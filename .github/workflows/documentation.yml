@@ -2,7 +2,7 @@ name: Build, test and generate docs
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'src/**'
       - 'docs/**'
