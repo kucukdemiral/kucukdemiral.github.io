@@ -4,12 +4,14 @@ email: richard@university.edu
 description: Academic webpage of Dr. Richard Feynman
 baseurl: ""
 url: ""
-remote_theme: sbryngelson/academic-website-template
 
 # Google analytics ID: Uncomment and your own, if you like
 # google_analytics: XX
 # google_analytics_4: XXX
 # google_tag_manager: XXX
+remote_theme: sbryngelson/academic-website-template
+
+
 
 # Footer info
 affiliation: >
@@ -40,58 +42,13 @@ include:
   - .htaccess
   - _pages
 
-# Conversion
-markdown: kramdown
-highlighter: rouge
-lsi: false
-excerpt_separator: "\n\n"
-incremental: false
 
-# Markdown Processing
-kramdown:
-  input: GFM
-  hard_wrap: false
-  auto_ids: true
-  footnote_nr: 1
-  entity_output: as_char
-  toc_levels: 1..6
-  smart_quotes: lsquo,rsquo,ldquo,rdquo
-  enable_coderay: false
-  parse_block_html: true # default for kramdown is false. This will enable using Markdown links
-
-
-plugins: ['jekyll/scholar']
-
-scholar:
-
-  last_name: Doe
-  first_name: [John]
-
-  style: citesty
-  locale: en
-
-  source: /assets/
-  bibliography: ref.bib
-  bibliography_template: bibtemplate
-  sort_by: year, month
-  order: descending
-
-  replace_strings: true
-  join_strings: true
-
-  details_dir: bibliography
-  details_layout: bibtex.html
-  details_link: Details
-
-  query: "@*"
-
-  bibliography_list_attributes:
-    reversed: "reversed"
-
-exclude:
-  - Gemfile
-  - Gemfile.lock
-  - update_boostrap.sh
-  - switch_theme.sh
-  - tags
-  - Rakefile
+# # Theme settings:
+# site_author: SLIDE authors
+# repo_url: "https://github.com/Battery-Intelligence-Lab/SLIDE/"
+# edit_on_github: true
+# github_docs_folder: true
+# sticky_navigation: true
+# prev_next_buttons_location: bottom
+# search_enabled: true
+# hljs_style: github-gist
