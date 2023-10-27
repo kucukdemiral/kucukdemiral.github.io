@@ -4,85 +4,18 @@
   image: graphical abstract.pdf
   display: Renewable and Sustainable Energy Reviews
   year: 
-  doi:
-  abstract: "The balance between supplied and demanded power is a crucial issue in the economic dispatching of electricity energy. With the emergence of renewable sources and data-driven approaches, demand-side or demand response (DR) programs have been applied to maintain this balance as accurately as possible. Short-term load forecasting (STLF) has a decisive impact on the success, sustainability, and performance of those programs. Forecasting customers' consumption over short or long time horizons allows distribution companies to establish new policies or modify strategies in terms of energy management, infrastructure planning, and budgeting. Deep learning (DL)-based approaches for STLF have been referenced for a long time, considering factors such as accuracy, various performance measures, volatility, and adverse effects of uncertainties in {load demand}. Hence, in this review, DL-based studies for the STLF problem have been considered. The studies have been classified by several titles, such as the provided method and main ideas, dataset specifications, uncertain-aware approaches, online solutions, and practical extensions to DR programs. The main contribution of this review is the ongoing exploration of STLF with DL models to reveal the research direction of the load forecasting problem in terms of the future-oriented integration of the key concepts of online, robustness, and feasibility."
+  #doi: 
+  abstract: "The balance between supplied and demanded power is a crucial issue in the economic dispatching of electricity energy. 
+  With the emergence of renewable sources and data-driven approaches, demand-side or demand response (DR) programs have been applied 
+  to maintain this balance as accurately as possible. Short-term load forecasting (STLF) has a decisive impact on the success, sustainability, a
+  nd performance of those programs. Forecasting customers' consumption over short or long time horizons allows distribution companies to establish new 
+  policies or modify strategies in terms of energy management, infrastructure planning, and budgeting. Deep learning (DL)-based approaches 
+  for STLF have been referenced for a long time, considering factors such as accuracy, various performance measures, volatility, and adverse effects 
+  of uncertainties in {load demand}. Hence, in this review, DL-based studies for the STLF problem have been considered. The studies have been 
+  classified by several titles, such as the provided method and main ideas, dataset specifications, uncertain-aware approaches, online solutions, 
+  and practical extensions to DR programs. The main contribution of this review is the ongoing exploration of STLF with DL models to reveal 
+  the research direction of the load forecasting problem in terms of the future-oriented integration of the key concepts of online, robustness, and feasibility."
  
-- title: Structure and Distribution Metric for Quantifying the Quality of Uncertainty-Assessing Gaussian Processes, Deep Neural Nets, and Deep Neural Operators for Regression
-  authors: E. Pickering, T.P. Sapsis
-  url: pickering2022structure
-  image: pickering2022structure.png
-  display: <b>Submitted</b>
-  year: 2022
-  arxiv: 2203.04515
-  abstract: "We propose two bounded comparison metrics that may be implemented to arbitrary dimension in regression tasks. One quantifies the structure of uncertainty and the other quantifies the distribution of uncertainty. The structure metric assesses the similarity in shape and location of uncertainty with the true error, while the distribution metric quantifies the supported magnitudes between the two. We apply these metrics to Gaussian Processes (GPs), Ensemble Deep Neural Nets (DNNs), and Ensemble Deep Neural Operators (DNOs) on high-dimensional and nonlinear test cases. We find that comparing a model's uncertainty estimates with the model's squared error provides a compelling ground truth assessment. We also observe that both DNNs and DNOs, especially when compared to GPs, provide encouraging metric values in high dimensions with either sparse or plentiful data."
-
-- title: Efficient global resolvent analysis via the one-way Navier-Stokes equations
-  authors: 
-    A. Towne, G. Rigas, O. Kamal, E. Pickering, T. Colonius
-  url: towne2022efficient
-  image: towne2022efficient.png
-  display: Journal of Fluid Mechanics, 948, A9
-  year: 2022
-  doi: doi:10.1017/jfm.2022.647
-  abstract: "Resolvent analysis is a powerful tool for modelling and analysing transitional and turbulent flows and, in particular, for approximating coherent flow structures. Despite recent algorithmic advances, computing resolvent modes for flows with more than one inhomogeneous spatial coordinate remains computationally expensive. In this paper we show how efficient and accurate approximations of resolvent modes can be obtained using a well-posed spatial marching method for flows that contain a slowly varying direction, i.e. one in which the mean flow changes gradually. First, we derive a well-posed and convergent one-way equation describing the downstream-travelling waves supported by the linearized Navier–Stokes equations. The method is based on a projection operator that isolates downstream-travelling waves. Integrating these one-way Navier–Stokes (OWNS) equations in the slowly varying direction, which requires significantly less CPU and memory resources than a direct solution of the linearized Navier–Stokes equations, approximates the action of the resolvent operator on a forcing vector. Second, this capability is leveraged to compute approximate resolvent modes using an adjoint-based optimization framework in which the forward and adjoint OWNS equations are marched in the downstream and upstream directions, respectively. This avoids the need to solve direct and adjoint globally discretized equations, therefore bypassing the main computational bottleneck of a typical global resolvent calculation. The method is demonstrated using the examples of a simple acoustics problem, a Mach 1.5 turbulent jet and a Mach 4.5 transitional zero-pressure-gradient flat-plate boundary layer. The optimal OWNS results are validated against corresponding global calculations, and the close agreement demonstrates the near-parabolic nature of these flows."
-
-- title: Resolvent-based modeling of turbulent jet noise
-  authors:
-    E. Pickering, A. Towne, P. Jordan, T. Colonius
-  url: pickering2021resolvent
-  image: pickering2021resolvent.png
-  display: Journal of the Acoustical Society of America
-  year: 2021
-  doi: 10.1121/10.0006453
-  abstract: "Resolvent analysis has demonstrated encouraging results for modeling coherent structures in jets when compared against their data-educed counterparts from high-fidelity large-eddy simulations (LES). We formulate resolvent analysis as an acoustic analogy that relates the near-field resolvent forcing to the near- and far-field pressure. We use an LES database of round, isothermal, Mach 0.9 and 1.5 jets to produce an ensemble of realizations for the acoustic field that we project onto a limited set of resolvent modes. In the near-field, we perform projections on a restricted acoustic output domain, r/D=[5,6], while the far-field projections are performed on a Kirchhoff surface comprising a 100-diameter arc centered at the nozzle. This allows the LES realizations to be expressed in the resolvent basis via a data-deduced, low-rank, cross-spectral density matrix. We find that a single resolvent mode reconstructs the most energetic regions of the acoustic field across Strouhal numbers, St=[0−1], and azimuthal wavenumbers, m=[0,2]. Finally, we present a simple function that results in a rank-1 resolvent model agreeing within 2dB of the peak noise for both jets."
-
-- title: Resolvent modeling of turbulent jets
-  authors:
-    E. Pickering
-  url: pickering2021thesis
-  image: pickering2021thesis.png
-  display: Ph.D. Dissertation, California Institute of Technology
-  year: 2021
-  doi: doi:10.7907/szxb-f168
-  abstract: "Optimal control of turbulent flows requires a detailed prediction of the unsteady, three-dimensional turbulent structures that govern quantities of interest like noise, drag, and mixing efficiency. There is a need for physics-based, reduced-order models of turbulent structure for those cases where direct simulation of the flow would be computationally prohibitive. In this thesis, we explore resolvent analysis as a framework for such models. Based on a linearization about the turbulent mean flow field, the resolvent finds optimal (highest gain) forcing functions that give rise, through linear amplification mechanisms, to energetic coherent structures. The forcing functions represent the nonlinear interactions between the coherent structures as well as with background incoherent turbulence.  While the high-gain structures capture many characteristics of the observed turbulent coherent structures in both wall-bounded and free-shear flows, closures for the forcing function are required to make these models predictive and thus utilize them for flow control.
-
-In the first part of this thesis, we examine a linear model for the resolvent forcing by adapting the concept of a turbulent (eddy) viscosity from classical Reynolds-Averaged  Navier-Stokes (RANS) turbulence modeling. We present a data-driven approach to identify an optimal eddy-viscosity field that best matches the resolvent prediction to the most energetic coherent structure educed via spectral proper orthogonal decomposition (SPOD) of data from high-fidelity simulations.  We analyze the specific case of turbulent jets spanning a range of Mach numbers from subsonic to supersonic.  We find the optimal eddy-viscosity field to be effective at matching both the shape and energy distribution of structures. More importantly, we find that calibrated eddy-viscosity fields predicted using standard eddy-viscosity models (utilizing only quantities available from RANS) yield results that are close to optimal.  
-
-We use the resulting resolvent model together with the high-fidelity data to investigate the full spectrum of amplification mechanisms and coherent structures present in turbulent jets. The addition of a turbulence model provides a clear separation between two established mechanisms in turbulent jets (Kelvin-Helmholtz and Orr) and leads to the identification of a third mechanism known as lift-up. Lift-up becomes the dominant mechanism at low-frequency limits for nonzero azimuthal wavenumbers, generating elongated, streaky structures. We find these streaks to be the most energetic structures in the jet, and that their presence has implications for altering the mean flow and controlling noise.
-
-Finally, we extend resolvent analysis to that of an acoustic analogy that relates the near-field forcing to the far-field acoustics 100 diameters from the nozzle. We again leverage high-fidelity data to produce an ensemble of realizations of the acoustic field and find that only a few resolvent modes are necessary for reconstruction. Ultimately, we find that a resolvent model based solely upon RANS quantities can reconstruct and predict the peak acoustic field at rank-1 to within 2 decibels for both the supersonic and transonic jets."
-
-- title: Optimal eddy viscosity for resolvent-based models of coherent structures in turbulent jets
-  authors: 
-    E. Pickering, G. Rigas, O. T. Schmidt, D. Sipp, T. Colonius
-  url: pickering2021optimal
-  image: pickering2021optimal.png
-  display: Journal of Fluid Mechanics, 917, A29
-  year: 2021
-  #arxiv: 2005.10964
-  doi: doi:10.1017/jfm.2021.232
-  abstract: "Response modes computed via linear resolvent analysis of a turbulent mean-flow field have been shown to qualitatively capture characteristics of the observed turbulent coherent structures in both wall-bounded and free shear flows.  To make such resolvent models predictive, the nonlinear forcing term must be closed. Strategies to do so include imposing self-consistent sets of triadic interactions, proposing various source models, or through turbulence modelling. For the latter, several investigators have proposed using the mean-field eddy viscosity acting linearly on the fluctuation field.  In this study, a data-driven approach is taken to quantitatively improve linear resolvent models by deducing an optimal eddy-viscosity field that maximizes the projection of the dominant resolvent mode to the energy-optimal coherent structure educed using spectral proper orthogonal decomposition (SPOD) of data from high-fidelity simulations.  We use large-eddy simulation databases for round isothermal jets at subsonic, transonic, and supersonic conditions and show that the optimal eddy viscosity substantially improves the agreement between resolvent and SPOD modes, reaching over 90% agreement at those frequencies where the jet exhibits a low-rank response.  We then consider a fixed model for the eddy viscosity and show that with the calibration of a single constant, the results are generally close to the optimal one.  In particular, the use of a standard Reynolds-Averaged-Navier-Stokes (RANS) eddy-viscosity resolvent model, with a single coefficient, provides substantial agreement between SPOD and resolvent modes for three turbulent jets and across the most energetic wavenumbers and frequencies."
-
-- title: Lift-up, Kelvin–Helmholtz and Orr mechanisms in turbulent jets
-  authors: 
-    E. Pickering, G. Rigas, P. A. S. Nogueira, A. V. G. Cavalieri, O. T. Schmidt, T. Colonius
-  url: pickering2020lift
-  image: pickering2020lift.jpeg
-  display: Journal of Fluid Mechanics 892, A2
-  year: 2020
-  #arxiv: 1909.09737
-  doi: doi:10.1017/jfm.2020.301
-  abstract: "Three amplification mechanisms present in turbulent jets, namely lift-up, Kelvin– Helmholtz and Orr, are characterized via global resolvent analysis and spectral proper orthogonal decomposition (SPOD) over a range of Mach numbers. The lift-up mechanism was recently identified in turbulent jets via local analysis by Nogueira et al. (J. Fluid Mech., vol. 873, 2019, pp. 211–237) at low Strouhal number (St) and non-zero azimuthal wavenumbers (m). In these limits, a global SPOD analysis of data from high-fidelity simulations reveals streamwise vortices and streaks similar to those found in turbulent wall-bounded flows. These structures are in qualitative agreement with the global resolvent analysis, which shows that they are a response to upstream forcing of streamwise vorticity near the nozzle exit. Analysis of mode shapes, component-wise amplitudes and sensitivity analysis distinguishes the three mechanisms and the regions of frequency–wavenumber space where each dominates, finding lift-up to be dominant as St/m → 0. Finally, SPOD and resolvent analyses of localized regions show that the lift-up mechanism is present throughout the jet, with a dominant azimuthal wavenumber inversely proportional to streamwise distance from the nozzle, with streaks of azimuthal wavenumber exceeding five near the nozzle, and wavenumbers one and two most energetic far downstream of the potential core."
-
-- title: Resolvent-based jet noise models - a projection approach
-  authors: 
-    E. Pickering, A. Towne, P. Jordan, T. Colonius
-  url: pickering2020resolvent
-  image: pickering2020resolvent.png
-  display: Proceedings of AIAA Scitech, Orlando 0999
-  year: 2020
-  doi: doi:10.2514/6.2020-0999
-  abstract: "Linear resolvent analysis has demonstrated encouraging results for modeling coherent structures in jets when compared against their data-deduced counterparts from high-fidelity large-eddy simulations (LES). However, leveraging resolvent modes for reconstructing statistics of the far acoustic field remains elusive. In this study, we use a LES database to produce an ensemble of realizations for the acoustic field that we project on to a limited set of n resolvent modes. The projections are done on a restricted acoustic output domain, r/D = [5, 6], and allow for the LES realizations to be recast in the resolvent basis via a datadeduced, low-rank, n × n cross-spectral density matrix. We find substantial improvements to the acoustic field reconstructions with the addition of a RANS-derived eddy-viscosity model to the resolvent operator. The reconstructions quantitatively match the most energetic regions of the acoustic field across Strouhal numbers, St = [0 − 1], and azimuthal wavenumbers, m = [0, 2], using only three resolvent modes. Finally, the characteristics of the resulting n × n covariance matrices are examined and suggest off-diagonal terms may be neglected for n ≤ 3. Results are presented for round, isothermal, Mach 1.5 and 0.9 jets."
 
 #- title: Near-surface dynamics of a gas bubble collapsing above a crevice
 #  authors:
