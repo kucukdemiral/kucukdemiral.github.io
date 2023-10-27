@@ -37,6 +37,7 @@ nav_pages:
   - name: software
   - name: team
   - name: teaching
+  - name: academics
 
 include:
   - .htaccess

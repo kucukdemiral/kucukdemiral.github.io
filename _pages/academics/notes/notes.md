@@ -1,0 +1,43 @@
+---
+layout: page
+title: Notes
+permalink: /academics/notes/
+feature-img: "assets/img/sample_feature_img_2.png"
+hide: true
+---
+
+You can find some notes over here that I've been maintaining for some academic courses (or academic-related courses), taken both at IIT Bombay as well as on other platforms like Coursera, Udemy, etc. In case you're looking for notes from the various gamedev courses I've pursued, you can check them out [here](/gamedev/courses/).
+
+Mostly, I write notes in `LaTeX` (no longer true, cuz now I'm one of the cool kids with an iPad). To view the `.tex` code, just simply change the `.pdf` to `.tex` in the URL. Alternatively, if you feel more comfortable with GitHub, you may head [here](https://github.com/omprabhu31/omprabhu31.github.io/) and navigate to the appropriate folder.
+
+<h3>Courses taken at IIT Bombay</h3>
+<ul>
+<li><a href="https://omprabhu31.github.io/academics/notes/ma214/">MA 214</a> - Introduction to Numerical Analysis</li>
+<li><a href="https://omprabhu31.github.io/academics/notes/me202/">ME 202</a> - Strength of Materials</li>
+<li><a href="https://omprabhu31.github.io/academics/notes/me-218/">ME 218</a> - Solid Mechanics Lab</li>
+<li><a href="https://omprabhu31.github.io/academics/notes/me-226/">ME 226</a> - Mechanical Measurements</li>
+</ul>
+
+<h3>Other courses</h3>
+
+> <h4>Machine Learning</h4>
+> Offered by [Stanford University](https://www.stanford.edu/) on [Coursera](https://www.coursera.org/)  -  Instructor: [Andrew Ng](https://www.coursera.org/instructor/andrewng)
+>
+> This course provides a broad introduction to machine learning, datamining, and statistical pattern recognition. Topics include: (i) Supervised learning (parametric/non-parametric algorithms, support vector machines, kernels, neural networks); (ii) Unsupervised learning (clustering, dimensionality reduction, recommender systems, deep learning); (iii) Best practices in machine learning (bias/variance theory; innovation process in machine learning and AI). The course will also draw from numerous case studies and applications.
+>
+> Notes: [Link to GitHub Repository](https://github.com/omprabhu31/machine-learning-coursera-stanford)
+
+
+> <h4>Neural Networks and Deep Learning</h4>
+> Offered by [deeplearning.ai](https://www.deeplearning.ai/) on [Coursera](https://www.coursera.org/)  -  Instructor: [Andrew Ng](https://www.coursera.org/instructor/andrewng)
+>
+> This course deals with the foundations of deep learning and how to actually build and implement efficient vectorized neural networks using Python.
+>
+> Notes: [.pdf](/academics/notes/neural_nets_deep_learning/Neural Networks and Deep Learning.pdf) / [.tex](https://github.com/omprabhu31/omprabhu31.github.io/blob/master/academics/notes/neural_nets_deep_learning/Neural%20Networks%20and%20Deep%20Learning.tex)
+
+> <h4>AI For Everyone</h4>
+> Offered by [deeplearning.ai](https://www.deeplearning.ai/) on [Coursera](https://www.coursera.org/)  -  Instructor: [Andrew Ng](https://www.coursera.org/instructor/andrewng)
+>
+> This is a non-technical course in the field of AI to help understand AI technologies as well as choose and implement AI projects to benefit the society.
+>
+> Notes: [.pdf](/academics/notes/ai_for_everyone/AI for Everyone.pdf) / [.tex](https://github.com/omprabhu31/omprabhu31.github.io/blob/master/academics/notes/ai_for_everyone/AI%20for%20Everyone.tex)
