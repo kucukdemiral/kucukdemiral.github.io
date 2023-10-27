@@ -7,12 +7,12 @@ url: ""
 affiliation: I am part of the <a href="https://gcu.ac.uk/" target="_blank">Applied Science Department</a> at Glasgow Caledonian University
 
 # Google analytics ID
-google_analytics: UA-176412042-1
+google_analytics: 
 
 # Location info. (shown in footer)
 location: >
   Room: M203 <br/>
-  Building George Moore <br/>
+  Building: George Moore <br/>
   School of Computing, Engineering and Built Environment<br/>
   70Cowcaddens Road<br/>
   Glasgow, G4 0BA<br/>
