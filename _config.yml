@@ -1,54 +1,63 @@
 # Site settings
-title: Richard Feynman
-email: richard@university.edu
-description: Academic webpage of Dr. Richard Feynman
+title: Ethan Pickering
+email: pickering@mit.edu
+description: Academic webpage of Ethan Pickering
 baseurl: ""
 url: ""
+affiliation: I am part of the <a href="http://meche.mit.edu/" target="_blank">Mechanical Engineering Department</a> at the Massachusetts Institute of Technology
 
-# Google analytics ID: Uncomment and your own, if you like
-# google_analytics: XX
-# google_analytics_4: XXX
-# google_tag_manager: XXX
-remote_theme: sbryngelson/academic-website-template
+# Google analytics ID
+google_analytics: UA-176412042-1
 
-
-
-# Footer info
-affiliation: >
-    Richard Feynman<br/>
-    Professor of Physics<br/>
-    California Institute of Technology
-
+# Location info. (shown in footer)
 location: >
-  California Institute of Technology<br/>
-  1200 E California Blvd<br/>
-  Pasadena, CA 91125
+  Coordinates: <br/>
+  Building 5 <br/>
+  Massachusetts Institute of Technology <br/>
+  77 Massachusetts Ave<br/>
+  Cambridge, MA 02139<br/>
 
+# Contact info. (shown in footer)
 contact: >
-    <a href="mailto:richard@university.edu" target="_blank"><i class="fa fa-envelope fa-1x"></i> Contact Richard via email</a> <br/>
-    <a href="https://github.com/sbryngelson/academic-website-template"><i class="fa fa-github fa-1x"></i> Use this site as a template!</a>
+    Contact Ethan via email: <a href="mailto:pickering@mit.edu" target="_blank">pickering@mit.edu</a> <br/>
+    <br/><a href="/aboutwebsite.html">Use this webpage as a template for your own!</a>
 
 # Pages shown in navbar
 nav_pages:
   - name: about
   - name: publications
   - name: talks
-  - name: research
-  - name: software
-  - name: team
-  - name: teaching
+  - name: service
+# - name: research
+# - name: software
+# - name: team
+# - name: teaching
+
+# Do you want to group your publications by year? {true/false}
+group_pub_by_year: true
 
 include:
   - .htaccess
   - _pages
 
+sass:
+  sass_dir: _sass
 
-# # Theme settings:
-# site_author: SLIDE authors
-# repo_url: "https://github.com/Battery-Intelligence-Lab/SLIDE/"
-# edit_on_github: true
-# github_docs_folder: true
-# sticky_navigation: true
-# prev_next_buttons_location: bottom
-# search_enabled: true
-# hljs_style: github-gist
+# Conversion
+markdown: kramdown
+highlighter: rouge
+lsi: false
+excerpt_separator: "\n\n"
+incremental: false
+
+# Markdown Processing
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+  footnote_nr: 1
+  entity_output: as_char
+  toc_levels: 1..6
+  smart_quotes: lsquo,rsquo,ldquo,rdquo
+  enable_coderay: false
+  parse_block_html: true # default for kramdown is false. This will enable using Markdown links

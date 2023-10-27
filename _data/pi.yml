@@ -1,22 +1,23 @@
-- name: Dr. Richard Feynman
-  photo: headshot.jpg
-  info: Richard C. Tolman Professor, California Institute of Technology
-  email: richard@university.edu
-  github: https://github.com/
-  researchgate: https://www.researchgate.net/
-  scholar: https://scholar.google.com/citations?user=B7vSqZsAAAAJ
-  cv: cv/cv.pdf
-  # Change the number below to the number of "educations" you have (up to 6)
-  number_educ: 2
-  education1: "(1942) Ph.D. Physics, Princeton University"
-  education2: "(1939) B.S. Physics, Massachusetts Institute of Technology"
-  # education3: 
-  # education4: 
-  # education5: 
-  # education6: 
-  education1short: (1942) Ph.D. Physics, Princeton
-  education2short: (1939) B.S. Physics, MIT
-  # education3short: 
-  # education4short: 
-  # education5short: 
-  # education6short: 
+- name: Dr. Ethan Pickering
+  photo: Ethan_smile_close.JPG
+  info: AI-Assisted Genetic Design Team Lead at Bayer, Lecturer at MIT
+  email: pickering@mit.edu
+  github: https://github.com/ethan-pickering
+  researchgate: https://www.researchgate.net/profile/Ethan_Pickering
+  scholar: https://scholar.google.com/citations?user=q3KI3-0AAAAJ&hl=en
+  cv: https://github.com/ethan-pickering/cv/blob/master/Ethan_Pickering_Curriculum_Vitae.pdf
+  number_educ: 7
+  education1: (2022-  ) AI-Assisted Genetic Design Team Lead, Bayer Crop Sciences
+  education2: (2023-  ) Lecturer in Mechanical Engineering, MIT
+  education3: (2021-2022) Postdoctoral Scholar in Mechanical Engineering, MIT (with <a href="http://sandlab.mit.edu/" target="_blank">Professor Themis Sapsis</a>)
+  education4: (2016-2021) Ph.D. in Mechanical Engineering, Caltech (with <a href="https://colonius.caltech.edu" target="_blank">Tim Colonius</a>)
+  education5: (2018) M.S. in Mechanical Engineering, Caltech (with <a href="https://colonius.caltech.edu" target="_blank">Tim Colonius</a>)
+  education6: (2016) M.S. Mechanical Engineering, Case Western Reserve University (with <a href="https://engineering.dartmouth.edu/people/faculty/alexis-abramson" target="_blank">Alexis Abramson</a> (now at Dartmouth) and <a href="https://engineering.case.edu/centers/sdle/roger-french" target="_blank">Roger French</a>)
+  education7: (2015) B.S. Mechanical and Aerospace Engineering, Case Western Reserve University
+  education1short: (2022-  ) AI Team Lead, Bayer
+  education2short: (2023-  ) Lecturer, MIT
+  education3short: (2021-2022) Postdoc ME, MIT
+  education4short: (2016-2021) Ph.D. ME, Caltech 
+  education5short: (2018) M.S. ME, Caltech 
+  education6short: (2016) M.S. ME, CWRU 
+  education7short: (2015) B.S. MAE, CWRU

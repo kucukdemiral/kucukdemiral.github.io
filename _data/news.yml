@@ -1,6 +1,14 @@
-- date: 1 January, 1941
-  headline: "Example news here"
+- date: 19 December, 2022
+  headline: "New Nature Computational Science paper on <a href='https://rdcu.be/c1TPe' target='_blank'>Discovering Extreme Events</a>! We develop a method for artificial intelligence to teach itself to accurately predict extreme events. From rogue waves to pandemic spikes, to structural ship failures, deep neural operators interact with complex systems to efficiently discover and learn extreme behavior." 
 
-- date: 1 January, 1940
-  headline: "Example news here"
+- date: 15 March, 2021
+  headline: "Submitted a new <a href='https://arxiv.org/abs/2103.09421' target='_blank'>paper</a> to JASA! We use reduced-order modeling for capturing physics of turbulet jet noise."
 
+- date: 4 February, 2020
+  headline: "Defended my thesis, Resolvent modeling of turbulent jets, check out the <a href='https://caltech.box.com/s/izah1rs8xzjwc6l12s150c60znqhk8oy' target='_blank'>recording</a>!"
+
+- date: 22 May, 2020
+  headline: "Just submitted a new <a href='https://arxiv.org/abs/2005.10964' target='_blank'>paper</a> to JFM! We use data to determine an optimal eddy-viscosity for resolvent analysis."
+
+- date: 14 April, 2020
+  headline: "<a href='https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/liftup-kelvinhelmholtz-and-orr-mechanisms-in-turbulent-jets/E02CC1F9FE261D38B2E2A91D77D53E20' target='_blank'>Lift-Up in turbulent jets paper</a> accepted to JFM!"
