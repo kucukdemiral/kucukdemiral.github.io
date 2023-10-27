@@ -4,6 +4,7 @@ email: richard@university.edu
 description: Academic webpage of Dr. Richard Feynman
 baseurl: ""
 url: ""
+remote_theme: sbryngelson/academic-website-template
 
 # Google analytics ID: Uncomment and your own, if you like
 # google_analytics: XX
