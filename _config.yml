@@ -1,13 +1,54 @@
-title: SLIDE
-description: Official documentation of SLIDE software.
+# Site settings
+title: Richard Feynman
+email: richard@university.edu
+description: Academic webpage of Dr. Richard Feynman
+baseurl: ""
+url: ""
+
+# Google analytics ID: Uncomment and your own, if you like
+# google_analytics: XX
+# google_analytics_4: XXX
+# google_tag_manager: XXX
 remote_theme: sbryngelson/academic-website-template
 
-# Theme settings:
-site_author: SLIDE authors
-repo_url: "https://github.com/Battery-Intelligence-Lab/SLIDE/"
-edit_on_github: true
-github_docs_folder: true
-sticky_navigation: true
-prev_next_buttons_location: bottom
-search_enabled: true
-hljs_style: github-gist
+
+
+# Footer info
+affiliation: >
+    Richard Feynman<br/>
+    Professor of Physics<br/>
+    California Institute of Technology
+
+location: >
+  California Institute of Technology<br/>
+  1200 E California Blvd<br/>
+  Pasadena, CA 91125
+
+contact: >
+    <a href="mailto:richard@university.edu" target="_blank"><i class="fa fa-envelope fa-1x"></i> Contact Richard via email</a> <br/>
+    <a href="https://github.com/sbryngelson/academic-website-template"><i class="fa fa-github fa-1x"></i> Use this site as a template!</a>
+
+# Pages shown in navbar
+nav_pages:
+  - name: about
+  - name: publications
+  - name: talks
+  - name: research
+  - name: software
+  - name: team
+  - name: teaching
+
+include:
+  - .htaccess
+  - _pages
+
+
+# # Theme settings:
+# site_author: SLIDE authors
+# repo_url: "https://github.com/Battery-Intelligence-Lab/SLIDE/"
+# edit_on_github: true
+# github_docs_folder: true
+# sticky_navigation: true
+# prev_next_buttons_location: bottom
+# search_enabled: true
+# hljs_style: github-gist
