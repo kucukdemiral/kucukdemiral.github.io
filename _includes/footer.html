@@ -1,31 +1,28 @@
 <br/>
-<div id="footer" class="panel">
+<section id="footer">
+<div class="container-footer">
   <div class="panel-footer">
-	<div class="container-fluid">
 	  <div class="row">
 		<div class="col-sm-4">
-			
-            <p>&copy 2020 {{site.title | escape }} </p>
-
-              <p>{{ site.affiliation }}</p>
-
-		   <p>  </p><p>
-            		  
+		    <h5>About</h5>	
+            <p>{{ site.affiliation }}</p>
 		</div>
 
 		<div class="col-sm-4">
+		    <h5>Contact</h5>	
             <p>{{ site.contact }}</p>
 		</div>
 
-
 		<div class="col-sm-4">
+		    <h5>Coordinates</h5>	
             <p>{{ site.location }}</p>
 		</div>
-
 	  </div>
+
+      <center><p>&copy {{ "now" | date: "%Y" }} {{site.title | escape }} </p></center>
 	</div>
   </div>
 </div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script src="{{ site.url }}{{ site.baseurl }}/js/bootstrap.min.js"></script>
+<script src="{{ "/assets/javascript/bootstrap/jquery.min.js" | relative_url }}"></script>
+<script src="{{ "/assets/javascript/bootstrap/bootstrap.bundle.min.js" | relative_url }}"></script>
