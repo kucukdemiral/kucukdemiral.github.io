@@ -1,10 +1,10 @@
 - title: A comprehensive review on deep learning approaches for short-term load forecasting
   authors: Y. Eren, I. Kucukdemiral
-  url: 
+  url: bryngelson-JFM-19
   image: graphical abstract.pdf
-  display: Renewable and Sustainable Energy Reviews
-  year: 
-  #doi: 
+  display: (Accepted) Renewable and Sustainable Energy Reviews
+  year: 2023 
+  doi: 
   abstract: "The balance between supplied and demanded power is a crucial issue in the economic dispatching of electricity energy. 
   With the emergence of renewable sources and data-driven approaches, demand-side or demand response (DR) programs have been applied 
   to maintain this balance as accurately as possible. Short-term load forecasting (STLF) has a decisive impact on the success, sustainability, a
