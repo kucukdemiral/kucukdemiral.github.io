@@ -1,21 +1,12 @@
-- title: Discovering and forecasting extreme events via active learning in neural operators
-  authors: E. Pickering, S. Guth, G. Em Karniadakis, T.P. Sapsis
+- title: A comprehensive review on deep learning approaches for short-term load forecasting
+  authors: Y. Eren, I. Kucukdemiral
   url: pickering2022discovery
-  image: pickering2022discovery.png
-  display: Nature Compuational Science
-  year: 2022
-  doi: 10.1038/s43588-022-00376-0
-  abstract: "Extreme events in society and nature, such as pandemic spikes, rogue waves or structural failures, can have catastrophic consequences. Characterizing extremes is difficult, as they occur rarely, arise from seemingly benign conditions, and belong to complex and often unknown infinite-dimensional systems. Such challenges render attempts at characterizing them moot. We address each of these difficulties by combining output-weighted training schemes in Bayesian experimental design (BED) with an ensemble of deep neural operators. This model-agnostic framework pairs a BED scheme that actively selects data for quantifying extreme events with an ensemble of deep neural operators that approximate infinite-dimensional nonlinear operators. We show that not only does this framework outperform Gaussian processes, but that (1) shallow ensembles of just two members perform best; (2) extremes are uncovered regardless of the state of the initial data (that is, with or without extremes); (3) our method eliminates ‘double-descent’ phenomena; (4) the use of batches of suboptimal acquisition samples compared to step-by-step global optima does not hinder BED performance; and (5) Monte Carlo acquisition outperforms standard optimizers in high dimensions. Together, these conclusions form a scalable artificial intelligence (AI)-assisted experimental infrastructure that can efficiently infer and pinpoint critical situations across many domains, from physical to societal systems."
-
-- title: Information FOMO, The unhealthy fear of missing out on information. A method for removing misleading data for healthier models
-  authors: E. Pickering, T.P. Sapsis
-  url: pickering2022fomo
-  image: pickering2022fomo.png
-  display: <b>Submitted</b>
-  year: 2022
-  arxiv: 2208.13080
-  abstract: "Misleading or unnecessary data can have out-sized impacts on the health or accuracy of Machine Learning (ML) models. We present a Bayesian sequential selection method, akin to Bayesian experimental design, that identifies critically important information within a dataset, while ignoring data that is either misleading or brings unnecessary complexity to the surrogate model of choice. Specifically, our method eliminates the phenomena of double descent, where more data leads to worse performance. Our approach has two key features. First, the selection algorithm dynamically couples the chosen model and data. Data is chosen based on its merits towards improving the selected model, rather than being compared strictly against other data. Second, a natural convergence of the method removes the need for dividing the data into training, testing, and validation sets. Instead, the selection metric inherently assesses testing and validation error through global statistics of the model. This ensures that key information is never wasted in testing or validation. The method is applied using both Gaussian process regression and deep neural network surrogate models."
-
+  image: RSER.png
+  display: Renewable and Sustainable Energy Reviews
+  year: 
+  doi:
+  abstract: "The balance between supplied and demanded power is a crucial issue in the economic dispatching of electricity energy. With the emergence of renewable sources and data-driven approaches, demand-side or demand response (DR) programs have been applied to maintain this balance as accurately as possible. Short-term load forecasting (STLF) has a decisive impact on the success, sustainability, and performance of those programs. Forecasting customers' consumption over short or long time horizons allows distribution companies to establish new policies or modify strategies in terms of energy management, infrastructure planning, and budgeting. Deep learning (DL)-based approaches for STLF have been referenced for a long time, considering factors such as accuracy, various performance measures, volatility, and adverse effects of uncertainties in {load demand}. Hence, in this review, DL-based studies for the STLF problem have been considered. The studies have been classified by several titles, such as the provided method and main ideas, dataset specifications, uncertain-aware approaches, online solutions, and practical extensions to DR programs. The main contribution of this review is the ongoing exploration of STLF with DL models to reveal the research direction of the load forecasting problem in terms of the future-oriented integration of the key concepts of online, robustness, and feasibility."
+ 
 - title: Structure and Distribution Metric for Quantifying the Quality of Uncertainty-Assessing Gaussian Processes, Deep Neural Nets, and Deep Neural Operators for Regression
   authors: E. Pickering, T.P. Sapsis
   url: pickering2022structure
@@ -102,65 +93,4 @@ Finally, we extend resolvent analysis to that of an acoustic analogy that relate
 #  year: 2020
 #  arxiv: 1912.07022
 #  abstract: "The impact of a collapsing gas bubble above rigid, notched walls is considered. Such surface crevices and imperfections often function as bubble nucleation sites, and thus have a direct relation to cavitation-induced erosion and damage structures. A generic configuration is investigated numerically using a second-order-accurate compressible multi-component flow solver in a two-dimensional axisymmetric coordinate system. Results show that the crevice geometry has a significant effect on the collapse dynamics, jet formation, subsequent wave dynamics, and interactions. The wall-pressure distribution associated with erosion potential is a direct consequence of development and intensity of these flow phenomena."
-
-- title: Eddy viscosity for resolvent-based jet noise models
-  authors: 
-   E. Pickering, G. Rigas, O. T. Schmidt, D. Sipp, T. Colonius
-  url: pickering2019eddy
-  image: pickering2019eddy.png
-  display: Proceedings of AIAA/CEAS Aeroacoustics, Delft 2454
-  year: 2019
-  doi: doi:10.2514/6.2019-2454
-  abstract: "Response modes computed via linear resolvent analysis have shown promising results for qualitatively modeling both the hydrodynamic and acoustic fields in jets when compared to data-deduced modes from high-fidelity, large-eddy simulations (LES). For an improved quantitative prediction of the near- and far-field, the role of Reynolds stresses must also be considered. In this study, we propose a methodology to deduce an eddy-viscosity model that optimally captures the nonlinear forcing of resolvent modes. The methodology is based on the maximization of the projection between resolvent analysis and spectral proper orthogonal decomposition (SPOD) modes using a Lagrangian optimization framework. For a Mach 0.4 round, isothermal, turbulent jet, four methods are used to increase the projection coefficients: linear damping, spatially constant eddy-viscosity field, a turbulent kinetic energy derived viscosity field, and an optimized eddy-viscosity field. The resulting projection coefficients for the optimized eddy-viscosity field between SPOD and resolvent can be increased to over 90% for frequencies in the range St = 0.35−1 with significant improvements to St < 0.35. We find that the use of a frequency-independent turbulent kinetic energy turbulent viscosity model produces modes closely inline with optimal results, providing a preliminary eddy-viscosity resolvent model for jets."
-
-- title: Streaks and coherent structures in jets from round and serrated nozzles
-  authors: 
-   G. Rigas, E. Pickering, O. T. Schmidt, P. A. S. Nogueira, A. V. G. Cavalieri, G. A. Bres, T. Colonius
-  url: rigas2019streaks
-  image: rigas2019streaks.png
-  display: Proceedings of AIAA/CEAS Aeroacoustics, Delft 2597
-  year: 2019
-  doi: doi:10.2514/6.2019-2597 
-  abstract: "Hydrodynamic instabilities are directly related to large-scale coherent structures that are correlated with jet noise emission. Unravelling and accurately predicting their fundamental dynamics shows a promising direction for designing quieter jet engines. In this study, we analyze high-fidelity large-eddy simulation data of a turbulent Mach 0.4 round jet and a Mach 1.5 chevron jet. Using spectral proper orthogonal decomposition we identify, beyond the well-known Kelvin–Helmholtz and Orr mechanisms, elongated alternating streamwise streaks of high and low-speed fluid that have been associated with a non-modal lift-up effect in wall-bounded shear flows. In the global three-dimensional domain, the most energetic streaks manifest for azimuthal wavenumber m = 1 and frequency St → 0. Furthermore, for the chevron jet, streaks and streamwise vortices appear due to the presence of the serrated nozzle, and they inherit the periodicity of the nozzle geometry. Finally, local (planar) spectral proper orthogonal decomposition is used to analyze the coherent structures of the chevron jet flow. Near the nozzle exit, antisymmetric and symmetric modes appear to be amplified and linked to the presence of the chevrons/streaks. Further downstream, the most energetic modes share similar characteristics to the ones observed
-in round jets."
-
-- title: Resolvent-based analysis of streaks in turbulent jets
-  authors: 
-   P. A. S. Nogueira, A. V. G. Cavalieri, O. T. Schmidt, P. Jordan, V. Jaunet, E. Pickering, G. Rigas, T. Colonius
-  url: nogueira2019resolvent
-  image: nogueira2019resolvent.png
-  display: Proceedings of AIAA/CEAS Aeroacoustics, Delft 2569
-  year: 2019
-  doi:  doi:10.2514/6.2019-2569
-  abstract: "Large scale, elongated structures, similar those ones widely studied in wall-bounded flows, are also present in turbulent jets. Several characteristics of these streaks can be identified via reduced order models such as resolvent analysis. The present work involves a resolvent-based study of these structures in turbulent jets. We focus on obtaining the optimal forcing that generates these energetic coherent structures. Results are compared with experimental data post-processed using spectral proper orthogonal decomposition, allowing us to draw conclusions about the nature of the non-linear forcing, since the two analyses should provide equivalent results if this term is modelled as spatially white. By identifying streaks in a global framework, we expect to better understand the mechanism by which they are generated."
-
-- title: Building electricity consumption - Data analytics of building operations with classical time series decomposition and case based subsetting
-  authors: 
-   E. Pickering, M. A. Hossain, R. H. French, A. R. Abramson
-  url: pickering2018building
-  image: pickering2018building.png
-  display: Buildings and Energy 177, 184-196
-  year: 2018
-  doi: doi:10.1016/j.enbuild.2018.07.056
-  abstract: "The commercial building sector consumes approximately one-fifth of U.S. total energy and exhibits significant operational inefficiencies, leaving a great opportunity to implement various energy-efficiency measures. However, conventional energy audit techniques are expensive, time-consuming, and frequently inaccurate. Conversely, classical time series decomposition of smart meter (i.e. 15 min interval) building electricity consumption provides quick, inexpensive, and useful insights to building operation and characteristics. Paired with complementary time series datasets such as outdoor temperature and solar irradiation, specific insights into HVAC scheduling, daily operational variation, and the relative impact of temperature and solar radiation were quantitatively assessed. This work analyzes six commercial buildings and identifies various building characteristics, including the potential for savings of over 700 MWh valued at 92,000 per year from building rescheduling alone. With access to only whole building smart meter data, these results are obtained virtually and instantaneously, making the case for a rigorous data analytics approach to unlock the potential of building energy efficiency."
-
-- title: A cross-sectional study of the temporal evolution of electricity consumption of six commercial buildings  
-  authors: 
-   E. Pickering, M. A. Hossain, J. P. Mousseau, R. A. Swanson, R. H. French, A. R. Abramson
-  url: pickering2017cross
-  #image: pickering2017cross.tif
-  display: PLOS One
-  year: 2017
-  doi: doi:10.1371/journal.pone.0187129
-  abstract: "Current approaches to building efficiency diagnoses include conventional energy audit techniques that can be expensive and time consuming. In contrast, virtual energy audits of readily available 15-minute-interval building electricity consumption are being explored to provide quick, inexpensive, and useful insights into building operation characteristics. A cross sectional analysis of six buildings in two different climate zones provides methods for data cleaning, population-based building comparisons, and relationships (correlations) of weather and electricity consumption. Data cleaning methods have been developed to categorize and appropriately filter or correct anomalous data including outliers, missing data, and erroneous values (resulting in < 0.5 percent anomalies). The utility of a cross-sectional analysis of a sample set of building’s electricity consumption is found through comparisons of baseload, daily consumption variance, and energy use intensity. Correlations of weather and electricity consumption 15-minute interval datasets show important relationships for the heating and cooling seasons using computed correlations of a Time-Specific-Averaged-Ordered Variable (exterior temperature) and corresponding averaged variables (electricity consumption)(TSAOV method). The TSAOV method is unique as it introduces time of day as a third variable while also minimizing randomness in both correlated variables through averaging. This study found that many of the pair-wise linear correlation analyses lacked strong relationships, prompting the development of the new TSAOV method to uncover the causal relationship between electricity and weather. We conclude that a combination of varied HVAC system operations, building thermal mass, plug load use, and building set point temperatures are likely responsible for the poor correlations in the prior studies, while the correlation of time-specific-averaged-ordered temperature and corresponding averaged variables method developed herein adequately accounts for these issues and enables discovery of strong linear pair-wise correlation R values. TSAOV correlations lay the foundation for a new approach to building studies, that mitigates plug load interferences and identifies more accurate insights into weather-energy relationship for all building types. Over all six buildings analyzed the TSAOV method reported very significant average correlations per building of 0.94 to 0.82 in magnitude. Our rigorous statistics-based methods applied to 15-minute-interval electricity data further enables virtual energy audits of buildings to quickly and inexpensively inform energy savings measures."
-
-- title: EDIFES 0.4 - Scalable data analytics for commercial building virtual energy audits
-  authors: 
-   E. Pickering
-  url: pickering2016_MS
-  #image: pickering2017cross.tif
-  display: Master's Thesis
-  year: 2016
-  #doi: doi:10.1371/journal.pone.0187129
-  abstract: "Energy Diagnostics Investigator for Efficiency Savings (EDIFES) has been developed for scalable data analytics to conduct virtual energy audits on commercial buildings. Built as a software package in R, EDIFES ingests building electricity data and readily available weather data, applying various data analytics to determine building markers, characteristics, and operational tendencies. Through these analyses building systems are identified, including Heating Ventilation and Air Conditioning (HVAC), lighting, and plug load or other equipment, with characteristics such as load and system scheduling. Once building systems have been identified, EDIFES conducts virtual energy audits to diagnose efficiency issues, determines the impact (i.e. return-on-investment or payback) of potential retrofit actions (e.g. reschedulingHVAC to occupied hours or conducting a lighting retrofit). After this stage, it can be used for measurement and verification (M&V) or continuous commissioning. Six buildings are presented in this thesis."
 
