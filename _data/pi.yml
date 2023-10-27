@@ -1,23 +1,17 @@
-- name: Dr. Beklan Pickering
-  photo: Ethan_smile_close.JPG
-  info: AI-Assisted Genetic Design Team Lead at Bayer, Lecturer at MIT
-  email: pickering@mit.edu
-  github: https://github.com/ethan-pickering
-  researchgate: https://www.researchgate.net/profile/Ethan_Pickering
-  scholar: https://scholar.google.com/citations?user=q3KI3-0AAAAJ&hl=en
+- name: Dr Ibrahim Kucukdemiral
+  photo: ibrahim_picture_usa.JPG
+  info: Reader at Glasgow Caledonian University
+  email: ibrahim.kucukdemiral@gcu.ac.uk
+  github: https://github.com/kucukdemiral
+  scholar: https://scholar.google.com/citations?user=YWefQu8AAAAJ&hl=en&oi=ao
   cv: https://github.com/ethan-pickering/cv/blob/master/Ethan_Pickering_Curriculum_Vitae.pdf
-  number_educ: 7
-  education1: (2022-  ) AI-Assisted Genetic Design Team Lead, Bayer Crop Sciences
-  education2: (2023-  ) Lecturer in Mechanical Engineering, MIT
-  education3: (2021-2022) Postdoctoral Scholar in Mechanical Engineering, MIT (with <a href="http://sandlab.mit.edu/" target="_blank">Professor Themis Sapsis</a>)
-  education4: (2016-2021) Ph.D. in Mechanical Engineering, Caltech (with <a href="https://colonius.caltech.edu" target="_blank">Tim Colonius</a>)
-  education5: (2018) M.S. in Mechanical Engineering, Caltech (with <a href="https://colonius.caltech.edu" target="_blank">Tim Colonius</a>)
-  education6: (2016) M.S. Mechanical Engineering, Case Western Reserve University (with <a href="https://engineering.dartmouth.edu/people/faculty/alexis-abramson" target="_blank">Alexis Abramson</a> (now at Dartmouth) and <a href="https://engineering.case.edu/centers/sdle/roger-french" target="_blank">Roger French</a>)
-  education7: (2015) B.S. Mechanical and Aerospace Engineering, Case Western Reserve University
-  education1short: (2022-  ) AI Team Lead, Bayer
-  education2short: (2023-  ) Lecturer, MIT
-  education3short: (2021-2022) Postdoc ME, MIT
-  education4short: (2016-2021) Ph.D. ME, Caltech 
-  education5short: (2018) M.S. ME, Caltech 
-  education6short: (2016) M.S. ME, CWRU 
-  education7short: (2015) B.S. MAE, CWRU
+  number_educ: 6
+  education1: (2002) Ph.D. Electrical Engineering, Yildiz Technical University
+  education2: (1999) M.S. Electrical Engineering, Yildiz Technical University
+  education3: (1997) B.S. Electrical Engineering, Yildiz Technical University
+  education1short: (2021-  ) Reader, GCU
+  education2short: (2017-2021  ) Lecturer, GCU
+  education3short: (2015-2017) Full Prof., YTU
+  education4short: (2010-2015) Assoc. Prof, YTU
+  education5short: (2004-2010) Asst. Prof, YTU
+  education6short: (1998-2004) Research Asst., YTU
