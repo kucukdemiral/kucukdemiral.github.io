@@ -79,7 +79,7 @@ permalink: /about/
 
 ## Sketch
 
-Dr. Ethan Pickering investigates chaotic systems of engineering interest that exhibit rare and extreme events. He is currently a postdoctoral associate in Mechanical Engineering at the Massachusetts Institute of Technology, working with Themis Sapsis and collaborating with numerous institutions that cover state of the art computational, experimental, and theoretical abilities.
+Dr. Beklan Pickering investigates chaotic systems of engineering interest that exhibit rare and extreme events. He is currently a postdoctoral associate in Mechanical Engineering at the Massachusetts Institute of Technology, working with Themis Sapsis and collaborating with numerous institutions that cover state of the art computational, experimental, and theoretical abilities.
 
 {% if site.data.awards %}
 ## Awards

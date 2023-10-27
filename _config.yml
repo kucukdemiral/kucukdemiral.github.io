@@ -1,7 +1,7 @@
 # Site settings
-title: Ethan Pickering
+title: Beklan Kucukdemiral
 email: pickering@mit.edu
-description: Academic webpage of Ethan Pickering
+description: Academic webpage of Beklan Kucukdemiral
 baseurl: ""
 url: ""
 affiliation: I am part of the <a href="http://meche.mit.edu/" target="_blank">Mechanical Engineering Department</a> at the Massachusetts Institute of Technology
@@ -19,7 +19,7 @@ location: >
 
 # Contact info. (shown in footer)
 contact: >
-    Contact Ethan via email: <a href="mailto:pickering@mit.edu" target="_blank">pickering@mit.edu</a> <br/>
+    Contact Beklan via email: <a href="mailto:pickering@mit.edu" target="_blank">pickering@mit.edu</a> <br/>
     <br/><a href="/aboutwebsite.html">Use this webpage as a template for your own!</a>
 
 # Pages shown in navbar
@@ -28,10 +28,10 @@ nav_pages:
   - name: publications
   - name: talks
   - name: service
-# - name: research
-# - name: software
-# - name: team
-# - name: teaching
+  - name: research
+  - name: software
+  - name: team
+  - name: teaching
 
 # Do you want to group your publications by year? {true/false}
 group_pub_by_year: true
