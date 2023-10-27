@@ -1,25 +1,25 @@
 # Site settings
-title: Beklan Kucukdemiral
-email: pickering@mit.edu
-description: Academic webpage of Beklan Kucukdemiral
+title: Ibrahim Kucukdemiral
+email: ibrahim.klucukdemira@gcu.ac.uk
+description: Academic webpage of Ibrahim Kucukdemiral
 baseurl: ""
 url: ""
-affiliation: I am part of the <a href="http://meche.mit.edu/" target="_blank">Mechanical Engineering Department</a> at the Massachusetts Institute of Technology
+affiliation: I am part of the <a href="https://gcu.ac.uk/" target="_blank">Applied Science Department</a> at Glasgow Caledonian University
 
 # Google analytics ID
 google_analytics: UA-176412042-1
 
 # Location info. (shown in footer)
 location: >
-  Coordinates: <br/>
-  Building 5 <br/>
-  Massachusetts Institute of Technology <br/>
-  77 Massachusetts Ave<br/>
-  Cambridge, MA 02139<br/>
+  Coordinates: M203 <br/>
+  Building George Moore <br/>
+  SCEBE<br/>
+  70Cowcaddens Road<br/>
+  Glasgow, G4 0BA<br/>
 
 # Contact info. (shown in footer)
 contact: >
-    Contact Beklan via email: <a href="mailto:pickering@mit.edu" target="_blank">pickering@mit.edu</a> <br/>
+    Contact Ibrahim via email: <a href="mailto:ibrahim.kucukdemiral@gcu.ac.uk" target="_blank">pickering@mit.edu</a> <br/>
     <br/><a href="/aboutwebsite.html">Use this webpage as a template for your own!</a>
 
 # Pages shown in navbar
