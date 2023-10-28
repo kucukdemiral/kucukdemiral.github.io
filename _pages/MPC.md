@@ -1,7 +1,7 @@
 ---
 title: "Model Predictive Control"
 layout: default
-permalink: /teaching/mpc-course/
+permalink: /teaching/MPC/
 ---
 
 # Model Predictive Control
