@@ -8,4 +8,5 @@ permalink: /teaching/
 # Teaching
 
 [Model Predictive Control](/teaching/MPC/)
+[Control Systems (I)](/teaching/Control Systems (I)/)
 
