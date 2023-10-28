@@ -7,5 +7,5 @@ permalink: /teaching/
 
 # Teaching
 
-Model Predictive Control 
+[Model Predictive Control](/teaching/MPC/)
 
