@@ -6,14 +6,10 @@ permalink: /teaching/ControlSystems/
 
 # Control Systems
 
-<head>
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-</head>
+In Control systems we generally deal with either first order systems of the form
+$$
+G(s)=\frac{K}{\tau s+1}
+$$
+where $\tau$ is called the time constant of the system; or second order systems having a general transfer function
 
-<p>Here is an example equation: \[f(x) = \int_{0}^{x} e^{-t^2} dt\]</p>
-
-<script>
-  MathJax.typeset();
-</script>
 
