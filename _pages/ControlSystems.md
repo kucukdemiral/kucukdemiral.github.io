@@ -11,7 +11,7 @@ permalink: /teaching/ControlSystems/
   <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
 </head>
 
-<p>Here is an example equation: $f(x) = \int_{0}^{x} e^{-t^2} dt$</p>
+<p>Here is an example equation: \[f(x) = \int_{0}^{x} e^{-t^2} dt\]</p>
 
 <script>
   MathJax.typeset();
