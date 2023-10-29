@@ -79,7 +79,7 @@ permalink: /about/
 
 ## Sketch
 
-Dr. Beklan Pickering investigates chaotic systems of engineering interest that exhibit rare and extreme events. He is currently a postdoctoral associate in Mechanical Engineering at the Massachusetts Institute of Technology, working with Themis Sapsis and collaborating with numerous institutions that cover state of the art computational, experimental, and theoretical abilities.
+Dr Ibrahim Kucukdemiral's research interests include mathematical control theory, robust and optimal control systems, linear and nonlinear systems, identifitication and application of control on electromechanical systems. He is also interested in the control of renewable and sustainable energy systems. 
 
 {% if site.data.awards %}
 ## Awards
@@ -101,10 +101,11 @@ Dr. Beklan Pickering investigates chaotic systems of engineering interest that e
 
 ## Collaborators
 
-* <a href="https://scholar.google.com/citations?user=xYDWg90AAAAJ&hl=en" target="_blank"> Dr Yavuz Eren</a>
-* <a href="https://scholar.google.com/citations?user=gv8bO4oAAAAJ&hl=en" target="_blank"> Dr Hakan Yazici</a>
-* <a href="https://researchonline.gcu.ac.uk/en/persons/geraint-bevan" target="_blank"> Dr Geraint Bevan</a>
-* <a href="https://userweb.ucs.louisiana.edu/~axf1456/" target="_blank"> Dr Afef Fekih</a>
+* <a href="https://scholar.google.com/citations?user=xYDWg90AAAAJ&hl=en" target="_blank"> Dr Yavuz Eren</a> Yildiz Technical University, Department of Control and Automation Engineering, Istanbul, Turkiye
+* <a href="https://scholar.google.com/citations?user=gv8bO4oAAAAJ&hl=en" target="_blank"> Dr Hakan Yazici</a> Yildiz Technical University, Department of Mechanical Engineering, Istanbul, Turkiye
+* <a href="https://researchonline.gcu.ac.uk/en/persons/geraint-bevan" target="_blank"> Dr Geraint Bevan</a> Department of Applied Science, Glasgow Caledonian University, Glasgow, UK
+* <a href="https://userweb.ucs.louisiana.edu/~axf1456/" target="_blank"> Dr Afef Fekih</a> ECE, University of Louisiana at Lafayette.
+* <a href="https://researchportal.hw.ac.uk/en/persons/mustafa-suphi-erden" target="_blank"> Dr Suphi Erden</a> Institute of Sensor, Sginals and Systems, Heriot Watt  University, Edinburgh, UK
 
 
 
