@@ -101,14 +101,10 @@ Dr. Beklan Pickering investigates chaotic systems of engineering interest that e
 
 ## Collaborators
 
-* <a href="http://colonius.caltech.edu/" target="_blank">Professor Tim Colonius (Department of Mechanical and Civil Engineering, Caltech)</a>
-* <a href="https://www.imperial.ac.uk/people/g.rigas" target="_blank">Professor Georgios Rigas (Department of Aeronautics, Imperial College London)</a>
-* <a href="http://flowphysics.ucsd.edu/" target="_blank">Professor Oliver Schmidt (Department of Mechanical and Aerospace Engineering, UC San Diego)</a>
-* <a href="http://atowne.com/" target="_blank">Professor Aaron Towne (Department of Mechanical Engineering, University of Michigan)</a>
-* <a href="https://scholar.google.fr/citations?user=X7P6FUEAAAAJ&hl=fr" target="_blank"> Dr. Peter Jordan (Institut Pprime, CNRS, Universit ́e de Poitiers )</a>
-* <a href="http://denissipp.free.fr/" target="_blank"> Dr. Denis Sipp (Research Director at ONERA)</a>
-* <a href="http://www.ita.br/~cavalieri" target="_blank"> Professor Andre Cavalieri (Engenharia Aeronáutica, Instituto Tecnológico de Aeronáutica)</a>
-* <a href="https://www.cascadetechnologies.com/" target="_blank"> Dr. Guillaume Brès (Director of Operations and Senior Research Scientist, CASCADE Technologies)</a>
+* <a href="https://scholar.google.com/citations?user=xYDWg90AAAAJ&hl=en" target="_blank"> Dr Yavuz Eren</a>
+* <a href="https://scholar.google.com/citations?user=gv8bO4oAAAAJ&hl=en" target="_blank"> Dr Hakan Yazici</a>
+* <a href="https://researchonline.gcu.ac.uk/en/persons/geraint-bevan" target="_blank"> Dr Geraint Bevan</a>
+* <a href="https://userweb.ucs.louisiana.edu/~axf1456/" target="_blank"> Dr Afef Fekih</a>
 
 
 
