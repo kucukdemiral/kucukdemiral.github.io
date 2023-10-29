@@ -18,6 +18,6 @@ $$
 G(s)=\frac{\omega_n^2}{s^2+2\zeta \omega_n s+\omega_n^2}
 $$
 
-Here, $\omega_n [rads^{-1}]$ is called the **undamped natural frequency** of the process.
+Here, $\omega_n [\mathrm{rads}^{-1}]$ is called the **undamped natural frequency** of the process.
 
 
