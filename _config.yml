@@ -22,21 +22,21 @@ repository               : "kucukdemiral/kucukdemiral.github.io"
 author:
   # Biographic information
   avatar           : "profile.png"
-  name             : "Your Sidebar Name"
+  name             : "Dr Ibrahim Kucukdemiral"
   pronouns         : # example: "she/her"  
-  bio              : "Short biography for the left-hand sidebar"
-  location         : "Earth"
-  employer         : "Red Brick University"
+  bio              : "Dr. Ibrahim Kucukdemiral is a Reader in the Department of Applied Science at the School of Computing, Engineering, and Built Environment at Glasgow Caledonian University. He serves as Vice Chair of the IEEE Control Systems Chapter of the UK & Ireland Section and holds the position of Conference Coordinator Officer for the IEEE UK & Ireland Section. Additionally, he is the Chair of the Industrial Advisory Board for the Electrical and Mechanical Engineering departments and leads the Robotics for the Common Good research group. "
+  location         : "Glasgow, Scotland, UK"
+  employer         : "Glasgow Caledonian University"
   uri              : # URL
-  email            : "none@example.org" 
+  email            : "ibrahim.kucukdemiral@gcu.ac.uk" 
 
   # Academic websites
   arxiv            : # URL - Update with the correct link to your profile
-  googlescholar    : "https://scholar.google.com/citations?user=PS_CX0AAAAAJ"
+  googlescholar    : "https://scholar.google.com/citations?user=YWefQu8AAAAJ""
   impactstory      : # URL
-  orcid            : "http://orcid.org/yourorcidurl"
+  orcid            : "https://orcid.org/0000-0003-0174-5680"
   semantic         : # URL
-  pubmed           : "https://www.ncbi.nlm.nih.gov/pubmed/?term=john+snow"
+  pubmed           : ""
   researchgate     : # URL
 
   # Repositories and software development
