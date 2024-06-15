@@ -3,7 +3,7 @@ title: "Control Systems 1"
 collection: teaching
 type: "Graduate Module"
 permalink: /teaching/control-systems-1
-venue: "University of Glasgow, Department of Applied Science"
+venue: "Glasgow Caledonian University, Department of Applied Science"
 date: 2024-06
 location: "Glasgow, UK"
 ---
