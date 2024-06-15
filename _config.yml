@@ -10,7 +10,7 @@
 locale                   : "en-US"
 title                    : "Ibrahim Kucukdemiral / Home-Page"
 title_separator          : "-"
-name                     : &name "Ibrahim Kucukdemiral"
+name                     : &name "Dr Ibrahim Kucukdemiral"
 description              : &description "Reader, PhD, SMIEEE, FHEA"
 url                      : https://kucukdemiral.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
