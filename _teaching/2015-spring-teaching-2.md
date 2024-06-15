@@ -4,7 +4,7 @@ collection: teaching
 type: "Graduate Module"
 permalink: /teaching/control-systems-1
 venue: "Glasgow Caledonian University, Department of Applied Science"
-date: 2024-06
+date: 2024-06-01
 location: "Glasgow, UK"
 ---
 
