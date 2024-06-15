@@ -1,11 +1,11 @@
 ---
 title: "Control Systems"
 collection: teaching
-type: "Undergraduate course"
+type: "Graduate Module"
 permalink: /teaching/control-systems
-venue: "University 1, Department"
-date: 2024-01-01
-location: "City, Country"
+venue: "Glasgow Caledonian University, Department of Applied Science"
+date: 2024-06
+location: "Scotland, UK"
 ---
 
 This is a description of a teaching experience. You can use markdown like any other post.
