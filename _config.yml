@@ -21,7 +21,7 @@ repository               : "kucukdemiral/kucukdemiral.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "profile.png"
+  avatar           : "profile_image.jpg"
   name             : "Dr Ibrahim Kucukdemiral"
   pronouns         : # example: "she/her"  
   bio              : "Dr. Ibrahim Kucukdemiral is a Reader in the Department of Applied Science at the School of Computing, Engineering, and Built Environment at Glasgow Caledonian University. He serves as Vice Chair of the IEEE Control Systems Chapter of the UK & Ireland Section and holds the position of Conference Coordinator Officer for the IEEE UK & Ireland Section. Additionally, he is the Chair of the Industrial Advisory Board for the Electrical and Mechanical Engineering departments and leads the Robotics for the Common Good research group. "
