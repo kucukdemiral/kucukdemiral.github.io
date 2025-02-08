@@ -9,7 +9,7 @@
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 0;
+            padding: 0 0 80px 0; /* Bottom padding added to ensure content isn't hidden */
             background-color: #f4f4f4;
         }
         header {
@@ -27,11 +27,6 @@
             display: inline-block;
             position: relative;
             margin: 0 1rem;
-        }
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 18px;
         }
         nav ul li ul {
             display: none;
@@ -51,6 +46,8 @@
             color: #fff;
             padding: 0.5rem 1rem;
             display: block;
+            text-decoration: none;
+            font-size: 18px;
         }
         .container {
             width: 80%;
@@ -59,14 +56,26 @@
             padding: 1rem;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+        .applet {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .applet iframe {
+            width: 100%;
+            height: 600px; /* Adjust height as needed */
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
         footer {
             background: #333;
             color: #fff;
             text-align: center;
             padding: 1rem 0;
+            /* Removed fixed positioning to allow the page to scroll fully */
+            /* If you wish to keep a fixed footer, add extra padding to the body or container */
+            /* position: fixed;
             width: 100%;
-            position: relative;
-            bottom: 0;
+            bottom: 0; */
         }
     </style>
 </head>
@@ -80,7 +89,7 @@
                 <li><a href="research.html">Research</a></li>
                 <li><a href="publications.html">Publications</a></li>
                 <li>
-                    <a href="teaching.html">Teaching</a>
+                    <a href="#">Teaching</a>
                     <ul>
                         <li><a href="control-systems.html">Control Systems</a></li>
                         <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
@@ -93,8 +102,13 @@
     <div class="container">
         <h2>Control Systems</h2>
         <p>Content about Control Systems goes here.</p>
-        <h2>Teaching</h2>
-        <p>Content about teaching goes here.</p>
+        <h3>PID Simulator</h3>
+        <!-- Applet Section for the PID Simulator -->
+        <div class="applet">
+            <h3>Try the PID Simulator</h3>
+            <p>Use the frame below to experiment with the PID simulator from my repository.</p>
+            <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
+        </div>
     </div>
     <footer>
         <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
