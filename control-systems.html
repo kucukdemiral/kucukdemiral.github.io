@@ -4,58 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Systems - Dr. Ibrahim Beklan Küçükdemiral</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0 0 80px 0; /* Bottom padding added to ensure content isn't hidden */
-            background-color: #f4f4f4;
-        }
-        header {
-            background: #333;
-            color: #fff;
-            padding: 1rem 0;
-            text-align: center;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            text-align: center;
-        }
-        nav ul li {
-            display: inline-block;
-            position: relative;
-            margin: 0 1rem;
-        }
-        nav ul li ul {
-            display: none;
-            position: absolute;
-            background-color: #333;
-            padding: 0;
-            list-style: none;
-        }
-        nav ul li:hover ul {
-            display: block;
-        }
-        nav ul li ul li {
-            display: block;
-            margin: 0;
-        }
-        nav ul li ul li a {
-            color: #fff;
-            padding: 0.5rem 1rem;
-            display: block;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        nav ul li a:visited {
-            color: #fff; /* Ensure visited links remain white */
+        .portrait {
+            float: left;
+            margin-right: 20px;
+            width: 150px; /* Resize the image to 150px width */
+            height: auto;
         }
         .container {
             width: 80%;
@@ -63,27 +18,6 @@
             background-color: #fff;
             padding: 1rem;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .applet {
-            margin-top: 2rem;
-            text-align: center;
-        }
-        .applet iframe {
-            width: 100%;
-            height: 600px; /* Adjust height as needed */
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 1rem 0;
-            /* Removed fixed positioning to allow the page to scroll fully */
-            /* If you wish to keep a fixed footer, add extra padding to the body or container */
-            /* position: fixed;
-            width: 100%;
-            bottom: 0; */
         }
     </style>
 </head>
