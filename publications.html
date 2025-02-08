@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Publications</title>
-  <!-- Include the bibtex-js library from a CDN -->
-  <script src="bibtex-js-parser"></script>
+  <!-- Include the bibtex-js library from jsDelivr -->
+  <script src="https://cdn.jsdelivr.net/gh/pcooksey/bibtex-js@master/dist/bibtex.min.js"></script>
   <style>
     /* Basic styling for the publication entries */
     .bibtex-entry {
@@ -33,12 +33,9 @@
   <div id="publications"></div>
 
   <script>
-    // This function uses bibtex-js's display method to load a BibTeX file and render it.
-    // Ensure that your BibTeX file ("pubs.bib") is accessible (e.g., in the same directory).
+    // Use the Bibtex.display() method to load your BibTeX file ("pubs.bib") 
+    // and inject formatted entries into the div with id "publications".
     Bibtex.display("publications", "pubs.bib");
-
-    // Optional: you can further customize the output by overriding CSS classes
-    // defined in bibtex-js. Check the bibtex-js documentation for additional options.
   </script>
 </body>
 </html>
