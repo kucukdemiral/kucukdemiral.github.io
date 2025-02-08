@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Systems - Dr. Ibrahim Beklan Küçükdemiral</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="control-systems.css">
 </head>
 <body>
     <header>
@@ -38,7 +39,11 @@
         </div>
     </div>
     <footer>
-        <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+</script>
 </body>
 </html>
+            <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator" width="600" height="400"></iframe>
