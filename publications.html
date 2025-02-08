@@ -3,9 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Publications</title>
+  <title>My Publications - Dr. Ibrahim Beklan Küçükdemiral</title>
   <style>
-    /* Basic styling for the publication entries */
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background: #333;
+      color: #fff;
+      padding: 1rem 0;
+      text-align: center;
+    }
+    header h1, header h2 {
+      margin: 0.2em 0;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      text-align: center;
+    }
+    nav ul li {
+      display: inline;
+      margin: 0 1rem;
+    }
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 18px;
+    }
+    .container {
+      width: 80%;
+      margin: 2rem auto;
+      background-color: #fff;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    footer {
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 1rem 0;
+      width: 100%;
+      position: relative;
+      bottom: 0;
+    }
+    /* Styling for BibBase entries (you can adjust these as needed) */
     .bibbase-readmore {
       color: #007BFF;
       cursor: pointer;
@@ -32,21 +78,33 @@
   </style>
 </head>
 <body>
-  <h1>My Publications</h1>
-  <div id="navbar-container"></div>
-  <!-- BibBase will inject the formatted publication list here -->
-  <div id="bibbase"></div>
+  <!-- Top Menu (same as index page) -->
+  <header>
+    <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
+    <h2>Reader at Glasgow Caledonian University</h2>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="research.html">Research</a></li>
+        <li><a href="publications.html">Publications</a></li>
+        <li><a href="teaching.html">Teaching</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
 
-  <!-- Replace [URL-OF-BIBTEX-FILE] with the direct link to your pubs.bib file -->
-  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FtZgA79gz5LEAtpXcA&noBootstrap=1&jsonp=1"></script> 
-  <script>
-    // Using the Fetch API to load navbar.html and inject it into the container.
-    fetch('navbar.html')
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('navbar-container').innerHTML = data;
-      })
-      .catch(error => console.error('Error loading navbar:', error));
-  </script>
+  <!-- Main Content Container -->
+  <div class="container">
+    <h2>My Publications</h2>
+    <!-- BibBase will inject the formatted publication list here -->
+    <div id="bibbase"></div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
+  </footer>
+
+  <!-- BibBase script: Replace the bib parameter value with the URL-encoded direct link to your pubs.bib file -->
+  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fyour-domain.com%2Fpubs.bib&noBootstrap=1&jsonp=1"></script>
 </body>
 </html>
