@@ -1,79 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Publications - Dr. Ibrahim Beklan Küçükdemiral</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background: #333;
-            color: #fff;
-            padding: 1rem 0;
-            text-align: center;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            text-align: center;
-        }
-        nav ul li {
-            display: inline;
-            margin: 0 1rem;
-        }
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        .container {
-            width: 80%;
-            margin: 2rem auto;
-            background-color: #fff;
-            padding: 1rem;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 1rem 0;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Publications</title>
+  <!-- Include the bibtex-js library from a CDN -->
+  <script src="https://unpkg.com/bibtex-js@1.0.0/bibtex.min.js"></script>
+  <style>
+    /* Basic styling for the publication entries */
+    .bibtex-entry {
+      margin: 1em 0;
+      padding: 1em;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #fafafa;
+    }
+    .bibtex-entry h3 {
+      margin-top: 0;
+    }
+    .bibtex-entry .authors,
+    .bibtex-entry .journal,
+    .bibtex-entry .year {
+      font-style: italic;
+      color: #555;
+      font-size: 0.9em;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
-        <h2>Reader at Glasgow Caledonian University</h2>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="research.html">Research</a></li>
-                <li><a href="publications.html">Publications</a></li>
-                <li><a href="teaching.html">Teaching</a></li>
-                <li><a href="contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-    <div class="container">
-<h2>Publications</h2>
-        <ul>
-            <li><a href="https://scholar.google.com.tr/scholar?oi=bibs&hl=tr&cluster=1234567890">Title of Publication 1</a>, Journal Name, Year.</li>
-            <li><a href="https://scholar.google.com.tr/scholar?oi=bibs&hl=tr&cluster=1234567891">Title of Publication 2</a>, Journal Name, Year.</li>
-            <li><a href="https://scholar.google.com.tr/scholar?oi=bibs&hl=tr&cluster=1234567892">Title of Publication 3</a>, Journal Name, Year.</li>
-        </ul>
-    </div>
-    <footer>
-        <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
-    </footer>
+  <h1>My Publications</h1>
+  <!-- Container where the formatted BibTeX entries will be injected -->
+  <div id="publications"></div>
+
+  <script>
+    // This function uses bibtex-js's display method to load a BibTeX file and render it.
+    // Ensure that your BibTeX file ("pubs.bib") is accessible (e.g., in the same directory).
+    Bibtex.display("publications", "pubs.bib");
+
+    // Optional: you can further customize the output by overriding CSS classes
+    // defined in bibtex-js. Check the bibtex-js documentation for additional options.
+  </script>
 </body>
 </html>
