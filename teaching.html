@@ -79,14 +79,22 @@
         <p>I teach courses in Systems and Control Theory, Numerical Optimal Control, and Robotics.</p>
         
         <!-- New Applet Section for the PID Simulator -->
-        <div class="applet">
+        <div id="applet" class="applet">
             <h3>Try the PID Simulator</h3>
             <p>Use the frame below to experiment with the PID simulator from my repository.</p>
-            <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
+            <iframe src="https://your-repository-url.com/pid-simulator" title="PID Simulator"></iframe>
         </div>
     </div>
     <footer>
         <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
+    
+    <script>
+      // When the page loads, scroll the applet section into view.
+      window.onload = function() {
+        // Scroll smoothly to the element with id "applet"
+        document.getElementById("applet").scrollIntoView({ behavior: "smooth" });
+      };
+    </script>
 </body>
 </html>
