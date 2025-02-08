@@ -2,25 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Publications</title>
-  <!-- Include the bibtex-js library from jsDelivr -->
-  <script src="https://cdn.jsdelivr.net/npm/bibtex-parser@0.0.0/parse-bibtex.min.js"></script>
   <style>
     /* Basic styling for the publication entries */
-    .bibtex-entry {
+    .bibbase-readmore {
+      color: #007BFF;
+      cursor: pointer;
+    }
+    .bibbase-entry {
       margin: 1em 0;
       padding: 1em;
       border: 1px solid #ddd;
       border-radius: 5px;
       background: #fafafa;
     }
-    .bibtex-entry h3 {
-      margin-top: 0;
+    .bibbase-author {
+      font-weight: bold;
     }
-    .bibtex-entry .authors,
-    .bibtex-entry .journal,
-    .bibtex-entry .year {
+    .bibbase-title {
+      font-style: italic;
+    }
+    .bibbase-journal,
+    .bibbase-year {
       font-style: italic;
       color: #555;
       font-size: 0.9em;
@@ -29,13 +33,9 @@
 </head>
 <body>
   <h1>My Publications</h1>
-  <!-- Container where the formatted BibTeX entries will be injected -->
-  <div id="publications"></div>
+  <!-- BibBase will inject the formatted publication list here -->
+  <div id="bibbase"></div>
 
-  <script>
-    // Use the Bibtex.display() method to load your BibTeX file ("pubs.bib") 
-    // and inject formatted entries into the div with id "publications".
-    Bibtex.display("publications", "pubs.bib");
-  </script>
-</body>
+  <!-- Replace [URL-OF-BIBTEX-FILE] with the direct link to your pubs.bib file -->
+  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FtZgA79gz5LEAtpXcA&noBootstrap=1&jsonp=1"></script> </body>
 </html>
