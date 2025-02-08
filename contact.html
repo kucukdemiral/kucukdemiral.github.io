@@ -24,8 +24,28 @@
             text-align: center;
         }
         nav ul li {
-            display: inline;
+            display: inline-block;
+            position: relative;
             margin: 0 1rem;
+        }
+        nav ul li ul {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            padding: 0;
+            list-style: none;
+        }
+        nav ul li:hover ul {
+            display: block;
+        }
+        nav ul li ul li {
+            display: block;
+            margin: 0;
+        }
+        nav ul li ul li a {
+            color: #fff;
+            padding: 0.5rem 1rem;
+            display: block;
         }
         nav ul li a {
             color: #fff;
@@ -59,7 +79,13 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="research.html">Research</a></li>
                 <li><a href="publications.html">Publications</a></li>
-                <li><a href="teaching.html">Teaching</a></li>
+                <li>
+                    <a href="teaching.html">Teaching</a>
+                    <ul>
+                        <li><a href="control-systems.html">Control Systems</a></li>
+                        <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
+                    </ul>
+                </li>
                 <li><a href="contact.html">Contact</a></li>
             </ul>
         </nav>
@@ -70,18 +96,7 @@
 <p>Address: Glasgow Caledonian University, School of Computing, Engineering and Built Environment
     Cowcaddens Road, Glasgow, G4 0BA, Scotland, United Kingdom</p>
     </div>
-    <div class="container">
-        <h2>Send a Message</h2>
-        <form action="submit.php" method="post">
-            <label for="name">Name:</label><br>
-            <input type="text" id="name" name="name" required><br>
-            <label for="email">Email:</label><br>
-            <input type="email" id="email" name="email" required><br>
-            <label for="message">Message:</label><br>
-            <textarea id="message" name="message" required></textarea><br>
-            <input type="submit" value="Send">
-        </form>
-    </div> <!-- Add this closing div tag -->
+    <!-- Removed the form section -->
     <footer>
         <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
