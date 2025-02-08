@@ -33,9 +33,20 @@
 </head>
 <body>
   <h1>My Publications</h1>
+  <div id="navbar-container"></div>
   <!-- BibBase will inject the formatted publication list here -->
   <div id="bibbase"></div>
 
   <!-- Replace [URL-OF-BIBTEX-FILE] with the direct link to your pubs.bib file -->
-  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FtZgA79gz5LEAtpXcA&noBootstrap=1&jsonp=1"></script> </body>
+  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FtZgA79gz5LEAtpXcA&noBootstrap=1&jsonp=1"></script> 
+  <script>
+    // Using the Fetch API to load navbar.html and inject it into the container.
+    fetch('navbar.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('navbar-container').innerHTML = data;
+      })
+      .catch(error => console.error('Error loading navbar:', error));
+  </script>
+</body>
 </html>
