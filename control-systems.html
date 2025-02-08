@@ -5,17 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Systems - Dr. Ibrahim Beklan Küçükdemiral</title>
     <style>
-        /* ...existing code... */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            text-align: center;
+        }
+        nav ul li {
+            display: inline-block;
+            position: relative;
+            margin: 0 1rem;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        nav ul li ul {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            padding: 0;
+            list-style: none;
+        }
+        nav ul li:hover ul {
+            display: block;
+        }
+        nav ul li ul li {
+            display: block;
+            margin: 0;
+        }
+        nav ul li ul li a {
+            color: #fff;
+            padding: 0.5rem 1rem;
+            display: block;
+        }
+        .container {
+            width: 80%;
+            margin: 2rem auto;
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+        }
     </style>
 </head>
 <body>
     <header>
-        <!-- Top banner -->
-        <div class="top-banner">
-            <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
-            <p>Welcome to my professional webpage</p>
-        </div>
-        <!-- ...existing code... -->
+        <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
+        <h2>Reader at Glasgow Caledonian University</h2>
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
