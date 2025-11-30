@@ -1,45 +1,983 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Systems - Dr. Ibrahim Beklan Küçükdemiral</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="control-systems.css">
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Universal Control Lab</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- MathJax Configuration (Robust Async) -->
+<script>
+window.MathJax = {
+	tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+	svg: { fontCache: 'global' },
+	startup: {
+		ready: () => {
+			MathJax.startup.defaultReady();
+			window.mathJaxReady = true;
+			if (window.updateMath) window.updateMath();
+		}
+	}
+};
+</script>
+<script id="MathJax-script" async
+src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+	--primary: #2c3e50;
+	--accent: #2980b9;
+	--bg: #f4f7f6;
+	--panel-bg: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+	font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	background: var(--bg);
+	color: #333;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.header {
+	background: var(--primary);
+	color: white;
+	padding: 15px 20px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	flex-shrink: 0;
+	z-index: 100;
+}
+
+.header h1 { margin: 0; font-size: 1.2rem; }
+.header .status { font-size: 0.8rem; opacity: 0.8; font-family: monospace; }
+
+.main-container { display: flex; flex: 1; overflow: hidden; }
+
+.sidebar {
+	width: 360px;
+	background: var(--panel-bg);
+	border-right: 1px solid #bdc3c7;
+	overflow-y: auto;
+	padding: 20px;
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	z-index: 20;
+}
+
+.content {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.section-title {
+	font-size: 1.0rem;
+	font-weight: bold;
+	color: var(--primary);
+	border-bottom: 2px solid var(--accent);
+	padding-bottom: 5px;
+	margin-bottom: 10px;
+	margin-top: 0;
+}
+
+.control-group { margin-bottom: 12px; }
+.control-group label {
+	display: block;
+	text-align: left;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #555;
+	margin-bottom: 4px;
+}
+
+.control-group input[type="text"],
+.control-group input[type="number"] {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid #bdc3c7;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 16px; /* prevent iOS zoom */
+}
+
+.control-group input[type="range"] {
+	width: 100%;
+	margin-top: 10px;
+	cursor: pointer;
+	height: 30px;
+}
+
+.mode-selector {
+	display: flex;
+	background: #e0e0e0;
+	border-radius: 6px;
+	padding: 4px;
+	margin-bottom: 15px;
+	gap: 4px;
+}
+
+.mode-btn {
+	flex: 1;
+	text-align: center;
+	padding: 10px 4px;
+	cursor: pointer;
+	border-radius: 4px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	transition: 0.2s;
+	white-space: nowrap;
+}
+.mode-btn.active {
+	background: var(--accent);
+	color: white;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.box {
+	background: var(--panel-bg);
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.chart-box { flex: 1; min-height: 350px; position: relative; }
+
+.equation-wrapper {
+	overflow-x: auto;
+	font-size: 1.1rem;
+	min-height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px;
+}
+
+.hidden { display: none; }
+.warn-text { color: #c0392b; font-size: 0.8rem; margin-top: 5px; display: none; }
+
+.sat-box {
+	background: #fff3e0;
+	padding: 10px;
+	border: 1px solid #ffe0b2;
+	border-radius: 4px;
+	margin-bottom: 15px;
+}
+
+.relay-box {
+	background: #e8f8f5;
+	padding: 10px;
+	border: 1px solid #a2d9ce;
+	border-radius: 4px;
+	margin-bottom: 15px;
+}
+
+#mobile-toggle-btn { display: none; }
+
+@media (max-width: 900px) {
+	html, body {
+		height: auto;
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch;
+	}
+	body { display: block; }
+	
+	.header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		padding: 12px 15px;
+	}
+	.header h1 { font-size: 1.1rem; }
+	.header .status { font-size: 0.75rem; }
+	
+	.main-container { display: block; height: auto; overflow: visible; }
+	
+	.sidebar {
+		width: 100%;
+		border-right: none;
+		border-bottom: 1px solid #ddd;
+		height: auto;
+		overflow: visible;
+		padding: 15px;
+		max-height: none;
+	}
+	
+	#mobile-toggle-btn {
+		display: block;
+		width: 100%;
+		padding: 14px;
+		background: #ecf0f1;
+		color: #2c3e50;
+		border: 1px solid #bdc3c7;
+		border-radius: 6px;
+		font-weight: bold;
+		font-size: 0.95rem;
+		margin-bottom: 15px;
+		cursor: pointer;
+		text-align: center;
+		-webkit-tap-highlight-color: rgba(0,0,0,0.1);
+	}
+	
+	#sidebar-inner {
+		display: none;
+		animation: slideDown 0.3s ease-out;
+	}
+	#sidebar-inner.show { display: block; }
+	
+	@keyframes slideDown {
+		from { opacity: 0; transform: translateY(-10px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+	
+	.content {
+		padding: 15px;
+		height: auto;
+		overflow: visible;
+		padding-bottom: 60px;
+	}
+	
+	.chart-box { min-height: 280px; height: 350px; }
+	
+	.equation-wrapper {
+		font-size: 0.9rem;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+	
+	.mode-btn { font-size: 0.8rem; padding: 12px 6px; min-width: 60px; }
+	.section-title { font-size: 0.95rem; }
+	
+	input[type="range"] { height: 40px !important; }
+	button, .mode-btn { min-height: 44px; }
+}
+</style>
 </head>
 <body>
-    <header>
-        <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="research.html">Research</a></li>
-                <li><a href="publications.html">Publications</a></li>
-                <li>
-                    <a href="#">Teaching</a>
-                    <ul>
-                        <li><a href="control-systems.html">Control Systems</a></li>
-                        <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
-                    </ul>
-                </li>
-                <li><a href="contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-    <div class="container">
-       
-        <!-- Applet Section for the PID Simulator -->
-        <div class="applet">
-            <h3>Try the PID Simulator</h3>
-            <p>Use the frame below to experiment with the PID simulator from my repository.</p>
-            <p><iframe width="1090" height="2400" src="https://kucukdemiral.github.io/pid-simulation/"></iframe></p> 
-        </div>
-    </div>
-    <footer style="padding: 10px 0;">
-        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
-    </footer>
+
+<div class="header">
+<h1>Universal PID Lab</h1>
+<div class="status">Dr Ibrahim Kucukdemiral</div>
+</div>
+
+<div class="main-container">
+<div class="sidebar">
+<button id="mobile-toggle-btn" type="button" onclick="toggleSidebar()">Show Parameters &#9660;</button>
+
+<div id="sidebar-inner">
+<!-- System -->
+<div>
+<div class="section-title">1. System Transfer Function</div>
+<div class="control-group">
+<label>Numerator Coeffs (descending $s$)</label>
+<input type="text" id="sys_num" value="10" oninput="updateSystem()">
+</div>
+<div class="control-group">
+<label>Denominator Coeffs (descending $s$)</label>
+<input type="text" id="sys_den" value="1, 2, 2, 1" oninput="updateSystem()">
+</div>
+<div class="control-group">
+<label>Time Delay ($\tau$) [s]</label>
+<input type="number" id="sys_delay" value="0.0" step="0.01" min="0" oninput="updateSystem()">
+</div>
+<div class="control-group">
+<label>Simulation Duration [s]</label>
+<input type="number" id="sim_duration" value="20" step="1" min="1" oninput="updateAll()">
+</div>
+<div id="sys-error" class="warn-text"></div>
+</div>
+
+<!-- Controller -->
+<div>
+<div class="section-title">2. Controller Strategy</div>
+
+<div class="control-group sat-box">
+<label style="color:#d35400;">Control Limit ($u_{sat}$) [V]</label>
+<input type="range" id="rng_vLim" min="1" max="100" step="1" value="24"
+oninput="updateFromSlider('vLim', this.value)">
+<input type="number" id="num_vLim" value="24"
+oninput="updateFromBox('vLim', this.value)">
+</div>
+
+<label style="font-size:0.85rem; font-weight:bold; color:#555; margin-top:10px; display:block; text-align:left;">Control Mode:</label>
+<div class="mode-selector">
+<div id="btn-pid" class="mode-btn active" onclick="setMode('PID')">PID</div>
+<div id="btn-relay" class="mode-btn" onclick="setMode('RELAY')">Relay</div>
+<div id="btn-manual" class="mode-btn" onclick="setMode('MANUAL')">Manual</div>
+</div>
+
+<div class="control-group">
+<label>Setpoint ($r$)</label>
+<input type="number" id="setpoint" value="1.0" step="0.1"
+oninput="updateFromBox('setpoint', this.value)">
+</div>
+
+<!-- PID controls -->
+<div id="controls-pid">
+<div class="control-group">
+<label>Proportional ($K_p$)</label>
+<input type="range" id="rng_kp" min="0" max="200" step="0.1" value="1.0"
+oninput="updateFromSlider('kp', this.value)">
+<input type="number" id="num_kp" value="1.0" step="0.1"
+oninput="updateFromBox('kp', this.value)">
+</div>
+<div class="control-group">
+<label>Integral ($K_i$)</label>
+<input type="range" id="rng_ki" min="0" max="200" step="0.1" value="0.0"
+oninput="updateFromSlider('ki', this.value)">
+<input type="number" id="num_ki" value="0.0" step="0.1"
+oninput="updateFromBox('ki', this.value)">
+</div>
+<div class="control-group">
+<label>Derivative ($K_d$)</label>
+<input type="range" id="rng_kd" min="0" max="50" step="0.01" value="0.0"
+oninput="updateFromSlider('kd', this.value)">
+<input type="number" id="num_kd" value="0.0" step="0.01"
+oninput="updateFromBox('kd', this.value)">
+</div>
+<div class="control-group">
+<label>Filter Coefficient ($N$)</label>
+<input type="range" id="rng_N" min="1" max="100" step="1" value="10"
+oninput="updateFromSlider('N', this.value)">
+<input type="number" id="num_N" value="10" step="1"
+oninput="updateFromBox('N', this.value)">
+</div>
+</div>
+
+<!-- Relay controls -->
+<div id="controls-relay" class="hidden">
+<div class="control-group relay-box">
+<label style="color:#00897b;">Relay Amplitude ($M$)</label>
+<input type="range" id="rng_relayAmp" min="0.1" max="24" step="0.1" value="5.0"
+oninput="updateFromSlider('relayAmp', this.value)">
+<input type="number" id="num_relayAmp" value="5.0" step="0.1"
+oninput="updateFromBox('relayAmp', this.value)">
+</div>
+<div class="control-group relay-box">
+<label style="color:#00897b;">Hysteresis ($h$)</label>
+<input type="range" id="rng_hyst" min="0.0" max="2.0" step="0.01" value="0.1"
+oninput="updateFromSlider('hyst', this.value)">
+<input type="number" id="num_hyst" value="0.1" step="0.01"
+oninput="updateFromBox('hyst', this.value)">
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="content">
+<!-- Math box -->
+<div class="box">
+<h3 style="margin-top:0; color:var(--primary);">System Model</h3>
+<div id="latex-system" class="equation-wrapper">G(s) = [10] / [1, 2, 2, 1]</div>
+<div id="latex-controller" class="equation-wrapper" style="border-top:1px solid #eee;">C(s) = PID</div>
+<div id="filter-explanation"
+style="margin-top:15px; padding:12px; background:#f8f9fa; border-left:3px solid var(--accent); font-size:0.85rem; line-height:1.5; display:none;">
+<strong>Derivative Filter:</strong> The filtered derivative term prevents amplification of
+high-frequency noise. The transfer function
+<span style="font-family:monospace;">D(s) = K_d \cdot N\,s/(s+N)</span>
+acts as a first-order high-pass filter where N controls the cutoff frequency.
+</div>
+</div>
+
+<!-- Auto-tune panel -->
+<div class="box" style="padding:12px 16px;">
+<div id="tuner-info"
+style="background:#eef7ff;border:1px solid #c8ddff;padding:8px 10px;
+border-radius:6px;font-size:0.85rem;">
+<strong>Relay Auto-Tuning (Åström–Hägglund)</strong><br>
+Period \(P_u\): <span id="tun-Pu">–</span> s |
+Oscillation amplitude \(A_{\text{osc}}\): <span id="tun-A">–</span> |
+\(K_u\): <span id="tun-Ku">–</span>
+<br>
+<span style="margin-right:4px;">Rule:</span>
+<select id="tune-rule" style="font-size:0.8rem;">
+<option value="P_QDECAY">P, ¼ decay</option>
+<option value="PI_QDECAY">PI, ¼ decay</option>
+<option value="PID_QDECAY" selected>PID, ¼ decay</option>
+<option value="PID_PM30">PID, φ<sub>PM</sub> = 30°</option>
+<option value="PID_PM45">PID, φ<sub>PM</sub> = 45°</option>
+<option value="PID_PM60">PID, φ<sub>PM</sub> = 60°</option>
+</select>
+<button onclick="applyAutotunePID()"
+style="margin-left:8px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">
+Apply (auto-tune)
+</button>
+<div style="margin-top:5px;opacity:0.7;">
+Drag the two vertical bars on the chart to span one period of the relay oscillation.
+</div>
+</div>
+</div>
+
+<!-- Chart -->
+<div class="box chart-box">
+<canvas id="simChart"></canvas>
+</div>
+</div>
+</div>
+
 <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+// --- Global state ---
+const params = {
+	kp: 1.0, ki: 0.0, kd: 0.0, N: 10.0,
+	setpoint: 1.0,
+	vLim: 24.0,
+	relayAmp: 5.0,
+	hyst: 0.1
+};
+
+let sysA = [], sysB = [], sysC = [], sysD = 0;
+let sysOrder = 0;
+let sysDelay = 0;
+let globalNum = [], globalDen = [], globalDelay = 0;
+
+let controlMode = 'PID';
+let chartInstance = null;
+
+let marker1Index = 50;
+let marker2Index = 150;
+let draggingMarker = null;
+let lastDuration = null;
+
+// --- Layout ---
+function toggleSidebar() {
+	const content = document.getElementById('sidebar-inner');
+	const btn = document.getElementById('mobile-toggle-btn');
+	content.classList.toggle('show');
+	btn.innerHTML = content.classList.contains('show')
+	? 'Hide Parameters &#9650;'
+	: 'Show Parameters &#9660;';
+}
+
+// --- System parsing ---
+function updateSystem() {
+	const numStr = document.getElementById('sys_num').value;
+	const denStr = document.getElementById('sys_den').value;
+	const delayStr = document.getElementById('sys_delay').value;
+	
+	try {
+		let num = numStr.split(',').map(s => parseFloat(s));
+		let den = denStr.split(',').map(s => parseFloat(s));
+		sysDelay = parseFloat(delayStr) || 0;
+		
+		if (den.some(isNaN) || num.some(isNaN)) throw "Invalid coefficients";
+		if (den.length === 0 || den[0] === 0) throw "Invalid denominator";
+		
+		const a0 = den[0];
+		den = den.map(v => v / a0);
+		num = num.map(v => v / a0);
+		while (num.length < den.length) num.unshift(0);
+		
+		sysOrder = den.length - 1;
+		sysD = num[0];
+		
+		sysA = Array(sysOrder).fill(0).map(() => Array(sysOrder).fill(0));
+		sysB = Array(sysOrder).fill(0);
+		sysC = Array(sysOrder).fill(0);
+		
+		if (sysOrder > 0) {
+			for (let i = 0; i < sysOrder; i++) {
+				sysA[i][0] = -den[i + 1];
+				if (i < sysOrder - 1) sysA[i][i + 1] = 1;
+			}
+			for (let i = 0; i < sysOrder; i++) {
+				sysB[i] = num[i + 1] - den[i + 1] * sysD;
+			}
+			sysC[0] = 1;
+		}
+		
+		document.getElementById('sys-error').style.display = 'none';
+		
+		let dispNum = [...num];
+		while (dispNum.length > 1 && Math.abs(dispNum[0]) < 1e-9) dispNum.shift();
+		
+		globalNum = dispNum;
+		globalDen = den;
+		globalDelay = sysDelay;
+		
+		renderMath();
+		runSimulation();
+		
+	} catch (e) {
+		document.getElementById('sys-error').innerText = e;
+		document.getElementById('sys-error').style.display = 'block';
+	}
+}
+
+// --- UI interactions ---
+function setMode(mode) {
+	controlMode = mode;
+	['pid', 'relay', 'manual'].forEach(m => {
+		document.getElementById(`btn-${m}`).classList.toggle('active', m.toUpperCase() === mode);
+	});
+	document.getElementById('controls-pid').classList.toggle('hidden', mode !== 'PID');
+	document.getElementById('controls-relay').classList.toggle('hidden', mode !== 'RELAY');
+	renderMath();
+	runSimulation();
+}
+
+function updateFromSlider(key, val) {
+	val = parseFloat(val);
+	params[key] = val;
+	const num = document.getElementById(`num_${key}`);
+	if (num) num.value = val;
+	updateAll();
+}
+
+function updateFromBox(key, val) {
+	const floatVal = parseFloat(val);
+	if (isNaN(floatVal)) return;
+	params[key] = floatVal;
+	const rng = document.getElementById(`rng_${key}`);
+	if (rng) rng.value = floatVal;
+	updateAll();
+}
+
+function updateAll() {
+	params.setpoint = parseFloat(document.getElementById('setpoint').value);
+	renderMath();
+	runSimulation();
+}
+
+// --- Math rendering ---
+window.updateMath = renderMath;
+
+function renderMath() {
+	const poly = (coeffs) => {
+		if (!coeffs || coeffs.length === 0) return "0";
+		let str = "";
+		let ord = coeffs.length - 1;
+		coeffs.forEach((c, i) => {
+			if (Math.abs(c) < 1e-9) return;
+			let p = ord - i;
+			let val = parseFloat(Math.abs(c).toFixed(3));
+			let sign = (c < 0) ? " - " : " + ";
+			if (str === "") sign = (c < 0) ? "-" : "";
+			let term = (val === 1 && p > 0) ? "" : `${val}`;
+			if (p === 0) str += `${sign}${val}`;
+			else if (p === 1) str += `${sign}${term}s`;
+			else str += `${sign}${term}s^${p}`;
+		});
+		return str || "0";
+	};
+	
+	const numText = poly(globalNum);
+	const denText = poly(globalDen);
+	const delayText = globalDelay > 0 ? `e^{-${globalDelay}s}` : '';
+	
+	const sysDiv = document.getElementById('latex-system');
+	const ctrlDiv = document.getElementById('latex-controller');
+	const explDiv = document.getElementById('filter-explanation');
+	
+	explDiv.style.display = (controlMode === 'PID' && params.kd > 0) ? 'block' : 'none';
+	
+	if (!window.mathJaxReady) {
+		sysDiv.innerHTML = `G(s) = [${numText}] / [${denText}] ${delayText}`;
+		ctrlDiv.innerHTML = `Mode: ${controlMode}`;
+		return;
+	}
+	
+	const sysTex = `$$ G(s) = \\frac{${numText}}{${denText}} ${delayText} $$`;
+	let ctrlTex = "";
+	if (controlMode === 'PID') {
+		const kp = params.kp.toFixed(2);
+		const ki = params.ki.toFixed(2);
+		const kd = params.kd.toFixed(2);
+		const N = params.N.toFixed(0);
+		ctrlTex = `$$ C(s) = ${kp} + \\frac{${ki}}{s} + \\frac{${kd} \\cdot ${N} s}{s + ${N}} $$`;
+	} else if (controlMode === 'RELAY') {
+		ctrlTex = `$$ u(t) = \\text{sgn}(e) \\cdot M \\quad (\\text{Hysteresis: } h) $$`;
+	} else {
+		ctrlTex = `$$ u(t) = r(t) $$`;
+	}
+	
+	sysDiv.innerHTML = sysTex;
+	ctrlDiv.innerHTML = ctrlTex;
+	
+	if (window.MathJax && MathJax.typesetPromise) {
+		MathJax.typesetPromise([sysDiv, ctrlDiv]).catch(e => console.log('Math error', e));
+	}
+}
+
+// --- RK4 ---
+function getDerivatives(x, u) {
+	let dx = new Array(sysOrder).fill(0);
+	for (let i = 0; i < sysOrder; i++) {
+		let Ax_i = 0;
+		for (let j = 0; j < sysOrder; j++) Ax_i += sysA[i][j] * x[j];
+		dx[i] = Ax_i + sysB[i] * u;
+	}
+	return dx;
+}
+
+function rk4Step(x, u, dt) {
+	if (sysOrder === 0) return [];
+	let k1 = getDerivatives(x, u);
+	let x2 = x.map((val, i) => val + 0.5 * dt * k1[i]);
+	let k2 = getDerivatives(x2, u);
+	let x3 = x.map((val, i) => val + 0.5 * dt * k2[i]);
+	let k3 = getDerivatives(x3, u);
+	let x4 = x.map((val, i) => val + dt * k3[i]);
+	let k4 = getDerivatives(x4, u);
+	return x.map((val, i) => val + (dt/6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
+}
+
+// --- Simulation ---
+function runSimulation() {
+	const durInput = document.getElementById('sim_duration');
+	const duration = durInput ? (parseFloat(durInput.value) || 20.0) : 20.0;
+	
+	const resetMarkers = (lastDuration === null || Math.abs(duration - lastDuration) > 1e-9);
+	lastDuration = duration;
+	
+	const dt = 0.001;
+	const steps = Math.floor(duration / dt);
+	
+	let x = new Array(sysOrder).fill(0);
+	let integral = 0, prevError = 0, ud_prev = 0, time = 0;
+	let relayState = 0;
+	
+	let delaySteps = Math.floor(sysDelay / dt);
+	let u_buffer = new Array(delaySteps + 1).fill(0);
+	
+	const tData = [], yData = [], rData = [], uData = [];
+	const satMax = Math.abs(params.vLim);
+	
+	for (let k = 0; k <= steps; k++) {
+		let u_delayed_D = (delaySteps > 0 && u_buffer.length > 0) ? u_buffer[0] : 0;
+		let y_val = sysD * u_delayed_D;
+		if (sysOrder > 0) {
+			y_val += sysC.reduce((sum, v, i) => sum + v * x[i], 0);
+		}
+		
+		const r = params.setpoint;
+		const e = r - y_val;
+		let u = 0;
+		
+		if (controlMode === 'PID') {
+			const P = params.kp * e;
+			integral += e * dt;
+			if (Math.abs(integral * params.ki) > satMax)
+			integral = (satMax / (params.ki || 1e-9)) * Math.sign(integral);
+			const I = params.ki * integral;
+			const N = params.N;
+			const diff = e - prevError;
+			const ud = (ud_prev + N * params.kd * diff) / (1 + N * dt);
+			ud_prev = ud;
+			u = P + I + ud;
+		} else if (controlMode === 'RELAY') {
+			const h = params.hyst;
+			if (relayState === 0) relayState = (e > 0) ? 1 : -1;
+			if (e > h) relayState = 1;
+			else if (e < -h) relayState = -1;
+			u = relayState * params.relayAmp;
+			integral = 0;
+			ud_prev = 0;
+		} else {
+			u = r;
+			integral = 0;
+			ud_prev = 0;
+		}
+		prevError = e;
+		
+		if (u > satMax) u = satMax;
+		if (u < -satMax) u = -satMax;
+		
+		let u_plant_in = u;
+		if (delaySteps > 0) {
+			u_buffer.push(u);
+			u_buffer.shift();
+			u_plant_in = u_buffer[0];
+		}
+		
+		if (sysOrder > 0) x = rk4Step(x, u_plant_in, dt);
+		
+		const downsample = Math.ceil(steps / 600);
+		if (k % downsample === 0 || k === steps) {
+			tData.push(time);               // numeric time (no rounding)
+			yData.push(y_val);
+			rData.push(controlMode !== 'MANUAL' ? r : 0);
+			uData.push(u);
+		}
+		time += dt;
+	}
+	
+	drawChart(tData, yData, rData, uData, resetMarkers);
+}
+
+// --- Chart + marker plugin ---
+const markerPlugin = {
+	id: 'markerPlugin',
+	afterDraw(chart) {
+		const ctx = chart.ctx;
+		const xScale = chart.scales.x;
+		const labels = chart.data.labels || [];
+		if (!labels.length) return;
+		
+		[marker1Index, marker2Index].forEach((idx, i) => {
+			if (idx < 0 || idx >= labels.length) return;
+			const x = xScale.getPixelForValue(labels[idx]);
+			ctx.save();
+			ctx.strokeStyle = i === 0 ? '#e74c3c' : '#000000'; // red & black
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.moveTo(x, chart.chartArea.top);
+			ctx.lineTo(x, chart.chartArea.bottom);
+			ctx.stroke();
+			ctx.restore();
+		});
+	}
+};
+
+Chart.register(markerPlugin);
+
+function drawChart(labels, yData, rData, uData, resetMarkers) {
+	if (typeof Chart === 'undefined') return;
+	const ctx = document.getElementById('simChart').getContext('2d');
+	const showRef = (controlMode !== 'MANUAL');
+	
+	if (!chartInstance) {
+		chartInstance = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: labels,   // numeric times
+				datasets: [
+				{
+					label: 'Output (y)',
+					data: yData,
+					borderColor: '#2980b9',
+					borderWidth: 2,
+					pointRadius: 0,
+					yAxisID: 'y'
+				},
+				{
+					label: 'Setpoint (r)',
+					data: rData,
+					borderColor: '#e74c3c',
+					borderWidth: 2,
+					borderDash: [5, 5],
+					pointRadius: 0,
+					yAxisID: 'y',
+					hidden: !showRef
+				},
+				{
+					label: 'Control (u)',
+					data: uData,
+					borderColor: '#27ae60',
+					borderWidth: 1,
+					pointRadius: 0,
+					fill: true,
+					backgroundColor: 'rgba(39,174,96,0.1)',
+					yAxisID: 'y1'
+				}
+				]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				animation: false,
+				interaction: {mode: 'index', intersect: false},
+				scales: {
+					x: {
+						type: 'linear',
+						title: {display: true, text: 'Time (s)'},
+						ticks: {maxTicksLimit: 8}
+					},
+					y: {
+						position: 'left',
+						title: {display: true, text: 'Output'}
+					},
+					y1: {
+						position: 'right',
+						title: {display: true, text: 'Control'},
+						grid: {drawOnChartArea: false}
+					}
+				}
+			}
+		});
+		attachMarkerEvents();
+	} else {
+		chartInstance.data.labels = labels;
+		chartInstance.data.datasets[0].data = yData;
+		chartInstance.data.datasets[1].data = rData;
+		chartInstance.data.datasets[1].hidden = !showRef;
+		chartInstance.data.datasets[2].data = uData;
+	}
+	
+	if (labels.length > 2) {
+		if (resetMarkers) {
+			const n = labels.length;
+			marker1Index = Math.floor(n / 3);
+			marker2Index = Math.floor(2 * n / 3);
+		} else {
+			marker1Index = Math.min(marker1Index, labels.length - 2);
+			marker2Index = Math.min(marker2Index, labels.length - 1);
+		}
+	}
+	
+	chartInstance.update('none');
+	updateAutoTune();
+}
+
+function attachMarkerEvents() {
+	const canvas = document.getElementById('simChart');
+	canvas.addEventListener('mousedown', startDrag);
+	canvas.addEventListener('mousemove', dragMove);
+	document.addEventListener('mouseup', endDrag);
+	
+	canvas.addEventListener('touchstart', startDrag, {passive: false});
+	canvas.addEventListener('touchmove', dragMove, {passive: false});
+	document.addEventListener('touchend', endDrag);
+}
+
+function getMouseX(evt) {
+	const rect = chartInstance.canvas.getBoundingClientRect();
+	const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+	return clientX - rect.left;
+}
+
+function closestIndexFromPixel(xPixel) {
+	const labels = chartInstance.data.labels || [];
+	const xScale = chartInstance.scales.x;
+	if (!labels.length) return 0;
+	
+	// convert pixel -> time value, then choose nearest time in labels
+	const value = xScale.getValueForPixel(xPixel);
+	let bestIdx = 0;
+	let bestDist = Infinity;
+	for (let i = 0; i < labels.length; i++) {
+		const d = Math.abs(labels[i] - value);
+		if (d < bestDist) {
+			bestDist = d;
+			bestIdx = i;
+		}
+	}
+	return bestIdx;
+}
+
+function startDrag(evt) {
+	if (!chartInstance) return;
+	const xScale = chartInstance.scales.x;
+	const labels = chartInstance.data.labels || [];
+	if (!labels.length) return;
+	
+	const x = getMouseX(evt);
+	const m1x = xScale.getPixelForValue(labels[marker1Index]);
+	const m2x = xScale.getPixelForValue(labels[marker2Index]);
+	
+	if (Math.abs(x - m1x) < 12) draggingMarker = 1;
+	else if (Math.abs(x - m2x) < 12) draggingMarker = 2;
+}
+
+function dragMove(evt) {
+	if (!draggingMarker || !chartInstance) return;
+	evt.preventDefault();
+	const x = getMouseX(evt);
+	const idx = closestIndexFromPixel(x);
+	
+	if (draggingMarker === 1) marker1Index = idx;
+	else if (draggingMarker === 2) marker2Index = idx;
+	
+	chartInstance.update('none');
+	updateAutoTune();
+}
+
+function endDrag() { draggingMarker = null; }
+
+// --- Auto-tune ---
+function updateAutoTune() {
+	if (!chartInstance) return;
+	const labels = chartInstance.data.labels || [];
+	if (!labels.length) return;
+	
+	const y = chartInstance.data.datasets[0].data || [];
+	
+	let i1 = Math.min(marker1Index, marker2Index);
+	let i2 = Math.max(marker1Index, marker2Index);
+	if (i1 < 0) i1 = 0;
+	if (i2 >= labels.length) i2 = labels.length - 1;
+	if (i2 <= i1) return;
+	
+	const t1 = labels[i1];
+	const t2 = labels[i2];
+	if (!isFinite(t1) || !isFinite(t2)) return;
+	
+	const Pu = Math.abs(t2 - t1);
+	const windowY = y.slice(i1, i2 + 1);
+	if (!windowY.length) return;
+	
+	const ymin = Math.min(...windowY);
+	const ymax = Math.max(...windowY);
+	const Aosc = (ymax - ymin) / 2;
+	if (Aosc <= 0) return;
+	
+	const M = params.relayAmp;
+	const Ku = 4 * M / (Math.PI * Aosc);
+	
+	document.getElementById("tun-Pu").textContent = Pu.toFixed(3);
+	document.getElementById("tun-A").textContent = Aosc.toFixed(3);
+	document.getElementById("tun-Ku").textContent = Ku.toFixed(3);
+	
+	window.autoTune = {Pu, Aosc, Ku};
+}
+
+function applyAutotunePID() {
+	if (!window.autoTune) return;
+	const {Pu, Ku} = window.autoTune;
+	const rule = document.getElementById("tune-rule").value;
+	
+	let Kp, Ti, Td;
+	switch (rule) {
+		case 'P_QDECAY':   Kp = 0.5 * Ku;  Ti = 0;          Td = 0;           break;
+		case 'PI_QDECAY':  Kp = 0.45 * Ku; Ti = 0.833 * Pu; Td = 0;           break;
+		case 'PID_QDECAY': Kp = 0.6 * Ku;  Ti = 0.5 * Pu;   Td = 0.125 * Pu;  break;
+		case 'PID_PM30':   Kp = 0.87 * Ku; Ti = 0.55 * Pu;  Td = 0.14 * Pu;   break;
+		case 'PID_PM45':   Kp = 0.71 * Ku; Ti = 0.77 * Pu;  Td = 0.20 * Pu;   break;
+		case 'PID_PM60':   Kp = 0.50 * Ku; Ti = 1.29 * Pu;  Td = 0.30 * Pu;   break;
+		default:           Kp = 0.6 * Ku;  Ti = 0.5 * Pu;   Td = 0.125 * Pu;
+	}
+	
+	const Ki = (Ti > 0) ? Kp / Ti : 0;
+	const Kd = Kp * Td;
+	
+	params.kp = Kp;
+	params.ki = Ki;
+	params.kd = Kd;
+	
+	document.getElementById("num_kp").value = Kp.toFixed(3);
+	document.getElementById("num_ki").value = Ki.toFixed(3);
+	document.getElementById("num_kd").value = Kd.toFixed(3);
+	
+	const rng_kp = document.getElementById("rng_kp");
+	const rng_ki = document.getElementById("rng_ki");
+	const rng_kd = document.getElementById("rng_kd");
+	if (rng_kp) rng_kp.value = Math.min(Kp, parseFloat(rng_kp.max));
+	if (rng_ki) rng_ki.value = Math.min(Ki, parseFloat(rng_ki.max));
+	if (rng_kd) rng_kd.value = Math.min(Kd, parseFloat(rng_kd.max));
+	
+	setMode("PID");
+	updateAll();
+}
+
+// --- Init ---
+window.onload = function () { updateSystem(); };
 </script>
 </body>
 </html>
