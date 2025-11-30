@@ -696,7 +696,7 @@ function rk4Step(x, u, dt) {
     return x.map((val, i) => val + (dt/6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
 }
 
-// --- Simulation ---
+// --- Simulation (FIXED D & DELAY HANDLING) ---
 function runSimulation() {
     const durInput = document.getElementById('sim_duration');
     const duration = durInput ? (parseFloat(durInput.value) || 20.0) : 20.0;
@@ -712,18 +712,29 @@ function runSimulation() {
     let relayState = 0;
     
     let delaySteps = Math.floor(sysDelay / dt);
-    let u_buffer = new Array(delaySteps + 1).fill(0);
+    // Ensure buffer has at least length 1
+    let u_buffer = new Array(Math.max(delaySteps, 0) + 1).fill(0);
+    let u_prev = 0; // last control value (for zero-delay direct term)
     
     const tData = [], yData = [], rData = [], uData = [];
     const satMax = Math.abs(params.vLim);
     
     for (let k = 0; k <= steps; k++) {
-        let u_delayed_D = (delaySteps > 0 && u_buffer.length > 0) ? u_buffer[0] : 0;
-        let y_val = sysD * u_delayed_D;
+        // 1) Input used in the output equation (direct term)
+        let u_for_output;
+        if (delaySteps > 0 && u_buffer.length > 0) {
+            u_for_output = u_buffer[0];     // delayed input for D when there is delay
+        } else {
+            u_for_output = u_prev;          // previous input when delay = 0
+        }
+        
+        // 2) Output from plant (C x + D u)
+        let y_val = sysD * u_for_output;
         if (sysOrder > 0) {
             y_val += sysC.reduce((sum, v, i) => sum + v * x[i], 0);
         }
         
+        // 3) Controller
         const r = params.setpoint;
         const e = r - y_val;
         let u = 0;
@@ -747,33 +758,41 @@ function runSimulation() {
             u = relayState * params.relayAmp;
             integral = 0;
             ud_prev = 0;
-        } else {
+        } else { // MANUAL
             u = r;
             integral = 0;
             ud_prev = 0;
         }
         prevError = e;
         
+        // 4) Saturation
         if (u > satMax) u = satMax;
         if (u < -satMax) u = -satMax;
         
-        let u_plant_in = u;
+        // 5) Input to the plant (state) with time delay
+        let u_plant_in;
         if (delaySteps > 0) {
             u_buffer.push(u);
             u_buffer.shift();
             u_plant_in = u_buffer[0];
+        } else {
+            u_plant_in = u;
         }
         
+        // 6) State update
         if (sysOrder > 0) x = rk4Step(x, u_plant_in, dt);
         
+        // 7) Logging (downsampled)
         const downsample = Math.ceil(steps / 600);
         if (k % downsample === 0 || k === steps) {
-            tData.push(time);               // numeric time (no rounding)
+            tData.push(time);
             yData.push(y_val);
             rData.push(controlMode !== 'MANUAL' ? r : 0);
             uData.push(u);
         }
+        
         time += dt;
+        u_prev = u;  // store last applied input for next step
     }
     
     drawChart(tData, yData, rData, uData, resetMarkers);
