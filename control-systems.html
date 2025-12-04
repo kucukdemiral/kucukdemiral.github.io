@@ -1626,7 +1626,7 @@ function updateAutoTune() {
     const labels = chartInstance.data.labels || [];
     if (!labels.length) return;
     
-    const y = chartInstance.data.datasets[0].data || [];
+    const y = chartInstance.data.datasets[2].data || [];
     
     let i1 = Math.min(marker1Index, marker2Index);
     let i2 = Math.max(marker1Index, marker2Index);
