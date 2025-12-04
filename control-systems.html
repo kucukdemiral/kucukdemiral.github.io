@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Universal Control Lab</title>
+<title>Control Lab</title>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js Annotation Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
 
 <!-- MathJax Configuration (Robust Async) -->
 <script>
@@ -61,6 +63,44 @@ body {
     flex-direction: column;
     overflow: hidden;
 }
+/* Plant Sidebar Section (Green Theme) */
+.plant-box {
+    background-color: #e9f7ef;    /* Light Green Background */
+    border: 1px solid #27ae60;    /* Green Border */
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.plant-box .section-title {
+    color: #145a32;               /* Dark Green Text */
+    border-bottom-color: #27ae60; /* Green Underline */
+}
+.plant-box label { color: #145a32; }
+
+/* PID Sidebar Section (Blue Theme) */
+.pid-box {
+    background-color: #eaf2f8;   /* Light Blue Background */
+    border: 1px solid #2980b9;   /* Strong Blue Border */
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;            
+    margin-bottom: 15px;
+}
+.pid-box label { color: #154360; }
+	
+/* Feedback Sidebar Section (Purple Theme) */
+.feedback-box {
+    background-color: #f4ecf7;   /* Light Purple Background */
+    border: 1px solid #8e44ad;   /* Strong Purple Border */
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.feedback-box .section-title {
+    color: #5b2c6f;              /* Dark Purple Text */
+    border-bottom-color: #8e44ad;/* Purple Underline */
+}
+.feedback-box label { color: #4a235a; }
 
 .header {
     background: var(--primary);
@@ -128,7 +168,7 @@ body {
     border: 1px solid #bdc3c7;
     border-radius: 4px;
     font-family: monospace;
-    font-size: 16px; /* prevent iOS zoom */
+    font-size: 16px; 
 }
 
 .control-group input[type="range"] {
@@ -145,6 +185,7 @@ body {
     padding: 4px;
     margin-bottom: 15px;
     gap: 4px;
+    flex-wrap: wrap;
 }
 
 .mode-btn {
@@ -168,22 +209,114 @@ body {
     background: var(--panel-bg);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .chart-box { flex: 1; min-height: 350px; position: relative; }
 
-.equation-wrapper {
+/* Diagram Styles */
+.diagram-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin-bottom: 10px;
     overflow-x: auto;
-    font-size: 1.1rem;
-    min-height: 60px;
+    overflow-y: hidden;
+    background: #fff;
+    border-radius: 4px;
+    border-bottom: 1px solid #eee;
+}
+
+.diagram-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 700px;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.dia-block {
+    position: absolute;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    z-index: 2;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    font-size: 1.0rem;
+    font-weight: bold;
 }
 
-.hidden { display: none; }
+.dia-sum {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    background: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding-bottom: 3px;
+}
+
+/* Specific Block Positions & Color Themes */
+#blk-ctrl { 
+    left: 150px; top: 35px; width: 100px; height: 60px; 
+    background-color: #eaf2f8; border-color: #2980b9; color: #1a5276;
+}
+#blk-sat { 
+    left: 290px; top: 45px; width: 60px;  height: 40px; 
+    font-size: 0.85rem;
+    background-color: #fff3e0; border-color: #d35400; color: #d35400;
+}
+#blk-plant { 
+    left: 400px; top: 30px; width: 100px; height: 70px; 
+    background-color: #e9f7ef; border-color: #27ae60; color: #145a32;
+}
+#blk-fb { 
+    left: 300px; top: 125px; width: 100px; height: 60px; 
+    background-color: #f4ecf7; border-color: #8e44ad; color: #5b2c6f;
+}
+
+#jct-sum { left: 80px; top: 50px; }
+
+/* Legend / Math Display */
+.math-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 10px;
+}
+.legend-item {
+    background: #fdfdfd;
+    border: 1px solid #eee;
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.full-width { grid-column: span 2; }
+
+.dia-label {
+    position: absolute;
+    font-size: 0.85rem;
+    font-family: monospace;
+    color: #555;
+    z-index: 2;
+}
+
+.hidden { display: none !important; }
 .warn-text { color: #c0392b; font-size: 0.8rem; margin-top: 5px; display: none; }
 
 .sat-box {
@@ -204,119 +337,36 @@ body {
 
 #mobile-toggle-btn { display: none; }
 
-/* =========================
-   EMBED (IFRAME) OVERRIDES
-   ========================= */
-html.embedded,
-body.embedded {
-    height: auto;
-    min-height: 0;
-}
+/* EMBED & MOBILE overrides */
+html.embedded, body.embedded { height: auto; min-height: 0; }
+body.embedded { overflow: auto; display: block; }
+body.embedded .main-container { display: block; height: auto; overflow: visible; }
+body.embedded .sidebar, body.embedded .content { overflow: visible; max-height: none; }
 
-body.embedded {
-    overflow: auto;          /* let the iframe scroll as a whole */
-    display: block;          /* no full-screen flex layout */
-}
-
-body.embedded .main-container {
-    display: block;
-    height: auto;
-    overflow: visible;
-}
-
-body.embedded .sidebar,
-body.embedded .content {
-    overflow: visible;       /* no inner scrollbars */
-    max-height: none;
-}
-
-/* =========================
-   MOBILE LAYOUT
-   ========================= */
 @media (max-width: 900px) {
-    html, body {
-        height: auto;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-    }
+    html, body { height: auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
     body { display: block; }
-    
-    .header {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        padding: 12px 15px;
-    }
+    .header { position: sticky; top: 0; z-index: 100; padding: 12px 15px; }
     .header h1 { font-size: 1.1rem; }
     .header .status { font-size: 0.75rem; }
-    
     .main-container { display: block; height: auto; overflow: visible; }
-    
-    .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #ddd;
-        height: auto;
-        overflow: visible;
-        padding: 15px;
-        max-height: none;
-    }
-    
-    #mobile-toggle-btn {
-        display: block;
-        width: 100%;
-        padding: 14px;
-        background: #ecf0f1;
-        color: #2c3e50;
-        border: 1px solid #bdc3c7;
-        border-radius: 6px;
-        font-weight: bold;
-        font-size: 0.95rem;
-        margin-bottom: 15px;
-        cursor: pointer;
-        text-align: center;
-        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
-    }
-    
-    #sidebar-inner {
-        display: none;
-        animation: slideDown 0.3s ease-out;
-    }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; height: auto; overflow: visible; padding: 15px; max-height: none; }
+    #mobile-toggle-btn { display: block; width: 100%; padding: 14px; background: #ecf0f1; color: #2c3e50; border: 1px solid #bdc3c7; border-radius: 6px; font-weight: bold; font-size: 0.95rem; margin-bottom: 15px; cursor: pointer; text-align: center; }
+    #sidebar-inner { display: none; }
     #sidebar-inner.show { display: block; }
-    
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .content {
-        padding: 15px;
-        height: auto;
-        overflow: visible;
-        padding-bottom: 60px;
-    }
-    
+    .content { padding: 15px; height: auto; overflow: visible; padding-bottom: 60px; }
     .chart-box { min-height: 280px; height: 350px; }
-    
-    .equation-wrapper {
-        font-size: 0.9rem;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .mode-btn { font-size: 0.8rem; padding: 12px 6px; min-width: 60px; }
-    .section-title { font-size: 0.95rem; }
-    
+    .diagram-wrapper { -webkit-overflow-scrolling: touch; }
+    .math-legend { grid-template-columns: 1fr; }
+    .full-width { grid-column: span 1; }
     input[type="range"] { height: 40px !important; }
-    button, .mode-btn { min-height: 44px; }
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>Universal PID Lab</h1>
+    <h1>Control Lab</h1>
     <div class="status">Dr Ibrahim Kucukdemiral</div>
 </div>
 
@@ -325,9 +375,8 @@ body.embedded .content {
         <button id="mobile-toggle-btn" type="button" onclick="toggleSidebar()">Show Parameters &#9660;</button>
 
         <div id="sidebar-inner">
-            <!-- System -->
-            <div>
-                <div class="section-title">1. System Transfer Function</div>
+			<div class="plant-box">
+                <div class="section-title">Plant Transfer Function G(s)</div>
                 <div class="control-group">
                     <label>Numerator Coeffs (descending $s$)</label>
                     <input type="text" id="sys_num" value="10" oninput="updateSystem()">
@@ -337,19 +386,15 @@ body.embedded .content {
                     <input type="text" id="sys_den" value="1, 2, 2, 1" oninput="updateSystem()">
                 </div>
                 <div class="control-group">
-                    <label>Time Delay ($\tau$) [s]</label>
+                    <label>Plant Delay ($\tau$) [s]</label>
                     <input type="number" id="sys_delay" value="0.0" step="0.01" min="0" oninput="updateSystem()">
-                </div>
-                <div class="control-group">
-                    <label>Simulation Duration [s]</label>
-                    <input type="number" id="sim_duration" value="20" step="1" min="1" oninput="updateAll()">
                 </div>
                 <div id="sys-error" class="warn-text"></div>
             </div>
-
+  
             <!-- Controller -->
             <div>
-                <div class="section-title">2. Controller Strategy</div>
+                <div class="section-title">Controller Strategy C(s)</div>
 
                 <div class="control-group sat-box">
                     <label style="color:#d35400;">Control Limit ($u_{sat}$) [V]</label>
@@ -364,6 +409,7 @@ body.embedded .content {
                     <div id="btn-pid" class="mode-btn active" onclick="setMode('PID')">PID</div>
                     <div id="btn-relay" class="mode-btn" onclick="setMode('RELAY')">Relay</div>
                     <div id="btn-manual" class="mode-btn" onclick="setMode('MANUAL')">Manual</div>
+                    <div id="btn-openloopfr" class="mode-btn" onclick="setMode('OPEN_LOOP_FR')">Open-loop FR</div>
                 </div>
 
                 <div class="control-group">
@@ -373,7 +419,7 @@ body.embedded .content {
                 </div>
 
                 <!-- PID controls -->
-                <div id="controls-pid">
+                <div id="controls-pid" class="pid-box">
                     <div class="control-group">
                         <label>Proportional ($K_p$)</label>
                         <input type="range" id="rng_kp" min="0" max="200" step="0.1" value="1.0"
@@ -422,15 +468,90 @@ body.embedded .content {
                     </div>
                 </div>
             </div>
+
+            <!-- Feedback -->
+            <div>
+                <!-- START: Colored Feedback Box -->
+                <div class="feedback-box">
+                    <div class="section-title">Feedback Transfer Function H(s)</div>
+                    <div class="control-group">
+                        <label>Numerator Coeffs (descending $s$)</label>
+                        <input type="text" id="fb_num" value="1" oninput="updateFeedback()">
+                    </div>
+                    <div class="control-group">
+                        <label>Denominator Coeffs (descending $s$)</label>
+                        <input type="text" id="fb_den" value="1" oninput="updateFeedback()">
+                    </div>
+                    <div class="control-group">
+                        <label>Feedback Delay ($\tau_{fb}$) [s]</label>
+                        <input type="number" id="fb_delay" value="0.0" step="0.01" min="0" oninput="updateFeedback()">
+                    </div>
+                    <div id="fb-error" class="warn-text"></div>
+                </div>
+                            
+                <!-- Time-domain setting -->
+                <div class="control-group" id="time-settings" style="margin-top:20px;">
+                    <label id="time-label">Simulation Duration [s]</label>
+                    <input type="number" id="sim_duration" value="20" step="1" min="1" oninput="updateAll()">
+                </div>
+
+                <!-- Frequency-domain settings (shown only in Open-loop FR mode) -->
+                <div class="control-group hidden" id="freq-settings" style="margin-top:20px;">
+                    <label>Frequency range ω<sub>min</sub> – ω<sub>max</sub> [rad/s]</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" id="w_min" value="0.01" step="0.01" min="0.0001"
+                               oninput="updateBodeCharts()" style="flex:1;">
+                        <input type="number" id="w_max" value="100" step="0.1" min="0.001"
+                               oninput="updateBodeCharts()" style="flex:1;">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="content">
-        <!-- Math box -->
+        <!-- Visual Block Diagram -->
         <div class="box">
-            <h3 style="margin-top:0; color:var(--primary);">System Model</h3>
-            <div id="latex-system" class="equation-wrapper">G(s) = [10] / [1, 2, 2, 1]</div>
-            <div id="latex-controller" class="equation-wrapper" style="border-top:1px solid #eee;">C(s) = PID</div>
+            <h3 style="margin-top:0; color:var(--primary);">System Block Diagram</h3>
+            
+            <div class="diagram-wrapper">
+                <svg class="diagram-svg" viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="8" markerHeight="6" 
+                        refX="7" refY="3" orient="auto">
+                          <polygon points="0 0, 8 3, 0 6" fill="#333" />
+                        </marker>
+                    </defs>
+                    <line x1="20" y1="65" x2="78" y2="65" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="112" y1="65" x2="148" y2="65" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="250" y1="65" x2="288" y2="65" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="350" y1="65" x2="398" y2="65" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="500" y1="65" x2="650" y2="65" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="620" y1="65" x2="620" y2="155" stroke="#333" stroke-width="2"/>
+                    <line x1="620" y1="155" x2="402" y2="155" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <line x1="300" y1="155" x2="95" y2="155" stroke="#333" stroke-width="2"/>
+                    <line x1="95" y1="155" x2="95" y2="82" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <text x="70" y="60" font-family="monospace" font-size="14" fill="#555">+</text>
+                    <text x="75" y="110" font-family="monospace" font-size="14" fill="#555">-</text>
+                </svg>
+
+                <div class="dia-label" style="left:30px; top:45px;">r(t)</div>
+                <div id="jct-sum" class="dia-sum">+</div>
+                <div id="blk-ctrl" class="dia-block">$$ G_{PID}(s) $$</div>
+                <div id="blk-sat" class="dia-block">Sat</div>
+                <div id="blk-plant" class="dia-block">$$ G(s) $$</div>
+                <div class="dia-label" style="left:600px; top:45px;">y(t)</div>
+                <div id="blk-fb" class="dia-block">$$ H(s) $$</div>
+            </div>
+
+            <div class="math-legend">
+                <div class="legend-item full-width" id="eq-ctrl"></div>
+                <div class="legend-item" id="eq-sat"></div>
+                <div class="legend-item" id="eq-plant"></div>
+                <div class="legend-item full-width" id="eq-fb"></div>
+                <div class="legend-item full-width" id="eq-ol"></div>
+            </div>
+            
             <div id="filter-explanation"
                  style="margin-top:15px; padding:12px; background:#f8f9fa; border-left:3px solid var(--accent); font-size:0.85rem; line-height:1.5; display:none;">
                 <strong>Derivative Filter:</strong> The filtered derivative term prevents amplification of
@@ -440,8 +561,9 @@ body.embedded .content {
             </div>
         </div>
 
-        <!-- Auto-tune panel -->
+        <!-- Info Panel Box -->
         <div class="box" style="padding:12px 16px;">
+            <!-- Relay Tuning Info (Default) -->
             <div id="tuner-info"
                  style="background:#eef7ff;border:1px solid #c8ddff;padding:8px 10px;
                         border-radius:6px;font-size:0.85rem;">
@@ -467,12 +589,43 @@ body.embedded .content {
                 <div style="margin-top:5px;opacity:0.7;">
                     Drag the two vertical bars on the chart to span one period of the relay oscillation.
                 </div>
+                <div id="tun-formula" style="margin-top:4px;font-size:0.8rem;opacity:0.8;"></div>
+            </div>
+
+            <!-- Frequency Response Info Block (Hidden by default, shown in FR mode) -->
+            <div id="freq-info" class="hidden"
+                 style="background:#fff8e1; border:1px solid #ffecb3; padding:10px;
+                        border-radius:6px; font-size:0.9rem; line-height:1.6;">
+                <strong style="color:#f57f17;">Frequency Response Margins (Open-Loop)</strong><br>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:5px;">
+                    <div>
+                        <strong>Gain Crossover</strong> (\(\omega_{gc}\)): <span id="val-wgc" style="font-family:monospace">--</span> rad/s<br>
+                        <strong>Phase Margin</strong> (PM): <span id="val-pm" style="font-family:monospace; font-weight:bold;">--</span>&deg;
+                    </div>
+                    <div>
+                        <strong>Phase Crossover</strong> (\(\omega_{pc}\)): <span id="val-wpc" style="font-family:monospace">--</span> rad/s<br>
+                        <strong>Gain Margin</strong> (GM): <span id="val-gm" style="font-family:monospace; font-weight:bold;">--</span> dB
+                    </div>
+                </div>
+                <div id="stability-note" style="margin-top:8px; font-style:italic; font-size:0.85rem; color:#555;"></div>
             </div>
         </div>
 
-        <!-- Chart -->
-        <div class="box chart-box">
+        <!-- Time-domain chart -->
+        <div class="box chart-box" id="time-container">
             <canvas id="simChart"></canvas>
+        </div>
+
+        <!-- Bode magnitude -->
+        <div class="box chart-box hidden" id="bode-mag-container">
+            <h4 style="margin-top:0; color:var(--primary);">Open-loop Magnitude |G(s)H(s)| (dB)</h4>
+            <canvas id="bodeMagChart"></canvas>
+        </div>
+
+        <!-- Bode phase -->
+        <div class="box chart-box hidden" id="bode-phase-container">
+            <h4 style="margin-top:0; color:var(--primary);">Open-loop Phase ∠G(s)H(s) (deg)</h4>
+            <canvas id="bodePhaseChart"></canvas>
         </div>
     </div>
 </div>
@@ -487,13 +640,25 @@ const params = {
     hyst: 0.1
 };
 
+// Plant G(s)
 let sysA = [], sysB = [], sysC = [], sysD = 0;
 let sysOrder = 0;
 let sysDelay = 0;
 let globalNum = [], globalDen = [], globalDelay = 0;
 
+// Feedback H(s)
+let fbA = [], fbB = [], fbC = [], fbD = 1;
+let fbOrder = 0;
+let fbDelay = 0;
+let fbGlobalNum = [], fbGlobalDen = [], fbGlobalDelay = 0;
+
+// Open-loop L(s) = G(s)H(s)
+let olNum = [], olDen = [], olDelay = 0;
+
 let controlMode = 'PID';
 let chartInstance = null;
+let bodeMagChart = null;
+let bodePhaseChart = null;
 
 let marker1Index = 50;
 let marker2Index = 150;
@@ -510,85 +675,218 @@ function toggleSidebar() {
         : 'Show Parameters &#9660;';
 }
 
-// Enable/disable auto-tune button based on control mode
 function updateAutotuneButton() {
     const btn = document.getElementById('btn-autotune');
-    if (!btn) return;
+    const ruleSelect = document.getElementById('tune-rule');
+    if (!btn || !ruleSelect) return;
     const enabled = (controlMode === 'RELAY');
     btn.disabled = !enabled;
     btn.style.opacity = enabled ? '1' : '0.4';
     btn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
+    ruleSelect.disabled = !enabled;
 }
 
-// --- System parsing ---
-function updateSystem() {
-    const numStr = document.getElementById('sys_num').value;
-    const denStr = document.getElementById('sys_den').value;
-    const delayStr = document.getElementById('sys_delay').value;
+// --- System Parsing Helper ---
+function parseTransferFunction(numId, denId, delayId) {
+    const numStr = document.getElementById(numId).value;
+    const denStr = document.getElementById(denId).value;
+    const delayStr = document.getElementById(delayId).value;
     
-    try {
-        let num = numStr.split(',').map(s => parseFloat(s));
-        let den = denStr.split(',').map(s => parseFloat(s));
-        sysDelay = parseFloat(delayStr) || 0;
-        
-        if (den.some(isNaN) || num.some(isNaN)) throw "Invalid coefficients";
-        if (den.length === 0 || den[0] === 0) throw "Invalid denominator";
-        
-        const a0 = den[0];
-        den = den.map(v => v / a0);
-        num = num.map(v => v / a0);
-        while (num.length < den.length) num.unshift(0);
-        
-        sysOrder = den.length - 1;
-        sysD = num[0];
-        
-        sysA = Array(sysOrder).fill(0).map(() => Array(sysOrder).fill(0));
-        sysB = Array(sysOrder).fill(0);
-        sysC = Array(sysOrder).fill(0);
-        
-        if (sysOrder > 0) {
-            for (let i = 0; i < sysOrder; i++) {
-                sysA[i][0] = -den[i + 1];
-                if (i < sysOrder - 1) sysA[i][i + 1] = 1;
-            }
-            for (let i = 0; i < sysOrder; i++) {
-                sysB[i] = num[i + 1] - den[i + 1] * sysD;
-            }
-            sysC[0] = 1;
+    let num = numStr.split(',').map(s => parseFloat(s));
+    let den = denStr.split(',').map(s => parseFloat(s));
+    let dly = parseFloat(delayStr) || 0;
+    
+    if (den.some(isNaN) || num.some(isNaN)) throw "Invalid coefficients";
+    if (den.length === 0 || den[0] === 0) throw "Invalid denominator";
+    
+    const a0 = den[0];
+    den = den.map(v => v / a0);
+    num = num.map(v => v / a0);
+    while (num.length < den.length) num.unshift(0);
+    
+    const order = den.length - 1;
+    const D = num[0];
+    
+    let A = Array(order).fill(0).map(() => Array(order).fill(0));
+    let B = Array(order).fill(0);
+    let C = Array(order).fill(0);
+    
+    if (order > 0) {
+        for (let i = 0; i < order; i++) {
+            A[i][0] = -den[i + 1];
+            if (i < order - 1) A[i][i + 1] = 1;
         }
+        for (let i = 0; i < order; i++) {
+            B[i] = num[i + 1] - den[i + 1] * D;
+        }
+        C[0] = 1;
+    }
+    
+    let dispNum = [...num];
+    while (dispNum.length > 1 && Math.abs(dispNum[0]) < 1e-9) dispNum.shift();
+    
+    return { A, B, C, D, order, delay: dly, dispNum, den };
+}
+
+// Polynomial multiplication for open-loop TF
+function polyMultiply(a, b) {
+    if (!a || !a.length) return (b && b.length) ? [...b] : [0];
+    if (!b || !b.length) return (a && a.length) ? [...a] : [0];
+    const res = Array(a.length + b.length - 1).fill(0);
+    for (let i = 0; i < a.length; i++) {
+        for (let j = 0; j < b.length; j++) {
+            res[i + j] += a[i] * b[j];
+        }
+    }
+    return res;
+}
+
+function updateOpenLoopTF() {
+    const numG = (globalNum && globalNum.length) ? globalNum : [1];
+    const denG = (globalDen && globalDen.length) ? globalDen : [1];
+    const numH = (fbGlobalNum && fbGlobalNum.length) ? fbGlobalNum : [1];
+    const denH = (fbGlobalDen && fbGlobalDen.length) ? fbGlobalDen : [1];
+
+    olNum = polyMultiply(numG, numH);
+    olDen = polyMultiply(denG, denH);
+    olDelay = (globalDelay || 0) + (fbGlobalDelay || 0);
+
+    if (controlMode === 'OPEN_LOOP_FR') {
+        updateBodeCharts();
+    }
+}
+
+// --- Plant Update ---
+function updateSystem() {
+    try {
+        const sys = parseTransferFunction('sys_num', 'sys_den', 'sys_delay');
+        sysA = sys.A; sysB = sys.B; sysC = sys.C; sysD = sys.D;
+        sysOrder = sys.order; sysDelay = sys.delay;
+        globalNum = sys.dispNum; globalDen = sys.den; globalDelay = sysDelay;
         
         document.getElementById('sys-error').style.display = 'none';
-        
-        let dispNum = [...num];
-        while (dispNum.length > 1 && Math.abs(dispNum[0]) < 1e-9) dispNum.shift();
-        
-        globalNum = dispNum;
-        globalDen = den;
-        globalDelay = sysDelay;
-        
+        updateOpenLoopTF();
         renderMath();
         runSimulation();
-        
     } catch (e) {
         document.getElementById('sys-error').innerText = e;
         document.getElementById('sys-error').style.display = 'block';
     }
 }
 
+// --- Feedback Update ---
+function updateFeedback() {
+    try {
+        const fb = parseTransferFunction('fb_num', 'fb_den', 'fb_delay');
+        fbA = fb.A; fbB = fb.B; fbC = fb.C; fbD = fb.D;
+        fbOrder = fb.order; fbDelay = fb.delay;
+        fbGlobalNum = fb.dispNum; fbGlobalDen = fb.den; fbGlobalDelay = fbDelay;
+        
+        document.getElementById('fb-error').style.display = 'none';
+        updateOpenLoopTF();
+        renderMath();
+        runSimulation();
+    } catch (e) {
+        document.getElementById('fb-error').innerText = e;
+        document.getElementById('fb-error').style.display = 'block';
+    }
+}
+
 // --- UI interactions ---
 function setMode(mode) {
     controlMode = mode;
-    ['pid', 'relay', 'manual'].forEach(m => {
-        document.getElementById(`btn-${m}`).classList.toggle('active', m.toUpperCase() === mode);
-    });
+    
+    // Explicitly map modes to button IDs to fix Open-loop FR highlight issue
+    const btnMap = {
+        'PID': 'btn-pid',
+        'RELAY': 'btn-relay',
+        'MANUAL': 'btn-manual',
+        'OPEN_LOOP_FR': 'btn-openloopfr'
+    };
+    
+    for (const [mKey, btnId] of Object.entries(btnMap)) {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.classList.toggle('active', mKey === mode);
+    }
+    
     document.getElementById('controls-pid').classList.toggle('hidden', mode !== 'PID');
     document.getElementById('controls-relay').classList.toggle('hidden', mode !== 'RELAY');
 
-    updateAutotuneButton();   // keep auto-tune only active in RELAY
+    // time vs Bode containers
+    const timeCont  = document.getElementById('time-container');
+    const magCont   = document.getElementById('bode-mag-container');
+    const phaseCont = document.getElementById('bode-phase-container');
 
+    // time vs frequency input visibility
+    const timeSettings = document.getElementById('time-settings');
+    const freqSettings = document.getElementById('freq-settings');
+
+    // Info Panels (Tuner vs Frequency Info)
+    const tunerInfo = document.getElementById('tuner-info');
+    const freqInfo  = document.getElementById('freq-info');
+
+    if (mode === 'OPEN_LOOP_FR') {
+        // Hide Time Domain, Show Bode
+        if (timeCont)  timeCont.classList.add('hidden');
+        if (magCont)   magCont.classList.remove('hidden');
+        if (phaseCont) phaseCont.classList.remove('hidden');
+        if (timeSettings) timeSettings.classList.add('hidden');
+        if (freqSettings) freqSettings.classList.remove('hidden');
+        
+        // Swap Info Panel: Show Frequency Info
+        if (tunerInfo) tunerInfo.classList.add('hidden');
+        if (freqInfo)  freqInfo.classList.remove('hidden');
+
+        // Update block colors if needed
+        const ctrlBlk = document.getElementById('blk-ctrl');
+        if (ctrlBlk) {
+             ctrlBlk.style.backgroundColor = '#eaf2f8';
+             ctrlBlk.style.borderColor = '#2980b9';
+             ctrlBlk.style.color = '#1a5276';
+        }
+
+        updateBodeCharts();
+    } else {
+        // Show Time Domain, Hide Bode
+        if (timeCont)  timeCont.classList.remove('hidden');
+        if (magCont)   magCont.classList.add('hidden');
+        if (phaseCont) phaseCont.classList.add('hidden');
+        if (timeSettings) timeSettings.classList.remove('hidden');
+        if (freqSettings) freqSettings.classList.add('hidden');
+
+        // Swap Info Panel: Show Tuner (or default)
+        if (tunerInfo) tunerInfo.classList.remove('hidden');
+        if (freqInfo)  freqInfo.classList.add('hidden');
+
+        const ctrlBlk = document.getElementById('blk-ctrl');
+        if (ctrlBlk) {
+            if (mode === 'RELAY') {
+                ctrlBlk.style.backgroundColor = '#e8f8f5';
+                ctrlBlk.style.borderColor = '#00897b';
+                ctrlBlk.style.color = '#004d40';
+            } else {
+                ctrlBlk.style.backgroundColor = '#eaf2f8';
+                ctrlBlk.style.borderColor = '#2980b9';
+                ctrlBlk.style.color = '#1a5276';
+            }
+        }
+
+        runSimulation();
+    }
+
+    if (mode !== 'RELAY') {
+        const PuEl = document.getElementById("tun-Pu");
+        if (PuEl) PuEl.textContent = '–';
+        document.getElementById("tun-A").textContent = '–';
+        document.getElementById("tun-Ku").textContent = '–';
+        document.getElementById('tun-formula').innerHTML = '';
+        window.autoTune = null;
+    }
+
+    updateAutotuneButton();
     renderMath();
-    runSimulation();
 }
+
 
 function updateFromSlider(key, val) {
     val = parseFloat(val);
@@ -611,6 +909,7 @@ function updateAll() {
     params.setpoint = parseFloat(document.getElementById('setpoint').value);
     renderMath();
     runSimulation();
+    if (controlMode === 'OPEN_LOOP_FR') updateBodeCharts();
 }
 
 // --- Math rendering ---
@@ -635,69 +934,387 @@ function renderMath() {
         return str || "0";
     };
     
+    // Plant
     const numText = poly(globalNum);
     const denText = poly(globalDen);
     const delayText = globalDelay > 0 ? `e^{-${globalDelay}s}` : '';
-    
-    const sysDiv = document.getElementById('latex-system');
-    const ctrlDiv = document.getElementById('latex-controller');
-    const explDiv = document.getElementById('filter-explanation');
-    
-    explDiv.style.display = (controlMode === 'PID' && params.kd > 0) ? 'block' : 'none';
-    
-    if (!window.mathJaxReady) {
-        sysDiv.innerHTML = `G(s) = [${numText}] / [${denText}] ${delayText}`;
-        ctrlDiv.innerHTML = `Mode: ${controlMode}`;
-        return;
-    }
-    
     const sysTex = `$$ G(s) = \\frac{${numText}}{${denText}} ${delayText} $$`;
+
+    // Feedback
+    const fbNumText = poly(fbGlobalNum);
+    const fbDenText = poly(fbGlobalDen);
+    const fbDelayText = fbGlobalDelay > 0 ? `e^{-${fbGlobalDelay}s}` : '';
+    const fbTex = `$$ H(s) = \\frac{${fbNumText}}{${fbDenText}} ${fbDelayText} $$`;
+
+    // Open-loop L(s)
+    const olNumText = poly(olNum);
+    const olDenText = poly(olDen);
+    const olDelayText = olDelay > 0 ? `e^{-${olDelay}s}` : '';
+    const olTex = `$$ L(s) = G(s)H(s) = \\frac{${olNumText}}{${olDenText}} ${olDelayText} $$`;
+
+    // Controller text
     let ctrlTex = "";
     if (controlMode === 'PID') {
         const kp = params.kp.toFixed(2);
         const ki = params.ki.toFixed(2);
         const kd = params.kd.toFixed(2);
-        const N = params.N.toFixed(0);
-        ctrlTex = `$$ C(s) = ${kp} + \\frac{${ki}}{s} + \\frac{${kd} \\cdot ${N} s}{s + ${N}} $$`;
+        const N  = params.N.toFixed(0);
+        ctrlTex = `$$ G_{PID}(s) = ${kp} + \\frac{${ki}}{s} + \\frac{${kd} \\cdot ${N} s}{s + ${N}} $$`;
     } else if (controlMode === 'RELAY') {
-        ctrlTex = `$$ u(t) = \\text{sgn}(e) \\cdot M \\quad (\\text{Hysteresis: } h) $$`;
-    } else {
-        ctrlTex = `$$ u(t) = r(t) $$`;
+        ctrlTex = `$$ \\text{Relay: } u(t) = \\text{sgn}(e) \\cdot ${params.relayAmp} \\quad (\\text{hyst}=${params.hyst}) $$`;
+    } else if (controlMode === 'MANUAL') {
+        ctrlTex = `$$ \\text{Manual Mode: } u(t) = r(t) $$`;
+    } else if (controlMode === 'OPEN_LOOP_FR') {
+        ctrlTex = `$$ \\text{Open-loop FR mode (PID ignored).} $$`;
     }
     
-    sysDiv.innerHTML = sysTex;
-    ctrlDiv.innerHTML = ctrlTex;
+    const satTex = `$$ \\text{Sat: } \\pm ${params.vLim} \\text{ V} $$`;
+    
+    const eqCtrl = document.getElementById('eq-ctrl');
+    const eqSat  = document.getElementById('eq-sat');
+    const eqPlant= document.getElementById('eq-plant');
+    const eqFb   = document.getElementById('eq-fb');
+    const eqOL   = document.getElementById('eq-ol');
+    
+    if (eqCtrl) eqCtrl.innerHTML  = ctrlTex;
+    if (eqSat)  eqSat.innerHTML   = satTex;
+    if (eqPlant)eqPlant.innerHTML = sysTex;
+    if (eqFb)   eqFb.innerHTML    = fbTex;
+    if (eqOL)   eqOL.innerHTML    = olTex;
+
+    const blkCtrl = document.getElementById('blk-ctrl');
+    if (blkCtrl && controlMode === 'PID')  blkCtrl.innerHTML = `$$ G_{PID}(s) $$`;
+    if (blkCtrl && controlMode === 'RELAY')blkCtrl.innerHTML = `$$ \\text{Relay} $$`;
+    if (blkCtrl && controlMode === 'MANUAL')blkCtrl.innerHTML= `$$ \\text{Man} $$`;
+    if (blkCtrl && controlMode === 'OPEN_LOOP_FR') blkCtrl.innerHTML = `$$ G_{PID}(s) $$`;
+
+    const explDiv = document.getElementById('filter-explanation');
+    if (explDiv) {
+        explDiv.style.display = (controlMode === 'PID' && params.kd > 0) ? 'block' : 'none';
+    }
     
     if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise([sysDiv, ctrlDiv]).catch(e => console.log('Math error', e));
+        const wrapper = document.querySelector('.box');
+        MathJax.typesetPromise([wrapper]).catch(e => console.log('Math error', e));
     }
 }
 
-// --- RK4 ---
-function getDerivatives(x, u) {
-    let dx = new Array(sysOrder).fill(0);
-    for (let i = 0; i < sysOrder; i++) {
+// --- Frequency response of L(s) = G(s)H(s) ---
+function evalPoly(coeffs, s) {
+    let res = { re: 0, im: 0 };
+    for (let i = 0; i < coeffs.length; i++) {
+        const c = coeffs[i];
+        const power = coeffs.length - 1 - i;
+        let sp = { re: 1, im: 0 };
+        if (power > 0) {
+            sp = { re: 0, im: 1 };
+            let acc = { re: 1, im: 0 };
+            for (let k = 0; k < power; k++) {
+                const tmp = {
+                    re: acc.re * sp.re - acc.im * sp.im,
+                    im: acc.re * sp.im + acc.im * sp.re
+                };
+                acc = tmp;
+            }
+            sp = acc;
+        }
+        res.re += c * sp.re;
+        res.im += c * sp.im;
+    }
+    return res;
+}
+
+function evalPolyAtJW(coeffs, w) {
+    const s = { re: 0, im: w };
+    let res = { re: 0, im: 0 };
+    for (let i = 0; i < coeffs.length; i++) {
+        const tmp = {
+            re: res.re * s.re - res.im * s.im,
+            im: res.re * s.im + res.im * s.re
+        };
+        res.re = tmp.re + coeffs[i];
+        res.im = tmp.im;
+    }
+    return res;
+}
+
+function complexDiv(a, b) {
+    const den = b.re * b.re + b.im * b.im;
+    return {
+        re: (a.re * b.re + a.im * b.im) / den,
+        im: (a.im * b.re - a.re * b.im) / den
+    };
+}
+
+
+function updateBodeCharts() {
+    if (!olNum || !olNum.length || !olDen || !olDen.length) return;
+
+    const N = 500; // INCREASED RESOLUTION FOR SMOOTHER PLOTS
+
+    const wMinInput = document.getElementById("w_min");
+    const wMaxInput = document.getElementById("w_max");
+    let wMin = wMinInput ? parseFloat(wMinInput.value) : 0.01;
+    let wMax = wMaxInput ? parseFloat(wMaxInput.value) : 100;
+
+    if (!isFinite(wMin) || wMin <= 0) wMin = 0.01;
+    if (!isFinite(wMax) || wMax <= wMin) wMax = wMin * 10;
+
+    const logMin = Math.log10(wMin);
+    const logMax = Math.log10(wMax);
+
+    const wList = [];
+    const magDB = [];
+    const phaseDeg = [];
+
+    // --- CONTINUOUS PHASE CALCULATION ---
+    // Instead of calculating absolute phase at every point and unwrapping,
+    // we accumulate the angle change (delta) between steps.
+    // This avoids jumps completely.
+
+    let prevL = null; // Store previous complex value
+    let accumulatedPhase = 0;
+
+    for (let i = 0; i < N; i++) {
+        const exp = logMin + (logMax - logMin) * i / (N - 1);
+        const w = Math.pow(10, exp);
+
+        // Calculate L(jw)
+        const nVal = evalPolyAtJW(olNum, w);
+        const dVal = evalPolyAtJW(olDen, w);
+        const L = complexDiv(nVal, dVal);
+
+        // Apply Delay
+        let Ld = L;
+        if (olDelay && olDelay > 0) {
+            const phi = -w * olDelay;
+            const c = Math.cos(phi);
+            const s = Math.sin(phi);
+            Ld = {
+                re: L.re * c - L.im * s,
+                im: L.re * s + L.im * c
+            };
+        }
+
+        const mag = Math.sqrt(Ld.re * Ld.re + Ld.im * Ld.im);
+        const mag_dB = 20 * Math.log10(mag);
+
+        // Phase Calculation
+        if (i === 0) {
+            // Initial phase (using standard atan2)
+            accumulatedPhase = Math.atan2(Ld.im, Ld.re) * 180 / Math.PI;
+        } else {
+            // Calculate delta angle from previous point
+            // Angle(z2/z1) = Angle(z2 * conj(z1))
+            // Let z2 = Ld (current), z1 = prevL (previous)
+            // z2 * z1* = (a+bi)(c-di) = (ac+bd) + i(bc-ad)
+            const ac_bd = Ld.re * prevL.re + Ld.im * prevL.im;
+            const bc_ad = Ld.im * prevL.re - Ld.re * prevL.im;
+            
+            const delta = Math.atan2(bc_ad, ac_bd) * 180 / Math.PI;
+            accumulatedPhase += delta;
+        }
+
+        prevL = Ld; // Store for next step
+
+        wList.push(w);
+        magDB.push(mag_dB);
+        phaseDeg.push(accumulatedPhase);
+    }
+
+    // --- MARGIN CALCULATION LOGIC ---
+    let wc_gain = null; // Gain Crossover Freq (Mag = 0 dB)
+    let wc_phase = null; // Phase Crossover Freq (Phase = -180 deg)
+    let pm = null;       // Phase Margin
+    let gm = null;       // Gain Margin
+
+    // A. Find Gain Crossover (where Magnitude crosses 0 dB)
+    for (let i = 0; i < N - 1; i++) {
+        if ((magDB[i] >= 0 && magDB[i+1] < 0) || (magDB[i] <= 0 && magDB[i+1] > 0)) {
+            // Linear interpolate w
+            const m1 = magDB[i], m2 = magDB[i+1];
+            const w1 = wList[i], w2 = wList[i+1];
+            const slope = (m2 - m1) / (w2 - w1);
+            wc_gain = w1 - (m1 / slope);
+            
+            // Get Phase at this freq (interpolate)
+            // Linear interpolation of phase is safe here due to high resolution
+            const p1 = phaseDeg[i], p2 = phaseDeg[i+1];
+            const p_at_wc = p1 + (p2 - p1) * (wc_gain - w1) / (w2 - w1);
+            
+            // Normalize phase to find distance from -180
+            // PM = 180 + Phase(Wgc)
+            // Need to unwrap relative to -180
+            let p_norm = p_at_wc;
+            while(p_norm > 0) p_norm -= 360;
+            while(p_norm <= -360) p_norm += 360;
+            
+            pm = 180 + p_norm;
+            break; 
+        }
+    }
+
+    // B. Find Phase Crossover (where Phase crosses -180, -540, etc)
+    for (let i = 0; i < N - 1; i++) {
+        // Check crossing of any odd multiple of 180 (e.g., -180, -540)
+        // Normalize checking logic:
+        // We look for crossing of -180 relative to 360 mod.
+        let p1 = phaseDeg[i];
+        let p2 = phaseDeg[i+1];
+        
+        // Normalize to -360..0 for detection
+        let p1_n = p1; while(p1_n > 0) p1_n -= 360; while(p1_n <= -360) p1_n += 360;
+        let p2_n = p2; while(p2_n > 0) p2_n -= 360; while(p2_n <= -360) p2_n += 360;
+
+        if ((p1_n >= -180 && p2_n < -180) || (p1_n <= -180 && p2_n > -180)) {
+             const w1 = wList[i], w2 = wList[i+1];
+             // Interpolate w based on the normalized phase crossing -180
+             const slope = (p2_n - p1_n) / (w2 - w1);
+             wc_phase = w1 - ((p1_n + 180) / slope);
+
+             // Calculate Exact Gain at this frequency
+             const nVal = evalPolyAtJW(olNum, wc_phase);
+             const dVal = evalPolyAtJW(olDen, wc_phase);
+             let L = complexDiv(nVal, dVal);
+             const mag = Math.sqrt(L.re*L.re + L.im*L.im);
+             const mag_db = 20*Math.log10(mag);
+             
+             gm = -mag_db; 
+             break;
+        }
+    }
+
+    // 3. Update HTML Info Panel
+    const elWgc = document.getElementById("val-wgc");
+    const elPm  = document.getElementById("val-pm");
+    const elWpc = document.getElementById("val-wpc");
+    const elGm  = document.getElementById("val-gm");
+    const elNote= document.getElementById("stability-note");
+
+    if (elWgc) elWgc.innerText = (wc_gain !== null) ? wc_gain.toFixed(3) : "∞";
+    if (elPm)  elPm.innerText  = (pm !== null) ? pm.toFixed(1) : "--";
+    if (elWpc) elWpc.innerText = (wc_phase !== null) ? wc_phase.toFixed(3) : "∞";
+    if (elGm)  elGm.innerText  = (gm !== null) ? gm.toFixed(1) : "--";
+
+    if (elNote) {
+        if (pm !== null && gm !== null) {
+            if (pm > 0 && gm > 0) {
+                elNote.innerText = "System appears Stable (PM > 0, GM > 0)";
+                elNote.style.color = "#27ae60";
+            } else {
+                elNote.innerText = "System appears Unstable";
+                elNote.style.color = "#c0392b";
+            }
+        } else {
+             elNote.innerText = "";
+        }
+    }
+
+    // 4. Plot Charts
+    const magCtx   = document.getElementById('bodeMagChart').getContext('2d');
+    const phaseCtx = document.getElementById('bodePhaseChart').getContext('2d');
+
+    const xScaleConfig = {
+        type: 'logarithmic',
+        title: { display: true, text: 'Frequency ω (rad/s)' },
+        ticks: {
+            callback: function(value) { return value; }
+        }
+    };
+
+    if (!bodeMagChart) {
+        bodeMagChart = new Chart(magCtx, {
+            type: 'line',
+            data: {
+                labels: wList,
+                datasets: [{
+                    label: '|G(s)H(s)| (dB)',
+                    data: magDB,
+                    borderColor: '#2980b9',
+                    borderWidth: 2,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: xScaleConfig,
+                    y: {
+                        title: { display: true, text: 'Magnitude (dB)' }
+                    }
+                }
+            }
+        });
+    } else {
+        bodeMagChart.data.labels = wList;
+        bodeMagChart.data.datasets[0].data = magDB;
+        bodeMagChart.update('none');
+    }
+
+    if (!bodePhaseChart) {
+        bodePhaseChart = new Chart(phaseCtx, {
+            type: 'line',
+            data: {
+                labels: wList,
+                datasets: [{
+                    label: '∠G(s)H(s) (deg)',
+                    data: phaseDeg,
+                    borderColor: '#8e44ad',
+                    borderWidth: 2,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: xScaleConfig,
+                    y: {
+                        title: { display: true, text: 'Phase (deg)' }
+                    }
+                }
+            }
+        });
+    } else {
+        bodePhaseChart.data.labels = wList;
+        bodePhaseChart.data.datasets[0].data = phaseDeg;
+        bodePhaseChart.update('none');
+    }
+}
+
+// --- Generic RK4 Solver ---
+function getDerivatives(A, B, x, u, order) {
+    let dx = new Array(order).fill(0);
+    for (let i = 0; i < order; i++) {
         let Ax_i = 0;
-        for (let j = 0; j < sysOrder; j++) Ax_i += sysA[i][j] * x[j];
-        dx[i] = Ax_i + sysB[i] * u;
+        for (let j = 0; j < order; j++) Ax_i += A[i][j] * x[j];
+        dx[i] = Ax_i + B[i] * u;
     }
     return dx;
 }
 
-function rk4Step(x, u, dt) {
-    if (sysOrder === 0) return [];
-    let k1 = getDerivatives(x, u);
+function rk4Step(A, B, x, u, dt, order) {
+    if (order === 0) return [];
+    let k1 = getDerivatives(A, B, x, u, order);
     let x2 = x.map((val, i) => val + 0.5 * dt * k1[i]);
-    let k2 = getDerivatives(x2, u);
+    let k2 = getDerivatives(A, B, x2, u, order);
     let x3 = x.map((val, i) => val + 0.5 * dt * k2[i]);
-    let k3 = getDerivatives(x3, u);
+    let k3 = getDerivatives(A, B, x3, u, order);
     let x4 = x.map((val, i) => val + dt * k3[i]);
-    let k4 = getDerivatives(x4, u);
+    let k4 = getDerivatives(A, B, x4, u, order);
     return x.map((val, i) => val + (dt/6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
 }
 
-// --- Simulation (FIXED D & DELAY HANDLING) ---
+// --- Simulation Loop ---
 function runSimulation() {
+    if (controlMode === 'OPEN_LOOP_FR') {
+        // No need to update time-domain when only looking at Bode
+        return;
+    }
+
     const durInput = document.getElementById('sim_duration');
     const duration = durInput ? (parseFloat(durInput.value) || 20.0) : 20.0;
     
@@ -707,36 +1324,50 @@ function runSimulation() {
     const dt = 0.001;
     const steps = Math.floor(duration / dt);
     
-    let x = new Array(sysOrder).fill(0);
+    // Plant State
+    let xSys = new Array(sysOrder).fill(0);
+    let sysDelaySteps = Math.floor(sysDelay / dt);
+    let uBuffer = new Array(Math.max(sysDelaySteps, 0) + 1).fill(0);
+    let uPrev = 0;
+
+    // Feedback State
+    let xFb = new Array(fbOrder).fill(0);
+    let fbDelaySteps = Math.floor(fbDelay / dt);
+    let yBuffer = new Array(Math.max(fbDelaySteps, 0) + 1).fill(0);
+
+    // Controller State
     let integral = 0, prevError = 0, ud_prev = 0, time = 0;
     let relayState = 0;
     
-    let delaySteps = Math.floor(sysDelay / dt);
-    // Ensure buffer has at least length 1
-    let u_buffer = new Array(Math.max(delaySteps, 0) + 1).fill(0);
-    let u_prev = 0; // last control value (for zero-delay direct term)
-    
-    const tData = [], yData = [], rData = [], uData = [];
+    const tData = [], yData = [], rData = [], uData = [], fbData = [];
     const satMax = Math.abs(params.vLim);
     
     for (let k = 0; k <= steps; k++) {
-        // 1) Input used in the output equation (direct term)
-        let u_for_output;
-        if (delaySteps > 0 && u_buffer.length > 0) {
-            u_for_output = u_buffer[0];     // delayed input for D when there is delay
-        } else {
-            u_for_output = u_prev;          // previous input when delay = 0
-        }
+        // Plant output
+        let u_for_sys_out = (sysDelaySteps > 0 && uBuffer.length > 0) ? uBuffer[0] : uPrev;
         
-        // 2) Output from plant (C x + D u)
-        let y_val = sysD * u_for_output;
+        let y_val = sysD * u_for_sys_out;
         if (sysOrder > 0) {
-            y_val += sysC.reduce((sum, v, i) => sum + v * x[i], 0);
+            y_val += sysC.reduce((sum, v, i) => sum + v * xSys[i], 0);
+        }
+
+        // Feedback
+        if (fbDelaySteps > 0) {
+            yBuffer.push(y_val);
+            yBuffer.shift();
+        } else {
+            yBuffer[0] = y_val;
         }
         
-        // 3) Controller
+        let y_in_fb = (fbDelaySteps > 0) ? yBuffer[0] : y_val; 
+        
+        let y_meas = fbD * y_in_fb;
+        if (fbOrder > 0) {
+            y_meas += fbC.reduce((sum, v, i) => sum + v * xFb[i], 0);
+        }
+
         const r = params.setpoint;
-        const e = r - y_val;
+        const e = r - y_meas;
         let u = 0;
         
         if (controlMode === 'PID') {
@@ -765,43 +1396,44 @@ function runSimulation() {
         }
         prevError = e;
         
-        // 4) Saturation
+        // Saturation
         if (u > satMax) u = satMax;
         if (u < -satMax) u = -satMax;
         
-        // 5) Input to the plant (state) with time delay
+        // Delay into plant
         let u_plant_in;
-        if (delaySteps > 0) {
-            u_buffer.push(u);
-            u_buffer.shift();
-            u_plant_in = u_buffer[0];
+        if (sysDelaySteps > 0) {
+            uBuffer.push(u);
+            uBuffer.shift();
+            u_plant_in = uBuffer[0];
         } else {
             u_plant_in = u;
         }
         
-        // 6) State update
-        if (sysOrder > 0) x = rk4Step(x, u_plant_in, dt);
+        if (sysOrder > 0) xSys = rk4Step(sysA, sysB, xSys, u_plant_in, dt, sysOrder);
+        if (fbOrder > 0)  xFb  = rk4Step(fbA, fbB, xFb, y_in_fb, dt, fbOrder);
         
-        // 7) Logging (downsampled)
         const downsample = Math.ceil(steps / 600);
         if (k % downsample === 0 || k === steps) {
             tData.push(time);
             yData.push(y_val);
+            fbData.push(y_meas);
             rData.push(controlMode !== 'MANUAL' ? r : 0);
             uData.push(u);
         }
         
         time += dt;
-        u_prev = u;  // store last applied input for next step
+        uPrev = u;
     }
     
-    drawChart(tData, yData, rData, uData, resetMarkers);
+    drawChart(tData, yData, rData, uData, fbData, resetMarkers);
 }
 
 // --- Chart + marker plugin ---
 const markerPlugin = {
     id: 'markerPlugin',
     afterDraw(chart) {
+        if (controlMode !== 'RELAY') return; // only show markers in relay mode
         const ctx = chart.ctx;
         const xScale = chart.scales.x;
         const labels = chart.data.labels || [];
@@ -824,7 +1456,7 @@ const markerPlugin = {
 
 Chart.register(markerPlugin);
 
-function drawChart(labels, yData, rData, uData, resetMarkers) {
+function drawChart(labels, yData, rData, uData, fbData, resetMarkers) {
     if (typeof Chart === 'undefined') return;
     const ctx = document.getElementById('simChart').getContext('2d');
     const showRef = (controlMode !== 'MANUAL');
@@ -833,10 +1465,10 @@ function drawChart(labels, yData, rData, uData, resetMarkers) {
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,   // numeric times
+                labels: labels,   
                 datasets: [
                     {
-                        label: 'Output (y)',
+                        label: 'Plant Output (y)',
                         data: yData,
                         borderColor: '#2980b9',
                         borderWidth: 2,
@@ -852,6 +1484,15 @@ function drawChart(labels, yData, rData, uData, resetMarkers) {
                         pointRadius: 0,
                         yAxisID: 'y',
                         hidden: !showRef
+                    },
+                    {
+                        label: 'Measured Feedback',
+                        data: fbData,
+                        borderColor: '#8e44ad',
+                        borderWidth: 1,
+                        borderDash: [2, 2],
+                        pointRadius: 0,
+                        yAxisID: 'y'
                     },
                     {
                         label: 'Control (u)',
@@ -894,7 +1535,8 @@ function drawChart(labels, yData, rData, uData, resetMarkers) {
         chartInstance.data.datasets[0].data = yData;
         chartInstance.data.datasets[1].data = rData;
         chartInstance.data.datasets[1].hidden = !showRef;
-        chartInstance.data.datasets[2].data = uData;
+        chartInstance.data.datasets[2].data = fbData;
+        chartInstance.data.datasets[3].data = uData;
     }
     
     if (labels.length > 2) {
@@ -934,7 +1576,6 @@ function closestIndexFromPixel(xPixel) {
     const xScale = chartInstance.scales.x;
     if (!labels.length) return 0;
     
-    // convert pixel -> time value, then choose nearest time in labels
     const value = xScale.getValueForPixel(xPixel);
     let bestIdx = 0;
     let bestDist = Infinity;
@@ -949,6 +1590,7 @@ function closestIndexFromPixel(xPixel) {
 }
 
 function startDrag(evt) {
+    if (controlMode !== 'RELAY') return;
     if (!chartInstance) return;
     const xScale = chartInstance.scales.x;
     const labels = chartInstance.data.labels || [];
@@ -979,6 +1621,7 @@ function endDrag() { draggingMarker = null; }
 
 // --- Auto-tune ---
 function updateAutoTune() {
+    if (controlMode !== 'RELAY') return;
     if (!chartInstance) return;
     const labels = chartInstance.data.labels || [];
     if (!labels.length) return;
@@ -1005,17 +1648,38 @@ function updateAutoTune() {
     if (Aosc <= 0) return;
     
     const M = params.relayAmp;
-    const Ku = 4 * M / (Math.PI * Aosc);
+    const h = Math.abs(params.hyst || 0);
+
+    let Ku;
+    const useHyst = (h > 0 && h < Aosc);
+    if (useHyst) {
+        const ratio = h / Aosc;
+        const corr  = Math.sqrt(1 - ratio * ratio);
+        Ku = (Math.PI * Aosc) / (4 * M * corr);
+    } else {
+        Ku = 4 * M / (Math.PI * Aosc);
+    }
     
     document.getElementById("tun-Pu").textContent = Pu.toFixed(3);
     document.getElementById("tun-A").textContent = Aosc.toFixed(3);
     document.getElementById("tun-Ku").textContent = Ku.toFixed(3);
     
     window.autoTune = {Pu, Aosc, Ku};
+
+    const formulaDiv = document.getElementById('tun-formula');
+    if (formulaDiv) {
+        if (useHyst) {
+            formulaDiv.innerHTML = '\\(K_u = \\dfrac{\\pi A}{4 M \\sqrt{1 - (h/A)^2}}\\)';
+        } else {
+            formulaDiv.innerHTML = '\\(K_u = \\dfrac{4 M}{\\pi A}\\)';
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([formulaDiv]).catch(e => console.log('Math error', e));
+        }
+    }
 }
 
 function applyAutotunePID() {
-    // Safety: only allow in RELAY mode and when auto-tune data is available
     if (controlMode !== 'RELAY' || !window.autoTune) return;
 
     const {Pu, Ku} = window.autoTune;
@@ -1057,7 +1721,8 @@ function applyAutotunePID() {
 // --- Init ---
 window.onload = function () {
     updateSystem();
-    updateAutotuneButton();  // initialise button state for default PID mode
+    updateFeedback();
+    updateAutotuneButton();
 };
 </script>
 </body>
