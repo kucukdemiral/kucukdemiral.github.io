@@ -1,141 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Publications - Dr. Ibrahim Beklan Küçükdemiral</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
-    header {
-      background: #333;
-      color: #fff;
-      padding: 1rem 0;
-      text-align: center;
-    }
-    header h1, header h2 {
-      margin: 0.2em 0;
-    }
-    nav ul {
-      list-style: none;
-      padding: 0;
-      text-align: center;
-    }
-    nav ul li {
-      display: inline-block;
-      position: relative;
-    }
-    nav ul li ul {
-      display: none;
-      position: absolute;
-      background-color: #333;
-      padding: 0;
-      list-style: none;
-    }
-    nav ul li:hover ul {
-      display: block;
-    }
-    nav ul li ul li {
-      display: block;
-      margin: 0;
-    }
-    nav ul li ul li a {
-      color: #fff;
-      padding: 0.5rem 1rem;
-      display: block;
-    }
-    nav ul li a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 18px;
-    }
-    .container {
-      width: 80%;
-      margin: 2rem auto;
-      background-color: #fff;
-      padding: 1rem;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    footer {
-      background: #333;
-      color: #fff;
-      text-align: center;
-      padding: 1rem 0;
-      width: 100%;
-      position: relative;
-      bottom: 0;
-    }
-    /* Styling for BibBase entries (you can adjust these as needed) */
-    .bibbase-readmore {
-      color: #007BFF;
-      cursor: pointer;
-    }
-    .bibbase-entry {
-      margin: 1em 0;
-      padding: 1em;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background: #fafafa;
-    }
-    .bibbase-author {
-      font-weight: bold;
-    }
-    .bibbase-title {
-      font-style: italic;
-    }
-    .bibbase-journal,
-    .bibbase-year {
-      font-style: italic;
-      color: #555;
-      font-size: 0.9em;
-    }
-    .portrait {
-      float: left;
-      margin-right: 20px;
-      width: 150px; /* Resize the image to 150px width */
-      height: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publications - Dr. Ibrahim Beklan Kucukdemiral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Top Menu (same as index page) -->
-  <header>
-    <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
-    <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="research.html">Research</a></li>
-        <li><a href="publications.html">Publications</a></li>
-        <li>
-          <a href="#">Teaching</a>
-          <ul>
-            <li><a href="control-systems.html">Control Systems</a></li>
-            <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
-          </ul>
-        </li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-    </nav>
-  </header>
+    <header>
+        <div class="header-content">
+            <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
+            <p class="subtitle">Reader &middot; Glasgow Caledonian University</p>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="research.html">Research</a></li>
+                <li><a href="publications.html" class="active">Publications</a></li>
+                <li>
+                    <a href="teaching.html">Teaching</a>
+                    <ul>
+                        <li><a href="control-systems.html">Control Systems</a></li>
+                        <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
 
-  <!-- Main Content Container -->
-  <div class="container">
-    <h2>My Publications</h2>
-    <!-- BibBase will inject the formatted publication list here -->
-    <div id="bibbase"></div>
-  </div>
-  <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FJ44AvW8QX86xEjAyD&noBootstrap=1&jsonp=1"></script>
+    <div class="container">
+        <h2>Publications</h2>
+        <div id="bibbase"></div>
+    </div>
+    <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FJ44AvW8QX86xEjAyD&noBootstrap=1&jsonp=1"></script>
 
-  <footer>
-    <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
-  </footer>
-
-  <!-- BibBase script: Replace the bib parameter value with the URL-encoded direct link to your pubs.bib file -->
+    <footer>
+        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
+    </footer>
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

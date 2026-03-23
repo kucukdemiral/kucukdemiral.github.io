@@ -1,68 +1,409 @@
+/* === Base Reset & Typography === */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+:root {
+    --navy: #1B2A4A;
+    --navy-light: #243656;
+    --accent: #2E5090;
+    --accent-hover: #3A65B0;
+    --text-primary: #2D3748;
+    --text-secondary: #4A5568;
+    --text-light: #718096;
+    --bg-page: #F7F8FA;
+    --bg-card: #FFFFFF;
+    --bg-subtle: #F1F3F7;
+    --border: #E2E8F0;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 24px rgba(0, 0, 0, 0.06);
+    --radius: 6px;
+    --max-width: 900px;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
+    font-family: 'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text-primary);
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: var(--bg-page);
+    -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3, h4 {
+    font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--navy);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+/* === Header === */
 header {
-    background: #333;
+    background: var(--navy);
     color: #fff;
-    padding: 1rem 0;
+    padding: 0;
     text-align: center;
+    border-bottom: 3px solid var(--accent);
 }
+
+.header-content {
+    padding: 2rem 1.5rem 0.75rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+header h1 {
+    font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.15rem;
+    letter-spacing: 0.5px;
+}
+
+header .subtitle {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    letter-spacing: 0.3px;
+}
+
+/* === Navigation === */
+nav {
+    background: var(--navy-light);
+    margin-top: 0.75rem;
+}
+
 nav ul {
     list-style: none;
     padding: 0;
-    text-align: center;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    max-width: var(--max-width);
+    margin: 0 auto;
 }
+
 nav ul li {
-    display: inline-block;
     position: relative;
-    margin: 0 1rem;
 }
+
 nav ul li a {
-    color: #fff;
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
-    font-size: 18px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    display: block;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
 }
+
+nav ul li a:hover,
+nav ul li a:focus {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
 nav ul li a:visited {
-    color: #fff; /* Ensure visited links remain white */
+    color: rgba(255, 255, 255, 0.85);
 }
+
+nav ul li a:visited:hover {
+    color: #fff;
+}
+
+nav ul li a.active {
+    color: #fff;
+    border-bottom: 2px solid var(--accent);
+}
+
+/* Dropdown */
 nav ul li ul {
     display: none;
     position: absolute;
-    background-color: #333;
-    padding: 0;
+    top: 100%;
+    left: 0;
+    background-color: var(--navy-light);
+    padding: 0.25rem 0;
     list-style: none;
+    min-width: 220px;
+    box-shadow: var(--shadow-lg);
+    border-radius: 0 0 var(--radius) var(--radius);
+    z-index: 100;
 }
+
 nav ul li:hover ul {
     display: block;
 }
-.container {
-    width: 80%;
-    margin: 2rem auto;
-    background-color: #fff;
-    padding: 1rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
+
 nav ul li ul li {
     display: block;
     margin: 0;
 }
+
 nav ul li ul li a {
-    color: #fff;
-    padding: 0.5rem 1rem;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.6rem 1.25rem;
     display: block;
     text-decoration: none;
-    font-size: 18px;
+    font-size: 0.85rem;
+    text-transform: none;
+    border-bottom: none;
 }
-footer {
-    background: #333;
+
+nav ul li ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
+}
+
+/* === Main Content === */
+.container {
+    width: 90%;
+    max-width: var(--max-width);
+    margin: 2.5rem auto;
+    background-color: var(--bg-card);
+    padding: 2.5rem 3rem;
+    box-shadow: var(--shadow);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.container h2 {
+    font-size: 1.65rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--bg-subtle);
+}
+
+.container h3 {
+    font-size: 1.25rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+}
+
+.container p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* === Home Page Profile === */
+.profile-section {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.portrait {
+    width: 180px;
+    height: auto;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+    border: 3px solid var(--bg-subtle);
+}
+
+.profile-text {
+    flex: 1;
+}
+
+.profile-text h2 {
+    margin-top: 0;
+}
+
+/* === Research Page === */
+.research-area {
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+}
+
+.research-area h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.research-area p {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+/* === Contact Page === */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.contact-item {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius);
+}
+
+.contact-item h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+}
+
+.contact-item p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.contact-item a {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* === Teaching & Applet === */
+.course-list {
+    list-style: none;
+    padding: 0;
+}
+
+.course-list li {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+}
+
+.course-list li a {
+    font-weight: 500;
+}
+
+.applet {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: var(--bg-subtle);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
     text-align: center;
-    padding: 1rem 0;
+}
+
+.applet h3 {
+    margin-top: 0;
+}
+
+.applet iframe {
     width: 100%;
-    position: relative;
-    bottom: 0;
+    height: 600px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+}
+
+.applet-full iframe {
+    height: 2400px;
+}
+
+/* === Publications === */
+.bibbase-readmore {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.bibbase-entry {
+    margin: 0.75em 0;
+    padding: 1em 1.25em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+}
+
+.bibbase-author {
+    font-weight: 600;
+}
+
+.bibbase-title {
+    font-style: italic;
+}
+
+.bibbase-journal,
+.bibbase-year {
+    font-style: italic;
+    color: var(--text-light);
+    font-size: 0.9em;
+}
+
+/* === Footer === */
+footer {
+    background: var(--navy);
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    padding: 1.25rem 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    border-top: 3px solid var(--accent);
+}
+
+footer p {
+    margin: 0;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    nav ul {
+        flex-wrap: wrap;
+    }
+
+    nav ul li a {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .profile-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .portrait {
+        width: 150px;
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
 }

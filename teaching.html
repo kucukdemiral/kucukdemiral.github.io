@@ -3,93 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teaching - Dr. Ibrahim Beklan Küçükdemiral</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0 0 80px 0; /* Bottom padding added to ensure content isn't hidden */
-            background-color: #f4f4f4;
-        }
-        header {
-            background: #333;
-            color: #fff;
-            padding: 1rem 0;
-            text-align: center;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            text-align: center;
-        }
-        nav ul li {
-            display: inline-block;
-            position: relative;
-            margin: 0 1rem;
-        }
-        nav ul li ul {
-            display: none;
-            position: absolute;
-            background-color: #333;
-            padding: 0;
-            list-style: none;
-        }
-        nav ul li:hover ul {
-            display: block;
-        }
-        nav ul li ul li {
-            display: block;
-            margin: 0;
-        }
-        nav ul li ul li a {
-            color: #fff;
-            padding: 0.5rem 1rem;
-            display: block;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        .container {
-            width: 80%;
-            margin: 2rem auto;
-            background-color: #fff;
-            padding: 1rem;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .applet {
-            margin-top: 2rem;
-            text-align: center;
-        }
-        .applet iframe {
-            width: 100%;
-            height: 600px; /* Adjust height as needed */
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 1rem 0;
-            /* Removed fixed positioning to allow the page to scroll fully */
-            /* If you wish to keep a fixed footer, add extra padding to the body or container */
-            /* position: fixed;
-            width: 100%;
-            bottom: 0; */
-        }
-    </style>
+    <title>Teaching - Dr. Ibrahim Beklan Kucukdemiral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
-        <h2>Reader at Glasgow Caledonian University</h2>
+        <div class="header-content">
+            <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
+            <p class="subtitle">Reader &middot; Glasgow Caledonian University</p>
+        </div>
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
                 <li><a href="research.html">Research</a></li>
                 <li><a href="publications.html">Publications</a></li>
                 <li>
-                    <a href="teaching.html">Teaching</a>
+                    <a href="teaching.html" class="active">Teaching</a>
                     <ul>
                         <li><a href="control-systems.html">Control Systems</a></li>
                         <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
@@ -99,19 +31,27 @@
             </ul>
         </nav>
     </header>
+
     <div class="container">
         <h2>Teaching</h2>
-        <p>I teach courses in Systems and Control Theory, Numerical Optimal Control, and Robotics.</p>
-        
-        <!-- Applet Section for the PID Simulator -->
+        <p>I teach courses in Systems and Control Theory, Numerical Optimal Control, and Robotics. Below are the current courses with interactive materials.</p>
+
+        <h3>Current Courses</h3>
+        <ul class="course-list">
+            <li><a href="control-systems.html">Control Systems</a> &mdash; Fundamentals of feedback control, PID tuning, and system analysis</li>
+            <li><a href="model-predictive-control.html">Model Predictive Control</a> &mdash; Constrained optimal control and receding-horizon strategies</li>
+        </ul>
+
         <div class="applet">
-            <h3>Try the PID Simulator</h3>
-            <p>Use the frame below to experiment with the PID simulator from my repository.</p>
+            <h3>PID Simulator</h3>
+            <p>Use the interactive simulator below to experiment with PID controller tuning.</p>
             <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
         </div>
     </div>
+
     <footer>
-        <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

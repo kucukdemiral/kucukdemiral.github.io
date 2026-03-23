@@ -3,80 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Predictive Control - Dr. Ibrahim Beklan Küçükdemiral</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background: #333;
-            color: #fff;
-            padding: 1rem 0;
-            text-align: center;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            text-align: center;
-        }
-        nav ul li {
-            display: inline-block;
-            position: relative;
-            margin: 0 1rem;
-        }
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        nav ul li ul {
-            display: none;
-            position: absolute;
-            background-color: #333;
-            padding: 0;
-            list-style: none;
-        }
-        nav ul li:hover ul {
-            display: block;
-        }
-        nav ul li ul li {
-            display: block;
-            margin: 0;
-        }
-        nav ul li ul li a {
-            color: #fff;
-            padding: 0.5rem 1rem;
-            display: block;
-        }
-        .container {
-            width: 80%;
-            margin: 2rem auto;
-            background-color: #fff;
-            padding: 1rem;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .portrait {
-            float: left;
-            margin-right: 20px;
-            width: 150px; /* Resize the image to 150px width */
-            height: auto;
-        }
-    </style>
+    <title>Model Predictive Control - Dr. Ibrahim Beklan Kucukdemiral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>Dr. Ibrahim Beklan Küçükdemiral</h1>
+        <div class="header-content">
+            <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
+            <p class="subtitle">Reader &middot; Glasgow Caledonian University</p>
+        </div>
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
                 <li><a href="research.html">Research</a></li>
                 <li><a href="publications.html">Publications</a></li>
                 <li>
-                    <a href="#">Teaching</a>
+                    <a href="teaching.html" class="active">Teaching</a>
                     <ul>
                         <li><a href="control-systems.html">Control Systems</a></li>
                         <li><a href="model-predictive-control.html">Model Predictive Control</a></li>
@@ -86,12 +31,15 @@
             </ul>
         </nav>
     </header>
+
     <div class="container">
         <h2>Model Predictive Control</h2>
-        <p>Content about Model Predictive Control goes here.</p>
+        <p>Course materials and interactive resources for Model Predictive Control will be available here.</p>
     </div>
+
     <footer>
-        <p>&copy; 2025 Dr. Ibrahim Beklan Küçükdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
