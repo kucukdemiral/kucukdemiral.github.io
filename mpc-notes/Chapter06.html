@@ -378,97 +378,11 @@
 <figcaption>Simulation results for the LQG control example. <strong>(a)</strong> Measured State: The Kalman Filter estimate (red) effectively filters the noisy position measurements (blue) to track the true trajectory (black). <strong>(b)</strong> Unmeasured State: Although velocity is not measured directly, the filter successfully reconstructs it using the system model and position data. Note the convergence of the estimate (blue) to the truth (black) after the initial transient. <strong>(c)</strong> Statistical Consistency: The velocity estimation error (blue) remains bounded within the <span class="math inline">\(\pm 3\sigma\)</span> confidence intervals (red dashed lines) derived from the steady-state covariance <span class="math inline">\(P_\infty\)</span>. The large error at <span class="math inline">\(t &lt; 4\)</span>s is due to the incorrect initial guess (<span class="math inline">\(x_{est}=0\)</span> vs <span class="math inline">\(x_{true}=0.5\)</span>), which the filter quickly corrects.</figcaption>
 </figure>
 <h2 id="interactive-scalar-kf">Interactive Demo: Scalar Kalman Filter Step-by-Step</h2>
-<p>Use the interactive tool below to trace through the Kalman filter recursion for a <strong>scalar</strong> system step by step.
-The default parameters match <strong>Exercise 1</strong> below — run it first, then try changing the noise covariances
-<span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> to see how they affect the gain and estimation uncertainty.</p>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-</script>
-<pre><code># ── Scalar Kalman Filter: Step-by-Step Recursion ──
-# System:  x_{k+1} = A*x_k + w_k,   y_k = C*x_k + v_k
-A = 1        # State transition (random walk model)
-C = 1        # Measurement matrix
-W = 0.5      # Process noise variance  (trust in model)
-V = 2.0      # Measurement noise variance (trust in sensor)
-
-# Initial conditions
-x_hat = 0.0  # Initial state estimate
-P     = 1.0  # Initial error variance
-
-# Measurements (try adding more or changing values!)
-measurements = [1.2, 0.9, 1.5]
-
-# ── Run the filter ──────────────────────────────
-print("Scalar Kalman Filter - Step-by-Step Recursion")
-print("=" * 56)
-print(f"  System:  A = {A},  C = {C}")
-print(f"  Noise:   W = {W} (process),  V = {V} (measurement)")
-print(f"  Init:    x_hat_0 = {x_hat},  P_0 = {P}")
-print()
-
-gains = []
-variances = []
-
-for k, y_k in enumerate(measurements, start=1):
-    print(f"--- Step k = {k}  |  measurement y_{k} = {y_k} ---")
-
-    # PREDICT
-    x_pred = A * x_hat
-    P_pred = A * P * A + W
-    print(f"  Predict:   x_hat_minus = {x_pred:.4f}    P_minus = {P_pred:.4f}")
-
-    # INNOVATION + GAIN
-    S = C * P_pred * C + V       # Innovation covariance
-    L = P_pred * C / S           # Kalman gain
-    innov = y_k - C * x_pred    # Innovation
-    print(f"  Gain:      S = {S:.4f}    L = {L:.4f}")
-    print(f"  Innovn:    y_tilde = {innov:.4f}")
-
-    # CORRECT
-    x_hat = x_pred + L * innov
-    P = (1 - L * C) * P_pred
-    print(f"  Correct:   x_hat = {x_hat:.4f}    P = {P:.4f}")
-    print()
-
-    gains.append(L)
-    variances.append(P)
-
-# Summary table
-print("=" * 56)
-print("Summary:")
-print(f"  {'k':<4} {'Gain L_k':<12} {'Variance P_k':<14} {'Estimate x_hat_k'}")
-print(f"  {'-'*4} {'-'*12} {'-'*14} {'-'*16}")
-
-# Re-run to collect all estimates for the table
-x_h = 0.0; p = 1.0
-for k, y_k in enumerate(measurements, start=1):
-    x_p = A * x_h
-    p_p = A * p * A + W
-    s = C * p_p * C + V
-    l = p_p * C / s
-    x_h = x_p + l * (y_k - C * x_p)
-    p = (1 - l * C) * p_p
-    print(f"  {k:<4} {l:<12.4f} {p:<14.4f} {x_h:.4f}")
-
-print()
-print("Observations:")
-print(f"  Gain:     {gains[0]:.4f} -> {gains[-1]:.4f}  (decreasing: filter trusts model more)")
-print(f"  Variance: {variances[0]:.4f} -> {variances[-1]:.4f}  (decreasing: estimates more certain)")
-
-# Steady-state values (for comparison)
-# Solve P_ss = A*P_ss*A + W - (A*P_ss*C)^2 / (C*P_ss*C + V)
-# For scalar: P_ss^2 + (W+V)*P_ss*0 ... use quadratic formula
-# P_pred_ss = P_ss + W, where P_ss = (1 - L_ss)*P_pred_ss
-# P_pred_ss satisfies: P_pred_ss = P_pred_ss - P_pred_ss^2/(P_pred_ss+V) + W
-# => P_pred_ss^2/(P_pred_ss+V) = W => P_pred_ss^2 = W*(P_pred_ss+V)
-# => P_pred_ss^2 - W*P_pred_ss - W*V = 0
-disc = W**2 + 4*W*V
-P_pred_ss = (W + np.sqrt(disc)) / 2
-L_ss = P_pred_ss / (P_pred_ss + V)
-P_ss = (1 - L_ss) * P_pred_ss
-print(f"\n  Steady-state: L_inf = {L_ss:.4f},  P_inf = {P_ss:.4f}")</code></pre>
-</div>
+<p>Use the interactive demo below to step through the Kalman filter recursion for a <strong>scalar</strong> random walk system.
+Adjust the noise covariances <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> with the sliders,
+then click <strong>Step</strong> to advance one time step. Watch how each phase of the algorithm
+(Measurement &rarr; Predict &rarr; Gain &rarr; Correct) is highlighted in sequence and the plot updates with the true state, noisy measurements, and Kalman filter estimate.</p>
+<div class="kalman-demo"></div>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
 <li><p><strong>Scalar Kalman Filter by Hand.</strong> Consider a scalar system with <span class="math inline">\(A = 1\)</span>, <span class="math inline">\(B = 0\)</span>, <span class="math inline">\(C = 1\)</span>, process noise covariance <span class="math inline">\(W = 0.5\)</span>, and measurement noise covariance <span class="math inline">\(V = 2\)</span>. The initial conditions are <span class="math inline">\(\hat{x}_0 = 0\)</span> and <span class="math inline">\(P_0 = 1\)</span>.</p>

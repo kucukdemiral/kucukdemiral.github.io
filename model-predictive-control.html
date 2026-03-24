@@ -559,6 +559,182 @@
             to { opacity: 1; }
         }
 
+        /* ========== Kalman Filter Interactive Demo ========== */
+        .chapter-body .kalman-demo {
+            margin: 1.5rem 0;
+            border: 2px solid #0D7C66;
+            border-radius: var(--radius);
+            background: #0F1923;
+            overflow: hidden;
+            font-family: 'Source Sans 3', sans-serif;
+        }
+        .kf-header {
+            background: #0D7C66;
+            padding: 0.45rem 1rem;
+        }
+        .kf-title {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .kf-system-info {
+            padding: 0.55rem 1rem;
+            color: #8899AA;
+            font-size: 0.82rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .kf-system-info em { color: #D4E0ED; font-style: italic; }
+        .kf-fixed { color: #667788; font-size: 0.78rem; }
+        .kf-controls-row {
+            padding: 0.65rem 1rem;
+            display: flex;
+            gap: 1.2rem;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .kf-slider-group {
+            flex: 1;
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .kf-slider-label {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: #8899AA;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            cursor: default;
+        }
+        .kf-slider-label em { color: #D4E0ED; }
+        .kf-slider {
+            width: 110px;
+            accent-color: #0D7C66;
+            cursor: pointer;
+        }
+        .kf-slider-val {
+            color: #D4E0ED;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            font-weight: 600;
+            min-width: 2.5rem;
+            text-align: right;
+        }
+        .kf-btn-group {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .kf-btn {
+            padding: 0.32rem 0.85rem;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.73rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .kf-step-btn { background: #0D7C66; color: #fff; }
+        .kf-step-btn:hover { background: #0A6B58; }
+        .kf-auto-btn { background: #2C3E50; color: #D4E0ED; border: 1px solid rgba(255,255,255,0.12); }
+        .kf-auto-btn:hover { background: #34495E; }
+        .kf-auto-btn.kf-auto-active { background: #C0392B; color: #fff; border-color: transparent; }
+        .kf-reset-btn { background: transparent; color: #8899AA; border: 1px solid rgba(255,255,255,0.12); }
+        .kf-reset-btn:hover { color: #D4E0ED; border-color: rgba(255,255,255,0.25); }
+        .kf-step-counter {
+            color: #D4E0ED;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-left: 0.4rem;
+        }
+        /* body: algo + plot side by side */
+        .kf-body {
+            display: flex;
+        }
+        .kf-algo {
+            flex: 0 0 46%;
+            padding: 0.5rem 0.8rem;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            overflow-y: auto;
+        }
+        .kf-plot-wrap {
+            flex: 1;
+            min-height: 300px;
+        }
+        .kf-canvas {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            display: block;
+        }
+        /* algorithm phases */
+        .kf-phase {
+            margin-bottom: 0.35rem;
+            padding: 0.35rem 0.55rem;
+            border-left: 3px solid transparent;
+            border-radius: 2px;
+            transition: all 0.25s ease;
+            opacity: 0.45;
+        }
+        .kf-phase.kf-active {
+            opacity: 1;
+        }
+        .kf-ph-meas.kf-active { border-left-color: #3498db; background: rgba(52,152,219,0.08); }
+        .kf-ph-pred.kf-active { border-left-color: #e67e22; background: rgba(230,126,34,0.08); }
+        .kf-ph-gain.kf-active { border-left-color: #9b59b6; background: rgba(155,89,182,0.08); }
+        .kf-ph-corr.kf-active { border-left-color: #27ae60; background: rgba(39,174,96,0.08); }
+        .kf-phase-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #556677;
+            letter-spacing: 0.9px;
+            text-transform: uppercase;
+            margin-bottom: 0.15rem;
+        }
+        .kf-active .kf-phase-title { color: #D4E0ED; }
+        .kf-ph-meas.kf-active .kf-phase-title { color: #3498db; }
+        .kf-ph-pred.kf-active .kf-phase-title { color: #e67e22; }
+        .kf-ph-gain.kf-active .kf-phase-title { color: #9b59b6; }
+        .kf-ph-corr.kf-active .kf-phase-title { color: #27ae60; }
+        .kf-eq {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.82rem;
+            color: #667788;
+            padding: 0.1rem 0 0.1rem 0.7rem;
+            line-height: 1.45;
+        }
+        .kf-active .kf-eq { color: #C0CCDD; }
+        .kf-eq em { font-style: italic; }
+        .kf-formula { white-space: nowrap; }
+        .kf-computed { white-space: nowrap; margin-left: 0.5rem; }
+        .kf-computed .kv-y,
+        .kf-computed .kv-xpred,
+        .kf-computed .kv-Ppred,
+        .kf-computed .kv-S,
+        .kf-computed .kv-L,
+        .kf-computed .kv-innov,
+        .kf-computed .kv-xhat,
+        .kf-computed .kv-P {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-weight: 600;
+            color: #f39c12;
+        }
+        @media (max-width: 720px) {
+            .kf-body { flex-direction: column; }
+            .kf-algo { flex: none; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+            .kf-controls-row { flex-direction: column; gap: 0.5rem; }
+        }
+
         /* ========== Center blocks (for standalone figures/images) ========== */
         .chapter-body .center {
             text-align: center;
@@ -752,6 +928,7 @@
     </footer>
 
     <script src="pyodide-runner.js"></script>
+    <script src="kalman-demo.js"></script>
     <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -799,6 +976,7 @@
             body.scrollTop = 0;
             typesetMath();
             if (window.PyodideRunner) PyodideRunner.initAll(body);
+            if (window.KalmanDemo) KalmanDemo.initAll(body);
             return;
         }
 
@@ -814,6 +992,7 @@
                 body.scrollTop = 0;
                 typesetMath();
                 if (window.PyodideRunner) PyodideRunner.initAll(body);
+            if (window.KalmanDemo) KalmanDemo.initAll(body);
             })
             .catch(function() {
                 body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
