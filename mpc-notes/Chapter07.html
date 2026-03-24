@@ -1,0 +1,556 @@
+<h1 id="model-predictive-control">Model Predictive Control</h1>
+<h2 id="linear-model-predictive-control">Linear Model Predictive Control</h2>
+<blockquote>
+<p><em>“MPC is like playing chess: you predict several moves ahead, pick the best move, execute it, and then – because the opponent [uncertainty] might play differently than expected – you re-evaluate the board and plan again.”</em><br />
+— paraphrasing the receding horizon principle</p>
+</blockquote>
+<p>This chapter extends unconstrained optimal control (LQR) to handle physical limits. We define the Linear MPC problem, showing how actuator saturation and safety constraints are incorporated directly into the optimisation. We then cover the <strong>Receding Horizon</strong> principle, introduce the <strong>YALMIP</strong> toolbox for implementation, and analyse how the prediction horizon <span class="math inline">\(N\)</span> and the terminal cost <span class="math inline">\(P\)</span> affect closed-loop stability and performance.</p>
+<h3 id="motivation-the-need-for-constraints">Motivation: The Need for Constraints</h3>
+<p>In the previous chapters, we derived the Linear Quadratic Regulator (LQR). This method provides a closed-form solution to the optimal control problem, yielding a static feedback gain matrix <span class="math inline">\(K\)</span>. However, LQR relies on a critical, often unrealistic assumption: <strong>the system operates in an unconstrained linear world.</strong></p>
+<p>In physical reality, every engineering system has limits:</p>
+<ul>
+<li><p><strong>Actuator Saturation:</strong> A motor has a maximum voltage; a valve cannot open beyond 100%.</p></li>
+<li><p><strong>Safety Constraints:</strong> A chemical reactor must not exceed a critical pressure; a robotic arm must stay within a defined workspace.</p></li>
+<li><p><strong>Performance Bounds:</strong> A passenger vehicle must limit acceleration to ensure comfort.</p></li>
+</ul>
+<h4 class="unnumbered" id="why-clipping-in-lqr-fails">Why <em>Clipping</em> in LQR Fails</h4>
+<p>A common naive approach is to design an LQR controller and simply <em>clip</em> or saturate the control signal if it exceeds the limit: <span class="math display">\[u = \text{sat}(-Kx) = \begin{cases}
+    u_\text{max} &amp; -Kx \ge u_\text{max} \\
+    u_\text{min} &amp; -Kx \le u_\text{min} \\
+    -Kx &amp; \text{otherwise}
+\end{cases}\]</span> While this works for small disturbances, it breaks the mathematical guarantee of optimality and stability. Saturating the input effectively turns a linear system into a non-linear one. If the LQR controller requests a strong braking force to stabilise a fast-moving vehicle, but the actuator saturates, the vehicle may overshoot or become unstable because the "planned" energy dissipation did not occur.</p>
+<h4 class="unnumbered" id="from-offline-gains-to-online-optimisation">From Offline Gains to Online Optimisation</h4>
+<p><strong>Model Predictive Control (MPC)</strong> fundamentally alters this approach. Instead of calculating a control law <em>offline</em> (like the LQR gain <span class="math inline">\(K\)</span>), MPC solves a constrained optimisation problem <em>online</em> at every time step.</p>
+<p>By incorporating the constraints directly into the prediction model, MPC "knows" about the limits in advance. It does not blindly request impossible inputs; instead, it plans a trajectory that rides the very edge of the feasible region without crossing it. This capability—to operate safely and optimally against constraints—is what makes MPC the standard in advanced industrial control.</p>
+<p>In this chapter, we will formulate the Linear MPC problem and demonstrate how to implement it efficiently using the YALMIP toolbox.</p>
+<h3 id="sec:mpc_formulation">Problem Formulation</h3>
+<p>The fundamental goal of MPC is to compute a sequence of future control inputs that drives the system state to the origin (or a target setpoint) whilst satisfying all physical constraints.</p>
+<p>At every sampling instant <span class="math inline">\(t\)</span>, we measure the current state of the system, denoted as <span class="math inline">\(x(t)\)</span>. We then define an optimal control problem over a finite <em>prediction horizon</em> of <span class="math inline">\(N\)</span> steps. To distinguish the prediction from the actual system evolution, we use the index <span class="math inline">\(k\)</span> to denote the steps into the future (where <span class="math inline">\(k=0\)</span> represents the current time <span class="math inline">\(t\)</span>).</p>
+<p>We solve the following constrained optimisation problem:</p>
+<p><span class="math display">\[\begin{equation}
+ \label{eq:mpc_cost}
+    \min_{{u}, {x}} J = \underbrace{x_N^\top Q_N x_N}_{\text{Terminal Cost}} + \sum_{k=0}^{N-1} \left( \underbrace{x_k^\top Q x_k}_{\text{State Penalty}} + \underbrace{u_k^\top R u_k}_{\text{Control Effort}} \right)
+\end{equation}\]</span></p>
+<p><strong>Subject to:</strong> <span class="math display">\[\begin{align*}
+    \textbf{Initialisation:} \quad &amp; x_0 = x(t) &amp;&amp; (\text{Current measured state}) \\
+    \textbf{Model Dynamics:} \quad &amp; x_{k+1} = A x_k + B u_k, &amp;&amp; k=0,\dots,N-1 \\
+    \textbf{Actuator Limits:} \quad &amp; u_{\min} \le u_k \le u_{\max}, &amp;&amp; k=0,\dots,N-1 \\
+    \textbf{Safety Limits:} \quad &amp; x_{\min} \le x_k \le x_{\max}, &amp;&amp; k=1,\dots,N
+\end{align*}\]</span></p>
+<p>Where:</p>
+<ul>
+<li><p><span class="math inline">\({u} = \{u_0, u_1, \dots, u_{N-1}\}\)</span> is the sequence of future control inputs to be optimised.</p></li>
+<li><p><span class="math inline">\({x} = \{x_1, x_2, \dots, x_N\}\)</span> is the sequence of predicted states.</p></li>
+<li><p><span class="math inline">\(Q \succeq 0\)</span> and <span class="math inline">\(R \succ 0\)</span> are the stage cost weighting matrices.</p></li>
+<li><p><span class="math inline">\(Q_N \succeq 0\)</span> is the terminal weight, often chosen to approximate the infinite-horizon cost (i.e., the solution to the Riccati equation, <span class="math inline">\(P\)</span>).</p></li>
+</ul>
+<h3 id="the-receding-horizon-principle">The Receding Horizon Principle</h3>
+<p>The defining feature of MPC is its <strong>Receding Horizon</strong> strategy. Rather than computing a single fixed trajectory from start to finish, the controller operates in a loop:</p>
+<ol>
+<li><p><strong>Measure:</strong> Obtain the current state <span class="math inline">\(x(t)\)</span>.</p></li>
+<li><p><strong>Solve:</strong> Compute the optimal sequence <span class="math inline">\(\{u_0, u_1, \dots, u_{N-1}\}\)</span> by solving the constrained optimisation problem (<a href="#eq:mpc_cost" data-reference-type="ref" data-reference="eq:mpc_cost">[eq:mpc_cost]</a>).</p></li>
+<li><p><strong>Apply:</strong> Inject <strong>only the first input</strong> <span class="math inline">\(u_0\)</span> into the system. The rest of the sequence is discarded.</p></li>
+<li><p><strong>Recede:</strong> Wait for the next sampling instant <span class="math inline">\(t+1\)</span>, measure the new state <span class="math inline">\(x(t+1)\)</span>, and repeat the process.</p></li>
+</ol>
+<p>By re-solving the problem at every time step based on fresh measurements, the MPC converts an open-loop optimal plan into a <strong>closed-loop feedback strategy</strong>, capable of rejecting disturbances and correcting model mismatches.</p>
+<div class="examplebox">
+<p><span>Hand-Worked MPC: Scalar Integrator with Constraints</span> We now solve the MPC problem <strong>entirely by hand</strong> to make the mechanics concrete before moving to MATLAB.</p>
+<p><strong>System:</strong> <span class="math display">\[x_{k+1} = x_k + u_k \qquad \text{(pure integrator)}\]</span> <strong>Parameters:</strong> <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 1\)</span>, <span class="math inline">\(Q_N = 1\)</span>, prediction horizon <span class="math inline">\(N = 2\)</span>, input constraint <span class="math inline">\(|u_k| \le 0.5\)</span>.</p>
+<p><strong>Initial condition:</strong> <span class="math inline">\(x_0 = 1\)</span>.</p>
+<p><strong>Step 1 — Write the predicted states in terms of the decisions:</strong> <span class="math display">\[\begin{align*}
+x_1 &amp;= x_0 + u_0 = 1 + u_0 \\
+x_2 &amp;= x_1 + u_1 = 1 + u_0 + u_1
+\end{align*}\]</span></p>
+<p><strong>Step 2 — Substitute into the cost function:</strong> <span class="math display">\[\begin{align*}
+J &amp;= \underbrace{x_0^2}_{=1} + u_0^2 + \underbrace{x_1^2}_{(1+u_0)^2} + u_1^2 + \underbrace{x_2^2}_{(1+u_0+u_1)^2}
+\end{align*}\]</span> Expanding and collecting: <span class="math display">\[J = 3 + 4u_0 + 2u_1 + 3u_0^2 + 2u_0 u_1 + 2u_1^2\]</span> This is a quadratic in <span class="math inline">\(u = [u_0 \;\; u_1]^\top\)</span>: <span class="math display">\[J = u^\top \underbrace{\begin{bmatrix} 3 &amp; 1 \\ 1 &amp; 2 \end{bmatrix}}_{H} u + \underbrace{\begin{bmatrix} 4 \\ 2 \end{bmatrix}^\top}_{f^\top} u + 3\]</span></p>
+<p><strong>Step 3 — Solve the unconstrained QP:</strong></p>
+<p>Setting <span class="math inline">\(\nabla_{u} J = 2Hu + f = 0\)</span>: <span class="math display">\[u^\star = -\tfrac{1}{2}H^{-1}f = -\frac{1}{2} \cdot \frac{1}{5}\begin{bmatrix} 2 &amp; -1 \\ -1 &amp; 3 \end{bmatrix}\begin{bmatrix} 4 \\ 2 \end{bmatrix} = -\frac{1}{10}\begin{bmatrix} 6 \\ 2 \end{bmatrix} = \begin{bmatrix} -0.6 \\ -0.2 \end{bmatrix}\]</span></p>
+<p><strong>Step 4 — Check constraints:</strong></p>
+<p>Since <span class="math inline">\(|u_0^\star| = 0.6 &gt; 0.5\)</span>, the constraint is violated. We set <span class="math inline">\(u_0 = -0.5\)</span> (at its bound) and re-optimise over <span class="math inline">\(u_1\)</span> alone: <span class="math display">\[x_1 = 1 - 0.5 = 0.5, \qquad x_2 = 0.5 + u_1\]</span> <span class="math display">\[J(u_1) = u_1^2 + (0.5 + u_1)^2 + \text{const.} = 2u_1^2 + u_1 + \text{const.}\]</span> <span class="math display">\[\frac{dJ}{du_1} = 4u_1 + 1 = 0 \quad\Longrightarrow\quad u_1^\star = -0.25 \quad (\text{feasible})\]</span></p>
+<p><strong>Step 5 — Apply the Receding Horizon:</strong></p>
+<p>We apply <strong>only</strong> <span class="math inline">\(u_0^\star = -0.5\)</span> and <strong>discard</strong> <span class="math inline">\(u_1^\star = -0.25\)</span>.</p>
+<p>The plant advances: <span class="math inline">\(x_1 = 0.5\)</span>. We now re-measure and re-solve with <span class="math inline">\(x_0 = 0.5\)</span>.</p>
+<p>Since the problem is linear in <span class="math inline">\(x_0\)</span>, the new unconstrained solution scales: <span class="math inline">\(u^\star = 0.5 \times [-0.6,\; -0.2]^\top = [-0.3,\; -0.1]^\top\)</span>. Both inputs satisfy <span class="math inline">\(|u_k| \le 0.5\)</span>, so the constraints are inactive. We apply <span class="math inline">\(u_0 = -0.3\)</span> and the state moves to <span class="math inline">\(x_1 = 0.2\)</span>.</p>
+<p><strong>Summary of the closed-loop trajectory:</strong></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Step <span class="math inline">\(t\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x(t)\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(u^\star_0\)</span></th>
+<th style="text-align: center;">Constraint active?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1.0</td>
+<td style="text-align: center;"><span class="math inline">\(-0.50\)</span></td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0.50</td>
+<td style="text-align: center;"><span class="math inline">\(-0.30\)</span></td>
+<td style="text-align: center;">No</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0.20</td>
+<td style="text-align: center;"><span class="math inline">\(-0.12\)</span></td>
+<td style="text-align: center;">No</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0.08</td>
+<td style="text-align: center;"><span class="math inline">\(\cdots\)</span></td>
+<td style="text-align: center;">No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Key observations:</strong></p>
+<ol>
+<li><p>The constraint is active only at the first step, when the state is large. As <span class="math inline">\(x\)</span> shrinks, the problem becomes unconstrained and the MPC law approaches the LQR law.</p></li>
+<li><p>Only the first input is ever applied — re-planning at each step provides feedback.</p></li>
+<li><p>The QP matrices <span class="math inline">\(H\)</span> and <span class="math inline">\(f\)</span> are fixed; only <span class="math inline">\(f\)</span> changes with <span class="math inline">\(x_0\)</span>. This is why the <code>optimizer</code> object in the next section treats <span class="math inline">\(x_0\)</span> as a parameter.</p></li>
+</ol>
+</div>
+<h3 id="efficient-implementation-via-yalmip">Efficient Implementation via YALMIP</h3>
+<p>To implement MPC, we utilise <strong>YALMIP</strong> <span class="citation" data-cites="Lofberg2004"></span>, a MATLAB toolbox that allows us to define optimisation problems using high-level symbolic code.</p>
+<p>A naive implementation would define and solve the problem from scratch inside the simulation loop. This is computationally prohibitive because YALMIP would need to re-parse the mathematical structure every few milliseconds. Instead, we use a technique known as <strong>Parametric Programming</strong>.</p>
+<p>We construct the problem <strong>once</strong> offline, treating the initial state <span class="math inline">\(x_0\)</span> as a symbolic <strong>parameter</strong>. The YALMIP <code>optimizer</code> object then maps this parameter to the optimal decision variables, allowing for extremely fast execution during the simulation.</p>
+<h3 id="stability-and-the-terminal-cost">Stability and the Terminal Cost</h3>
+<p>Before writing the code that solves standard MPC, we must ensure stability <span class="citation" data-cites="Mayne2000"></span>. For a finite horizon <span class="math inline">\(N\)</span>, MPC is not automatically guaranteed to stabilise the system. To address this, we include a <strong>Terminal Cost</strong> weighted by a matrix <span class="math inline">\(Q_N\)</span>: <span class="math display">\[\begin{equation*}
+    J_{term} = x_N^\top Q_N x_N
+\end{equation*}\]</span></p>
+<div class="alertbox">
+<p><span>Selection of the terminal weight <span class="math inline">\(Q_N\)</span></span> Choosing the terminal weight as <span class="math display">\[Q_N = P,\]</span> where <span class="math inline">\(P\)</span> is the positive semidefinite solution of the discrete algebraic Riccati equation <span class="math display">\[P = A^\top P A - A^\top P B (R + B^\top P B)^{-1} B^\top P A + Q,\]</span> is a natural and important choice because it matches the infinite-horizon LQR cost-to-go. In the unconstrained case, this choice makes the finite-horizon MPC law consistent with the LQR solution near the origin.</p>
+<p>In the constrained case, however, the terminal cost <span class="math inline">\(P\)</span> alone does not in general guarantee closed-loop stability for arbitrary horizon lengths. A rigorous stability guarantee typically also requires a suitable terminal set and a terminal control law such that, inside the terminal set, the constraints remain satisfied and the terminal cost decreases under the terminal controller. Therefore, <span class="math inline">\(Q_N=P\)</span> should be viewed as an essential stabilising ingredient, but not as a complete stability guarantee by itself unless the unconstrained LQR tail is known to be feasible.</p>
+</div>
+<h4 id="the-yalmip-workflow">The YALMIP Workflow</h4>
+<p>The following script demonstrates the complete setup. Note that MATLAB uses 1-based indexing, so the symbolic variable <code>x{k}</code> corresponds to the mathematical state <span class="math inline">\(x_{k-1}\)</span>.</p>
+<pre id="lst:yalmip_mpc" class="matlab" data-language="Matlab" data-caption="Efficient MPC setup using the YALMIP \texttt{optimizer} object." data-label="lst:yalmip_mpc"><code>    A = [1.1 1; 0 1]; B = [0; 1]; % Example System
+    nx = 2; nu = 1;
+    N = 10;                       % Prediction Horizon
+    
+    % 2. Weights and Constraints
+    Q = eye(nx); R = 0.1;
+    [P, ~, ~] = dare(A, B, Q, R); % Terminal Weight (Stability)
+    u_max = 1; x_max = 5;
+    u_min = -1; x_min = -5;
+    
+    % 3. Define Symbolic Variables
+    % u(:,k) represents input u_{k-1}
+    % x(:,k) represents state x_{k-1}
+    u = sdpvar(nu, N);    
+    x = sdpvar(nx, N+1);  
+    
+    % 4. Build Objective and Constraints Loop
+    constraints = [];
+    objective = 0;
+    
+    for k = 1:N
+        % Stage Cost
+        objective = objective + x(:,k)&#39;*Q*x(:,k) + u(:,k)&#39;*R*u(:,k);
+        
+        % Dynamics Constraint: x_{k} = A*x_{k-1} + B*u_{k-1}
+        constraints = [constraints, x(:,k+1) == A*x(:,k) + B*u(:,k)];
+        
+        % Physical Constraints
+        constraints = [constraints, u_min &lt;= u(:,k) &lt;= u_max];
+        constraints = [constraints, x_min &lt;= x(:,k) &lt;= x_max];
+    end
+    
+    % Terminal Cost (The &quot;Anchor&quot; for stability)
+    objective = objective + x(:,N+1)&#39;*P*x(:,N+1);
+    
+    % 5. Create the Optimizer Object
+    % We treat the &#39;current state&#39; (x(:,1)) as a PARAMETER.
+    % The solver will return the &#39;first input&#39; (u(:,1)).
+    parameters_in = x(:,1);
+    solutions_out = u(:,1);
+    
+    controller = optimizer(constraints, objective, [], parameters_in, solutions_out);
+    
+    % --- SIMULATION USAGE ---
+    % Inside the simulation loop, we simply call:
+    % u_optimal = controller(x_current);</code></pre>
+<div class="notebox">
+<p><span>Indexing Alert</span> Pay close attention to indexing. In mathematics, we start at <span class="math inline">\(k=0\)</span> (current state). In MATLAB, indices start at 1. Therefore:</p>
+<ul>
+<li><p>Math <span class="math inline">\(x_0\)</span> <span class="math inline">\(\rightarrow\)</span> Code <code>x(:,1)</code> (The Parameter)</p></li>
+<li><p>Math <span class="math inline">\(u_0\)</span> <span class="math inline">\(\rightarrow\)</span> Code <code>u(:,1)</code> (The Output to apply)</p></li>
+<li><p>Math <span class="math inline">\(x_N\)</span> <span class="math inline">\(\rightarrow\)</span> Code <code>x(:,N+1)</code> (The Terminal State)</p></li>
+</ul>
+</div>
+<div class="examplebox">
+<p><span>MATLAB: Full MPC Simulation with YALMIP</span> <strong>System Definition:</strong> We consider a discrete-time linear system with unstable and oscillatory dynamics. The state-space matrices are: <span class="math display">\[\begin{equation*}
+        A = \begin{bmatrix} 1.5 &amp; 0 \\ 1 &amp; -1.5 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}
+\end{equation*}\]</span> Note that the eigenvalue <span class="math inline">\(\lambda = -1.5\)</span> introduces a discrete-time oscillation (sign flipping at every step) combined with unstable growth, making this a challenging control target.</p>
+<p><strong>The MPC Optimisation Problem:</strong> At each sampling instant, the controller solves the following quadratic programme (i.e. an optimisation problem with a quadratic cost function and linear constraints) with a prediction horizon of <span class="math inline">\(N=5\)</span>:</p>
+<p><span class="math display">\[\begin{equation*}
+        \min_{u_0, \dots, u_{N-1}} J = x_N^\top P x_N + \sum_{k=0}^{N-1} \left( x_k^\top Q x_k + u_k^\top R u_k \right)
+\end{equation*}\]</span> where <span class="math inline">\(P\)</span> is the LQR solution of the discrete-time Riccati equation.</p>
+<p><strong>Subject to:</strong> <span class="math display">\[\begin{align*}
+        x_{k+1} &amp;= A x_k + B u_k &amp; \text{(Dynamics)}\\
+        -5 &amp;\leq u_k \leq 5 &amp; \text{(Input Saturation)}\\
+        \begin{bmatrix} -10 \\ -10 \end{bmatrix} &amp;\leq x_k \leq \begin{bmatrix} 10 \\ 10 \end{bmatrix} &amp; \text{(State Safety)}\\
+        x_0 &amp;= x(t) &amp; \text{(Measurement)}
+\end{align*}\]</span></p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><p><strong>Weights:</strong> <span class="math inline">\(Q = I_2\)</span>, <span class="math inline">\(R = 20\)</span>. The high input cost <span class="math inline">\(R\)</span> penalises aggressive control actions.</p></li>
+<li><p><strong>Terminal Cost:</strong> <span class="math inline">\(P_N\)</span> is the unique positive-definite solution to the unconstrained LQR Algebraic Riccati Equation.</p></li>
+</ul>
+<p>Figure <a href="#fig:simplempc" data-reference-type="ref" data-reference="fig:simplempc">[fig:simplempc]</a> shows the simulation result obtained after using the code provided below.</p>
+<pre class="matlab" data-language="Matlab"><code>        A = [1.5 0; 1 -1.5];  B = [1; 0];
+        nx = 2; nu = 1;
+        Q = eye(2); R = 20;
+        
+        [P,~,~] = dare(A,B,Q,R);
+        
+        u_min = -5; u_max = 5;
+        x_min = [-10; -10]; x_max = [10; 10];
+        
+        N = 5;
+        
+        % 2. YALMIP Formulation
+        u = sdpvar(nu, N);
+        x = sdpvar(nx, N+1);
+        x_init = sdpvar(nx, 1);
+        
+        obj = 0; 
+        cons = [x(:,1) == x_init];
+        
+        for k = 1:N
+                obj = obj + x(:,k)&#39;*Q*x(:,k) + u(:,k)&#39;*R*u(:,k);
+                cons = [cons, x(:,k+1) == A*x(:,k) + B*u(:,k)];
+                cons = [cons, u_min &lt;= u(:,k) &lt;= u_max];
+                cons = [cons, x_min &lt;= x(:,k) &lt;= x_max];
+        end
+        
+        obj = obj + x(:,N+1)&#39;*P*x(:,N+1);
+        
+        % 3. Optimizer
+        opts = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;quadprog&#39;);
+        mpc_controller = optimizer(cons, obj, opts, x_init, u(:,1));
+        
+        % 4. Simulation Loop
+        T_sim = 30;
+        x_state = [1; -2]; % Initial Condition
+        
+        % Initialize History arrays
+        x_hist = zeros(nx, T_sim+1); 
+        u_hist = zeros(nu, T_sim);
+        
+        % Save the initial state at index 1 (Time 0)
+        x_hist(:,1) = x_state;
+        
+        for t = 1:T_sim
+                % A. Solve MPC
+                [u_opt, errorcode] = mpc_controller(x_state);
+        
+                if errorcode ~= 0, 
+                    warning(&#39;Solver failed!&#39;); 
+                end
+        
+                % B. Log Control (at time k)
+                u_hist(:,t) = u_opt;
+        
+                % C. Apply Control / Plant Physics
+                x_state = A*x_state + B*u_opt;
+        
+                % D. Log Next State (at time k+1)
+                x_hist(:,t+1) = x_state;
+        end
+        
+        % 5. Plotting
+        t_vec_x = 0:T_sim;    % State time vector (0 to 30)
+        t_vec_u = 0:T_sim-1;  % Control time vector (0 to 29)
+        
+        figure;
+        subplot(2,1,1);
+        plot(t_vec_x, x_hist(1,:), &#39;LineWidth&#39;, 2); hold on;
+        plot(t_vec_x, x_hist(2,:), &#39;LineWidth&#39;, 2); 
+        grid on;
+        ylabel(&#39;Position&#39;); title(&#39;State Regulation&#39;);
+        legend(&#39;x_1&#39;, &#39;x_2&#39;);
+        xlim([0 T_sim]);
+        
+        subplot(2,1,2);
+        stairs(t_vec_u, u_hist(1,:), &#39;LineWidth&#39;, 2); hold on; 
+        yline(u_max, &#39;r--&#39;, &#39;Max Limit&#39;, &#39;LineWidth&#39;, 2);
+        yline(u_min, &#39;r--&#39;, &#39;Min Limit&#39;, &#39;LineWidth&#39;, 2);
+        ylabel(&#39;Control Input (u)&#39;); grid on;
+        xlabel(&#39;Time Steps&#39;);
+        xlim([0 T_sim]);</code></pre>
+<div class="center">
+<p><img src="figures/Simple_MPC.png" style="width:70.0%" alt="image" /> <span id="fig:simplempc" data-label="fig:simplempc"></span></p>
+</div>
+</div>
+<h3 id="sec:effect_of_N">The Effect of Horizon (<span class="math inline">\(N\)</span>) and Terminal Cost (<span class="math inline">\(P\)</span>)</h3>
+<p>A common pitfall in MPC design is choosing parameters that make the controller "myopic" (short-sighted). If the horizon <span class="math inline">\(N\)</span> is too short, the controller may not see the approaching constraints or the equilibrium point in time to stop, leading to instability.</p>
+<p>We can solve this problem in two ways:</p>
+<ol>
+<li><p><strong>Increase <span class="math inline">\(N\)</span>:</strong> This extends the controller’s vision, but increases computational complexity linearly (or polynomially, depending on the solver). Typically it would be reasonable to choose <span class="math display">\[\begin{equation*}
+        N \cdot T_s \approx T_\text{settling}
+\end{equation*}\]</span> This selection is dependent on <span class="math inline">\(T_\text{sampling}\)</span>. In other words, we aim to have approximately <span class="math inline">\(10\)</span> to <span class="math inline">\(20\)</span> samples during the rising phase of the step response: <span class="math display">\[\begin{equation}
+        T_\text{sampling} \approx \frac{T_r}{10} \quad \text{to} \quad \frac{T_r}{20}
+\end{equation}\]</span> where <span class="math inline">\(T_r\)</span> is the rise time of the system that is controlled. Hence, <span class="math display">\[\begin{equation*}
+        N \approx 20 \text{--} 50 \text{ samples}
+\end{equation*}\]</span></p></li>
+<li><p><strong>Add Terminal Cost <span class="math inline">\(P\)</span>:</strong> This adds an "artificial" cost to the end of the horizon. By setting <span class="math inline">\(P\)</span> equal to the infinite-horizon LQR cost, we trick the controller into thinking it plans for eternity, even if <span class="math inline">\(N\)</span> is small.</p></li>
+</ol>
+<p>While short horizons can lead to instability, a more common issue in practice is <strong>Performance Degradation</strong>. If the control authority is "expensive" (high <span class="math inline">\(R\)</span>) and the horizon is short, the controller becomes "lazy."</p>
+<figure id="fig:mpc_lazy" data-latex-placement="h">
+<embed src="figures/Effect_of_N.png" style="width:90.0%" />
+<figcaption><strong>Performance Degradation with Short Horizons.</strong> The system starts at <span class="math inline">\(x_0=4\)</span> with expensive control (<span class="math inline">\(R=10\)</span>). The Short Horizon controller (Red) tries to save control effort in the short term as it cannot see long enough, leading to extremely slow convergence. The Terminal Cost controller (Green) recognises the long-term value of aggressive action, matching the performance of the Long Horizon controller (Blue).</figcaption>
+</figure>
+<div class="examplebox">
+<p><span>MATLAB Benchmark: Stability Analysis</span> To rigorously test the stability properties of the MPC controller, we utilise an <em>open-loop unstable scalar system</em>.</p>
+<p><strong>1. The Experiment:</strong> We define an unstable system subject to strict input constraints: <span class="math display">\[\begin{equation*}
+        x_{k+1} = 1.2 x_k + u_k, \qquad -1 \leq u_k \leq 1
+\end{equation*}\]</span> The initial condition <span class="math inline">\(x_0 = 4\)</span> is chosen close to the controllability limit. We compare three controller configurations:</p>
+<ol>
+<li><p><strong>Short Horizon (<span class="math inline">\(N=3\)</span>):</strong> A very myopic controller.</p></li>
+<li><p><strong>Long Horizon (<span class="math inline">\(N=10\)</span>):</strong> A far-sighted controller.</p></li>
+<li><p><strong>Short Horizon with <span class="math inline">\(P\)</span> (<span class="math inline">\(N=3, P=P_{LQR}\)</span>):</strong> A myopic controller compensated with a terminal cost.</p></li>
+</ol>
+<p><strong>2. The Results (see Figure <a href="#fig:mpc_lazy" data-reference-type="ref" data-reference="fig:mpc_lazy">1.1</a>):</strong></p>
+<ul>
+<li><p><strong>The Lazy Controller (Red Line):</strong> With <span class="math inline">\(N=3\)</span> and no terminal cost, the controller minimises the cost over a very short window. It calculates that applying maximum braking (<span class="math inline">\(u=-1\)</span>) is <em>too expensive</em> (<span class="math inline">\(R=10\)</span>) relative to the short-term reduction in state error. It chooses a "soft" braking strategy (<span class="math inline">\(u \approx -0.9\)</span>). While this prevents immediate explosion, convergence is very slow. The controller fails to realise that dragging out the error over a long time will result in a much higher <em>total</em> cost.</p></li>
+<li><p><strong>The Optimal Controller (Green/Blue Lines):</strong> By adding the Terminal Cost (<span class="math inline">\(P\)</span>) or extending the horizon (<span class="math inline">\(N=10\)</span>), the controller accounts for the <em>infinite tail</em> of the cost function. It realises that while braking hard (<span class="math inline">\(u=-1\)</span>) is expensive <em>now</em>, it is the only way to minimise the sum of squared errors over the long run. Consequently, it acts aggressively, driving the state to zero in minimal time.</p></li>
+</ul>
+<p><strong>Conclusion:</strong> The Terminal Cost <span class="math inline">\(P\)</span> is not just a stability anchor; it is a crucial tuning parameter that restores <strong>long-term optimality</strong> to short-horizon controllers.</p>
+</div>
+<h3 id="sec:mpc_stability_theory">Recursive Feasibility and Formal Stability Guarantees<span class="math inline">\(^{(*)}\)</span></h3>
+<p>The previous sections showed experimentally that adding the terminal cost <span class="math inline">\(P\)</span> improves MPC performance and can prevent instability. We now explain <em>why</em> this works, and what additional ingredient is needed to <em>guarantee</em> stability rigorously.</p>
+<h4 id="the-gap-in-the-argument">The Gap in the Argument</h4>
+<p>Consider the MPC cost function: <span class="math display">\[J = \sum_{k=0}^{N-1} \bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) + x_N^\top P\, x_N\]</span> The terminal cost <span class="math inline">\(x_N^\top P\, x_N\)</span> is supposed to represent the cost of controlling the system from <span class="math inline">\(x_N\)</span> to the origin <em>after</em> the horizon ends. This representation is exact when the LQR controller <span class="math inline">\(u = -Kx\)</span> is applied from step <span class="math inline">\(N\)</span> onward <strong>and no constraints are violated</strong> during that infinite tail.</p>
+<p>But nothing in the formulation above prevents <span class="math inline">\(x_N\)</span> from landing in a region where the LQR input <span class="math inline">\(-Kx_N\)</span> would violate the constraint <span class="math inline">\(|u| \le u_{\max}\)</span>. If that happens, the terminal cost <span class="math inline">\(P\)</span> is wrong — it promises a future cost that cannot actually be achieved without breaking the constraints.</p>
+<p>This is not only a theoretical concern. When <span class="math inline">\(x_N\)</span> is large and the constraints are tight, the MPC may plan a trajectory that looks optimal over the <span class="math inline">\(N\)</span>-step window but leads to constraint violations (or solver infeasibility) at the very next time step.</p>
+<p>To close this gap, we need two things:</p>
+<ol>
+<li><p>A <strong>terminal set</strong> <span class="math inline">\(\mathcal{X}_f\)</span> — a region of the state space where the LQR controller can operate indefinitely without violating any constraint.</p></li>
+<li><p>A <strong>terminal constraint</strong> <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> added to the MPC optimisation, which forces the predicted terminal state to land inside this safe region.</p></li>
+</ol>
+<h4 id="positive-invariant-sets">Positive Invariant Sets</h4>
+<p>The terminal set <span class="math inline">\(\mathcal{X}_f\)</span> must have a very specific property: once the state enters <span class="math inline">\(\mathcal{X}_f\)</span>, the LQR controller must keep it there forever, while satisfying all constraints at every future step. A set with this property is called <em>positively invariant</em>.</p>
+<div class="defnbox">
+<p><span>Definition: Positive Invariant Set</span> A set <span class="math inline">\(\mathcal{X}_f \subseteq \mathbb{R}^n\)</span> is a <strong>positive invariant set</strong> for the closed-loop system <span class="math inline">\(x_{k+1} = (A - BK)\,x_k\)</span> under the terminal control law <span class="math inline">\(u = -Kx\)</span>, subject to constraints <span class="math inline">\(u \in \mathcal{U}\)</span>, <span class="math inline">\(x \in \mathcal{X}\)</span>, if for every state <span class="math inline">\(x \in \mathcal{X}_f\)</span> the following three conditions hold:</p>
+<ol>
+<li><p>The input <span class="math inline">\(u = -Kx\)</span> satisfies the input constraints: <span class="math inline">\(-Kx \in \mathcal{U}\)</span>.</p></li>
+<li><p>The next state satisfies the state constraints: <span class="math inline">\((A - BK)x \in \mathcal{X}\)</span>.</p></li>
+<li><p>The next state stays in the set: <span class="math inline">\((A - BK)x \in \mathcal{X}_f\)</span>.</p></li>
+</ol>
+</div>
+<p>Think of <span class="math inline">\(\mathcal{X}_f\)</span> as a <em>safe harbour</em>. The MPC controller must steer the state into <span class="math inline">\(\mathcal{X}_f\)</span> by the end of the prediction horizon. Once the state is inside, the LQR controller takes over and handles everything from that point on — no constraint violations, no instability, guaranteed convergence to the origin.</p>
+<h4 id="subsec:terminal_set_scalar">Computing <span class="math inline">\(\mathcal{X}_f\)</span>: A Scalar Example</h4>
+<p>We compute <span class="math inline">\(\mathcal{X}_f\)</span> step by step for the scalar system used throughout this chapter.</p>
+<p><strong>System:</strong> <span class="math inline">\(x_{k+1} = 1.2\,x_k + u_k\)</span>, with input constraint <span class="math inline">\(|u_k| \le 1\)</span>.</p>
+<p><strong>Step 1 — Find the LQR gain.</strong> Solving the DARE with <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 1\)</span> gives <span class="math inline">\(P \approx 1.95\)</span> and: <span class="math display">\[K = \frac{a P b}{R + b^2 P} = \frac{1.2 \times 1.95}{1 + 1.95} \approx 0.79\]</span> The terminal controller is <span class="math inline">\(u = -Kx \approx -0.79\,x\)</span>, and the closed-loop eigenvalue is: <span class="math display">\[a_{cl} = a - bK = 1.2 - 0.79 = 0.41\]</span> Since <span class="math inline">\(|0.41| &lt; 1\)</span>, the closed-loop system under LQR is stable.</p>
+<p><strong>Step 2 — Find the largest interval where the input constraint holds.</strong> The LQR input is <span class="math inline">\(u = -Kx\)</span>. The constraint <span class="math inline">\(|u| \le 1\)</span> becomes <span class="math inline">\(|Kx| \le 1\)</span>, which gives: <span class="math display">\[|x| \le \frac{1}{K} = \frac{1}{0.79} \approx 1.27\]</span> So the candidate terminal set is <span class="math inline">\(\mathcal{X}_f = \{x : |x| \le 1.27\}\)</span>.</p>
+<p><strong>Step 3 — Verify positive invariance.</strong> Take any <span class="math inline">\(x\)</span> inside <span class="math inline">\(\mathcal{X}_f\)</span>, so <span class="math inline">\(|x| \le 1.27\)</span>. Under the LQR controller, the next state is: <span class="math display">\[|x^+| = |a_{cl} \cdot x| = 0.41 \times |x| \le 0.41 \times 1.27 = 0.52\]</span> Since <span class="math inline">\(0.52 &lt; 1.27\)</span>, the next state is well inside <span class="math inline">\(\mathcal{X}_f\)</span>. The set is positively invariant.</p>
+<p>In fact, the state <em>contracts</em> by a factor of <span class="math inline">\(0.41\)</span> at each step inside <span class="math inline">\(\mathcal{X}_f\)</span>. After entering the safe harbour, the system converges to zero quickly under the LQR controller.</p>
+<div class="notebox">
+<p><span>Why does this work?</span> The key is that the closed-loop eigenvalue satisfies <span class="math inline">\(|a_{cl}| &lt; 1\)</span>. This means <span class="math inline">\(|x^+| &lt; |x|\)</span> for any non-zero <span class="math inline">\(x\)</span>, so the state always shrinks. And because the boundary of <span class="math inline">\(\mathcal{X}_f\)</span> is defined by the constraint <span class="math inline">\(|Kx| = 1\)</span>, the shrinking state can never reach the boundary again once it moves inward. The constraints remain satisfied at every future step.</p>
+<p>If the system also had state constraints <span class="math inline">\(|x| \le x_{\max}\)</span>, we would need <span class="math inline">\(\mathcal{X}_f \subseteq \{x : |x| \le x_{\max}\}\)</span>. For the example above, <span class="math inline">\(1.27 &lt; x_{\max}\)</span> is required.</p>
+</div>
+<h4 id="the-complete-mpc-problem-with-terminal-constraint">The Complete MPC Problem with Terminal Constraint</h4>
+<p>We now modify the MPC formulation from Section <a href="#sec:mpc_formulation" data-reference-type="ref" data-reference="sec:mpc_formulation">1.2</a> by adding the terminal constraint. The optimisation becomes:</p>
+<p><span class="math display">\[\begin{align}
+    \min_{u} \quad &amp; J = x_N^\top P\, x_N + \sum_{k=0}^{N-1} \bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) \nonumber \\
+    \text{s.t.} \quad &amp; x_{k+1} = Ax_k + Bu_k, \quad k = 0, \ldots, N-1 \nonumber \\
+    &amp; u_{\min} \le u_k \le u_{\max}, \quad k = 0, \ldots, N-1 \nonumber \\
+    &amp; x_{\min} \le x_k \le x_{\max}, \quad k = 1, \ldots, N \nonumber \\
+    &amp; \boxed{x_N \in \mathcal{X}_f} \label{eq:mpc_terminal}
+\end{align}\]</span></p>
+<p>The only difference from before is the last line. This extra constraint restricts where the prediction horizon is allowed to end. The QP becomes slightly more constrained, but in return it provides a formal stability guarantee.</p>
+<p>For the scalar case, <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> simply means <span class="math inline">\(|x_N| \le 1/K\)</span>. For multi-state systems, <span class="math inline">\(\mathcal{X}_f\)</span> is typically a polytope (a region defined by linear inequalities), and the constraint <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> adds a set of linear inequalities to the QP — so it remains a QP.</p>
+<h4 id="recursive-feasibility">Recursive Feasibility</h4>
+<p>A controller is useless if it can solve the optimisation at time <span class="math inline">\(t\)</span> but not at time <span class="math inline">\(t+1\)</span>. We need the guarantee that once the MPC problem is feasible, it <em>stays</em> feasible forever. This property is called <strong>recursive feasibility</strong>.</p>
+<div class="defnbox">
+<p><span>Definition: Recursive Feasibility</span> The MPC problem is <strong>recursively feasible</strong> if, whenever a feasible solution exists at time <span class="math inline">\(t\)</span>, a feasible solution also exists at time <span class="math inline">\(t+1\)</span> after applying the optimal input <span class="math inline">\(u_0^\star\)</span> to the plant.</p>
+</div>
+<p>The proof uses a simple but powerful idea called the <strong>shifted sequence</strong>.</p>
+<p><strong>Setup.</strong> Suppose at time <span class="math inline">\(t\)</span>, the MPC solver returns the optimal input sequence: <span class="math display">\[u^\star = \{u_0^\star,\; u_1^\star,\; \ldots,\; u_{N-1}^\star\}\]</span> with predicted states <span class="math inline">\(\{x_0, x_1, \ldots, x_N\}\)</span>, where <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> (the terminal constraint is satisfied).</p>
+<p>We apply <span class="math inline">\(u_0^\star\)</span> to the plant. The system moves to <span class="math inline">\(x_1\)</span>.</p>
+<p><strong>Constructing a feasible candidate at time <span class="math inline">\(t+1\)</span>.</strong> At the next time step, we need <em>some</em> feasible input sequence starting from <span class="math inline">\(x_1\)</span>. We do not need the optimal one — any feasible sequence proves that the problem has a solution. The optimiser will then find an even better one.</p>
+<p>Here is our candidate: <span class="math display">\[\tilde{u} = \{u_1^\star,\; u_2^\star,\; \ldots,\; u_{N-1}^\star,\; \underbrace{-K x_N}_{\text{LQR input at } x_N}\}\]</span> We take the old optimal sequence, drop <span class="math inline">\(u_0^\star\)</span> (already used), shift everything one step to the left, and append the LQR input <span class="math inline">\(-Kx_N\)</span> at the end.</p>
+<p><strong>Why is this candidate feasible?</strong></p>
+<ul>
+<li><p><strong>Inputs <span class="math inline">\(u_1^\star, \ldots, u_{N-1}^\star\)</span>:</strong> These satisfied the constraints in the original problem, so they still do.</p></li>
+<li><p><strong>Predicted states <span class="math inline">\(x_2, x_3, \ldots, x_N\)</span>:</strong> These are the same states from the original prediction (the dynamics are deterministic). They satisfied the state constraints before, so they still do.</p></li>
+<li><p><strong>The appended input <span class="math inline">\(-Kx_N\)</span>:</strong> Since <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> and <span class="math inline">\(\mathcal{X}_f\)</span> is positively invariant, the LQR input <span class="math inline">\(-Kx_N\)</span> satisfies the input constraints (by condition 1 of the definition).</p></li>
+<li><p><strong>The new terminal state <span class="math inline">\(\tilde{x}_N = (A - BK)x_N\)</span>:</strong> Since <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> and the set is positively invariant, <span class="math inline">\((A - BK)x_N \in \mathcal{X}_f\)</span> (by condition 3). So the terminal constraint is satisfied.</p></li>
+</ul>
+<p>Every constraint is met. The candidate <span class="math inline">\(\tilde{u}\)</span> is feasible. The solver is guaranteed to find a solution (possibly a better one), so the MPC problem will never become infeasible.</p>
+<div class="alertbox">
+<p><span>The role of each ingredient</span> Remove any one ingredient and the argument breaks down:</p>
+<ul>
+<li><p><strong>Without <span class="math inline">\(\mathcal{X}_f\)</span>:</strong> We cannot guarantee that <span class="math inline">\(-Kx_N\)</span> satisfies the input constraints.</p></li>
+<li><p><strong>Without the terminal constraint <span class="math inline">\(x_N \in \mathcal{X}_f\)</span>:</strong> We cannot guarantee that the appended input is feasible or that the new terminal state stays in <span class="math inline">\(\mathcal{X}_f\)</span>.</p></li>
+<li><p><strong>Without positive invariance:</strong> The new terminal state <span class="math inline">\((A - BK)x_N\)</span> might leave <span class="math inline">\(\mathcal{X}_f\)</span>, breaking the terminal constraint.</p></li>
+</ul>
+</div>
+<h4 id="subsec:stability_proof">The Stability Proof</h4>
+<p>We now show that the closed-loop system is <strong>asymptotically stable</strong>: the state converges to the origin. The argument uses the optimal cost <span class="math inline">\(J^\star(x_t)\)</span> as a <strong>Lyapunov function</strong>.</p>
+<p>A Lyapunov function is any function <span class="math inline">\(V(x)\)</span> that satisfies three conditions:</p>
+<ol>
+<li><p><span class="math inline">\(V(x) &gt; 0\)</span> for all <span class="math inline">\(x \ne 0\)</span>, and <span class="math inline">\(V(0) = 0\)</span>. (Positive definite.)</p></li>
+<li><p><span class="math inline">\(V(x_{t+1}) &lt; V(x_t)\)</span> whenever <span class="math inline">\(x_t \ne 0\)</span>. (Strictly decreasing.)</p></li>
+<li><p><span class="math inline">\(V(x) \to \infty\)</span> as <span class="math inline">\(\|x\| \to \infty\)</span>. (Radially unbounded.)</p></li>
+</ol>
+<p>If such a function exists, the state must converge to zero. The reasoning is straightforward: <span class="math inline">\(V\)</span> is positive and keeps decreasing, so it must converge to some limit. Since <span class="math inline">\(V\)</span> can only be zero at <span class="math inline">\(x = 0\)</span>, the state must converge there too.</p>
+<p>We claim that <span class="math inline">\(V(x_t) = J^\star(x_t)\)</span> — the optimal MPC cost — satisfies all three conditions.</p>
+<p><strong>Condition 1: Positivity.</strong> Since <span class="math inline">\(Q \succ 0\)</span>, any non-zero initial state incurs a strictly positive first stage cost: <span class="math inline">\(J^\star(x) \ge x^\top Q\, x &gt; 0\)</span> for <span class="math inline">\(x \ne 0\)</span>. And <span class="math inline">\(J^\star(0) = 0\)</span> because the zero sequence <span class="math inline">\(u = 0\)</span> keeps the state at zero with zero cost.</p>
+<p><strong>Condition 3: Radial unboundedness.</strong> <span class="math inline">\(J^\star(x) \ge x^\top Q\, x\)</span>, so as <span class="math inline">\(\|x\| \to \infty\)</span>, <span class="math inline">\(J^\star \to \infty\)</span>.</p>
+<p><strong>Condition 2: Strict decrease.</strong> This is the main step. We must show that <span class="math inline">\(J^\star(x_{t+1}) &lt; J^\star(x_t)\)</span>.</p>
+<p>Write <span class="math inline">\(\ell(x,u) = x^\top Q\, x + u^\top R\, u\)</span> for the stage cost, and <span class="math inline">\(V_f(x) = x^\top P\, x\)</span> for the terminal cost. At time <span class="math inline">\(t\)</span>, the optimal cost is: <span class="math display">\[J^\star(x_t) = \ell(x_t, u_0^\star) + \sum_{k=1}^{N-1} \ell(x_k, u_k^\star) + V_f(x_N)\]</span></p>
+<p>At time <span class="math inline">\(t+1\)</span>, the state is <span class="math inline">\(x_{t+1} = x_1\)</span>. We do not know the new optimal cost, but we can bound it from above using the shifted candidate <span class="math inline">\(\tilde{u}\)</span>, since the optimal cost is at most the cost of any feasible sequence: <span class="math display">\[J^\star(x_{t+1}) \;\le\; \underbrace{\sum_{k=1}^{N-1} \ell(x_k, u_k^\star)}_{\text{old stage costs (shifted)}} + \underbrace{\ell(x_N,\, -Kx_N) + V_f\bigl((A-BK)x_N\bigr)}_{\text{cost of the appended LQR step}}\]</span></p>
+<p>Now subtract: <span class="math display">\[J^\star(x_t) - J^\star(x_{t+1}) \;\ge\; \ell(x_t, u_0^\star) + V_f(x_N) - \ell(x_N, -Kx_N) - V_f\bigl((A-BK)x_N\bigr)\]</span></p>
+<p>Here is where the choice of <span class="math inline">\(P\)</span> matters. Because <span class="math inline">\(P\)</span> is the DARE solution, it satisfies: <span class="math display">\[V_f(x) = \ell(x, -Kx) + V_f\bigl((A - BK)x\bigr) \quad \text{for all } x\]</span> This is exactly what the Riccati equation says in cost-to-go language: the LQR cost at state <span class="math inline">\(x\)</span> equals the current stage cost under the LQR law plus the LQR cost at the next state. Substituting <span class="math inline">\(x = x_N\)</span>: <span class="math display">\[V_f(x_N) - \ell(x_N, -Kx_N) - V_f\bigl((A - BK)x_N\bigr) = 0\]</span></p>
+<p>So the middle terms cancel, leaving: <span class="math display">\[J^\star(x_t) - J^\star(x_{t+1}) \;\ge\; \ell(x_t, u_0^\star) \;=\; x_t^\top Q\, x_t + {u_0^\star}^\top R\, u_0^\star \;\ge\; x_t^\top Q\, x_t \;&gt;\; 0\]</span></p>
+<p>The optimal cost decreases by at least <span class="math inline">\(x_t^\top Q\, x_t\)</span> at every step. Since <span class="math inline">\(Q \succ 0\)</span>, this decrease is strictly positive whenever <span class="math inline">\(x_t \ne 0\)</span>.</p>
+<div class="summarybox">
+<p><span>Theorem: Stability of MPC with Terminal Ingredients</span> Consider the linear system <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span> with constraints <span class="math inline">\(u_k \in \mathcal{U}\)</span>, <span class="math inline">\(x_k \in \mathcal{X}\)</span>, stage cost weights <span class="math inline">\(Q \succ 0\)</span>, <span class="math inline">\(R \succ 0\)</span>, and suppose:</p>
+<ol>
+<li><p>The terminal cost is <span class="math inline">\(V_f(x) = x^\top P\, x\)</span>, where <span class="math inline">\(P\)</span> solves the DARE.</p></li>
+<li><p>The terminal controller is <span class="math inline">\(\kappa_f(x) = -Kx\)</span> (the LQR gain from the same DARE).</p></li>
+<li><p>A positive invariant set <span class="math inline">\(\mathcal{X}_f\)</span> exists for the closed-loop <span class="math inline">\((A - BK)\)</span> under the constraints.</p></li>
+<li><p>The terminal constraint <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> is included in the MPC formulation.</p></li>
+</ol>
+<p>Then:</p>
+<ul>
+<li><p><strong>Recursive feasibility:</strong> If the MPC is feasible at <span class="math inline">\(t = 0\)</span>, it is feasible for all <span class="math inline">\(t \ge 0\)</span>.</p></li>
+<li><p><strong>Asymptotic stability:</strong> The closed-loop state converges to the origin: <span class="math inline">\(x_t \to 0\)</span> as <span class="math inline">\(t \to \infty\)</span>.</p></li>
+<li><p><strong>Lyapunov function:</strong> The optimal cost <span class="math inline">\(J^\star(x_t)\)</span> is non-increasing and serves as a Lyapunov function for the closed-loop system.</p></li>
+</ul>
+</div>
+<h4 id="what-this-means-in-practice">What This Means in Practice</h4>
+<p>The stability theorem gives a clean recipe: choose <span class="math inline">\(P\)</span> and <span class="math inline">\(K\)</span> from the DARE, compute the positive invariant set <span class="math inline">\(\mathcal{X}_f\)</span>, and add the constraint <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> to the QP. However, there are practical trade-offs.</p>
+<ul>
+<li><p><strong>The terminal constraint shrinks the feasible region.</strong> Only initial states from which the MPC can drive <span class="math inline">\(x_N\)</span> into <span class="math inline">\(\mathcal{X}_f\)</span> in <span class="math inline">\(N\)</span> steps are feasible. If <span class="math inline">\(N\)</span> is small or <span class="math inline">\(\mathcal{X}_f\)</span> is small, the set of feasible initial states may be too restrictive.</p></li>
+<li><p><strong>Increasing <span class="math inline">\(N\)</span> enlarges the feasible region.</strong> With more steps, the controller has more room to manoeuvre the terminal state into <span class="math inline">\(\mathcal{X}_f\)</span>. In the limit <span class="math inline">\(N \to \infty\)</span>, the set of feasible initial states approaches the maximal controllable set.</p></li>
+<li><p><strong>Computing <span class="math inline">\(\mathcal{X}_f\)</span> for multi-state systems is harder.</strong> For a scalar system, <span class="math inline">\(\mathcal{X}_f\)</span> is just an interval. For higher-dimensional systems, it is a polytope (a region defined by many linear inequalities). Algorithms exist to compute it iteratively, but the number of inequalities can grow quickly.</p></li>
+<li><p><strong>Many practical implementations omit the terminal constraint.</strong> Engineers often rely on choosing <span class="math inline">\(N\)</span> large enough that <span class="math inline">\(x_N\)</span> naturally ends up near the origin, where the LQR law does not violate constraints. This is not rigorous, but it works well when the horizon covers the system’s settling time (<span class="math inline">\(N \cdot T_s \approx T_{\text{settling}}\)</span>, as discussed in Section <a href="#sec:effect_of_N" data-reference-type="ref" data-reference="sec:effect_of_N">1.6</a>). The terminal cost <span class="math inline">\(P\)</span> alone provides adequate stability in most applications, even without the formal terminal set constraint.</p></li>
+</ul>
+<p>The following table summarises the three levels of MPC design, from simplest to most rigorous:</p>
+<div class="center">
+<div class="tabular">
+<p><span>L<span>3.5cm</span> C<span>2.5cm</span> C<span>2.5cm</span> C<span>3.5cm</span></span> <strong>Design</strong> &amp; <strong>Terminal cost</strong> &amp; <strong>Terminal set</strong> &amp; <strong>Guarantee</strong><br />
+Basic MPC &amp; <span class="math inline">\(Q_N = Q\)</span> &amp; None &amp; No formal guarantee<br />
+MPC with <span class="math inline">\(P\)</span> &amp; <span class="math inline">\(Q_N = P\)</span> (DARE) &amp; None &amp; Works in practice; no proof<br />
+Rigorous MPC &amp; <span class="math inline">\(Q_N = P\)</span> (DARE) &amp; <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> &amp; Recursive feasibility + stability<br />
+</p>
+</div>
+</div>
+<p>For an MSc-level course and most industrial applications, using <span class="math inline">\(Q_N = P\)</span> with a sufficiently long horizon is the standard approach. The rigorous formulation with <span class="math inline">\(\mathcal{X}_f\)</span> is used when formal certification is required (e.g., aerospace, medical devices) or when the horizon <span class="math inline">\(N\)</span> must be kept very short for computational reasons.</p>
+<h4 id="why-terminal-set-size-matters">Why Terminal Set Size Matters</h4>
+<p>The size of <span class="math inline">\(\mathcal{X}_f\)</span> directly controls the set of initial states from which MPC can find a feasible solution. Understanding this trade-off is important for controller design.</p>
+<p><strong>A small terminal set</strong> means <span class="math inline">\(\mathcal{X}_f\)</span> is a tight region around the origin. The MPC must drive <span class="math inline">\(x_N\)</span> into this small target within <span class="math inline">\(N\)</span> steps, which is harder. The consequence: fewer initial states lead to a feasible problem, and a longer horizon <span class="math inline">\(N\)</span> may be needed to compensate.</p>
+<p><strong>A large terminal set</strong> means <span class="math inline">\(\mathcal{X}_f\)</span> covers more of the state space. The MPC has an easier target for <span class="math inline">\(x_N\)</span>, so feasibility is maintained for a wider range of initial conditions, even with a short horizon.</p>
+<p>However, there is an upper limit: <span class="math inline">\(\mathcal{X}_f\)</span> cannot exceed the <em>maximal positive invariant set</em> for the closed-loop system <span class="math inline">\((A-BK)\)</span> under the given constraints. Any state outside this maximal set will eventually be driven to a constraint violation by the LQR controller, so it cannot belong to <span class="math inline">\(\mathcal{X}_f\)</span>.</p>
+<p>The ideal design therefore computes the largest possible <span class="math inline">\(\mathcal{X}_f\)</span> (the maximal positive invariant set), which maximises the region of attraction.</p>
+<div class="center">
+
+</div>
+<p>In the figure above, the dashed box is the state constraint set <span class="math inline">\(\mathcal{X}\)</span>. With a small <span class="math inline">\(\mathcal{X}_f\)</span> (red), the MPC must work harder to hit the target. With a large <span class="math inline">\(\mathcal{X}_f\)</span> (blue), more initial states lead to feasible problems.</p>
+<h4 id="computing-mathcalx_f-for-multi-state-systems-using-mpt3">Computing <span class="math inline">\(\mathcal{X}_f\)</span> for Multi-State Systems Using MPT3</h4>
+<p>For scalar systems, we computed <span class="math inline">\(\mathcal{X}_f\)</span> by hand in the earlier example. For systems with two or more states, the terminal set is a polytope (a region bounded by many linear inequalities), and computing it by hand becomes impractical. The standard approach uses an iterative algorithm:</p>
+<ol>
+<li><p>Start with the constraint set: <span class="math inline">\(\Omega_0 = \{x \in \mathcal{X} \mid Kx \in \mathcal{U}\}\)</span>.</p></li>
+<li><p>At each iteration, intersect with the pre-image: <span class="math inline">\(\Omega_{i+1} = \Omega_i \cap \{x \mid (A-BK)x \in \Omega_i\}\)</span>.</p></li>
+<li><p>Repeat until <span class="math inline">\(\Omega_{i+1} = \Omega_i\)</span> (the set stops shrinking). This fixed point is the maximal positive invariant set <span class="math inline">\(\mathcal{X}_f\)</span>.</p></li>
+</ol>
+<p>The iteration is guaranteed to converge in a finite number of steps for stable closed-loop systems with polytopic constraints.</p>
+<p>In MATLAB, the <strong>Multi-Parametric Toolbox 3 (MPT3)</strong> <span class="citation" data-cites="Herceg2013"></span> automates this computation. MPT3 is a free toolbox available at <code>https://www.mpt3.org</code>. The following code computes <span class="math inline">\(\mathcal{X}_f\)</span> for a two-state system:</p>
+<pre class="matlab" data-language="Matlab" data-caption="Computing $\mathcal{X}_f$ using MPT3"><code>A = [1.2 1; 0 1];
+B = [0.5; 1];
+
+% Constraints
+umax = 1;
+xmax = [5; 5];  % state bounds: -xmax &lt;= x &lt;= xmax
+
+% Step 1: Compute LQR gain and DARE solution
+Q = eye(2);
+R = 1;
+[K_lqr, P_dare] = dlqr(A, B, Q, R);
+
+% Closed-loop matrix under LQR
+Acl = A - B*K_lqr;
+
+% Step 2: Define constraint polytopes using MPT3
+X = Polyhedron(&#39;lb&#39;, -xmax, &#39;ub&#39;, xmax);   % state constraints
+U = Polyhedron(&#39;lb&#39;, -umax, &#39;ub&#39;, umax);   % input constraints
+
+% Step 3: Build the closed-loop LTI system
+sys = LTISystem(&#39;A&#39;, Acl);
+sys.x.min = -xmax;
+sys.x.max = xmax;
+
+% Map input constraints through K: |K*x| &lt;= umax
+KPoly = Polyhedron(&#39;A&#39;, [K_lqr; -K_lqr], &#39;b&#39;, [umax; umax]);
+
+% Step 4: Compute the maximal positive invariant set
+Xf = sys.invariantSet();
+
+% Intersect with input constraint mapped through K
+Xf = Xf &amp; KPoly;
+
+% Step 5: Visualise
+figure;
+plot(X, &#39;color&#39;, [0.9 0.9 0.9], &#39;alpha&#39;, 0.3); hold on;
+plot(Xf, &#39;color&#39;, &#39;blue&#39;, &#39;alpha&#39;, 0.5);
+xlabel(&#39;x_1&#39;); ylabel(&#39;x_2&#39;);
+legend(&#39;State constraints X&#39;, &#39;Terminal set X_f&#39;);
+title(&#39;Maximal Positive Invariant Set&#39;);</code></pre>
+<p>The key function is <code>sys.invariantSet()</code>, which performs the iterative algorithm described above automatically. For the example above, the result is a polytope with several faces (linear inequalities) that can be directly used as the terminal constraint <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> in the MPC formulation.</p>
+<div class="notebox">
+<p><span>MPT3 and YALMIP</span> MPT3 uses YALMIP internally, so both toolboxes must be installed. Once <span class="math inline">\(\mathcal{X}_f\)</span> is computed as a <code>Polyhedron</code> object, its half-space representation <span class="math inline">\(H_f x \le h_f\)</span> can be extracted with <code>Xf.A</code> and <code>Xf.b</code>, and added directly to the MPC optimisation as the linear constraint <span class="math inline">\(H_f x_N \le h_f\)</span>.</p>
+</div>
+<div class="notebox">
+<p><span>Combining MPC with State Estimation</span> This chapter assumed that the full state <span class="math inline">\(x_k\)</span> is available for measurement. In practice, only noisy partial measurements <span class="math inline">\(y_k = Cx_k + v_k\)</span> are available, and the state must be estimated using a Kalman filter (Chapter 6). Chapter 8 develops the output-feedback MPC architecture that combines the estimator, a target calculator, and the MPC regulator into a complete control system.</p>
+</div>
+<h3 class="unnumbered" id="exercises">Exercises</h3>
+<ol>
+<li><p>Consider the scalar system <span class="math display">\[x_{k+1} = 1.5\, x_k + u_k\]</span> with weighting matrices <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 2\)</span>, and a prediction horizon <span class="math inline">\(N = 2\)</span>.</p>
+<ol>
+<li><p>Write out the predicted states <span class="math inline">\(x_1\)</span> and <span class="math inline">\(x_2\)</span> as functions of <span class="math inline">\(x_0\)</span> and the decision variables <span class="math inline">\(u_0, u_1\)</span>.</p></li>
+<li><p>Using these expressions, eliminate the states from the cost function <span class="math display">\[J = x_2^\top Q_N\, x_2 + \sum_{k=0}^{1}\bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr)\]</span> (set <span class="math inline">\(Q_N = Q\)</span> for simplicity) and express <span class="math inline">\(J\)</span> in the standard quadratic form <span class="math display">\[J = u^\top H\, u + 2\, x_0^\top f^\top u + \text{const.}\]</span> where <span class="math inline">\(u = [u_0 \;\; u_1]^\top\)</span>. State the matrices <span class="math inline">\(H\)</span> and <span class="math inline">\(f\)</span> explicitly.</p></li>
+</ol></li>
+<li><p>For the system <span class="math display">\[x_{k+1} = 1.2\, x_k + u_k, \qquad Q = 1, \quad R = 0.5, \quad N = 1, \quad Q_N = Q,\]</span> with no constraints and an initial condition <span class="math inline">\(x_0 = 3\)</span>:</p>
+<ol>
+<li><p>Show that the MPC optimisation at <span class="math inline">\(k = 0\)</span> reduces to a single-variable unconstrained quadratic minimisation in <span class="math inline">\(u_0\)</span>.</p></li>
+<li><p>Find the optimal input <span class="math inline">\(u_0^\star\)</span> and the resulting next state <span class="math inline">\(x_1\)</span>.</p></li>
+<li><p>Explain why only <span class="math inline">\(u_0^\star\)</span> is applied to the plant and what happens at the next sampling instant under the receding horizon principle.</p></li>
+</ol></li>
+<li><p>Consider the same system as in Exercise 2, but now add the input constraint <span class="math inline">\(-1 \le u_k \le 1\)</span>.</p>
+<ol>
+<li><p>For <span class="math inline">\(x_0 = 3\)</span>, determine whether the unconstrained optimum <span class="math inline">\(u_0^\star\)</span> from Exercise 2 violates the constraint. If so, find the constrained optimum.</p></li>
+<li><p>Repeat for <span class="math inline">\(x_0 = 10\)</span>. Simulate the closed-loop response for several steps by applying the receding horizon strategy with <span class="math inline">\(N = 1\)</span>. Does the state converge to the origin?</p></li>
+<li><p>Determine (analytically or by trial) the largest initial condition <span class="math inline">\(|x_0|\)</span> for which the MPC problem with <span class="math inline">\(N = 1\)</span> and <span class="math inline">\(-1 \le u_k \le 1\)</span> remains feasible. What happens if <span class="math inline">\(x_0\)</span> exceeds this value?</p></li>
+</ol></li>
+<li><p>Consider a double integrator in discrete time: <span class="math display">\[A = \begin{bmatrix} 1 &amp; 1 \\ 0 &amp; 1 \end{bmatrix}, \qquad B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix},\]</span> with <span class="math inline">\(Q = I_2\)</span>, <span class="math inline">\(R = 1\)</span>, <span class="math inline">\(Q_N = Q\)</span>, input constraint <span class="math inline">\(-1 \le u_k \le 1\)</span>, and initial condition <span class="math inline">\(x_0 = [4 \;\; 0]^\top\)</span>.</p>
+<ol>
+<li><p>Using YALMIP (or by hand for <span class="math inline">\(N = 2\)</span>), solve the MPC problem for horizons <span class="math inline">\(N = 2, 5, 10, 20\)</span> and record the first optimal input <span class="math inline">\(u_0^\star\)</span> in each case.</p></li>
+<li><p>Simulate the closed-loop response for each horizon length over <span class="math inline">\(30\)</span> time steps. Plot the state trajectories and input sequences.</p></li>
+<li><p>Discuss how <span class="math inline">\(N\)</span> affects the speed of convergence, constraint activity, and computational cost. What is the minimum <span class="math inline">\(N\)</span> for which the closed-loop system appears stable?</p></li>
+</ol></li>
+<li><p>Return to the scalar system <span class="math display">\[x_{k+1} = 1.2\, x_k + u_k, \qquad -1 \le u_k \le 1,\]</span> with <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 10\)</span>, and <span class="math inline">\(x_0 = 4\)</span>.</p>
+<ol>
+<li><p>Solve the discrete algebraic Riccati equation to obtain the terminal cost weight <span class="math inline">\(P\)</span>.</p></li>
+<li><p>Simulate the closed-loop system under MPC with <span class="math inline">\(N = 3\)</span> and <span class="math inline">\(Q_N = Q\)</span> (no terminal cost correction). Repeat with <span class="math inline">\(Q_N = P\)</span>. Compare the convergence rates.</p></li>
+<li><p>Explain, using the concept of the infinite-horizon cost-to-go, why adding the terminal cost <span class="math inline">\(P\)</span> improves performance even though the horizon <span class="math inline">\(N\)</span> remains short.</p></li>
+<li><p>For the case <span class="math inline">\(Q_N = P\)</span>, under what conditions is the terminal cost a valid approximation of the true cost-to-go beyond the horizon? State the role of the terminal set <span class="math inline">\(\mathcal{X}_f\)</span> and the terminal control law <span class="math inline">\(u = -Kx\)</span> in a rigorous stability proof.</p></li>
+</ol></li>
+<li><p>A control engineer designs an MPC controller for a chemical reactor modelled as <span class="math display">\[x_{k+1} = A x_k + B u_k, \qquad x_k \in \mathbb{R}^3, \quad u_k \in \mathbb{R}^2,\]</span> with state constraints <span class="math inline">\(x_{\min} \le x_k \le x_{\max}\)</span> representing safety limits and input constraints <span class="math inline">\(u_{\min} \le u_k \le u_{\max}\)</span> representing valve positions.</p>
+<ol>
+<li><p>The engineer observes that the MPC solver returns an infeasibility warning at certain operating points. List three possible causes of infeasibility and, for each, suggest a practical remedy.</p></li>
+<li><p>The engineer proposes softening the state constraints by introducing slack variables <span class="math inline">\(\epsilon_k \ge 0\)</span> and replacing <span class="math inline">\(x_{\min} \le x_k \le x_{\max}\)</span> with <span class="math inline">\(x_{\min} - \epsilon_k \le x_k \le x_{\max} + \epsilon_k\)</span>, adding a penalty <span class="math inline">\(\rho \|\epsilon_k\|^2\)</span> to the cost. Explain the trade-off involved in choosing <span class="math inline">\(\rho\)</span> and why input constraints should generally <em>not</em> be softened.</p></li>
+<li><p>The engineer is considering two design choices: (i) a short horizon <span class="math inline">\(N = 5\)</span> with the DARE terminal cost <span class="math inline">\(Q_N = P\)</span>, and (ii) a long horizon <span class="math inline">\(N = 50\)</span> with <span class="math inline">\(Q_N = Q\)</span>. Discuss the advantages and disadvantages of each choice in terms of closed-loop stability, computational load, and robustness to model uncertainty.</p></li>
+</ol></li>
+</ol>

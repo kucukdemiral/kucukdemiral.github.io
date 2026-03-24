@@ -8,269 +8,370 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+
+    <!-- MathJax -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            processEscapes: true,
+            tags: 'ams'
+        },
+        svg: { fontCache: 'global' },
+        startup: { typeset: false }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
     <style>
-        .course-hero {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-            color: #fff;
-            padding: 2.5rem 3rem;
-            border-radius: var(--radius);
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .course-hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(46,80,144,0.3) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-        .course-hero h2 {
-            color: #fff;
-            font-size: 1.8rem;
-            border-bottom: none;
-            margin-bottom: 0.25rem;
-            position: relative;
-        }
-        .course-hero .course-subtitle {
-            color: rgba(255,255,255,0.7);
-            font-size: 1.05rem;
-            margin-bottom: 1rem;
-            font-style: italic;
-        }
-        .course-hero p {
-            color: rgba(255,255,255,0.85);
-            max-width: 650px;
-            position: relative;
-        }
-        .course-meta {
+        /* Layout */
+        .mpc-layout {
             display: flex;
-            gap: 1.5rem;
-            margin-top: 1.25rem;
-            flex-wrap: wrap;
-            position: relative;
-        }
-        .course-meta span {
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.6);
-            letter-spacing: 0.3px;
-        }
-        .course-meta span strong {
-            color: rgba(255,255,255,0.9);
+            max-width: 1200px;
+            width: 95%;
+            margin: 0 auto;
+            gap: 0;
+            min-height: calc(100vh - 200px);
         }
 
-        .download-bar {
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 1.25rem 0;
+            font-size: 0.82rem;
+            box-shadow: 1px 0 4px rgba(0,0,0,0.04);
+        }
+        .sidebar-header {
+            padding: 0 1rem 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.75rem;
+        }
+        .sidebar-header h3 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            color: var(--navy);
+            margin: 0 0 0.35rem;
+        }
+        .sidebar-header .dl-link {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sidebar .part-label {
+            padding: 0.5rem 1rem 0.25rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-top: 0.5rem;
+        }
+        .sidebar .toc-item {
+            display: block;
+            padding: 0.4rem 1rem 0.4rem 1.25rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+            line-height: 1.4;
+        }
+        .sidebar .toc-item:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+        .sidebar .toc-item.active {
+            background: rgba(46,80,144,0.06);
+            color: var(--accent);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+        .sidebar .toc-item .ch-num {
+            display: inline-block;
+            width: 22px;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg-card);
+            border-left: none;
+        }
+
+        /* Chapter navigation bar */
+        .chapter-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 2rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .chapter-nav button {
+            padding: 0.35rem 1rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .chapter-nav button:hover:not(:disabled) {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .chapter-nav button:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+        .chapter-nav .ch-indicator {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        /* Chapter content area */
+        .chapter-body {
+            padding: 2rem 2.5rem 3rem;
+            max-width: 780px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Typography inside chapters */
+        .chapter-body h1 {
+            font-size: 1.9rem;
+            margin: 0 0 0.25rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--bg-subtle);
+        }
+        .chapter-body h2 {
+            font-size: 1.5rem;
+            margin: 2.5rem 0 0.75rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--bg-subtle);
+        }
+        .chapter-body h3 {
+            font-size: 1.15rem;
+            margin: 2rem 0 0.5rem;
+            color: var(--accent);
+        }
+        .chapter-body h4 {
+            font-size: 1rem;
+            margin: 1.5rem 0 0.5rem;
+            color: var(--navy-light);
+        }
+        .chapter-body p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            text-align: justify;
+            hyphens: auto;
+        }
+        .chapter-body ul, .chapter-body ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+        .chapter-body li {
+            margin-bottom: 0.35rem;
+        }
+
+        /* Figures */
+        .chapter-body figure {
+            margin: 1.5rem 0;
+            text-align: center;
+            background: var(--bg-subtle);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .chapter-body figure img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 3px;
+        }
+        .chapter-body figcaption {
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        /* Tables */
+        .chapter-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.9rem;
+        }
+        .chapter-body th, .chapter-body td {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .chapter-body th {
+            background: var(--bg-subtle);
+            font-weight: 600;
+            color: var(--navy);
+        }
+        .chapter-body tr:nth-child(even) {
+            background: rgba(241,243,247,0.5);
+        }
+
+        /* Math display */
+        .chapter-body .math.display {
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+
+        /* Code / algorithm blocks */
+        .chapter-body pre, .chapter-body code {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+        }
+        .chapter-body pre {
+            background: #1e2433;
+            color: #e0e6f0;
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+        .chapter-body code {
+            background: var(--bg-subtle);
+            padding: 0.15rem 0.35rem;
+            border-radius: 3px;
+            color: var(--accent);
+        }
+        .chapter-body pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Blockquotes / remarks / examples */
+        .chapter-body blockquote {
+            border-left: 3px solid var(--accent);
+            margin: 1.25rem 0;
+            padding: 0.75rem 1.25rem;
+            background: rgba(46,80,144,0.04);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            color: var(--text-secondary);
+        }
+        .chapter-body blockquote p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Definition/theorem boxes */
+        .chapter-body .definition, .chapter-body .theorem, .chapter-body .remark, .chapter-body .example {
+            margin: 1.25rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        /* Welcome / hero for foreword */
+        .chapter-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: #fff;
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+        }
+        .chapter-hero h1 { color: #fff; border: none; font-size: 2rem; }
+        .chapter-hero p { color: rgba(255,255,255,0.85); }
+        .chapter-hero .meta { color: rgba(255,255,255,0.55); font-size: 0.85rem; margin-top: 0.75rem; }
+
+        /* Download banner */
+        .dl-banner {
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 1rem 1.5rem;
+            padding: 0.85rem 1.25rem;
             background: var(--bg-subtle);
-            border-radius: var(--radius);
             border: 1px solid var(--border);
-            margin-bottom: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
         }
-        .download-bar .dl-info {
-            flex: 1;
-        }
-        .download-bar .dl-info strong {
-            display: block;
-            color: var(--navy);
-            font-size: 0.95rem;
-        }
-        .download-bar .dl-info span {
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
-        .btn-download {
+        .dl-banner span { flex: 1; font-size: 0.88rem; color: var(--text-secondary); }
+        .btn-dl {
             display: inline-block;
-            padding: 0.6rem 1.5rem;
+            padding: 0.45rem 1.2rem;
             background: var(--accent);
             color: #fff;
             border-radius: var(--radius);
-            font-family: 'Source Sans 3', sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            letter-spacing: 0.3px;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
             text-decoration: none;
-            transition: background 0.2s ease;
+            transition: background 0.2s;
             white-space: nowrap;
         }
-        .btn-download:hover {
-            background: var(--accent-hover);
-            color: #fff;
-        }
-        .btn-download:visited {
-            color: #fff;
-        }
+        .btn-dl:hover { background: var(--accent-hover); color: #fff; }
+        .btn-dl:visited { color: #fff; }
 
-        .part-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin: 2rem 0 1rem;
-            cursor: default;
-        }
-        .part-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--navy);
-            color: #fff;
-            font-family: 'Crimson Text', serif;
-            font-size: 0.95rem;
-            font-weight: 700;
+        /* Loading spinner */
+        .loading { text-align: center; padding: 4rem; color: var(--text-light); }
+
+        /* Mobile sidebar toggle */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            z-index: 200;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .part-title {
-            font-family: 'Crimson Text', serif;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--navy);
-            margin: 0;
-        }
-
-        .chapter-card {
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin-bottom: 0.75rem;
-            background: var(--bg-card);
-            overflow: hidden;
-            transition: box-shadow 0.2s ease;
-        }
-        .chapter-card:hover {
-            box-shadow: var(--shadow);
-        }
-        .chapter-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.85rem 1.25rem;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.15s ease;
-        }
-        .chapter-header:hover {
-            background: var(--bg-subtle);
-        }
-        .ch-number {
-            font-family: 'Crimson Text', serif;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--accent);
-            background: rgba(46,80,144,0.08);
-            padding: 0.2rem 0.6rem;
-            border-radius: 3px;
-            flex-shrink: 0;
-            min-width: 36px;
-            text-align: center;
-        }
-        .ch-title {
-            flex: 1;
-            font-family: 'Source Sans 3', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .ch-toggle {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            transition: transform 0.25s ease;
-            flex-shrink: 0;
-        }
-        .chapter-card.open .ch-toggle {
-            transform: rotate(180deg);
-        }
-        .ch-body {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.35s ease;
-        }
-        .chapter-card.open .ch-body {
-            max-height: 800px;
-        }
-        .ch-content {
-            padding: 0 1.25rem 1rem;
-            border-top: 1px solid var(--border);
-        }
-        .section-list {
-            list-style: none;
-            padding: 0;
-            margin: 0.75rem 0 0;
-        }
-        .section-list li {
-            position: relative;
-            padding: 0.3rem 0 0.3rem 1.1rem;
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-        .section-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0.65rem;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--border);
-        }
-        .ch-description {
-            font-size: 0.88rem;
-            color: var(--text-light);
-            margin: 0.75rem 0 0;
-            font-style: italic;
-        }
-
-        .appendix-section {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 2px solid var(--bg-subtle);
-        }
-        .appendix-section h3 {
-            margin-top: 0;
-        }
-
-        .nav-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin: 1.5rem 0 0;
-        }
-        .nav-btn {
-            padding: 0.45rem 1rem;
-            font-size: 0.8rem;
-            font-family: 'Source Sans 3', sans-serif;
-            font-weight: 500;
-            color: var(--accent);
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .nav-btn:hover {
             background: var(--accent);
             color: #fff;
-            border-color: var(--accent);
-        }
-        .nav-btn.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        @media (max-width: 768px) {
-            .course-hero { padding: 1.5rem; }
-            .course-hero h2 { font-size: 1.4rem; }
-            .course-meta { flex-direction: column; gap: 0.5rem; }
-            .download-bar { flex-direction: column; text-align: center; }
+        @media (max-width: 900px) {
+            .mpc-layout { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 0;
+                overflow: hidden;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 150;
+                transition: max-height 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .sidebar.open { max-height: 80vh; overflow-y: auto; }
+            .sidebar-toggle { display: block; }
+            .chapter-body { padding: 1.5rem; }
+            .chapter-nav { padding: 0.5rem 1rem; }
         }
     </style>
 </head>
@@ -297,369 +398,192 @@
         </nav>
     </header>
 
-    <div class="container">
-        <!-- Course Hero -->
-        <div class="course-hero">
-            <h2>Model Predictive Control</h2>
-            <p class="course-subtitle">An Introduction</p>
-            <p>A comprehensive course covering the theory and practice of Model Predictive Control &mdash; from optimisation fundamentals and state-space modelling through constrained optimal control, Kalman filtering, and robust tube MPC.</p>
-            <div class="course-meta">
-                <span><strong>Level:</strong> MSc / Advanced Undergraduate</span>
-                <span><strong>Chapters:</strong> 11 + Appendices</span>
-                <span><strong>Parts:</strong> Fundamentals &middot; Optimal Control &middot; MPC</span>
-            </div>
-        </div>
-
-        <!-- Download -->
-        <div class="download-bar">
-            <div class="dl-info">
-                <strong>Complete Lecture Notes (PDF)</strong>
-                <span>Model Predictive Control: An Introduction &mdash; I. Kucukdemiral, 2026</span>
-            </div>
-            <a href="mpc-notes/MPC_Lecture_Notes.pdf" target="_blank" class="btn-download">Download PDF</a>
-        </div>
-
-        <!-- Navigation -->
-        <div class="nav-buttons">
-            <button class="nav-btn active" onclick="showPart('all')">All</button>
-            <button class="nav-btn" onclick="showPart('1')">Part I</button>
-            <button class="nav-btn" onclick="showPart('2')">Part II</button>
-            <button class="nav-btn" onclick="showPart('3')">Part III</button>
-            <button class="nav-btn" onclick="showPart('app')">Appendices</button>
-            <button class="nav-btn" onclick="toggleAll(true)">Expand All</button>
-            <button class="nav-btn" onclick="toggleAll(false)">Collapse All</button>
-        </div>
-
-        <!-- PART I -->
-        <div class="part-group" data-part="1">
-            <div class="part-header">
-                <span class="part-number">I</span>
-                <h3 class="part-title">Fundamentals</h3>
+    <div class="mpc-layout">
+        <!-- Sidebar TOC -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>MPC Lecture Notes</h3>
+                <a href="mpc-notes/MPC_Lecture_Notes.pdf" target="_blank" class="dl-link">Download PDF</a>
             </div>
 
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">1</span>
-                    <span class="ch-title">Introduction to Model Predictive Control</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">From classical feedback control to optimisation-based control. The four key components of MPC: model, measurements, objectives, and constraints.</p>
-                        <ul class="section-list">
-                            <li>From Classical Control to Optimisation-Based Control</li>
-                            <li>Conceptual Framework: The Racing Car Analogy</li>
-                            <li>Receding Horizon Control (RHC)</li>
-                            <li>Why Use Model Predictive Control?</li>
-                            <li>Operation of MPC: Prediction Model, Cost Function, Constraints</li>
-                            <li>Applications of Model Predictive Control</li>
-                            <li>Case Study: Energy-Efficient Building Control</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="toc-item active" data-ch="foreword" onclick="loadChapter('foreword')">
+                <span class="ch-num"></span>Foreword
             </div>
 
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">2</span>
-                    <span class="ch-title">Optimisation: The Engine of MPC</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Mathematical foundations of optimisation: decision variables, objective functions, constraints, and solution methods underpinning MPC.</p>
-                        <ul class="section-list">
-                            <li>What is Optimisation?</li>
-                            <li>The Anatomy of an Optimisation Problem</li>
-                            <li>Decision Variables, Objective Functions, Constraints</li>
-                            <li>Illustrative Examples: Box Volume Maximisation, Linear Regression</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="part-label">Part I &mdash; Fundamentals</div>
+            <div class="toc-item" data-ch="ch01" onclick="loadChapter('ch01')">
+                <span class="ch-num">1</span>Introduction to MPC
+            </div>
+            <div class="toc-item" data-ch="ch02" onclick="loadChapter('ch02')">
+                <span class="ch-num">2</span>Optimisation
+            </div>
+            <div class="toc-item" data-ch="ch03" onclick="loadChapter('ch03')">
+                <span class="ch-num">3</span>State-Space Representation
+            </div>
+            <div class="toc-item" data-ch="ch04" onclick="loadChapter('ch04')">
+                <span class="ch-num">4</span>Controllability &amp; Observability
             </div>
 
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">3</span>
-                    <span class="ch-title">State-Space Representation of Dynamic Systems</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Continuous and discrete-time state-space models, linearisation of nonlinear systems, and discretisation techniques.</p>
-                        <ul class="section-list">
-                            <li>General Form of a State-Space Model</li>
-                            <li>Continuous-Time LTI Formulation</li>
-                            <li>Nonlinear Modelling (Pendulum Example)</li>
-                            <li>Equilibrium Points and Local Linearisation</li>
-                            <li>Discretisation: Zero-Order Hold, Forward Euler, Runge-Kutta</li>
-                            <li>Stability Analysis in the Discrete-Time Domain</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="part-label">Part II &mdash; Optimal Control &amp; Estimation</div>
+            <div class="toc-item" data-ch="ch05" onclick="loadChapter('ch05')">
+                <span class="ch-num">5</span>LQR via Quadratic Programming
+            </div>
+            <div class="toc-item" data-ch="ch06" onclick="loadChapter('ch06')">
+                <span class="ch-num">6</span>Kalman Filter
             </div>
 
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">4</span>
-                    <span class="ch-title">Controllability &amp; Observability</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Structural properties of linear systems essential for control design and state estimation.</p>
-                        <ul class="section-list">
-                            <li>Controllability: Rank Condition and Kalman Criterion</li>
-                            <li>Controllability Matrix and MATLAB Verification</li>
-                            <li>Observability: Matrix Construction and Tests</li>
-                            <li>State Reconstruction from Output Measurements</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="part-label">Part III &mdash; Model Predictive Control</div>
+            <div class="toc-item" data-ch="ch07" onclick="loadChapter('ch07')">
+                <span class="ch-num">7</span>Linear MPC
             </div>
-        </div>
-
-        <!-- PART II -->
-        <div class="part-group" data-part="2">
-            <div class="part-header">
-                <span class="part-number">II</span>
-                <h3 class="part-title">Optimal Control and Optimal Estimation</h3>
+            <div class="toc-item" data-ch="ch08" onclick="loadChapter('ch08')">
+                <span class="ch-num">8</span>Output Feedback &amp; Offset-Free MPC
+            </div>
+            <div class="toc-item" data-ch="ch09" onclick="loadChapter('ch09')">
+                <span class="ch-num">9</span>Simulink Implementation
+            </div>
+            <div class="toc-item" data-ch="ch10" onclick="loadChapter('ch10')">
+                <span class="ch-num">10</span>Conclusion &amp; Further Topics
+            </div>
+            <div class="toc-item" data-ch="ch11" onclick="loadChapter('ch11')">
+                <span class="ch-num">11</span>Robust MPC &amp; Tube MPC
             </div>
 
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">5</span>
-                    <span class="ch-title">LQR Design via Quadratic Programming</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Finite-horizon LQR as a quadratic program. Sparse QP formulation, KKT conditions, and the bridge to constrained MPC.</p>
-                        <ul class="section-list">
-                            <li>Finite-Horizon LQR Problem Formulation</li>
-                            <li>Convexity Conditions for Well-Posed Problems</li>
-                            <li>Sparse Quadratic Programming Formulation</li>
-                            <li>Solution via KKT Conditions</li>
-                            <li>Infinite-Horizon Problems and Asymptotic Stability</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="part-label">Appendices</div>
+            <div class="toc-item" data-ch="appA" onclick="loadChapter('appA')">
+                <span class="ch-num">A</span>Linear Algebra
             </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">6</span>
-                    <span class="ch-title">State Estimation and the Kalman Filter</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Stochastic systems, Gaussian uncertainty propagation, and the derivation of the Kalman filter with practical tuning guidelines.</p>
-                        <ul class="section-list">
-                            <li>Random Variables, Expectation, Covariance</li>
-                            <li>Stochastic System Model and Assumptions</li>
-                            <li>Derivation of the Kalman Filter: Prediction and Correction</li>
-                            <li>Innovation and Kalman Gain</li>
-                            <li>Duality Between Estimation and Control</li>
-                            <li>Steady-State Kalman Filter and Algebraic Riccati Equation</li>
-                            <li>Practical Tuning Guidelines and MATLAB Case Study</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="toc-item" data-ch="appB" onclick="loadChapter('appB')">
+                <span class="ch-num">B</span>Probability &amp; Statistics
             </div>
-        </div>
+        </aside>
 
-        <!-- PART III -->
-        <div class="part-group" data-part="3">
-            <div class="part-header">
-                <span class="part-number">III</span>
-                <h3 class="part-title">Model Predictive Control</h3>
+        <!-- Main content area -->
+        <main class="main-content">
+            <div class="chapter-nav">
+                <button id="btn-prev" onclick="navigateChapter(-1)" disabled>&larr; Previous</button>
+                <span class="ch-indicator" id="ch-indicator">Foreword</span>
+                <button id="btn-next" onclick="navigateChapter(1)">Next &rarr;</button>
             </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">7</span>
-                    <span class="ch-title">Linear Model Predictive Control</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">The core MPC formulation: cost functions, constraints, the receding horizon principle, and YALMIP implementation.</p>
-                        <ul class="section-list">
-                            <li>Motivation: The Need for Constraints</li>
-                            <li>MPC Cost Function with Terminal Cost</li>
-                            <li>System Dynamics, Actuator, and Safety Constraints</li>
-                            <li>The Receding Horizon Principle: Measure &rarr; Solve &rarr; Apply &rarr; Recede</li>
-                            <li>Hand-Worked Example: Scalar Integrator</li>
-                            <li>YALMIP Implementation</li>
-                            <li>Stability and Performance Analysis</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="chapter-body" id="chapter-body">
+                <div class="loading">Loading content...</div>
             </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">8</span>
-                    <span class="ch-title">Output Feedback and Offset-Free MPC</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Handling sensor noise, model uncertainty, and steady-state offsets through disturbance models and augmented state estimation.</p>
-                        <ul class="section-list">
-                            <li>Limitations of State Feedback MPC</li>
-                            <li>Disturbance Model and Augmented System</li>
-                            <li>State and Disturbance Estimation</li>
-                            <li>The Target Calculator: Unconstrained and Constrained Methods</li>
-                            <li>Output-Feedback MPC Architecture</li>
-                            <li>MATLAB Implementation Case Studies</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">9</span>
-                    <span class="ch-title">Simulink Implementation of MPC</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Practical guidance for implementing custom MPC controllers in Simulink without the MPC Toolbox.</p>
-                        <ul class="section-list">
-                            <li>General Implementation Guidance</li>
-                            <li>The Code-Generation Barrier and How to Overcome It</li>
-                            <li>Managing State Across Time Steps: Persistent Variables</li>
-                            <li>Building Blocks: Temperature Control Case Study</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">10</span>
-                    <span class="ch-title">Course Conclusion and Further Topics</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Rigorous stability analysis, nonlinear MPC, and pointers to advanced topics.</p>
-                        <ul class="section-list">
-                            <li>Rigorous Stability Analysis: Terminal Sets and Lyapunov Methods</li>
-                            <li>Robust MPC and Tube MPC Overview</li>
-                            <li>Nonlinear MPC (NMPC): Direct Single and Multiple Shooting</li>
-                            <li>Software Tools: CasADi, ACADOS, FORCES Pro</li>
-                            <li>Case Study: Pendulum Swing-Up and Balance</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chapter-card" onclick="toggleChapter(this)">
-                <div class="chapter-header">
-                    <span class="ch-number">11</span>
-                    <span class="ch-title">Robust MPC and Tube MPC</span>
-                    <span class="ch-toggle">&#9660;</span>
-                </div>
-                <div class="ch-body">
-                    <div class="ch-content">
-                        <p class="ch-description">Handling bounded disturbances through constraint tightening and tube-based robust control strategies.</p>
-                        <ul class="section-list">
-                            <li>The Problem: Disturbances and Constraint Violations</li>
-                            <li>Two Approaches: Min-Max MPC vs. Tube MPC</li>
-                            <li>Set Operations: Minkowski Sum and Pontryagin Difference</li>
-                            <li>Tube MPC: System Decomposition, Feedback Design, Tube Width</li>
-                            <li>Constraint Tightening and the Tube MPC Optimisation Problem</li>
-                            <li>Recursive Feasibility and Stability</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Appendices -->
-        <div class="part-group" data-part="app">
-            <div class="appendix-section">
-                <h3>Appendices</h3>
-
-                <div class="chapter-card" onclick="toggleChapter(this)">
-                    <div class="chapter-header">
-                        <span class="ch-number">A</span>
-                        <span class="ch-title">Linear Algebra: A Self-Study Reference</span>
-                        <span class="ch-toggle">&#9660;</span>
-                    </div>
-                    <div class="ch-body">
-                        <div class="ch-content">
-                            <ul class="section-list">
-                                <li>Scalars, Vectors, and Matrices</li>
-                                <li>Special Matrices: Identity, Diagonal, Symmetric</li>
-                                <li>Operations: Transpose, Multiplication, Inverse</li>
-                                <li>Determinant, Trace, Eigenvalues</li>
-                                <li>Quadratic Forms and Definiteness</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chapter-card" onclick="toggleChapter(this)">
-                    <div class="chapter-header">
-                        <span class="ch-number">B</span>
-                        <span class="ch-title">Probability and Statistics: A Self-Study Reference</span>
-                        <span class="ch-toggle">&#9660;</span>
-                    </div>
-                    <div class="ch-body">
-                        <div class="ch-content">
-                            <ul class="section-list">
-                                <li>Random Variables and Distributions</li>
-                                <li>Expectation, Variance, Covariance</li>
-                                <li>Gaussian (Normal) Distribution</li>
-                                <li>Stochastic Processes and White Noise</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
+
+    <!-- Mobile sidebar toggle -->
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
 
     <footer>
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
 
     <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-        function toggleChapter(card) {
-            card.classList.toggle('open');
+    var chapters = [
+        { id: 'foreword', file: 'mpc-notes/Foreword.html', title: 'Foreword' },
+        { id: 'ch01', file: 'mpc-notes/Chapter01.html', title: 'Chapter 1: Introduction to MPC' },
+        { id: 'ch02', file: 'mpc-notes/Chapter02.html', title: 'Chapter 2: Optimisation' },
+        { id: 'ch03', file: 'mpc-notes/Chapter03.html', title: 'Chapter 3: State-Space Representation' },
+        { id: 'ch04', file: 'mpc-notes/Chapter04.html', title: 'Chapter 4: Controllability & Observability' },
+        { id: 'ch05', file: 'mpc-notes/Chapter05.html', title: 'Chapter 5: LQR via Quadratic Programming' },
+        { id: 'ch06', file: 'mpc-notes/Chapter06.html', title: 'Chapter 6: Kalman Filter' },
+        { id: 'ch07', file: 'mpc-notes/Chapter07.html', title: 'Chapter 7: Linear MPC' },
+        { id: 'ch08', file: 'mpc-notes/Chapter08V2.html', title: 'Chapter 8: Output Feedback & Offset-Free MPC' },
+        { id: 'ch09', file: 'mpc-notes/Chapter9.html', title: 'Chapter 9: Simulink Implementation' },
+        { id: 'ch10', file: 'mpc-notes/Chapter10.html', title: 'Chapter 10: Conclusion & Further Topics' },
+        { id: 'ch11', file: 'mpc-notes/ChapterTubeMPC.html', title: 'Chapter 11: Robust MPC & Tube MPC' },
+        { id: 'appA', file: 'mpc-notes/Appendix1.html', title: 'Appendix A: Linear Algebra' },
+        { id: 'appB', file: 'mpc-notes/AppendixProbability.html', title: 'Appendix B: Probability & Statistics' }
+    ];
+
+    var currentIndex = 0;
+    var cache = {};
+
+    function loadChapter(id) {
+        var idx = chapters.findIndex(function(c) { return c.id === id; });
+        if (idx === -1) return;
+        currentIndex = idx;
+        var ch = chapters[idx];
+        var body = document.getElementById('chapter-body');
+        var indicator = document.getElementById('ch-indicator');
+
+        // Update sidebar
+        document.querySelectorAll('.toc-item').forEach(function(el) {
+            el.classList.toggle('active', el.getAttribute('data-ch') === id);
+        });
+
+        indicator.textContent = ch.title;
+        updateNavButtons();
+
+        // Update URL hash
+        history.replaceState(null, '', '#' + id);
+
+        if (cache[id]) {
+            body.innerHTML = cache[id];
+            body.scrollTop = 0;
+            typesetMath();
+            return;
         }
 
-        function toggleAll(open) {
-            document.querySelectorAll('.chapter-card').forEach(function(card) {
-                if (open) {
-                    card.classList.add('open');
-                } else {
-                    card.classList.remove('open');
-                }
-            });
-        }
+        body.innerHTML = '<div class="loading">Loading...</div>';
 
-        function showPart(part) {
-            var groups = document.querySelectorAll('.part-group');
-            groups.forEach(function(g) {
-                if (part === 'all' || g.getAttribute('data-part') === part) {
-                    g.style.display = '';
-                } else {
-                    g.style.display = 'none';
-                }
+        fetch(ch.file)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                // Fix relative image paths for chapters loaded into the main page
+                html = html.replace(/src="figures\//g, 'src="mpc-notes/figures/');
+                cache[id] = html;
+                body.innerHTML = html;
+                body.scrollTop = 0;
+                typesetMath();
+            })
+            .catch(function() {
+                body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
             });
-            document.querySelectorAll('.nav-btn').forEach(function(btn) {
-                btn.classList.remove('active');
+
+        // Scroll to top of content area
+        window.scrollTo(0, 0);
+
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function typesetMath() {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([document.getElementById('chapter-body')]).catch(function(err) {
+                console.log('MathJax typeset error:', err);
             });
-            event.target.classList.add('active');
         }
+    }
+
+    function navigateChapter(dir) {
+        var next = currentIndex + dir;
+        if (next >= 0 && next < chapters.length) {
+            loadChapter(chapters[next].id);
+        }
+    }
+
+    function updateNavButtons() {
+        document.getElementById('btn-prev').disabled = (currentIndex === 0);
+        document.getElementById('btn-next').disabled = (currentIndex === chapters.length - 1);
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey) navigateChapter(-1);
+        if (e.key === 'ArrowRight' && !e.ctrlKey && !e.metaKey) navigateChapter(1);
+    });
+
+    // Load from URL hash or default to foreword
+    var hash = window.location.hash.replace('#', '');
+    var startChapter = chapters.find(function(c) { return c.id === hash; }) ? hash : 'foreword';
+    loadChapter(startChapter);
     </script>
 </body>
 </html>

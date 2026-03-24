@@ -1,0 +1,259 @@
+<h1 id="chap:controllability">Controllability &amp; Observability</h1>
+<p>Now that we have established the state-space modelling framework (Chapter 3), we turn to two structural questions that determine whether a control or estimation design is even possible.</p>
+<p>In previous chapters, we focused on the machinery of optimisation—how to select the <em>best</em> input to minimise a cost function. However, before asking "what is the optimal trajectory?", we must answer a more fundamental question: "does a valid trajectory exist?"</p>
+<p>This chapter introduces the twin structural properties of <strong>controllability</strong> and <strong>observability</strong>. These concepts define the physical limitations of what a control system can achieve, regardless of the sophistication of the algorithm used.</p>
+<ul>
+<li><p><strong>Controllability</strong> answers the question of <em>actuation</em>: Is it possible to steer the system from its current state to any desired target state using the available inputs? If a system is unreachable, no amount of mathematical optimisation can force it to the target.</p></li>
+<li><p><strong>Observability</strong> answers the question of <em>sensing</em>: Is it possible to reconstruct the full internal state of the system solely by monitoring the inputs and outputs? Since MPC and LQR typically require full state feedback (<span class="math inline">\(x_k\)</span>), observability is the prerequisite for designing the estimators (such as Kalman Filters) required to implement these controllers in reality.</p></li>
+</ul>
+<p>For modern control strategies like Model Predictive Control, these are not merely theoretical curiosities; they are the necessary existence conditions. If a system lacks these properties, the optimisation problem may be ill-posed, leading to controllers that are either unstable or physically incapable of meeting their objectives.</p>
+<h2 id="controllability">Controllability</h2>
+<p>The fundamental question of controllability is: given the dynamics <span class="math inline">\(x_{k+1} = A x_k + B u_k\)</span>, do the actuators (represented by matrix <span class="math inline">\(B\)</span>) possess sufficient authority over the system states (governed by matrix <span class="math inline">\(A\)</span>) to drive the system to a specific target?</p>
+<p>Consider a trivial example where the matrix <span class="math inline">\(B\)</span> is all zeros. In such a case, the control input <span class="math inline">\(u_k\)</span> has no effect on the state evolution, rendering us powerless to change the trajectory. While this is an extreme case, a system can be uncontrollable even with non-zero actuators if their influence is geometrically restricted to a specific subspace of the state space.</p>
+<div class="defnbox">
+<p><span>Definition: Controllability</span> A system is <em>controllable</em> if, for any initial state <span class="math inline">\(x_0\)</span> and any target state <span class="math inline">\(x_N\)</span>, there exists a finite sequence of control inputs that drives the system from <span class="math inline">\(x_0\)</span> to <span class="math inline">\(x_N\)</span>.</p>
+</div>
+<h3 id="derivation-of-the-rank-condition">Derivation of the Rank Condition</h3>
+<p>For Linear Time-Invariant (LTI) systems where the state vector is <span class="math inline">\(x_k \in \mathbb R^n\)</span>, we can derive a simple algebraic test for controllability. We begin by expanding the discrete-time dynamics to express the state <span class="math inline">\(x_N\)</span> as a function of the initial state <span class="math inline">\(x_0\)</span> and the control history.</p>
+<p>Starting from <span class="math inline">\(k=0\)</span> and substituting recursively: <span class="math display">\[\begin{align*}
+    x_1 &amp;= A x_0 + B u_0 \\
+    x_2 &amp;= A x_1 + B u_1 = A(A x_0 + B u_0) + B u_1 = A^2 x_0 + AB u_0 + B u_1 \\
+    &amp;\vdots \\
+    x_N &amp;= A^N x_0 + \sum_{i=0}^{N-1} A^{N-1-i} B u_i
+\end{align*}\]</span></p>
+<p>We can rewrite this summation in a compact matrix-vector form. By collecting all control inputs into a stacked vector <span class="math inline">\(\mathcal{U}\)</span>, we obtain: <span class="math display">\[x_N - A^N x_0 = 
+\underbrace{\begin{bmatrix} B &amp; AB &amp; A^2 B &amp; \cdots &amp; A^{N-1} B \end{bmatrix}}_{\mathcal{C}_N}
+\underbrace{\begin{bmatrix} u_{N-1} \\ u_{N-2} \\ \vdots \\ u_0 \end{bmatrix}}_{\mathcal{U}}\]</span> This equation is a linear system of the form <span class="math inline">\({b} = \mathcal{C}_N\, \mathcal{U}\)</span>. The controllability problem reduces to a linear algebra problem:</p>
+<div class="alertbox">
+<p><span>Question</span> Does a solution <span class="math inline">\(\mathcal{U}\)</span> exist for any desired vector <span class="math inline">\({b} = x_N - A^N x_0\)</span>?</p>
+</div>
+<p>For a solution to exist for <em>any</em> target state in the <span class="math inline">\(n\)</span>-dimensional state space, the matrix <span class="math inline">\(\mathcal{C}_N\)</span> must span <span class="math inline">\(\mathbb{R}^n\)</span>. This requires <span class="math inline">\(\mathcal{C}_N\)</span> to have full row rank.</p>
+<p>While this matrix grows with the horizon <span class="math inline">\(N\)</span>, the <strong>Cayley-Hamilton Theorem</strong> tells us that any matrix power <span class="math inline">\(A^k\)</span> for <span class="math inline">\(k \ge n\)</span> can be written as a linear combination of lower powers (<span class="math inline">\(I, \dots, A^{n-1}\)</span>). Consequently, adding columns beyond <span class="math inline">\(A^{n-1}B\)</span> provides no new linearly independent directions. The Cayley-Hamilton Theorem states that every square matrix satisfies its own characteristic equation; as a consequence, <span class="math inline">\(A^n\)</span> (and all higher powers) can be expressed as a linear combination of <span class="math inline">\(I, A, \dots, A^{n-1}\)</span>. We can therefore define the standard <strong>Controllability Matrix</strong> <span class="math inline">\(\mathcal{C}\)</span> using only <span class="math inline">\(n\)</span> blocks.</p>
+<p><span class="math display">\[\begin{equation*}
+    \mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2 B &amp; \cdots &amp; A^{n-1} B \end{bmatrix}
+\end{equation*}\]</span></p>
+<div class="alertbox">
+<p><span>Theorem: The Kalman Rank Condition</span> Consider an LTI system with state dimension <span class="math inline">\(n\)</span>. The system pair <span class="math inline">\((A, B)\)</span> is controllable if and only if the <strong>controllability matrix</strong> <span class="math inline">\(\mathcal{C}\)</span> has full rank: <span class="math display">\[\begin{equation*}
+        \text{rank}(\mathcal{C}) = n
+\end{equation*}\]</span> where the matrix is constructed from the system matrices as: <span class="math display">\[\begin{equation*}
+        \mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2B &amp; \cdots &amp; A^{n-1}B \end{bmatrix}
+\end{equation*}\]</span> <strong>Interpretation:</strong> If this condition holds, the columns of <span class="math inline">\(\mathcal{C}\)</span> span the entire state space <span class="math inline">\(\mathbb{R}^n\)</span>. This guarantees that there is no "hidden" subspace where the state can get stuck; the input <span class="math inline">\(u\)</span> has the authority to steer the state vector anywhere in the <span class="math inline">\(n\)</span>-dimensional space.</p>
+</div>
+<figure id="fig:controllability_decomposition" data-latex-placement="H">
+
+<figcaption>Controllability decomposition of a linear system. The input <span class="math inline">\(u\)</span> drives only the controllable subspace <span class="math inline">\(x_c\)</span>. The uncontrollable subspace <span class="math inline">\(x_{\bar{c}}\)</span> evolves independently of <span class="math inline">\(u\)</span> and cannot be steered by any control action. Both subspaces may contribute to the output <span class="math inline">\(y\)</span>.</figcaption>
+</figure>
+<h3 id="controllability-in-matlab">Controllability in MATLAB</h3>
+<p>Let us verify this condition for a discrete-time double integrator system. While we could construct the matrix manually, the best practice is to use the MATLAB Control System Toolbox function <code>ctrb</code>. This ensures the method generalizes correctly to higher-dimensional systems.</p>
+<pre id="lst:matlab_controllability" class="matlab" data-language="Matlab" data-caption="MATLAB script to check controllability using the \texttt{ctrb} command." data-label="lst:matlab_controllability"><code>    h = 0.1;               % Sampling time
+    A = [1, h; 
+            0, 1];            
+    
+    B = [0.5*h^2; 
+            h];               
+    
+    n = size(A, 1);        
+    
+    % 2. Compute Controllability Matrix
+    Co = ctrb(A, B);
+    
+    % 3. Check Rank Condition
+    rank_Co = rank(Co);
+    
+    fprintf(&#39;State Dimension n = %d\n&#39;, n);
+    fprintf(&#39;Rank of Co      = %d\n&#39;, rank_Co);
+</code></pre>
+<p><strong>Results</strong><br />
+Since the rank of the controllability matrix (2) equals the number of states (2), the system is controllable. This mathematically guarantees that an input sequence exists to drive the robot from any initial position and velocity to any target state (assuming no actuator saturation), satisfying the necessary condition for LQR design which will be covered in the next chapter.</p>
+<h2 id="observability">Observability</h2>
+<p>While controllability deals with the active problem of steering the state <span class="math inline">\(x\)</span> using the input <span class="math inline">\(u\)</span>, <strong>observability</strong> addresses the passive inverse problem: can we reconstruct the internal state <span class="math inline">\(x(t)\)</span> solely by monitoring the system’s input <span class="math inline">\(u(t)\)</span> and output <span class="math inline">\(y(t)\)</span>?</p>
+<p>This concept is fundamental for practical MPC implementation. Most advanced control strategies (including MPC and LQR) are <em>state-feedback</em> controllers, meaning they calculate the optimal input <span class="math inline">\(u = -Kx\)</span> based on the full state vector. However, in reality, we rarely measure every state variable directly due to sensor costs or physical impossibility. Instead, we measure a subset <span class="math inline">\(y = Cx\)</span> and use a mathematical algorithm known as a <em>State Observer</em> (e.g., a Kalman Filter) to estimate the missing variables. Observability is the mathematical guarantee that this estimation is possible.</p>
+<div class="defnbox">
+<p><span>Observability</span> A linear system is defined as <strong>observable</strong> if the initial state <span class="math inline">\(x(t_0)\)</span> can be uniquely determined from the knowledge of the system input <span class="math inline">\(u(t)\)</span> and output <span class="math inline">\(y(t)\)</span> over a finite time interval <span class="math inline">\(t_0 \leq t \leq t_1\)</span>.</p>
+<p>If a system is <strong>unobservable</strong>, there exists at least one "hidden" mode inside the system that does not affect the output <span class="math inline">\(y(t)\)</span>. Consequently, the controller acts "blindly" with respect to this mode, which can lead to undetected instability.</p>
+</div>
+<h3 id="the-observability-matrix">The Observability Matrix</h3>
+<p>For an LTI system defined by matrices <span class="math inline">\(A\)</span> (dynamics) and <span class="math inline">\(C\)</span> (measurement), observability is a structural property of the pair <span class="math inline">\((A, C)\)</span>. It determines whether the information from the internal states propagates to the output.</p>
+<p>To test for this property, we construct the <strong>Observability Matrix</strong>, denoted by <span class="math inline">\(\mathcal{O}\)</span>: <span class="math display">\[\begin{equation*}
+    \mathcal{O} = 
+    \begin{bmatrix}
+        C \\
+        CA \\
+        CA^2 \\
+        \vdots \\
+        CA^{n-1}
+    \end{bmatrix}
+\end{equation*}\]</span> Note that <span class="math inline">\(\mathcal{O}\)</span> is a matrix of dimension <span class="math inline">\((n \cdot p) \times n\)</span>, where <span class="math inline">\(n\)</span> is the number of states and <span class="math inline">\(p\)</span> is the number of outputs.</p>
+<div class="notebox">
+<p><span>Kalman Rank Condition for Observability</span> An LTI system is fully observable if and only if the observability matrix has <strong>full column rank</strong>: <span class="math display">\[\begin{equation*}
+        \text{rank}(\mathcal{O}) = n
+\end{equation*}\]</span> If the rank is less than <span class="math inline">\(n\)</span>, the system is unobservable, and the <em>unobservable states</em> correspond to the null space of <span class="math inline">\(\mathcal{O}\)</span>.</p>
+</div>
+<div class="examplebox">
+<p><span>Unobservable Systems</span> Consider a simple 2-state system where the dynamics are decoupled, and we only measure the first state: <span class="math display">\[\begin{align*}
+    \dot{x} &amp;= \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{bmatrix} x + \begin{bmatrix} 1 \\ 1 \end{bmatrix} u \\
+    y &amp;= \underbrace{\begin{bmatrix} 1 &amp; 0 \end{bmatrix}}_{C} x
+\end{align*}\]</span> Here, <span class="math inline">\(x_1\)</span> decays with time constant 1, and <span class="math inline">\(x_2\)</span> decays with time constant 0.5. The sensor <span class="math inline">\(y\)</span> measures <span class="math inline">\(x_1\)</span> perfectly.</p>
+<p>Let us check the Observability Matrix <span class="math inline">\(\mathcal{O}\)</span>: <span class="math display">\[\begin{equation*}
+    \mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} 
+    = \begin{bmatrix} 
+        1 &amp; 0 \\ 
+        (1)(-1) + (0)(0) &amp; (1)(0) + (0)(-2) 
+    \end{bmatrix}
+    = \begin{bmatrix} 
+        1 &amp; 0 \\ 
+        -1 &amp; 0 
+    \end{bmatrix}
+\end{equation*}\]</span> The second column is entirely zero. The rank of this matrix is 1 (which is less than <span class="math inline">\(n=2\)</span>).</p>
+<p><strong>Interpretation:</strong> The sensor output <span class="math inline">\(y\)</span> is mathematically disconnected from state <span class="math inline">\(x_2\)</span>. No matter how long we record the data, we can never know the value of <span class="math inline">\(x_2\)</span>. If <span class="math inline">\(x_2\)</span> were unstable (e.g., a positive eigenvalue), the system would explode, and the controller would be unaware until the machine physically failed.</p>
+</div>
+<div class="examplebox">
+<p><span>Controllability of a Three-State System</span> Consider a three-state system with the following sparse matrices: <span class="math display">\[\begin{equation*}
+    A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ 0 &amp; 0 &amp; 0 \end{bmatrix}, \qquad
+    B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}
+\end{equation*}\]</span> This system represents a <em>triple integrator</em> (e.g., a frictionless mass where the input is a jerk signal — the rate of change of acceleration). The state vector is <span class="math inline">\(x = \begin{bmatrix} \text{position} &amp; \text{velocity} &amp; \text{acceleration} \end{bmatrix}^\top\)</span>.</p>
+<p>Since <span class="math inline">\(n = 3\)</span>, the controllability matrix requires three blocks: <span class="math inline">\(\mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2 B \end{bmatrix}\)</span>.</p>
+<p><strong>Step 1:</strong> Compute <span class="math inline">\(AB\)</span>: <span class="math display">\[\begin{equation*}
+    AB = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ 0 &amp; 0 &amp; 0 \end{bmatrix}
+    \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}
+    = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p><strong>Step 2:</strong> Compute <span class="math inline">\(A^2 B\)</span>: <span class="math display">\[\begin{equation*}
+    A^2 B = A(AB) = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ 0 &amp; 0 &amp; 0 \end{bmatrix}
+    \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}
+    = \begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p><strong>Step 3:</strong> Assemble the controllability matrix: <span class="math display">\[\begin{equation*}
+    \mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2 B \end{bmatrix}
+    = \begin{bmatrix} 0 &amp; 0 &amp; 1 \\ 0 &amp; 1 &amp; 0 \\ 1 &amp; 0 &amp; 0 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p><strong>Step 4:</strong> Determine the rank. The matrix <span class="math inline">\(\mathcal{C}\)</span> is a permutation matrix (each row and each column contains exactly one non-zero entry). Its determinant is: <span class="math display">\[\begin{equation*}
+    \det(\mathcal{C}) = 0 \cdot (0 \cdot 0 - 0 \cdot 0) - 0 \cdot (0 \cdot 0 - 1 \cdot 0) + 1 \cdot (0 \cdot 0 - 1 \cdot 1) = -1 \neq 0
+\end{equation*}\]</span> Therefore <span class="math inline">\(\text{rank}(\mathcal{C}) = 3 = n\)</span>.</p>
+<p><strong>Interpretation:</strong> The system is fully controllable. Despite the input <span class="math inline">\(u\)</span> entering only the third state equation directly, its effect propagates through the chain of integrators: after one time step, the input influences <span class="math inline">\(x_3\)</span>; after two steps, it reaches <span class="math inline">\(x_2\)</span>; and after three steps, it reaches <span class="math inline">\(x_1\)</span>. The single actuator has full authority over all three states, which is a characteristic property of systems in <em>controllable canonical form</em>.</p>
+</div>
+<div class="examplebox">
+<p><span>Observable System: Adding a Second Sensor</span> Consider the same 2-state system from the previous unobservable example, but suppose we replace the sensor with one that measures a <em>combination</em> of both states: <span class="math display">\[\begin{align*}
+    \dot{x} &amp;= \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{bmatrix} x + \begin{bmatrix} 1 \\ 1 \end{bmatrix} u \\
+    y &amp;= \underbrace{\begin{bmatrix} 1 &amp; 1 \end{bmatrix}}_{C} x
+\end{align*}\]</span> The <span class="math inline">\(A\)</span> matrix is identical to the unobservable case. The only change is that <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 1 \end{bmatrix}\)</span> instead of <span class="math inline">\(\begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span>. Physically, this sensor now measures <span class="math inline">\(y = x_1 + x_2\)</span>, coupling both states into the output.</p>
+<p>Let us construct the observability matrix <span class="math inline">\(\mathcal{O}\)</span>:</p>
+<p><strong>Step 1:</strong> Compute <span class="math inline">\(CA\)</span>: <span class="math display">\[\begin{equation*}
+    CA = \begin{bmatrix} 1 &amp; 1 \end{bmatrix}
+    \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{bmatrix}
+    = \begin{bmatrix} -1 &amp; -2 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p><strong>Step 2:</strong> Assemble the observability matrix: <span class="math display">\[\begin{equation*}
+    \mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix}
+    = \begin{bmatrix} 1 &amp; 1 \\ -1 &amp; -2 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p><strong>Step 3:</strong> Check the rank. The determinant is: <span class="math display">\[\begin{equation*}
+    \det(\mathcal{O}) = (1)(-2) - (1)(-1) = -2 + 1 = -1 \neq 0
+\end{equation*}\]</span> Therefore <span class="math inline">\(\text{rank}(\mathcal{O}) = 2 = n\)</span>.</p>
+<p><strong>Interpretation:</strong> The system is now fully observable. By measuring a linear combination of both states rather than a single state in isolation, the sensor output <span class="math inline">\(y = x_1 + x_2\)</span> contains information about both modes. Because the two modes decay at different rates (<span class="math inline">\(\lambda_1 = -1\)</span> and <span class="math inline">\(\lambda_2 = -2\)</span>), the observer can separate their individual contributions from the mixed signal over time. This example demonstrates that observability is a property of the <em>pair</em> <span class="math inline">\((A, C)\)</span>: the same dynamics can be observable or unobservable depending entirely on the sensor configuration.</p>
+</div>
+<h3 id="derivation-of-the-rank-condition-1">Derivation of the Rank Condition</h3>
+<p>We can derive the observability condition intuitively by considering a Discrete-Time LTI system. Our objective is simple: given a sequence of measurements <span class="math inline">\(y_0, y_1, \dots\)</span>, can we mathematically calculate the initial state vector <span class="math inline">\(x_0\)</span>?</p>
+<h4 class="unnumbered" id="step-1-isolating-the-unforced-response">Step 1: Isolating the Unforced Response</h4>
+<p>The general output equation is: <span class="math display">\[\begin{equation*}
+    y_k = C A^k x_0 + \sum_{j=0}^{k-1} C A^{k-1-j} B u_j + D u_k
+\end{equation*}\]</span> Based on the <span>Principle of Superposition</span>, the output consists of two parts: the <em>free response</em> (dependent only on initial conditions) and the <em>forced response</em> (dependent on inputs). Since the inputs <span class="math inline">\(u_k\)</span> are known, we can calculate the forced response and subtract it from the measurement. Thus, without loss of generality, we treat the problem as solving for <span class="math inline">\(x_0\)</span> in the unforced system: <span class="math display">\[\begin{align*}
+    x_{k+1} &amp;= A x_k \\
+    y_k &amp;= C x_k
+\end{align*}\]</span></p>
+<h4 class="unnumbered" id="step-2-stacking-the-measurements">Step 2: Stacking the Measurements</h4>
+<p>Let us observe the system for <span class="math inline">\(n\)</span> time steps (where <span class="math inline">\(n\)</span> is the dimension of the state vector) and write the output at each step in terms of the initial state <span class="math inline">\(x_0\)</span>: <span class="math display">\[\begin{align*}
+    k=0: &amp; \quad y_0 = C x_0 \\
+    k=1: &amp; \quad y_1 = C x_1 = C (A x_0) = CA x_0 \\
+    k=2: &amp; \quad y_2 = C x_2 = C (A^2 x_0) = CA^2 x_0 \\
+    &amp; \quad \vdots \\
+    k=n-1: &amp; \quad y_{n-1} = C A^{n-1} x_0
+\end{align*}\]</span></p>
+<h4 class="unnumbered" id="step-3-the-linear-system-of-equations">Step 3: The Linear System of Equations</h4>
+<p>We can stack these individual equations into a single large matrix equation <span class="math inline">\(Y = \mathcal{O} x_0\)</span>: <span class="math display">\[\begin{equation*}
+    \underbrace{\begin{bmatrix} y_0 \\ y_1 \\ \vdots \\ y_{n-1} \end{bmatrix}}_{{Y}}
+    =
+    \underbrace{\begin{bmatrix} C \\ CA \\ \vdots \\ CA^{n-1} \end{bmatrix}}_{\mathcal{O}}
+    x_0
+\end{equation*}\]</span></p>
+<p>Here:</p>
+<ul>
+<li><p><span class="math inline">\({Y}\)</span> is the vector of collected measurements (known).</p></li>
+<li><p><span class="math inline">\(\mathcal{O}\)</span> is the <strong>Observability Matrix</strong> (known).</p></li>
+<li><p><span class="math inline">\(x_0\)</span> is the state vector we wish to find (unknown).</p></li>
+</ul>
+<h4 class="unnumbered" id="step-4-the-invertibility-condition">Step 4: The Invertibility Condition</h4>
+<p>This is a standard linear algebra problem of the form <span class="math inline">\(Ax = b\)</span>. We have <span class="math inline">\(n\)</span> unknowns (the elements of <span class="math inline">\(x_0\)</span>). To find a <strong>unique</strong> solution for <span class="math inline">\(x_0\)</span>, the matrix <span class="math inline">\(\mathcal{O}\)</span> must provide enough independent equations to constrain the solution fully.</p>
+<p>Mathematically, this requires that the mapping be invertible (specifically, left-invertible). This is only possible if the columns of <span class="math inline">\(\mathcal{O}\)</span> are linearly independent.</p>
+<div class="summarybox">
+<p><span>The Rank Test</span> A system is observable if and only if the Observability Matrix has full rank: <span class="math display">\[\begin{equation*}
+        \text{rank}(\mathcal{O}) = n
+\end{equation*}\]</span> If this holds, we can uniquely solve for the state via the left pseudo-inverse: <span class="math display">\[x_0 = (\mathcal{O}^\top \mathcal{O})^{-1} \mathcal{O}^\top {Y}\]</span></p>
+</div>
+<p><em>Note:</em> One might ask, "Why stop at <span class="math inline">\(n-1\)</span>?" According to the <strong>Cayley-Hamilton Theorem</strong>, any matrix power <span class="math inline">\(A^k\)</span> for <span class="math inline">\(k \ge n\)</span> can be written as a linear combination of lower powers (<span class="math inline">\(I, A, \dots, A^{n-1}\)</span>). Therefore, taking more measurements beyond <span class="math inline">\(k=n-1\)</span> adds rows to <span class="math inline">\(\mathcal{O}\)</span> that are linearly dependent on previous rows, providing no new information for determining the rank.</p>
+<h3 id="observability-in-matlab">Observability in MATLAB</h3>
+<p>To demonstrate the physical meaning of observability, we analyse the double integrator model (position and velocity) under two different sensor configurations:</p>
+<ol>
+<li><p><strong>Position Sensor (<span class="math inline">\(y=x_1\)</span>):</strong> We measure position. Can we infer velocity? Intuitively yes, by observing the change in position over time.</p></li>
+<li><p><strong>Velocity Sensor (<span class="math inline">\(y=x_2\)</span>):</strong> We measure velocity. Can we infer position? Intuitively no, because we do not know the starting integration constant.</p></li>
+</ol>
+<pre id="lst:matlab_observability" class="matlab" data-language="Matlab" data-caption="MATLAB script comparing two sensor configurations." data-label="lst:matlab_observability"><code>
+    h = 0.1;
+    A = [1, h; 
+            0, 1];
+    n = size(A, 1);
+    
+    C1 = [1, 0]; % We measure the first state
+    
+    Ob1 = obsv(A, C1);
+    rank_Ob1 = rank(Ob1);
+    
+    C2 = [0, 1]; % We measure the second state
+    
+    Ob2 = obsv(A, C2);
+    rank_Ob2 = rank(Ob2);
+    </code></pre>
+<p><strong>Results:</strong><br />
+In Case 1, the matrix <span class="math inline">\(\mathcal{O}\)</span> has rank 2, meaning the rows are linearly independent; information about both states is present in the output history. In Case 2, the matrix has rank 1 (identical rows). The "position" mode is unobservable. If we only measure speed, the robot’s absolute position is mathematically impossible to reconstruct.</p>
+<div class="notebox">
+<p><span>Stabilisability and Detectability</span> In practice, MPC does not always require full controllability or observability. The weaker notions of <em>stabilisability</em> (all uncontrollable modes are stable) and <em>detectability</em> (all unobservable modes are stable) are often sufficient. These conditions appear in the convergence analysis of the Kalman filter (Chapter 6) and the existence of the DARE solution (Chapter 5).</p>
+</div>
+<h2 class="unnumbered" id="exercises">Exercises</h2>
+<ol>
+<li><p>Consider the discrete-time system <span class="math inline">\((A,\,B)\)</span> with <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -6 &amp; -11 &amp; -6 \end{bmatrix}, \qquad
+B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Construct the controllability matrix <span class="math inline">\(\mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2 B \end{bmatrix}\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(\text{rank}(\mathcal{C})\)</span> and determine whether the system is controllable.</p></li>
+<li><p>Repeat the analysis for <span class="math inline">\(B&#39; = \begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix}\)</span> and comment on how the input coupling affects controllability.</p></li>
+</ol></li>
+<li><p>A discrete-time system is described by <span class="math display">\[A = \begin{bmatrix} 1 &amp; 0.1 \\ 0 &amp; 1 \end{bmatrix}, \qquad
+C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Construct the observability matrix <span class="math inline">\(\mathcal{O}\)</span> and verify that <span class="math inline">\(\text{rank}(\mathcal{O}) = 2\)</span>.</p></li>
+<li><p>Now change the output matrix to <span class="math inline">\(C&#39; = \begin{bmatrix} 0 &amp; 0 \end{bmatrix}\)</span> (i.e. no sensor). What is the rank of the resulting observability matrix, and what does this imply physically?</p></li>
+<li><p>Suppose instead <span class="math inline">\(C&#39;&#39; = \begin{bmatrix} 1 &amp; 1 \end{bmatrix}\)</span>. Determine whether the system <span class="math inline">\((A,\,C&#39;&#39;)\)</span> is observable.</p></li>
+</ol></li>
+<li><p>The <strong>Popov–Belevitch–Hautus (PBH) test</strong> provides an eigenvalue-based criterion for controllability: the pair <span class="math inline">\((A,\,B)\)</span> is controllable if and only if <span class="math display">\[\text{rank}\!\begin{bmatrix} \lambda I - A &amp; B \end{bmatrix} = n \quad \text{for every eigenvalue } \lambda \text{ of } A.\]</span> Consider the system <span class="math display">\[A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -3 \end{bmatrix}, \qquad
+B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Find the eigenvalues of <span class="math inline">\(A\)</span>.</p></li>
+<li><p>Apply the PBH test at each eigenvalue to determine which modes are controllable and which are uncontrollable.</p></li>
+<li><p>Verify your conclusion by computing the controllability matrix <span class="math inline">\(\mathcal{C}\)</span> and checking its rank.</p></li>
+</ol></li>
+<li><p>A continuous-time system has the state-space representation <span class="math display">\[A = \begin{bmatrix} -2 &amp; 0 \\ 0 &amp; 0.5 \end{bmatrix}, \qquad
+B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Show that the pair <span class="math inline">\((A,\,B)\)</span> is <em>not</em> controllable by computing <span class="math inline">\(\text{rank}(\mathcal{C})\)</span>.</p></li>
+<li><p>Identify the uncontrollable mode. Is this mode stable or unstable?</p></li>
+<li><p>Based on your answer, determine whether the system is <em>stabilisable</em>. Justify your reasoning using the definition given in this chapter: a system is stabilisable if all uncontrollable modes are stable.</p></li>
+<li><p>Now suppose the system matrix is changed to <span class="math inline">\(A&#39; = \begin{bmatrix} -2 &amp; 0 \\ 0 &amp; -0.5 \end{bmatrix}\)</span> while <span class="math inline">\(B\)</span> remains the same. Is this modified system stabilisable? Why or why not?</p></li>
+</ol></li>
+<li><p>Consider the continuous-time system <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \qquad
+C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span> A state observer (Luenberger observer) reconstructs the state via <span class="math display">\[\dot{\hat{x}} = A \hat{x} + B u + L(y - C \hat{x}),\]</span> where <span class="math inline">\(L \in \mathbb{R}^{2 \times 1}\)</span> is the observer gain. The estimation error <span class="math inline">\(e = x - \hat{x}\)</span> satisfies <span class="math inline">\(\dot{e} = (A - LC)\,e\)</span>.</p>
+<ol>
+<li><p>Verify that the pair <span class="math inline">\((A,\,C)\)</span> is observable.</p></li>
+<li><p>Suppose we wish the observer error dynamics to have eigenvalues at <span class="math inline">\(\{-5,\, -6\}\)</span>. Determine the gain vector <span class="math inline">\(L = \begin{bmatrix} l_1 \\ l_2 \end{bmatrix}\)</span> such that the characteristic polynomial of <span class="math inline">\((A - LC)\)</span> matches <span class="math inline">\((\lambda + 5)(\lambda + 6) = \lambda^2 + 11\lambda + 30\)</span>.</p></li>
+<li><p>Comment on how the choice of observer eigenvalues (relative to the open-loop eigenvalues of <span class="math inline">\(A\)</span>) affects the speed of state estimation convergence.</p></li>
+</ol></li>
+</ol>

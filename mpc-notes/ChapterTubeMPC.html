@@ -1,0 +1,470 @@
+<h1 id="chap:tube_mpc">Robust MPC and Tube MPC<span class="math inline">\(^{(*)}\)</span></h1>
+<blockquote>
+<p><em>“Standard MPC tells you the best thing to do if the world is perfect. Tube MPC tells you what to do when it isn’t.”</em><br />
+— paraphrasing <strong>David Q. Mayne</strong></p>
+</blockquote>
+<p>Every MPC formulation we have seen so far relies on a perfect model: <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>. The controller solves an optimisation, applies the first input, and re-solves at the next step. This works well in practice — <em>provided the model is accurate</em>. In practice, however, systems are always subject to disturbances: sensor noise, wind gusts, friction that the model ignores, or small inaccuracies in the <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> matrices themselves. Even a tiny modelling error, accumulated over many steps, can push the real state across a constraint boundary that the controller thought was safe.</p>
+<p>This chapter addresses the question: <strong>how do we guarantee constraint satisfaction when the model is not perfect?</strong> The answer is <em>robust MPC</em>, and the most practical and widely-used form is called <strong>Tube MPC</strong>, introduced by Langson et al. <span class="citation" data-cites="Langson2004"></span> and further developed by Mayne et al. <span class="citation" data-cites="Mayne2005"></span>. The central idea is straightforward: instead of planning a single trajectory, we plan a “tube” of trajectories. As long as the disturbance is bounded, the real trajectory stays inside the tube, and the tube is designed so that constraints are never violated.</p>
+<h2 id="sec:tube_problem">The Problem: Disturbances and Constraint Violations</h2>
+<p>Consider the linear system with an additive disturbance: <span class="math display">\[\begin{equation}
+ \label{eq:uncertain_system}
+    x_{k+1} = Ax_k + Bu_k + w_k
+\end{equation}\]</span> where <span class="math inline">\(x_k \in \mathbb{R}^n\)</span> is the state, <span class="math inline">\(u_k \in \mathbb{R}^m\)</span> is the control input, and <span class="math inline">\(w_k \in \mathbb{R}^n\)</span> is a disturbance. We assume:</p>
+<ul>
+<li><p>The disturbance is bounded: <span class="math inline">\(w_k \in \mathcal{W}\)</span> for all <span class="math inline">\(k \ge 0\)</span>, where <span class="math inline">\(\mathcal{W}\)</span> is a known convex polytope containing the origin (e.g., <span class="math inline">\(\|w_k\|_\infty \le \delta\)</span> for some known <span class="math inline">\(\delta &gt; 0\)</span>).</p></li>
+<li><p>We do <em>not</em> know the specific value of <span class="math inline">\(w_k\)</span> in advance. We only know it will lie somewhere in <span class="math inline">\(\mathcal{W}\)</span>.</p></li>
+</ul>
+<p>The system is subject to constraints: <span class="math display">\[x_k \in \mathcal{X}, \qquad u_k \in \mathcal{U}, \qquad \text{for all } k \ge 0\]</span></p>
+<h3 class="unnumbered" id="why-standard-mpc-fails">Why Standard MPC Fails</h3>
+<p>Standard MPC ignores <span class="math inline">\(w_k\)</span> and plans as if <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>. At each step, it re-measures the state and re-solves, which provides some natural robustness. However, this is not enough to <em>guarantee</em> constraint satisfaction.</p>
+<p>Suppose the MPC plans a trajectory that passes close to a constraint boundary — say <span class="math inline">\(x_1 \le 5\)</span>. The controller predicts <span class="math inline">\(x_1 = 4.95\)</span> and decides this is safe. But after the input is applied, the disturbance <span class="math inline">\(w_0\)</span> adds an unexpected <span class="math inline">\(+0.1\)</span> to the state, producing <span class="math inline">\(x_1 = 5.05\)</span>. The constraint is violated.</p>
+<p>Standard MPC cannot prevent this because it does not account for the “worst case” during planning. It optimistically assumes the prediction is exact.</p>
+<div class="alertbox">
+<p><span>The core difficulty</span> Standard MPC guarantees constraints are satisfied for the <em>predicted</em> trajectory. But when disturbances act, the <em>actual</em> trajectory deviates from the prediction. No amount of re-solving at the next step can undo a constraint violation that has already occurred.</p>
+</div>
+<h2 id="two-approaches-to-robust-mpc">Two Approaches to Robust MPC</h2>
+<p>Two main approaches exist for handling bounded disturbances.</p>
+<h3 id="minmax-mpc">Min–Max MPC</h3>
+<p>The most direct approach formulates the problem as a game between the controller and an adversary (nature). The controller chooses inputs <span class="math inline">\(u\)</span> to minimise the cost, while nature chooses disturbances <span class="math inline">\(w \in \mathcal{W}\)</span> to maximise it: <span class="math display">\[\min_{u_0, \ldots, u_{N-1}} \;\max_{w_0, \ldots, w_{N-1} \in \mathcal{W}} \; J(x, u)\]</span> subject to the dynamics <a href="#eq:uncertain_system" data-reference-type="eqref" data-reference="eq:uncertain_system">[eq:uncertain_system]</a> and the constraints <span class="math inline">\(x_k \in \mathcal{X}\)</span>, <span class="math inline">\(u_k \in \mathcal{U}\)</span> for all possible disturbance realisations.</p>
+<p>This is mathematically rigorous but has serious drawbacks:</p>
+<ul>
+<li><p><strong>Computational explosion.</strong> The disturbance branches at every time step. Over <span class="math inline">\(N\)</span> steps with <span class="math inline">\(d\)</span> possible disturbance vertices, the number of scenarios grows as <span class="math inline">\(d^N\)</span>. For even modest problems, this becomes intractable.</p></li>
+<li><p><strong>Conservatism.</strong> The controller assumes nature is adversarial and always picks the worst disturbance. In reality, disturbances are often random, not adversarial. The resulting controller is overly cautious.</p></li>
+</ul>
+<p>Min–max MPC is therefore rarely used in practice. It is included here for completeness and to motivate the more practical alternative.</p>
+<h3 id="tube-mpc-the-key-idea">Tube MPC: The Key Idea</h3>
+<p>Tube MPC avoids the computational explosion by separating the problem into two parts:</p>
+<ol>
+<li><p>A <strong>nominal trajectory</strong> <span class="math inline">\(z_k\)</span> that is planned as if there were no disturbance. This is a standard MPC problem.</p></li>
+<li><p>A <strong>feedback controller</strong> <span class="math inline">\(-K(x_k - z_k)\)</span> that keeps the real state <span class="math inline">\(x_k\)</span> close to the nominal trajectory <span class="math inline">\(z_k\)</span>, despite the disturbance.</p></li>
+</ol>
+<p>The deviation <span class="math inline">\(e_k = x_k - z_k\)</span> between the real and nominal state is bounded because <span class="math inline">\(K\)</span> is stabilising and the disturbance is bounded. The set of all possible deviations forms a “tube” around the nominal trajectory. By tightening the constraints on the nominal trajectory (shrinking them inward by the tube width), we guarantee that the real trajectory satisfies the original constraints.</p>
+<p>This is the essence of Tube MPC: <strong>plan the nominal path conservatively, and let a feedback controller handle the disturbances.</strong></p>
+<h2 id="set-operations-minkowski-sum-and-pontryagin-difference">Set Operations: Minkowski Sum and Pontryagin Difference</h2>
+<p>Before developing Tube MPC formally, we need two set operations that appear throughout the theory. These are not difficult, but they are essential.</p>
+<h3 id="minkowski-sum">Minkowski Sum</h3>
+<div class="defnbox">
+<p><span>Definition: Minkowski Sum</span> The <strong>Minkowski sum</strong> of two sets <span class="math inline">\(P\)</span> and <span class="math inline">\(Q\)</span> in <span class="math inline">\(\mathbb{R}^n\)</span> is: <span class="math display">\[P \oplus Q = \{p + q \mid p \in P, \; q \in Q\}\]</span> In words: take every point in <span class="math inline">\(P\)</span>, add every point in <span class="math inline">\(Q\)</span>, and collect all the results. The resulting set is “<span class="math inline">\(P\)</span> inflated by <span class="math inline">\(Q\)</span>”.</p>
+</div>
+<p><strong>Geometric intuition.</strong> Place a copy of <span class="math inline">\(Q\)</span> at every point of <span class="math inline">\(P\)</span>. The Minkowski sum is the union of all these copies. If <span class="math inline">\(P\)</span> is a square and <span class="math inline">\(Q\)</span> is a small disk, then <span class="math inline">\(P \oplus Q\)</span> is the square with rounded corners. Figure <a href="#fig:minkowski_sum" data-reference-type="ref" data-reference="fig:minkowski_sum">1.1</a> illustrates this operation.</p>
+<figure id="fig:minkowski_sum" data-latex-placement="H">
+<embed src="figures/minkowski_sum.png" style="width:95.0%" />
+<figcaption>Minkowski sum of a square <span class="math inline">\(P\)</span> and a diamond <span class="math inline">\(W\)</span>. The result <span class="math inline">\(P \oplus W\)</span> is larger than <span class="math inline">\(P\)</span>, “inflated” by the shape of <span class="math inline">\(W\)</span>.</figcaption>
+</figure>
+<p><strong>Why it matters for Tube MPC.</strong> If the nominal state is <span class="math inline">\(z_k\)</span> and the error <span class="math inline">\(e_k\)</span> can be anywhere in a set <span class="math inline">\(\mathcal{E}\)</span>, then the actual state <span class="math inline">\(x_k = z_k + e_k\)</span> can be anywhere in <span class="math inline">\(\{z_k\} \oplus \mathcal{E}\)</span>. The tube around the nominal trajectory is exactly this: the Minkowski sum of each nominal point with the error set.</p>
+<h3 id="pontryagin-difference">Pontryagin Difference</h3>
+<div class="defnbox">
+<p><span>Definition: Pontryagin Difference</span> The <strong>Pontryagin difference</strong> (also called the <em>erosion</em>) of a set <span class="math inline">\(\mathcal{X}\)</span> by a set <span class="math inline">\(\mathcal{E}\)</span> is: <span class="math display">\[\mathcal{X} \ominus \mathcal{E} = \{z \in \mathbb{R}^n \mid z + e \in \mathcal{X} \;\; \text{for all } e \in \mathcal{E}\}\]</span> In words: <span class="math inline">\(\mathcal{X} \ominus \mathcal{E}\)</span> contains all points <span class="math inline">\(z\)</span> such that <em>every possible shift by an element of <span class="math inline">\(\mathcal{E}\)</span></em> still lands inside <span class="math inline">\(\mathcal{X}\)</span>.</p>
+</div>
+<p><strong>Geometric intuition.</strong> The Pontryagin difference is the “shrunk” version of <span class="math inline">\(\mathcal{X}\)</span>. If you stand at a point <span class="math inline">\(z \in \mathcal{X} \ominus \mathcal{E}\)</span> and someone pushes you by any amount in <span class="math inline">\(\mathcal{E}\)</span>, you still remain inside <span class="math inline">\(\mathcal{X}\)</span>. It is the opposite of the Minkowski sum: while <span class="math inline">\(\oplus\)</span> inflates a set, <span class="math inline">\(\ominus\)</span> shrinks it. See Figure <a href="#fig:pontryagin_diff" data-reference-type="ref" data-reference="fig:pontryagin_diff">1.2</a> for an illustration.</p>
+<figure id="fig:pontryagin_diff" data-latex-placement="H">
+<embed src="figures/pontryagin_diff.png" style="width:95.0%" />
+<figcaption>Pontryagin difference <span class="math inline">\(\mathcal{X} \ominus \mathcal{E}\)</span>. The original constraint set <span class="math inline">\(\mathcal{X}\)</span> (dashed blue) is shrunk inward by the size of <span class="math inline">\(\mathcal{E}\)</span> (red), yielding the tightened set (solid green). Any point in the tightened set remains inside <span class="math inline">\(\mathcal{X}\)</span> even after a worst-case shift from <span class="math inline">\(\mathcal{E}\)</span>.</figcaption>
+</figure>
+<p><strong>Why it matters for Tube MPC.</strong> To guarantee that the real state <span class="math inline">\(x_k = z_k + e_k\)</span> satisfies <span class="math inline">\(x_k \in \mathcal{X}\)</span> for all <span class="math inline">\(e_k \in \mathcal{E}\)</span>, we must require the nominal state to satisfy <span class="math inline">\(z_k \in \mathcal{X} \ominus \mathcal{E}\)</span>. This is called <em>constraint tightening</em>.</p>
+<div class="examplebox">
+<p><span>Minkowski Sum and Pontryagin Difference in 1D</span> Let <span class="math inline">\(\mathcal{X} = [-5, \; 5]\)</span> (the state must stay between <span class="math inline">\(-5\)</span> and <span class="math inline">\(5\)</span>) and <span class="math inline">\(\mathcal{E} = [-0.3, \; 0.3]\)</span> (the error is at most <span class="math inline">\(0.3\)</span> in magnitude).</p>
+<p><strong>Minkowski sum:</strong> <span class="math inline">\(\mathcal{X} \oplus \mathcal{E} = [-5.3, \; 5.3]\)</span>. The set grows by the error width on each side.</p>
+<p><strong>Pontryagin difference:</strong> <span class="math inline">\(\mathcal{X} \ominus \mathcal{E} = [-4.7, \; 4.7]\)</span>. The set shrinks by <span class="math inline">\(0.3\)</span> on each side. If the nominal state <span class="math inline">\(z\)</span> stays within <span class="math inline">\([-4.7, 4.7]\)</span>, then <span class="math inline">\(x = z + e\)</span> stays within <span class="math inline">\([-5, 5]\)</span> for any <span class="math inline">\(|e| \le 0.3\)</span>.</p>
+<p>This is constraint tightening: the nominal trajectory must respect the stricter bounds <span class="math inline">\(\pm 4.7\)</span>, so that the actual trajectory respects the original bounds <span class="math inline">\(\pm 5\)</span>.</p>
+</div>
+<h2 id="sec:tube_full">Tube MPC: The Full Development</h2>
+<p>We now develop Tube MPC step by step.</p>
+<h3 id="step-1-decompose-the-system">Step 1: Decompose the System</h3>
+<p>The uncertain system is <span class="math inline">\(x_{k+1} = Ax_k + Bu_k + w_k\)</span>. We introduce a <em>nominal</em> system that evolves without disturbance: <span class="math display">\[\begin{equation}
+ \label{eq:nominal_system}
+    z_{k+1} = Az_k + Bv_k
+\end{equation}\]</span> where <span class="math inline">\(z_k\)</span> is the nominal state and <span class="math inline">\(v_k\)</span> is the nominal input. These are the decision variables that the MPC optimiser will compute.</p>
+<p>We define the <em>error</em> between the real and nominal states: <span class="math display">\[e_k = x_k - z_k\]</span></p>
+<p>The control input is split into two parts: <span class="math display">\[\begin{equation}
+ \label{eq:tube_control_law}
+    u_k = v_k - K(x_k - z_k) = v_k - Ke_k
+\end{equation}\]</span> where:</p>
+<ul>
+<li><p><span class="math inline">\(v_k\)</span> is the <strong>nominal input</strong>, computed by the MPC optimiser. It steers the nominal trajectory <span class="math inline">\(z_k\)</span> toward the origin.</p></li>
+<li><p><span class="math inline">\(K\)</span> is a <strong>fixed feedback gain</strong> (typically the LQR gain from <code>dlqr</code>, so <span class="math inline">\(K &gt; 0\)</span> and <span class="math inline">\(u = -Kx\)</span> stabilises the system). It keeps the real state close to the nominal state by rejecting disturbances.</p></li>
+</ul>
+<h3 id="step-2-derive-the-error-dynamics">Step 2: Derive the Error Dynamics</h3>
+<p>Substituting <a href="#eq:tube_control_law" data-reference-type="eqref" data-reference="eq:tube_control_law">[eq:tube_control_law]</a> into the real dynamics <a href="#eq:uncertain_system" data-reference-type="eqref" data-reference="eq:uncertain_system">[eq:uncertain_system]</a> and subtracting the nominal dynamics <a href="#eq:nominal_system" data-reference-type="eqref" data-reference="eq:nominal_system">[eq:nominal_system]</a>:</p>
+<p><span class="math display">\[\begin{align*}
+    x_{k+1} &amp;= Ax_k + B(v_k - Ke_k) + w_k \\
+    z_{k+1} &amp;= Az_k + Bv_k
+\end{align*}\]</span></p>
+<p>Subtracting: <span class="math display">\[\begin{equation}
+ \label{eq:error_dynamics}
+    \boxed{e_{k+1} = (A - BK)\,e_k + w_k}
+\end{equation}\]</span></p>
+<p>This is the key result. The error dynamics are <em>autonomous</em>: they do not depend on <span class="math inline">\(v_k\)</span> at all. The nominal input cancels out. The error evolves purely under the closed-loop matrix <span class="math inline">\(A_{cl} = A - BK\)</span> and the disturbance <span class="math inline">\(w_k\)</span>.</p>
+<p>Since <span class="math inline">\(K\)</span> is chosen so that <span class="math inline">\(A_{cl}\)</span> is Schur stable (all eigenvalues inside the unit circle), the error <span class="math inline">\(e_k\)</span> does not grow without bound. But it does not converge to zero either, because the disturbance <span class="math inline">\(w_k\)</span> keeps pushing it around. Instead, <span class="math inline">\(e_k\)</span> settles into a bounded set that we can compute.</p>
+<h3 id="step-3-the-minimal-robust-positively-invariant-set">Step 3: The Minimal Robust Positively Invariant Set</h3>
+<div class="defnbox">
+<p><span>Definition: Robust Positively Invariant (RPI) Set</span> A set <span class="math inline">\(\mathcal{E} \subseteq \mathbb{R}^n\)</span> is a <strong>robust positively invariant (RPI) set</strong> for the error dynamics <span class="math inline">\(e_{k+1} = A_{cl}\,e_k + w_k\)</span> with <span class="math inline">\(w_k \in \mathcal{W}\)</span> if: <span class="math display">\[e_k \in \mathcal{E} \;\;\Longrightarrow\;\; e_{k+1} \in \mathcal{E} \quad \text{for all } w_k \in \mathcal{W}\]</span> Once the error enters <span class="math inline">\(\mathcal{E}\)</span>, it stays in <span class="math inline">\(\mathcal{E}\)</span> forever, no matter what disturbances occur.</p>
+</div>
+<p>The smallest such set is the <strong>minimal RPI (mRPI) set</strong>, denoted <span class="math inline">\(\mathcal{E}_\infty\)</span> <span class="citation" data-cites="Rakovic2005"></span>. It can be characterised explicitly: <span class="math display">\[\begin{equation}
+ \label{eq:mrpi}
+    \mathcal{E}_\infty = \bigoplus_{i=0}^{\infty} A_{cl}^i\, \mathcal{W} \;=\; \mathcal{W} \oplus A_{cl}\mathcal{W} \oplus A_{cl}^2\mathcal{W} \oplus \cdots
+\end{equation}\]</span> where <span class="math inline">\(\bigoplus\)</span> denotes the Minkowski sum. In words: take the disturbance set <span class="math inline">\(\mathcal{W}\)</span>, apply the closed-loop dynamics to get <span class="math inline">\(A_{cl}\mathcal{W}\)</span>, then <span class="math inline">\(A_{cl}^2\mathcal{W}\)</span>, and so on. Each set is smaller than the previous one (because <span class="math inline">\(A_{cl}\)</span> is stable and shrinks vectors). The mRPI is the Minkowski sum of all these sets.</p>
+<p><strong>Why is this a valid invariant set?</strong> If <span class="math inline">\(e_k \in \mathcal{E}_\infty\)</span>, then <span class="math inline">\(e_{k+1} = A_{cl}\,e_k + w_k\)</span>. Since <span class="math inline">\(A_{cl}\)</span> maps <span class="math inline">\(\mathcal{E}_\infty\)</span> into <span class="math inline">\(\bigoplus_{i=1}^{\infty} A_{cl}^i\,\mathcal{W}\)</span>, and adding <span class="math inline">\(w_k \in \mathcal{W}\)</span> gives <span class="math inline">\(\mathcal{W} \oplus \bigoplus_{i=1}^{\infty} A_{cl}^i\,\mathcal{W} = \mathcal{E}_\infty\)</span>, the set is invariant.</p>
+<p><strong>Practical computation.</strong> The infinite sum <a href="#eq:mrpi" data-reference-type="eqref" data-reference="eq:mrpi">[eq:mrpi]</a> is computed by iterating: <span class="math display">\[\begin{align*}
+    \Omega_0 &amp;= \mathcal{W} \\
+    \Omega_{i+1} &amp;= \Omega_i \oplus A_{cl}^{i+1}\mathcal{W}
+\end{align*}\]</span> and stopping when <span class="math inline">\(\Omega_{i+1} \approx \Omega_i\)</span> (the additional term <span class="math inline">\(A_{cl}^{i+1}\mathcal{W}\)</span> becomes negligibly small because <span class="math inline">\(A_{cl}\)</span> is stable). Figure <a href="#fig:mrpi_iteration" data-reference-type="ref" data-reference="fig:mrpi_iteration">1.3</a> illustrates this convergence.</p>
+<figure id="fig:mrpi_iteration" data-latex-placement="H">
+<embed src="figures/mrpi_iteration.png" style="width:60.0%" />
+<figcaption>Iterative computation of the mRPI set. Starting from <span class="math inline">\(\Omega_0 = \mathcal{W}\)</span> (innermost set), each iteration adds a smaller and smaller set <span class="math inline">\(A_{cl}^i\mathcal{W}\)</span>. The sets converge to the mRPI set <span class="math inline">\(\mathcal{E}_\infty\)</span>.</figcaption>
+</figure>
+<p><strong>The role of <span class="math inline">\(K\)</span>.</strong> A faster stabilising gain <span class="math inline">\(K\)</span> (one that places the eigenvalues of <span class="math inline">\(A_{cl}\)</span> closer to zero) produces a smaller mRPI set <span class="math inline">\(\mathcal{E}_\infty\)</span>, because <span class="math inline">\(A_{cl}^i\mathcal{W}\)</span> shrinks faster. A smaller tube means less constraint tightening, which means a larger feasible region for the nominal MPC. However, aggressive gains require larger control inputs, which tightens the input constraints more. There is a trade-off in choosing <span class="math inline">\(K\)</span>.</p>
+<div class="examplebox">
+<p><span>Computing the mRPI Set for a Scalar System</span> Consider the scalar system <span class="math inline">\(x_{k+1} = 1.2\,x_k + u_k + w_k\)</span> with <span class="math inline">\(|w_k| \le 0.1\)</span> and <span class="math inline">\(|u_k| \le 1\)</span>. The stabilising gain is <span class="math inline">\(K = 0.79\)</span> (as returned by <code>dlqr</code>, so <span class="math inline">\(u = -Kx\)</span>), giving <span class="math inline">\(a_{cl} = 1.2 - 0.79 = 0.41\)</span>.</p>
+<p>The mRPI set is the interval <span class="math inline">\(\mathcal{E}_\infty = [-\bar{e}, \;\bar{e}]\)</span>, where: <span class="math display">\[\bar{e} = \sum_{i=0}^{\infty} |a_{cl}|^i \cdot 0.1 = \frac{0.1}{1 - |a_{cl}|} = \frac{0.1}{1 - 0.41} = \frac{0.1}{0.59} \approx 0.169\]</span></p>
+<p>So the error <span class="math inline">\(e_k = x_k - z_k\)</span> is guaranteed to stay within <span class="math inline">\([-0.169, \; 0.169]\)</span>, no matter what disturbance sequence occurs (as long as <span class="math inline">\(|w_k| \le 0.1\)</span>).</p>
+<p><strong>Constraint tightening.</strong> If the original input constraint is <span class="math inline">\(|u_k| \le 1\)</span>, the tightened input constraint for <span class="math inline">\(v_k\)</span> is: <span class="math display">\[|v_k| \le 1 - |K| \cdot \bar{e} = 1 - 0.79 \times 0.169 \approx 0.867\]</span></p>
+<p>If the state constraint is <span class="math inline">\(|x_k| \le 5\)</span>, the tightened state constraint for <span class="math inline">\(z_k\)</span> is: <span class="math display">\[|z_k| \le 5 - 0.169 = 4.831\]</span></p>
+<p>The nominal MPC plans with these tighter bounds, and the feedback controller <span class="math inline">\(u_k = v_k - K(x_k - z_k)\)</span> takes care of the rest.</p>
+</div>
+<h2 id="sec:constraint_tightening">Step 4: Constraint Tightening</h2>
+<p>This is the central mechanism that makes Tube MPC robust. Since the real state <span class="math inline">\(x_k = z_k + e_k\)</span> can deviate from the nominal state <span class="math inline">\(z_k\)</span> by any amount in <span class="math inline">\(\mathcal{E}\)</span>, we must ensure the constraints hold even in the worst case.</p>
+<p><strong>State constraints.</strong> We need <span class="math inline">\(x_k = z_k + e_k \in \mathcal{X}\)</span> for all <span class="math inline">\(e_k \in \mathcal{E}\)</span>. This is equivalent to requiring: <span class="math display">\[\begin{equation}
+    z_k \in \mathcal{X} \ominus \mathcal{E} \;=:\; \mathcal{X}_t
+\end{equation}\]</span> The tightened state constraint set <span class="math inline">\(\mathcal{X}_t\)</span> is the original constraint set shrunk by the tube width.</p>
+<p><strong>Input constraints.</strong> The actual input is <span class="math inline">\(u_k = v_k - Ke_k\)</span>. We need <span class="math inline">\(u_k \in \mathcal{U}\)</span> for all <span class="math inline">\(e_k \in \mathcal{E}\)</span>. This gives: <span class="math display">\[\begin{equation}
+    v_k \in \mathcal{U} \ominus K\mathcal{E} \;=:\; \mathcal{V}
+\end{equation}\]</span> where <span class="math inline">\(K\mathcal{E} = \{Ke \mid e \in \mathcal{E}\}\)</span> is the set of all possible feedback corrections.</p>
+<p><strong>Why does this work?</strong> By construction:</p>
+<ul>
+<li><p>If <span class="math inline">\(z_k \in \mathcal{X}_t\)</span> and <span class="math inline">\(e_k \in \mathcal{E}\)</span>, then <span class="math inline">\(x_k = z_k + e_k \in \mathcal{X}\)</span>. (Definition of <span class="math inline">\(\ominus\)</span>.)</p></li>
+<li><p>If <span class="math inline">\(v_k \in \mathcal{V}\)</span> and <span class="math inline">\(e_k \in \mathcal{E}\)</span>, then <span class="math inline">\(u_k = v_k - Ke_k \in \mathcal{U}\)</span>. (Definition of <span class="math inline">\(\ominus\)</span>.)</p></li>
+</ul>
+<p>The original hard constraints on <span class="math inline">\((x_k, u_k)\)</span> are <em>guaranteed</em> to be satisfied, regardless of which disturbance <span class="math inline">\(w_k \in \mathcal{W}\)</span> occurs. The price we pay is that the nominal trajectory has less room: the feasible region shrinks by the tube width on all sides.</p>
+<div class="notebox">
+<p><span>How much room do we lose?</span> The amount of constraint tightening depends directly on the size of <span class="math inline">\(\mathcal{E}\)</span>, which in turn depends on:</p>
+<ul>
+<li><p><strong>The disturbance bound <span class="math inline">\(\mathcal{W}\)</span></strong>: Larger disturbances <span class="math inline">\(\Rightarrow\)</span> larger <span class="math inline">\(\mathcal{E}\)</span> <span class="math inline">\(\Rightarrow\)</span> more tightening.</p></li>
+<li><p><strong>The feedback gain <span class="math inline">\(K\)</span></strong>: A faster gain shrinks <span class="math inline">\(\mathcal{E}\)</span> (less tightening of state constraints) but enlarges <span class="math inline">\(K\mathcal{E}\)</span> (more tightening of input constraints). A slower gain has the opposite effect.</p></li>
+</ul>
+<p>In the extreme case where <span class="math inline">\(\mathcal{W} = \{0\}\)</span> (no disturbance), we get <span class="math inline">\(\mathcal{E} = \{0\}\)</span>, and the tightened constraints equal the original constraints. Tube MPC reduces to standard MPC.</p>
+</div>
+<h2 id="sec:tube_opt">Step 5: The Tube MPC Optimisation Problem</h2>
+<p>At each time step <span class="math inline">\(k\)</span>, we measure the current state <span class="math inline">\(x_k\)</span> and solve the following optimisation over the nominal trajectory <span class="math inline">\((z, v)\)</span>:</p>
+<p><span class="math display">\[\begin{equation}
+ \label{eq:tube_mpc_opt}
+    \begin{aligned}
+        \min_{z_0, \ldots, z_N, \;\; v_0, \ldots, v_{N-1}} \quad &amp; z_N^\top P\, z_N + \sum_{i=0}^{N-1} \bigl(z_i^\top Q\, z_i + v_i^\top R\, v_i\bigr) \\[6pt]
+        \text{subject to:} \quad
+        &amp; z_{i+1} = Az_i + Bv_i, \qquad i = 0, \ldots, N-1 \\
+        &amp; z_i \in \mathcal{X}_t = \mathcal{X} \ominus \mathcal{E}, \qquad i = 0, \ldots, N-1 \\
+        &amp; v_i \in \mathcal{V} = \mathcal{U} \ominus K\mathcal{E}, \qquad i = 0, \ldots, N-1 \\
+        &amp; z_N \in \mathcal{X}_f \\
+        &amp; x_k \in z_0 \oplus \mathcal{E}
+    \end{aligned}
+\end{equation}\]</span></p>
+<p>The key differences from standard MPC are:</p>
+<ol>
+<li><p><strong>The optimisation is over the nominal system</strong> <span class="math inline">\((z, v)\)</span>, not the real system <span class="math inline">\((x, u)\)</span>. The nominal system has no disturbance, so this is a standard QP — exactly the same type of problem we solved in Chapter 7.</p></li>
+<li><p><strong>The constraints are tightened.</strong> The state and input constraints are shrunk inward by the tube width to account for the worst-case disturbance.</p></li>
+<li><p><strong>The initial condition links the nominal and real systems.</strong> The constraint <span class="math inline">\(x_k \in z_0 \oplus \mathcal{E}\)</span> ensures the nominal starting point <span class="math inline">\(z_0\)</span> is close enough to the measured state <span class="math inline">\(x_k\)</span> that the error <span class="math inline">\(e_0 = x_k - z_0\)</span> lies within <span class="math inline">\(\mathcal{E}\)</span>. In practice, this is often implemented by fixing <span class="math inline">\(z_0 = x_k\)</span> (which satisfies the constraint since <span class="math inline">\(0 \in \mathcal{E}\)</span>), or by optimising over <span class="math inline">\(z_0\)</span> (which can improve performance by choosing a better tube centre).</p></li>
+<li><p><strong>The terminal set <span class="math inline">\(\mathcal{X}_f\)</span></strong> is a positive invariant set for the nominal system under the tightened constraints, analogous to the terminal set in Chapter 7. It must satisfy <span class="math inline">\(\mathcal{X}_f \subseteq \mathcal{X}_t\)</span>.</p></li>
+</ol>
+<p>After solving <a href="#eq:tube_mpc_opt" data-reference-type="eqref" data-reference="eq:tube_mpc_opt">[eq:tube_mpc_opt]</a>, the control input applied to the real system is: <span class="math display">\[\begin{equation}
+    u_k = v_0^\star - K(x_k - z_0^\star)
+\end{equation}\]</span></p>
+<p>At the next time step, we re-measure <span class="math inline">\(x_{k+1}\)</span> and solve again.</p>
+<h2 id="sec:tube_architecture">Tube MPC Architecture</h2>
+<p>The complete Tube MPC controller has the following structure:</p>
+<div class="center">
+
+</div>
+<p>The offline computation (feedback gain <span class="math inline">\(K\)</span>, mRPI set <span class="math inline">\(\mathcal{E}\)</span>, tightened constraints <span class="math inline">\(\mathcal{X}_t\)</span> and <span class="math inline">\(\mathcal{V}\)</span>, and the terminal set <span class="math inline">\(\mathcal{X}_f\)</span>) is performed once during the design phase. At run time, the controller only needs to solve the nominal QP (same size as standard MPC) and add the feedback correction.</p>
+<h2 id="sec:tube_example_scalar">Worked Example: Tube MPC for a Scalar System</h2>
+<div class="examplebox">
+<p><span>Tube MPC: Scalar Integrator with Disturbance</span> Consider the system: <span class="math display">\[x_{k+1} = 1.2\,x_k + u_k + w_k\]</span> with <span class="math inline">\(|u_k| \le 1\)</span>, <span class="math inline">\(|x_k| \le 5\)</span>, <span class="math inline">\(|w_k| \le 0.1\)</span>, and initial condition <span class="math inline">\(x_0 = 2\)</span>.</p>
+<p>Design a Tube MPC controller with <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 1\)</span>, <span class="math inline">\(N = 5\)</span>.</p>
+<p><strong>Step 1: Choose <span class="math inline">\(K\)</span> and compute the closed-loop eigenvalue.</strong></p>
+<p>Using the DARE with <span class="math inline">\(Q = 1\)</span>, <span class="math inline">\(R = 1\)</span>: <span class="math inline">\(K = 0.79\)</span> (positive, as returned by <code>dlqr</code>), so <span class="math inline">\(u = -Kx \approx -0.79x\)</span>, giving <span class="math inline">\(a_{cl} = a - bK = 1.2 - 0.79 = 0.41\)</span>.</p>
+<p><strong>Step 2: Compute the mRPI set.</strong> <span class="math display">\[\bar{e} = \frac{w_{\max}}{1 - |a_{cl}|} = \frac{0.1}{1 - 0.41} = \frac{0.1}{0.59} \approx 0.169\]</span> So <span class="math inline">\(\mathcal{E} = [-0.169, \; 0.169]\)</span>.</p>
+<p><strong>Step 3: Tighten constraints.</strong> <span class="math display">\[\begin{align*}
+        \text{State:} \quad &amp; |z_k| \le 5 - 0.169 = 4.831 \\
+        \text{Input:} \quad &amp; |v_k| \le 1 - |K| \cdot \bar{e} = 1 - 0.79 \times 0.169 \approx 0.867
+\end{align*}\]</span></p>
+<p><strong>Step 4: Solve the nominal MPC.</strong></p>
+<p>At each time step, solve the standard MPC problem <a href="#eq:tube_mpc_opt" data-reference-type="eqref" data-reference="eq:tube_mpc_opt">[eq:tube_mpc_opt]</a> for the disturbance-free system <span class="math inline">\(z_{k+1} = 1.2\,z_k + v_k\)</span> with the tightened constraints <span class="math inline">\(|z_k| \le 4.831\)</span> and <span class="math inline">\(|v_k| \le 0.867\)</span>.</p>
+<p><strong>Step 5: Apply the tube control law.</strong> <span class="math display">\[u_k = v_k^\star - K(x_k - z_k^\star) = v_k^\star - 0.79(x_k - z_k^\star)\]</span></p>
+<p>Figure <a href="#fig:tube_scalar" data-reference-type="ref" data-reference="fig:tube_scalar">1.4</a> shows 50 different disturbance realisations. The blue traces are the actual state trajectories; the red dashed line is the nominal trajectory. All realisations remain within the constraint bounds, despite the disturbances.</p>
+</div>
+<figure id="fig:tube_scalar" data-latex-placement="H">
+<embed src="figures/tube_mpc_scalar.png" style="width:85.0%" />
+<figcaption>Tube MPC applied to the scalar system <span class="math inline">\(x_{k+1} = 1.2\,x_k + u_k + w_k\)</span> with <span class="math inline">\(|w_k| \le 0.1\)</span>. Fifty disturbance realisations (blue) cluster around the nominal trajectory (red dashed). All trajectories satisfy the input constraints <span class="math inline">\(|u_k| \le 1\)</span>.</figcaption>
+</figure>
+<h2 id="sec:tube_example_2d">Worked Example: Two-State System</h2>
+<div class="examplebox">
+<p><span>Tube MPC: Double Integrator with Disturbance</span> Consider the double integrator: <span class="math display">\[A = \begin{bmatrix} 1 &amp; 1 \\ 0 &amp; 1 \end{bmatrix}, \quad B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad w_k \in \mathcal{W} = \{w \mid \|w\|_\infty \le 0.05\}\]</span> with <span class="math inline">\(|u_k| \le 1\)</span>, <span class="math inline">\(|x_{1,k}| \le 5\)</span>, <span class="math inline">\(|x_{2,k}| \le 3\)</span>, and <span class="math inline">\(Q = I_2\)</span>, <span class="math inline">\(R = 1\)</span>.</p>
+<p><strong>Step 1: Compute LQR gain.</strong></p>
+<p>Solving the DARE gives <span class="math inline">\(K = [0.4345 \;\; 1.0285]\)</span> (positive, as returned by <code>dlqr</code>) and <span class="math inline">\(P = \begin{bmatrix} 2.3671 &amp; 1.1180 \\ 1.1180 &amp; 2.5875 \end{bmatrix}\)</span>.</p>
+<p>The closed-loop matrix is: <span class="math display">\[A_{cl} = A - BK = \begin{bmatrix} 1 - 0.2172 &amp; 1 - 0.5142 \\ 0 - 0.4345 &amp; 1 - 1.0285 \end{bmatrix} = \begin{bmatrix} 0.7828 &amp; 0.4858 \\ -0.4345 &amp; -0.0285 \end{bmatrix}\]</span> The eigenvalues of <span class="math inline">\(A_{cl}\)</span> are approximately <span class="math inline">\(0.377 \pm 0.216j\)</span>, with <span class="math inline">\(|\lambda| \approx 0.434\)</span>, well inside the unit circle.</p>
+<p><strong>Step 2: Compute the mRPI set <span class="math inline">\(\mathcal{E}\)</span>.</strong></p>
+<p>This requires the iterative Minkowski sum <a href="#eq:mrpi" data-reference-type="eqref" data-reference="eq:mrpi">[eq:mrpi]</a>. For a two-state system, this is not practical by hand. Using MPT3 in MATLAB:</p>
+<pre class="matlab" data-language="Matlab"><code>A = [1 1; 0 1]; B = [0.5; 1];
+Q = eye(2); R = 1;
+[K_lqr, ~] = dlqr(A, B, Q, R);
+Acl = A - B*K_lqr;
+
+% Disturbance set
+W = Polyhedron(&#39;lb&#39;, [-0.05; -0.05], &#39;ub&#39;, [0.05; 0.05]);
+
+% Compute mRPI set (iterative Minkowski sum approximation)
+% Note: invariantSet() computes the MAXIMAL positive invariant set,
+% which is NOT the mRPI. The mRPI is computed via the iteration below.
+Omega = W;
+for i = 1:30
+    Omega_new = Omega + (Acl^i) * W;  % Minkowski sum
+    if Omega_new == Omega              % convergence check
+        fprintf(&#39;mRPI converged at iteration %d\n&#39;, i);
+        break;
+    end
+    Omega = Omega_new;
+end
+E = Omega;</code></pre>
+<p><strong>Step 3: Tighten constraints.</strong></p>
+<pre class="matlab" data-language="Matlab"><code>X = Polyhedron(&#39;lb&#39;, [-5; -3], &#39;ub&#39;, [5; 3]);
+U = Polyhedron(&#39;lb&#39;, -1, &#39;ub&#39;, 1);
+KE = K_lqr * E;           % Image of E under K (set of |Ke| values)
+
+Xt = X - E;               % Pontryagin difference
+Vt = U - KE;              % Pontryagin difference</code></pre>
+<p><strong>Step 4: Solve nominal MPC with tightened constraints.</strong></p>
+<p>The optimisation <a href="#eq:tube_mpc_opt" data-reference-type="eqref" data-reference="eq:tube_mpc_opt">[eq:tube_mpc_opt]</a> is a standard QP with the same structure as Chapter 7. The only difference is that <span class="math inline">\(\mathcal{X}\)</span>, <span class="math inline">\(\mathcal{U}\)</span> are replaced by <span class="math inline">\(\mathcal{X}_t\)</span>, <span class="math inline">\(\mathcal{V}\)</span>.</p>
+<p><strong>Step 5: Apply.</strong> <span class="math inline">\(u_k = v_0^\star - K(x_k - z_0^\star)\)</span>.</p>
+</div>
+<h2 id="sec:tube_guarantees">Guarantees of Tube MPC</h2>
+<p>Tube MPC provides three key guarantees, under the same type of assumptions as the nominal MPC stability theory (Chapter 7, Section <a href="#sec:mpc_stability_theory" data-reference-type="ref" data-reference="sec:mpc_stability_theory">[sec:mpc_stability_theory]</a>).</p>
+<div class="summarybox">
+<p><span>Theorem: Properties of Tube MPC</span> Suppose <span class="math inline">\((A, B)\)</span> is stabilisable, <span class="math inline">\(K\)</span> is chosen so that <span class="math inline">\(A_{cl} = A - BK\)</span> is Schur stable, and the MPC formulation <a href="#eq:tube_mpc_opt" data-reference-type="eqref" data-reference="eq:tube_mpc_opt">[eq:tube_mpc_opt]</a> includes a terminal cost <span class="math inline">\(P\)</span> (DARE solution) and terminal set <span class="math inline">\(\mathcal{X}_f\)</span> for the nominal system. Then, for any disturbance sequence <span class="math inline">\(\{w_k\} \subseteq \mathcal{W}\)</span>:</p>
+<ol>
+<li><p><strong>Robust constraint satisfaction:</strong> The actual state and input satisfy <span class="math inline">\(x_k \in \mathcal{X}\)</span> and <span class="math inline">\(u_k \in \mathcal{U}\)</span> for all <span class="math inline">\(k \ge 0\)</span>.</p></li>
+<li><p><strong>Recursive feasibility:</strong> If the optimisation <a href="#eq:tube_mpc_opt" data-reference-type="eqref" data-reference="eq:tube_mpc_opt">[eq:tube_mpc_opt]</a> is feasible at <span class="math inline">\(k = 0\)</span>, it is feasible for all <span class="math inline">\(k \ge 0\)</span>.</p></li>
+<li><p><strong>Robust stability:</strong> The actual state converges to a neighbourhood of the origin. Specifically, <span class="math inline">\(x_k\)</span> converges to the mRPI set <span class="math inline">\(\mathcal{E}\)</span> (not to the origin itself, because the persistent disturbance prevents exact convergence).</p></li>
+</ol>
+</div>
+<p>The first property follows directly from constraint tightening. The second uses the same shifted-sequence argument as in Chapter 7, applied to the nominal system. The third uses the nominal optimal cost <span class="math inline">\(J^\star(z)\)</span> as a Lyapunov function for the nominal system and then bounds the deviation of the real state.</p>
+<p>Note a subtle difference from the nominal case: the state does not converge to zero. It converges to the mRPI set <span class="math inline">\(\mathcal{E}\)</span> around the origin. This is the best we can hope for with persistent disturbances — we cannot drive the state to exactly zero when the disturbance keeps pushing it around.</p>
+<h2 id="sec:tube_comparison">Tube MPC vs Standard MPC: A Comparison</h2>
+<div class="center">
+<div class="tabular">
+<p><span>L<span>4cm</span> C<span>4.5cm</span> C<span>4.5cm</span></span> &amp; <strong>Standard MPC</strong> &amp; <strong>Tube MPC</strong><br />
+Model &amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span> &amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k + w_k\)</span><br />
+Disturbance &amp; Ignored &amp; Bounded: <span class="math inline">\(w_k \in \mathcal{W}\)</span><br />
+Constraint guarantee &amp; Nominal only &amp; Robust (for all <span class="math inline">\(w \in \mathcal{W}\)</span>)<br />
+Online computation &amp; Solve QP &amp; Solve QP (same size) + feedback<br />
+Offline computation &amp; <span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span> &amp; <span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{E}\)</span>, <span class="math inline">\(\mathcal{X}_t\)</span>, <span class="math inline">\(\mathcal{V}\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span><br />
+Convergence &amp; <span class="math inline">\(x_k \to 0\)</span> &amp; <span class="math inline">\(x_k \to \mathcal{E}\)</span> (neighbourhood of 0)<br />
+Feasible region &amp; Larger &amp; Smaller (due to tightening)<br />
+</p>
+</div>
+</div>
+<p>The main takeaway: Tube MPC achieves robust guarantees at essentially no additional online cost. The extra work is in the offline design (computing <span class="math inline">\(\mathcal{E}\)</span> and tightening constraints), not in the real-time optimisation. The QP solved at each step has exactly the same size and structure as standard MPC.</p>
+<h2 id="sec:tube_matlab">Implementation in MATLAB</h2>
+<p>The following MATLAB code implements a complete Tube MPC simulation for the scalar system from Section <a href="#sec:tube_example_scalar" data-reference-type="ref" data-reference="sec:tube_example_scalar">1.8</a>, using YALMIP.</p>
+<pre class="matlab" data-language="Matlab" data-caption="Tube MPC implementation for the scalar system"><code>% x_{k+1} = 1.2*x_k + u_k + w_k,  |w_k| &lt;= 0.1
+clear; clc;
+
+%--- System parameters ---
+a = 1.2;  b = 1;
+Q = 1;    R = 1;    N = 5;
+
+%--- Constraints ---
+x_max = 5;   u_max = 1;   w_max = 0.1;
+
+%--- Step 1: LQR gain ---
+[K_lqr, P_dare] = dlqr(a, b, Q, R);
+K = K_lqr;         % K &gt; 0 (dlqr convention); control law: u = -K*x
+a_cl = a - b*K;    % closed-loop eigenvalue: a_cl = a - b*K
+fprintf(&#39;K = %.4f, a_cl = %.4f\n&#39;, K, a_cl);
+
+%--- Step 2: mRPI set (scalar: geometric series) ---
+e_bar = w_max / (1 - abs(a_cl));
+fprintf(&#39;mRPI half-width: e_bar = %.4f\n&#39;, e_bar);
+
+%--- Step 3: Tighten constraints ---
+x_max_t = x_max - e_bar;              % tightened state
+u_max_t = u_max - abs(K) * e_bar;     % tightened input
+fprintf(&#39;Tightened: |z| &lt;= %.3f, |v| &lt;= %.3f\n&#39;, x_max_t, u_max_t);
+
+%--- Step 4: Build nominal MPC with YALMIP ---
+% z(1) is a decision variable (optimised), not fixed to x(k).
+% Constraint: |x(k) - z(1)| &lt;= e_bar (i.e., x(k) in {z(1)} + E).
+z = sdpvar(1, N+1);   % nominal states (z(1) = z_0 is optimised)
+v = sdpvar(1, N);      % nominal inputs
+x_meas = sdpvar(1);   % parameter: measured state
+
+constraints = [];
+cost = 0;
+for i = 1:N
+    cost = cost + z(i)^2 * Q + v(i)^2 * R;
+    constraints = [constraints, ...
+        z(i+1) == a*z(i) + b*v(i), ...
+        -x_max_t &lt;= z(i) &lt;= x_max_t, ...
+        -u_max_t &lt;= v(i) &lt;= u_max_t];
+end
+cost = cost + z(N+1)^2 * P_dare;  % terminal cost
+constraints = [constraints, -x_max_t &lt;= z(N+1) &lt;= x_max_t];
+
+% Tube constraint: x(k) must lie in {z_0} + E
+constraints = [constraints, -e_bar &lt;= x_meas - z(1) &lt;= e_bar];
+
+params_in = x_meas;          % parameter: measured state
+sols_out = [v(1), z(1)];     % solutions: first nominal input AND z_0
+
+ops = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;quadprog&#39;);
+controller = optimizer(constraints, cost, ops, params_in, sols_out);
+
+%--- Step 5: Simulate ---
+T_sim = 30;
+x = zeros(1, T_sim+1);
+z_traj = zeros(1, T_sim+1);
+u_applied = zeros(1, T_sim);
+
+x(1) = 2.0;      % initial condition
+
+rng(42);
+for k = 1:T_sim
+    % Solve nominal MPC (z_0 is optimised, not fixed to x(k))
+    sol = controller(x(k));
+    v0 = sol(1);
+    z0 = sol(2);
+
+    % Apply tube control law: u = v - K*(x - z)
+    % Note: z0 ~= x(k) in general, so the feedback term is nonzero
+    u_applied(k) = v0 - K * (x(k) - z0);
+    u_applied(k) = max(-u_max, min(u_max, u_applied(k)));
+
+    % Simulate real system with disturbance
+    w = w_max * (2*rand - 1);   % uniform in [-w_max, w_max]
+    x(k+1) = a * x(k) + b * u_applied(k) + w;
+
+    % Store nominal trajectory for plotting
+    z_traj(k) = z0;
+    z_traj(k+1) = a * z0 + b * v0;
+end
+
+%--- Plot ---
+figure;
+subplot(2,1,1);
+plot(0:T_sim, x, &#39;b-&#39;, &#39;LineWidth&#39;, 1.5); hold on;
+plot(0:T_sim, z_traj, &#39;r--&#39;, &#39;LineWidth&#39;, 1.5);
+yline(x_max, &#39;g--&#39;); yline(-x_max, &#39;g--&#39;);
+ylabel(&#39;State&#39;); legend(&#39;Actual x_k&#39;, &#39;Nominal z_k&#39;, &#39;Constraint&#39;);
+title(&#39;Tube MPC: Scalar System&#39;); grid on;
+
+subplot(2,1,2);
+stairs(0:T_sim-1, u_applied, &#39;b-&#39;, &#39;LineWidth&#39;, 1.5);
+yline(u_max, &#39;g--&#39;); yline(-u_max, &#39;g--&#39;);
+xlabel(&#39;Time step k&#39;); ylabel(&#39;Input u_k&#39;);
+legend(&#39;Applied input&#39;, &#39;Constraint&#39;); grid on;</code></pre>
+<h2 id="sec:tube_mpt3">Computing the mRPI Set with MPT3</h2>
+<p>For multi-state systems, computing the mRPI set by hand is impractical. The MPT3 toolbox <span class="citation" data-cites="Herceg2013"></span> provides automated tools for this. The key steps are:</p>
+<pre class="matlab" data-language="Matlab" data-caption="Computing the mRPI set and tightened constraints using MPT3"><code>% System: x+ = Ax + Bu + w,  w in W
+
+A = [1 1; 0 1];   B = [0.5; 1];
+Q = eye(2);        R = 1;
+
+% LQR gain
+[K_lqr, P_dare] = dlqr(A, B, Q, R);
+Acl = A - B*K_lqr;
+
+% Define constraint sets as Polyhedra
+X = Polyhedron(&#39;lb&#39;, [-5; -3], &#39;ub&#39;, [5; 3]);     % state
+U = Polyhedron(&#39;lb&#39;, -1, &#39;ub&#39;, 1);                 % input
+W = Polyhedron(&#39;lb&#39;, [-0.05; -0.05], ...
+               &#39;ub&#39;, [0.05; 0.05]);                 % disturbance
+
+% --- Compute the mRPI set ---
+% Iterative Minkowski sum: E = W + Acl*W + Acl^2*W + ...
+E = W;
+for i = 1:30
+    E_new = E + Acl^i * W;   % Minkowski sum
+    if E_new == E             % convergence check
+        fprintf(&#39;mRPI converged at iteration %d\n&#39;, i);
+        break;
+    end
+    E = E_new;
+end
+
+% --- Tighten constraints ---
+KE  = K_lqr * E;        % image of E under gain K (set of |Ke| values)
+Xt  = X - E;             % Pontryagin difference: X ominus E
+Vt  = U - KE;            % Pontryagin difference: U ominus KE
+
+% --- Compute terminal set for nominal system ---
+sys_nom = LTISystem(&#39;A&#39;, A - B*K_lqr);
+sys_nom.x.min = Xt.Internal.lb;
+sys_nom.x.max = Xt.Internal.ub;
+Xf = sys_nom.invariantSet();
+
+% --- Extract half-space representation for QP ---
+% Tightened state: Xt.A * z &lt;= Xt.b
+% Tightened input: Vt.A * v &lt;= Vt.b
+% Terminal:        Xf.A * z_N &lt;= Xf.b
+
+fprintf(&#39;Tightened state constraints: %d inequalities\n&#39;, size(Xt.A, 1));
+fprintf(&#39;Tightened input constraints: %d inequalities\n&#39;, size(Vt.A, 1));
+fprintf(&#39;Terminal set: %d inequalities\n&#39;, size(Xf.A, 1));</code></pre>
+<div class="notebox">
+<p><span>Approximate mRPI for large systems</span> For systems with more than 3–4 states, the exact mRPI computation can produce polytopes with a very large number of faces, making the resulting QP expensive. In practice, an outer approximation <span class="math inline">\(\hat{\mathcal{E}} \supseteq \mathcal{E}_\infty\)</span> is often used instead <span class="citation" data-cites="Rakovic2005"></span>. A common approach is to stop the iteration after a fixed number of steps <span class="math inline">\(s\)</span> and scale the result slightly outward: <span class="math inline">\(\hat{\mathcal{E}} = (1-\epsilon)^{-1}\,\Omega_s\)</span> for a small <span class="math inline">\(\epsilon &gt; 0\)</span> chosen so that <span class="math inline">\(A_{cl}^{s+1}\mathcal{W} \subseteq \epsilon\,\Omega_s\)</span>. This guarantees that <span class="math inline">\(\hat{\mathcal{E}}\)</span> is a true RPI set while keeping the number of polytope faces manageable.</p>
+</div>
+<h2 id="sec:tube_visualisation">Visualising the Tube</h2>
+<p>Figure <a href="#fig:tube_concept" data-reference-type="ref" data-reference="fig:tube_concept">1.5</a> illustrates the key concept. The nominal trajectory <span class="math inline">\(z_k\)</span> (red dashed) is planned by the MPC optimiser. The actual trajectory <span class="math inline">\(x_k\)</span> (blue solid) deviates due to disturbances but stays within the grey “tube” — the Minkowski sum <span class="math inline">\(\{z_k\} \oplus \mathcal{E}\)</span> at each step. The nominal trajectory respects the tightened constraints (orange lines), which guarantees the actual trajectory respects the original constraints (green dashed lines).</p>
+<figure id="fig:tube_concept" data-latex-placement="H">
+<embed src="figures/tube_mpc_concept.png" style="width:85.0%" />
+<figcaption>The tube concept in state space. Grey ellipses represent the cross-section <span class="math inline">\(\mathcal{E}\)</span> of the tube at each time step. The nominal trajectory (red) stays within the tightened constraints (orange), ensuring the actual trajectory (blue) stays within the original constraints (green dashed).</figcaption>
+</figure>
+<h2 id="summary-and-practical-guidelines">Summary and Practical Guidelines</h2>
+<div class="summarybox">
+<p><span>Tube MPC Design Recipe</span></p>
+<ol>
+<li><p><strong>Model the disturbance.</strong> Identify the disturbance set <span class="math inline">\(\mathcal{W}\)</span> from physical knowledge or data. Larger <span class="math inline">\(\mathcal{W}\)</span> gives more robustness but tighter constraints.</p></li>
+<li><p><strong>Choose the feedback gain <span class="math inline">\(K\)</span>.</strong> Use LQR or pole placement. Faster gains give a smaller tube (less constraint tightening) but require more control effort (more input constraint tightening). There is a design trade-off.</p></li>
+<li><p><strong>Compute the mRPI set <span class="math inline">\(\mathcal{E}\)</span>.</strong> Use the iterative Minkowski sum <a href="#eq:mrpi" data-reference-type="eqref" data-reference="eq:mrpi">[eq:mrpi]</a> or MPT3. For scalar systems, use the geometric series formula.</p></li>
+<li><p><strong>Tighten constraints.</strong> State: <span class="math inline">\(\mathcal{X}_t = \mathcal{X} \ominus \mathcal{E}\)</span>. Input: <span class="math inline">\(\mathcal{V} = \mathcal{U} \ominus K\mathcal{E}\)</span>. Check that the tightened sets are non-empty; if they are empty, the disturbance is too large relative to the constraints, and robust constraint satisfaction is impossible.</p></li>
+<li><p><strong>Design the nominal MPC.</strong> Solve a standard MPC problem with the tightened constraints. All the techniques from Chapter 7 apply (terminal cost <span class="math inline">\(P\)</span>, terminal set <span class="math inline">\(\mathcal{X}_f\)</span>, YALMIP implementation).</p></li>
+<li><p><strong>Apply the tube law.</strong> At each step: <span class="math inline">\(u_k = v_0^\star - K(x_k - z_0^\star)\)</span>.</p></li>
+</ol>
+</div>
+<div class="alertbox">
+<p><span>When Tube MPC cannot help</span> If the disturbance bound <span class="math inline">\(\mathcal{W}\)</span> is so large that the tightened constraint sets <span class="math inline">\(\mathcal{X}_t\)</span> or <span class="math inline">\(\mathcal{V}\)</span> become empty, then no controller can guarantee robust constraint satisfaction. In this case, the system physically cannot respect the constraints under all possible disturbances. Options include: relaxing the constraints (soft constraints), reducing the disturbance (better actuators or shielding), or accepting occasional constraint violations and using a stochastic MPC approach instead.</p>
+</div>
+<h2 class="unnumbered" id="further-reading">Further Reading</h2>
+<p>The Tube MPC framework was introduced by Langson et al. <span class="citation" data-cites="Langson2004"></span> and further developed by Mayne et al. <span class="citation" data-cites="Mayne2005"></span>. The efficient outer approximation of the mRPI set used in practice is due to Rakovi<span>ć</span> et al. <span class="citation" data-cites="Rakovic2005"></span>. For a comprehensive treatment of robust MPC including stochastic formulations, see Kouvaritakis and Cannon <span class="citation" data-cites="Kouvaritakis2016"></span>. The broader MPC stability theory underpinning the guarantees discussed in this chapter is surveyed in Mayne et al. <span class="citation" data-cites="Mayne2000"></span>. The textbooks by Rawlings et al. <span class="citation" data-cites="Rawlings2017"></span> and Borrelli et al. <span class="citation" data-cites="Borrelli2017"></span> provide detailed treatments of both nominal and robust MPC.</p>
+<h2 class="unnumbered" id="exercises">Exercises</h2>
+<ol>
+<li><p>Consider the scalar system <span class="math inline">\(x_{k+1} = 1.5\,x_k + u_k + w_k\)</span> with <span class="math inline">\(|u_k| \le 2\)</span>, <span class="math inline">\(|w_k| \le 0.2\)</span>, and <span class="math inline">\(Q = R = 1\)</span>.</p>
+<ol>
+<li><p>Compute the LQR gain <span class="math inline">\(K\)</span> and the closed-loop eigenvalue <span class="math inline">\(a_{cl}\)</span>.</p></li>
+<li><p>Using the geometric series formula, compute the mRPI half-width <span class="math inline">\(\bar{e}\)</span>.</p></li>
+<li><p>What are the tightened input constraints for the nominal MPC?</p></li>
+<li><p>If <span class="math inline">\(|x_k| \le 10\)</span>, what are the tightened state constraints?</p></li>
+</ol></li>
+<li><p>Compute the Minkowski sum <span class="math inline">\(P \oplus Q\)</span> and the Pontryagin difference <span class="math inline">\(P \ominus Q\)</span> for:</p>
+<ol>
+<li><p><span class="math inline">\(P = [-3, 3]\)</span>, <span class="math inline">\(Q = [-1, 1]\)</span> (intervals in <span class="math inline">\(\mathbb{R}\)</span>).</p></li>
+<li><p><span class="math inline">\(P = \{(x_1, x_2) \mid |x_1| \le 2, |x_2| \le 2\}\)</span> (a square) and <span class="math inline">\(Q = \{(x_1, x_2) \mid |x_1| + |x_2| \le 0.5\}\)</span> (a diamond). Sketch the results.</p></li>
+</ol></li>
+<li><p>A control engineer designs Tube MPC for a chemical process with <span class="math inline">\(|w_k| \le 0.5\)</span> and input constraint <span class="math inline">\(|u_k| \le 3\)</span>. The LQR gain is <span class="math inline">\(K = 1.8\)</span> (positive, with <span class="math inline">\(u = -Kx\)</span>) and the closed-loop eigenvalue is <span class="math inline">\(a_{cl} = 0.3\)</span>.</p>
+<ol>
+<li><p>Compute the tube width <span class="math inline">\(\bar{e}\)</span>.</p></li>
+<li><p>What is the tightened input constraint for <span class="math inline">\(v_k\)</span>?</p></li>
+<li><p>The engineer’s colleague suggests using a more aggressive gain with <span class="math inline">\(a_{cl} = 0.1\)</span>, which gives <span class="math inline">\(K = 2.5\)</span>. Recompute the tube width and tightened input constraint. Is this gain better or worse? Discuss the trade-off.</p></li>
+</ol></li>
+<li><p>Consider the double integrator from Section <a href="#sec:tube_example_2d" data-reference-type="ref" data-reference="sec:tube_example_2d">1.9</a>. Using MATLAB and MPT3:</p>
+<ol>
+<li><p>Compute the mRPI set <span class="math inline">\(\mathcal{E}\)</span> for <span class="math inline">\(\mathcal{W} = \{w \mid \|w\|_\infty \le 0.05\}\)</span>.</p></li>
+<li><p>Plot the original constraint set <span class="math inline">\(\mathcal{X}\)</span>, the mRPI set <span class="math inline">\(\mathcal{E}\)</span>, and the tightened constraint set <span class="math inline">\(\mathcal{X}_t = \mathcal{X} \ominus \mathcal{E}\)</span>.</p></li>
+<li><p>Repeat with <span class="math inline">\(\mathcal{W} = \{w \mid \|w\|_\infty \le 0.2\}\)</span>. How does the larger disturbance affect the feasible region?</p></li>
+<li><p>Find the largest disturbance bound <span class="math inline">\(\delta\)</span> such that <span class="math inline">\(\mathcal{X}_t\)</span> is still non-empty (i.e., the tightened constraint set has positive volume).</p></li>
+</ol></li>
+<li><p>Explain in your own words:</p>
+<ol>
+<li><p>Why does Tube MPC guarantee convergence to a neighbourhood of the origin rather than to the origin itself?</p></li>
+<li><p>What happens to the tube width <span class="math inline">\(\mathcal{E}\)</span> as the feedback gain <span class="math inline">\(K\)</span> becomes more aggressive (eigenvalues of <span class="math inline">\(A_{cl}\)</span> closer to zero)?</p></li>
+<li><p>Under what conditions does Tube MPC reduce to standard MPC?</p></li>
+</ol></li>
+</ol>
