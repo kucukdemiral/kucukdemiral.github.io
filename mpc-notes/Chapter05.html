@@ -407,11 +407,115 @@ The following code designs an LQR controller based on the <em>linear</em> model.
                 k4 = f_dyn(x + Ts*k3, u_val);
         
                 x = x + (Ts/6) * (k1 + 2*k2 + 2*k3 + k4);
-                if x(1) &lt;= 0, 
-                    x(1) = 1e-4; 
-                    x(2) = 0; 
+                if x(1) &lt;= 0,
+                    x(1) = 1e-4;
+                    x(2) = 0;
                 end
         end</code></pre>
+<p><strong>Python Equivalent:</strong></p>
+<script type="pyodide-setup">
+import numpy as np
+from scipy.signal import cont2discrete
+from scipy.linalg import solve_discrete_are
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<div class="pyodide-editor" data-title="LQR Setpoint Tracking for a MagLev System with RK4 Simulation">
+<pre class="pyodide-code">
+# --- System Parameters ---
+m  = 0.05      # Mass of ball (kg)
+g  = 9.81      # Gravity (m/s^2)
+C  = 0.001     # Magnetic constant (N m^2/A^2)
+
+# Nominal Equilibrium (Linearisation Point)
+y0 = 0.01      # 10 mm gap
+u0 = y0 * np.sqrt(m * g / C)   # Current to hover at y0
+
+# --- Linearisation ---
+Ac = np.array([[0, 1],
+               [2*g/y0, 0]])
+Bc = np.array([[0],
+               [-2*g/u0]])
+Cc = np.array([[1, 0]])
+Dc = np.array([[0]])
+
+# Discretisation (ZOH)
+Ts = 0.005     # 5 ms sampling time
+Ad, Bd, Cd, Dd, _ = cont2discrete((Ac, Bc, Cc, Dc), Ts, method='zoh')
+
+# --- LQR Design ---
+Q = np.diag([5000, 10])
+R = np.array([[1]])
+P = solve_discrete_are(Ad, Bd, Q, R)
+K = np.linalg.solve(R + Bd.T @ P @ Bd, Bd.T @ P @ Ad)
+
+print("LQR gain K =", K)
+
+# --- Setpoint Tracking ---
+y_target = 0.012                             # 12 mm target gap
+u_target = y_target * np.sqrt(m * g / C)
+x_target = np.array([y_target, 0.0])
+
+# Nonlinear dynamics
+def f_dyn(x, u):
+    return np.array([x[1], g - (C/m) * (u / x[0])**2])
+
+# RK4 integrator
+def rk4_step(x, u, dt):
+    k1 = f_dyn(x, u)
+    k2 = f_dyn(x + 0.5*dt*k1, u)
+    k3 = f_dyn(x + 0.5*dt*k2, u)
+    k4 = f_dyn(x + dt*k3, u)
+    return x + (dt/6) * (k1 + 2*k2 + 2*k3 + k4)
+
+# --- Simulation ---
+T_final = 1.0
+N = int(T_final / Ts)
+x = np.array([y0, 0.0])
+
+t_hist = np.zeros(N)
+y_hist = np.zeros(N)
+u_hist = np.zeros(N)
+
+for k in range(N):
+    u_val = u_target - K @ (x - x_target)
+    u_val = float(u_val)
+
+    t_hist[k] = k * Ts
+    y_hist[k] = x[0]
+    u_hist[k] = u_val
+
+    x = rk4_step(x, u_val, Ts)
+    if x[0] <= 0:
+        x[0] = 1e-4
+        x[1] = 0.0
+
+# --- Plot ---
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 5), sharex=True)
+
+ax1.plot(t_hist, y_hist * 1000, 'b', linewidth=1.5, label='Ball position')
+ax1.axhline(y_target * 1000, color='r', linestyle='--', label='Target')
+ax1.set_ylabel('Gap (mm)')
+ax1.legend()
+ax1.set_title('MagLev LQR Setpoint Tracking (Nonlinear RK4 Simulation)')
+ax1.grid(True, alpha=0.3)
+
+ax2.plot(t_hist, u_hist, 'g', linewidth=1.5, label='Coil current')
+ax2.axhline(u_target, color='r', linestyle='--', label='Target current')
+ax2.set_xlabel('Time (s)')
+ax2.set_ylabel('Current (A)')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('maglev_result.png', dpi=100)
+plt.show()
+print(f"\nFinal gap: {y_hist[-1]*1000:.3f} mm  (target: {y_target*1000:.1f} mm)")
+print(f"Final current: {u_hist[-1]:.4f} A  (target: {u_target:.4f} A)")
+</pre>
+</div>
 <p><strong>Result Analysis:</strong> The simulation shown in Figure <a href="#fig:maglev" data-reference-type="ref" data-reference="fig:maglev">[fig:maglev]</a> confirms that the linear LQR controller successfully drives the <em>nonlinear</em> plant to the new setpoint. The final control current settles at <span class="math inline">\(u_{target}\)</span> rather than zero, validating the necessity of the feedforward term <span class="math inline">\(u_g\)</span> to maintain equilibrium against gravity.</p>
 <div class="center">
 <p><img src="figures/tikz_ch05_1.png" style="width:85.0%" alt="image" /> <span id="fig:maglev_schematic" data-label="fig:maglev_schematic"></span></p>
@@ -420,6 +524,14 @@ The following code designs an LQR controller based on the <em>linear</em> model.
 <p><img src="figures/Maglev.png" style="width:70.0%" /> <span id="fig:maglev" data-label="fig:maglev"></span></p>
 </div>
 </div>
+
+<h3 id="interactive-maglev">Interactive Demo: Magnetic Levitation Animation</h3>
+<p>The interactive animation below lets you explore the MagLev LQR controller in real time.
+Drag the <strong>Target Gap</strong> slider to change the setpoint and watch the steel ball respond
+under the nonlinear dynamics. The simulation uses the same RK4 integrator and DARE-based
+LQR gain as the code above.</p>
+<div class="maglev-demo"></div>
+
 <h3 id="chapter-summary">Chapter Summary</h3>
 <p>This chapter has established the theoretical and numerical foundations of Optimal Control, marking the transition from system analysis to control synthesis. We introduced the LQR as a specific instance of a broader optimisation framework.</p>
 <p>By re-framing the classical recursive control problem as a batch QP, we laid the necessary groundwork for MPC. The key concepts covered in this chapter include:</p>

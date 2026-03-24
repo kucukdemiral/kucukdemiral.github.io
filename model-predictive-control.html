@@ -731,6 +731,105 @@
             .kf-controls-row { flex-direction: column; gap: 0.5rem; }
         }
 
+        /* ========== MagLev Animation Demo ========== */
+        .chapter-body .maglev-demo {
+            margin: 1.5rem 0;
+            border: 2px solid #0D7C66;
+            border-radius: var(--radius);
+            background: #0F1923;
+            overflow: hidden;
+            font-family: 'Source Sans 3', sans-serif;
+        }
+        .mlv-header {
+            background: #0D7C66;
+            padding: 0.45rem 1rem;
+        }
+        .mlv-title {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .mlv-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .mlv-slider-group {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .mlv-slider-group label {
+            color: #8899AA;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .mlv-slider-group input[type="range"] {
+            width: 100px;
+            accent-color: #0D7C66;
+        }
+        .mlv-slider-group .mlv-val {
+            color: #D4E0ED;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            min-width: 3rem;
+        }
+        .mlv-btn {
+            padding: 0.3rem 0.9rem;
+            border: 1px solid #0D7C66;
+            border-radius: 4px;
+            background: transparent;
+            color: #0D7C66;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.4px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .mlv-btn:hover { background: #0D7C66; color: #fff; }
+        .mlv-btn.active { background: #0D7C66; color: #fff; }
+        .mlv-body {
+            display: flex;
+            min-height: 320px;
+        }
+        .mlv-scene-wrap {
+            flex: 0 0 260px;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+        .mlv-scene-wrap canvas { width: 240px; height: 340px; }
+        .mlv-plot-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .mlv-plot-wrap canvas {
+            flex: 1;
+            width: 100%;
+            min-height: 150px;
+        }
+        .mlv-readout {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            color: #8899AA;
+            font-size: 0.75rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        .mlv-readout span { color: #D4E0ED; }
+        @media (max-width: 720px) {
+            .mlv-body { flex-direction: column; }
+            .mlv-scene-wrap { flex: none; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+            .mlv-controls { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        }
+
         /* ========== Center blocks (for standalone figures/images) ========== */
         .chapter-body .center {
             text-align: center;
@@ -925,6 +1024,7 @@
 
     <script src="pyodide-runner.js"></script>
     <script src="kalman-demo.js"></script>
+    <script src="maglev-demo.js"></script>
     <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -973,6 +1073,7 @@
             typesetMath();
             if (window.PyodideRunner) PyodideRunner.initAll(body);
             if (window.KalmanDemo) KalmanDemo.initAll(body);
+            if (window.MaglevDemo) MaglevDemo.initAll(body);
             return;
         }
 
@@ -989,6 +1090,7 @@
                 typesetMath();
                 if (window.PyodideRunner) PyodideRunner.initAll(body);
             if (window.KalmanDemo) KalmanDemo.initAll(body);
+            if (window.MaglevDemo) MaglevDemo.initAll(body);
             })
             .catch(function() {
                 body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
