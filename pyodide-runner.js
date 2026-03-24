@@ -1,22 +1,28 @@
 /**
  * Pyodide Interactive Code Runner
- * Provides browser-based Python execution for educational content.
- * Uses Pyodide (CPython compiled to WebAssembly) with NumPy & SciPy.
+ * Browser-based Python execution with matplotlib plotting support.
+ * Supports hidden setup/plot sections and locked preambles.
+ *
+ * HTML structure:
+ *   <div class="pyodide-runner">
+ *     <script type="pyodide-setup">  ...hidden imports/setup...  </script>
+ *     <pre><code>  ...editable problem code...  </code></pre>
+ *     <script type="pyodide-plot">   ...hidden plotting code...  </script>
+ *   </div>
  */
 (function () {
     'use strict';
 
     var PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/';
-    var pyodideReady = null;   // Promise that resolves to the pyodide instance
+    var pyodideReady = null;
     var pyodideInstance = null;
 
-    // ── Pyodide loader (lazy – only triggered on first "Run") ──────────
+    // ── Pyodide loader (lazy) ──────────────────────────────────────────
     function ensurePyodide() {
         if (pyodideReady) return pyodideReady;
 
         pyodideReady = new Promise(function (resolve, reject) {
-            // Show global loading banner
-            showGlobalStatus('Loading Python environment (first run may take a few seconds)...');
+            showGlobalStatus('Loading Python + NumPy + SciPy + Matplotlib...');
 
             var script = document.createElement('script');
             script.src = PYODIDE_CDN + 'pyodide.js';
@@ -24,15 +30,12 @@
                 loadPyodide({ indexURL: PYODIDE_CDN })
                     .then(function (py) {
                         pyodideInstance = py;
-                        return py.loadPackage(['numpy', 'scipy']);
+                        showGlobalStatus('Installing packages (numpy, scipy, matplotlib)...');
+                        return py.loadPackage(['numpy', 'scipy', 'matplotlib']);
                     })
                     .then(function () {
-                        // Pre-import commonly used modules
-                        pyodideInstance.runPython([
-                            'import numpy as np',
-                            'from scipy.optimize import minimize, minimize_scalar, linprog',
-                            'import io, sys'
-                        ].join('\n'));
+                        // Global preamble: imports + matplotlib capture setup
+                        pyodideInstance.runPython(GLOBAL_PREAMBLE);
                         hideGlobalStatus();
                         resolve(pyodideInstance);
                     })
@@ -51,6 +54,56 @@
         return pyodideReady;
     }
 
+    // Python code injected once on first load
+    var GLOBAL_PREAMBLE = [
+        'import numpy as np',
+        'from scipy.optimize import minimize, minimize_scalar, linprog',
+        'import io, sys, base64',
+        '',
+        '# Matplotlib with non-interactive backend',
+        'import matplotlib',
+        "matplotlib.use('Agg')",
+        'import matplotlib.pyplot as plt',
+        'from matplotlib.patches import Polygon as MplPolygon',
+        'from matplotlib.collections import PatchCollection',
+        '',
+        '# Academic-style defaults',
+        'plt.rcParams.update({',
+        "    'figure.figsize': (7, 4.5),",
+        "    'figure.dpi': 150,",
+        "    'font.size': 10,",
+        "    'axes.grid': True,",
+        "    'axes.axisbelow': True,",
+        "    'grid.alpha': 0.25,",
+        "    'grid.linestyle': '--',",
+        "    'axes.spines.top': False,",
+        "    'axes.spines.right': False,",
+        "    'figure.facecolor': 'white',",
+        "    'axes.facecolor': 'white',",
+        "    'axes.edgecolor': '#333333',",
+        "    'text.color': '#222222',",
+        "    'axes.labelcolor': '#222222',",
+        "    'xtick.color': '#444444',",
+        "    'ytick.color': '#444444',",
+        '})',
+        '',
+        '# Plot capture list (read by JS after execution)',
+        '_pyodide_plots = []',
+        '',
+        'def _capture_current_figures():',
+        '    """Save all open figures as base64 PNG and close them."""',
+        '    global _pyodide_plots',
+        '    for num in plt.get_fignums():',
+        '        fig = plt.figure(num)',
+        '        buf = io.BytesIO()',
+        '        fig.savefig(buf, format="png", dpi=150,',
+        '                    bbox_inches="tight", facecolor="white", edgecolor="none")',
+        '        buf.seek(0)',
+        '        _pyodide_plots.append(base64.b64encode(buf.read()).decode("utf-8"))',
+        '        buf.close()',
+        '    plt.close("all")',
+    ].join('\n');
+
     // ── Global loading banner ──────────────────────────────────────────
     var statusBanner = null;
 
@@ -68,87 +121,121 @@
         if (statusBanner) statusBanner.style.display = 'none';
     }
 
-    // ── Run code and capture stdout / stderr ───────────────────────────
-    function runCode(code, outputEl, btnEl) {
+    // ── Run code: setup + user + plot, capture stdout + figures ─────────
+    function runCode(setup, userCode, plotCode, outputEl, plotEl, btnEl) {
         btnEl.disabled = true;
         btnEl.textContent = 'Running...';
         outputEl.textContent = '';
-        outputEl.style.display = 'block';
+        outputEl.style.display = 'none';
+        plotEl.innerHTML = '';
+        plotEl.style.display = 'none';
 
         ensurePyodide()
             .then(function (py) {
-                // Redirect stdout/stderr
+                // Reset state
                 py.runPython([
+                    '_pyodide_plots = []',
+                    'plt.close("all")',
                     '_pyodide_stdout = io.StringIO()',
                     '_pyodide_stderr = io.StringIO()',
                     'sys.stdout = _pyodide_stdout',
                     'sys.stderr = _pyodide_stderr'
                 ].join('\n'));
 
+                // Combine: setup + user code + plot code
+                var fullCode = '';
+                if (setup) fullCode += setup + '\n';
+                fullCode += userCode;
+                if (plotCode) fullCode += '\n' + plotCode + '\n_capture_current_figures()';
+
+                var hasError = false;
                 try {
-                    py.runPython(code);
+                    py.runPython(fullCode);
                 } catch (e) {
-                    // Python exception – show it
+                    hasError = true;
                     var stderr = py.runPython('_pyodide_stderr.getvalue()');
                     outputEl.textContent = stderr || e.message;
                     outputEl.classList.add('pyodide-error');
-                    btnEl.disabled = false;
-                    btnEl.textContent = 'Run';
-                    restoreStreams(py);
-                    return;
+                    outputEl.style.display = 'block';
                 }
 
-                var stdout = py.runPython('_pyodide_stdout.getvalue()');
-                var stderr = py.runPython('_pyodide_stderr.getvalue()');
-                restoreStreams(py);
+                if (!hasError) {
+                    var stdout = py.runPython('_pyodide_stdout.getvalue()');
+                    var stderr = py.runPython('_pyodide_stderr.getvalue()');
 
-                var result = '';
-                if (stdout) result += stdout;
-                if (stderr) result += (result ? '\n' : '') + stderr;
-                outputEl.textContent = result || '(no output)';
-                outputEl.classList.remove('pyodide-error');
+                    var text = '';
+                    if (stdout) text += stdout;
+                    if (stderr) text += (text ? '\n' : '') + stderr;
+                    if (text) {
+                        outputEl.textContent = text;
+                        outputEl.classList.remove('pyodide-error');
+                        outputEl.style.display = 'block';
+                    }
+                }
+
+                // Render plots
+                var plotsJson = py.runPython('import json; json.dumps(_pyodide_plots)');
+                var plots = JSON.parse(plotsJson);
+                if (plots.length > 0) {
+                    plotEl.style.display = 'block';
+                    for (var i = 0; i < plots.length; i++) {
+                        var img = document.createElement('img');
+                        img.src = 'data:image/png;base64,' + plots[i];
+                        img.className = 'pyodide-plot-img';
+                        img.alt = 'Plot output';
+                        plotEl.appendChild(img);
+                    }
+                }
+
+                // Restore streams
+                py.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
                 btnEl.disabled = false;
-                btnEl.textContent = 'Run';
+                btnEl.textContent = '\u25B6 Run';
             })
             .catch(function (err) {
                 outputEl.textContent = 'Error: ' + err.message;
                 outputEl.classList.add('pyodide-error');
+                outputEl.style.display = 'block';
                 btnEl.disabled = false;
-                btnEl.textContent = 'Run';
+                btnEl.textContent = '\u25B6 Run';
             });
     }
 
-    function restoreStreams(py) {
-        py.runPython([
-            'sys.stdout = sys.__stdout__',
-            'sys.stderr = sys.__stderr__'
-        ].join('\n'));
-    }
-
-    // ── Build interactive widget from a <div class="pyodide-runner"> ──
+    // ── Build interactive widget ───────────────────────────────────────
     function initRunner(container) {
         if (container.dataset.initialized) return;
         container.dataset.initialized = '1';
 
-        var codeEl = container.querySelector('code') || container.querySelector('pre');
-        var initialCode = (codeEl ? codeEl.textContent : '').replace(/^\n+|\n+$/g, '');
+        // Extract hidden setup code
+        var setupEl = container.querySelector('script[type="pyodide-setup"]');
+        var setupCode = setupEl ? setupEl.textContent.replace(/^\n+|\n+$/g, '') : '';
 
-        // Clear container and rebuild
+        // Extract visible/editable code
+        var codeEl = container.querySelector('pre code') || container.querySelector('pre');
+        var editableCode = (codeEl ? codeEl.textContent : '').replace(/^\n+|\n+$/g, '');
+
+        // Extract hidden plot code
+        var plotScriptEl = container.querySelector('script[type="pyodide-plot"]');
+        var plotCode = plotScriptEl ? plotScriptEl.textContent.replace(/^\n+|\n+$/g, '') : '';
+
+        var hasPlot = plotCode.length > 0;
+
+        // Rebuild container
         container.innerHTML = '';
 
         // Label
         var label = document.createElement('div');
         label.className = 'pyodide-label';
-        label.innerHTML = '<span class="pyodide-lang">Python</span> Interactive';
+        label.innerHTML = '<span class="pyodide-lang">\u25B6 Python</span> Interactive' +
+            (hasPlot ? ' &middot; with plot' : '');
         container.appendChild(label);
 
         // Editable code area
         var textarea = document.createElement('textarea');
         textarea.className = 'pyodide-editor';
         textarea.spellcheck = false;
-        textarea.value = initialCode;
-        // Auto-size rows
-        var lines = initialCode.split('\n').length;
+        textarea.value = editableCode;
+        var lines = editableCode.split('\n').length;
         textarea.rows = Math.max(lines + 1, 4);
         container.appendChild(textarea);
 
@@ -158,7 +245,7 @@
 
         var runBtn = document.createElement('button');
         runBtn.className = 'pyodide-run-btn';
-        runBtn.textContent = 'Run';
+        runBtn.textContent = '\u25B6 Run';
         runBtn.title = 'Execute code (Shift+Enter)';
 
         var resetBtn = document.createElement('button');
@@ -170,22 +257,30 @@
         bar.appendChild(resetBtn);
         container.appendChild(bar);
 
-        // Output area
+        // Output area (text)
         var output = document.createElement('pre');
         output.className = 'pyodide-output';
         output.style.display = 'none';
         container.appendChild(output);
 
+        // Plot area (images)
+        var plotArea = document.createElement('div');
+        plotArea.className = 'pyodide-plot-area';
+        plotArea.style.display = 'none';
+        container.appendChild(plotArea);
+
         // Events
         runBtn.addEventListener('click', function () {
-            runCode(textarea.value, output, runBtn);
+            runCode(setupCode, textarea.value, plotCode, output, plotArea, runBtn);
         });
 
         resetBtn.addEventListener('click', function () {
-            textarea.value = initialCode;
-            textarea.rows = Math.max(initialCode.split('\n').length + 1, 4);
+            textarea.value = editableCode;
+            textarea.rows = Math.max(editableCode.split('\n').length + 1, 4);
             output.textContent = '';
             output.style.display = 'none';
+            plotArea.innerHTML = '';
+            plotArea.style.display = 'none';
         });
 
         // Shift+Enter shortcut
@@ -194,24 +289,23 @@
                 e.preventDefault();
                 runBtn.click();
             }
-            // Tab inserts spaces
             if (e.key === 'Tab') {
                 e.preventDefault();
                 var start = textarea.selectionStart;
                 var end = textarea.selectionEnd;
-                textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
+                textarea.value = textarea.value.substring(0, start) +
+                    '    ' + textarea.value.substring(end);
                 textarea.selectionStart = textarea.selectionEnd = start + 4;
             }
         });
 
-        // Auto-resize on input
+        // Auto-resize
         textarea.addEventListener('input', function () {
-            var lc = textarea.value.split('\n').length;
-            textarea.rows = Math.max(lc + 1, 4);
+            textarea.rows = Math.max(textarea.value.split('\n').length + 1, 4);
         });
     }
 
-    // ── Scan for runner blocks and initialise them ─────────────────────
+    // ── Scan & init ────────────────────────────────────────────────────
     function initAllRunners(root) {
         var runners = (root || document).querySelectorAll('.pyodide-runner');
         for (var i = 0; i < runners.length; i++) {
@@ -219,7 +313,6 @@
         }
     }
 
-    // Expose globally
     window.PyodideRunner = {
         initAll: initAllRunners,
         init: initRunner
