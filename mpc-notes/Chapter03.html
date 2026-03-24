@@ -506,7 +506,7 @@ Figure <a href="#fig:integrator_comparison" data-reference-type="ref" data-refe
 <p>It can be observed that the <strong>Forward Euler</strong> method is numerically unstable for every selection of sampling time <span class="math inline">\(h\)</span>; it introduces artificial energy into the system, causing the amplitude to grow unbounded (spiralling out) as time progresses. In contrast, the <strong>RK4</strong> method maintains high accuracy and preserves stability even at larger time steps.</p>
 </div>
 <figure id="fig:integrator_comparison">
-<embed src="figures/RK4_vs_euler.pdf.png" style="width:100.0%" />
+<img src="figures/RK4_vs_euler.png" style="width:100.0%" />
 <figcaption>Comparison of numerical integration accuracy for an undamped harmonic oscillator (<span class="math inline">\(\ddot{p} + p = 0\)</span>) across increasing time steps <span class="math inline">\(h \in \{0.05, 0.10, 0.25, 0.50\}\)</span> seconds. For this system (purely imaginary eigenvalues), the <strong>Forward Euler</strong> method (red dashed) is numerically unstable; it introduces artificial energy into the simulation, causing the amplitude to grow unbounded as time progresses. This error scales linearly with <span class="math inline">\(h\)</span>. In contrast, the <strong>Runge–Kutta 4 (RK4)</strong> method (blue dash-dot) maintains high fidelity to the <strong>Exact</strong> solution (solid gray), preserving stability even at the coarsest time step of <span class="math inline">\(h=0.50\)</span> s.</figcaption>
 </figure>
 <h2 id="stability-of-discrete-time-systems">Stability of Discrete-Time Systems</h2>

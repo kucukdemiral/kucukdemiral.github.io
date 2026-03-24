@@ -47,7 +47,7 @@
 </ul>
 <p>Consider racing track shown in Figure <a href="#fig:racing_car" data-reference-type="ref" data-reference="fig:racing_car">1.4</a>. A human driver naturally performs predictive control. Upon approaching a corner, the driver does not simply react to the car’s current position. Instead, they look ahead—establishing a <em>prediction horizon</em>. They anticipate the car’s future trajectory based on its current momentum and adjust their inputs <em>proactively</em>. For example, a driver will pull to the outside of the track to flatten the turn radius, anticipating the geometry of the road ahead before they even reach the apex.</p>
 <figure id="fig:racing_car" data-latex-placement="t">
-<embed src="figures/racing1.pdf.png" style="width:90.0%" />
+<img src="figures/Racing1.png" style="width:90.0%" />
 <figcaption>Model Predictive Control for trajectory optimisation in a racing scenario. The controller plans an optimal path (cyan) over the prediction horizon that minimises a cost function (tracking the reference line) while satisfying state constraints (track edges) and avoiding obstacles (red cars).</figcaption>
 </figure>
 <p>Imagine if the driver planned the entire lap at the starting line based on a map, closed their eyes, and executed that plan blindly. This "open-loop" execution would inevitably result in a crash. This failure occurs because the internal model is never perfect. There are several reasons for this failure:</p>

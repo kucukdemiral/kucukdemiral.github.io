@@ -306,7 +306,7 @@ J &amp;= \underbrace{x_0^2}_{=1} + u_0^2 + \underbrace{x_1^2}_{(1+u_0)^2} + u_1^
 </ol>
 <p>While short horizons can lead to instability, a more common issue in practice is <strong>Performance Degradation</strong>. If the control authority is "expensive" (high <span class="math inline">\(R\)</span>) and the horizon is short, the controller becomes "lazy."</p>
 <figure id="fig:mpc_lazy" data-latex-placement="h">
-<embed src="figures/Effect_of_N.pdf.png" style="width:90.0%" />
+<img src="figures/Effect_of_N.png" style="width:90.0%" />
 <figcaption><strong>Performance Degradation with Short Horizons.</strong> The system starts at <span class="math inline">\(x_0=4\)</span> with expensive control (<span class="math inline">\(R=10\)</span>). The Short Horizon controller (Red) tries to save control effort in the short term as it cannot see long enough, leading to extremely slow convergence. The Terminal Cost controller (Green) recognises the long-term value of aggressive action, matching the performance of the Long Horizon controller (Blue).</figcaption>
 </figure>
 <div class="examplebox">

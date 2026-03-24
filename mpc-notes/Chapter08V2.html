@@ -363,7 +363,7 @@ A standard MPC controller based on the nominal model would exhibit a steady-stat
 <p>Figure <a href="#fig:offset_free_results" data-reference-type="ref" data-reference="fig:offset_free_results">1.3</a> shows the closed-loop output, the control signals, the disturbance estimate and the activity of the soft output constraint.</p>
 </div>
 <figure id="fig:offset_free_results" data-latex-placement="!htb">
-<embed src="figures/Offsetfree_MPC.pdf.png" style="width:100.0%" />
+<img src="figures/Offsetfree_MPC.png" style="width:100.0%" />
 <figcaption>Closed-loop performance of the offset-free MPC with soft output constraints under piecewise-constant reference changes and an unknown step disturbance. The top panel shows accurate output tracking of the constrained reference whilst keeping the output close to the prescribed bounds. The second panel shows the applied control input together with the steady-state target input, with brief transient peaks at the reference-switching instants. The third panel shows that the augmented observer estimates the constant input disturbance well, including the disturbance sign change. The bottom panel shows that the soft output constraint is active only briefly during the disturbance transition, indicating that constraint violations are small and short-lived.</figcaption>
 </figure>
 <p>The code follows the algorithm summarised in Algorithm <a href="#alg:offset_free_mpc" data-reference-type="ref" data-reference="alg:offset_free_mpc">[alg:offset_free_mpc]</a>.</p>
@@ -447,7 +447,7 @@ A standard MPC controller based on the nominal model would exhibit a steady-stat
 <p>Finally, the virtual control input is mapped back to the physical commands <span class="math inline">\((\phi,\theta,T)\)</span> using <a href="#eq:virtual_mapping" data-reference-type="eqref" data-reference="eq:virtual_mapping">[eq:virtual_mapping]</a>.</p>
 <p><strong>4. MATLAB Implementation</strong></p>
 <p>The code below simulates this strategy. The controller uses a linear prediction model, but the plant is simulated with the full nonlinear dynamics using RK4 integration. A step wind disturbance is applied at <span class="math inline">\(t=50\)</span> s. Figure <a href="#fig:quad_mpc_result" data-reference-type="ref" data-reference="fig:quad_mpc_result">[fig:quad_mpc_result]</a> shows the simulation result for tracking and disturbance observation.</p>
-<p><embed src="figures/Quadrotor_MPC.pdf.png" style="width:90.0%" /> <span id="fig:quad_mpc_result" data-label="fig:quad_mpc_result"></span></p>
+<p><img src="figures/Quadrotor_MPC.png" style="width:90.0%" /> <span id="fig:quad_mpc_result" data-label="fig:quad_mpc_result"></span></p>
 <pre class="matlab" data-language="Matlab"><code>clear; clc; close all;
 
 %% 1. System &amp; Linear Model
@@ -820,7 +820,7 @@ y_k = C x_k,\]</span> where <span class="math inline">\(u_k \in [0, 2000]\)</spa
     fprintf(&#39;Total heating cost: GBP %.3f\n&#39;, sum(log_cost));
     
     % Visualisation is omitted for brevity</code></pre>
-<p><embed src="figures/hvac.pdf.png" style="width:90.0%" /> <span id="fig:singlezone2" data-label="fig:singlezone2"></span></p>
+<p><img src="figures/hvac.png" style="width:90.0%" /> <span id="fig:singlezone2" data-label="fig:singlezone2"></span></p>
 </div>
 <div class="examplebox">
 <p><span>Offset-free MPC of a 3-DOF Articulated Robot Manipulator</span></p>

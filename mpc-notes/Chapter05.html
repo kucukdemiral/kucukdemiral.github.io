@@ -192,7 +192,7 @@ Finally, look at the row for <span class="math inline">\(x_3\)</span>: <span cla
         % Plotting results... (omitted)</code></pre>
 <p>The simulation results given in Figure <a href="#fig:lqr-solution" data-reference-type="ref" data-reference="fig:lqr-solution">[fig:lqr-solution]</a> confirm that the finite-horizon optimal control problem drives the system state to the origin efficiently. It is important to note that the quadratic programme and the Riccati recursion are not two different controllers, but two equivalent ways of solving the same finite-horizon LQR problem. In both cases, the optimisation yields an optimal input sequence <span class="math inline">\((u_0,\dots,u_{N-1})\)</span>. The Riccati recursion, however, also makes explicit the underlying time-varying state-feedback law <span class="math display">\[u_k = -K_k x_k,\]</span> which is computationally more efficient and more natural for closed-loop implementation.</p>
 <div class="center">
-<p><embed src="figures/Finite_LQR.pdf.png" style="width:90.0%" /> <span id="fig:lqr-solution" data-label="fig:lqr-solution"></span></p>
+<p><img src="figures/Finite_LQR.png" style="width:90.0%" /> <span id="fig:lqr-solution" data-label="fig:lqr-solution"></span></p>
 </div>
 </div>
 <h3 id="infinite-horizon-lqr-for-stabilisation">Infinite-Horizon LQR for Stabilisation</h3>
@@ -291,7 +291,7 @@ Instead of computing a time-varying sequence of gains <span class="math inline">
 <p><strong>Discussion:</strong> The code makes a single call to <code>dare</code> to find the optimal policy. The simulation loop then applies the constant feedback law <span class="math inline">\(u_k = -K_{\infty} x_k\)</span>.</p>
 <p>The resulting trajectories (produced by the plotting section) would demonstrate that this constant gain successfully drives the state to the origin. Unlike the finite-horizon approach, which requires storing a look-up table of gains, this static <span class="math inline">\(K_{\infty}\)</span> is extremely memory-efficient, making it the standard choice for regulation tasks on embedded hardware.</p>
 <div class="center">
-<p><embed src="figures/InFinite_LQR.pdf.png" style="width:100.0%" /> <span id="fig:infinite_lqr-solution" data-label="fig:infinite_lqr-solution"></span></p>
+<p><img src="figures/InFinite_LQR.png" style="width:100.0%" /> <span id="fig:infinite_lqr-solution" data-label="fig:infinite_lqr-solution"></span></p>
 </div>
 </div>
 <h3 id="lqr-for-non-zero-setpoint-tracking">LQR for Non-Zero Setpoint Tracking</h3>
@@ -417,7 +417,7 @@ The following code designs an LQR controller based on the <em>linear</em> model.
 <p><img src="figures/tikz_ch05_1.png" style="width:85.0%" alt="image" /> <span id="fig:maglev_schematic" data-label="fig:maglev_schematic"></span></p>
 </div>
 <div class="center">
-<p><embed src="figures/Maglev.pdf.png" style="width:70.0%" /> <span id="fig:maglev" data-label="fig:maglev"></span></p>
+<p><img src="figures/Maglev.png" style="width:70.0%" /> <span id="fig:maglev" data-label="fig:maglev"></span></p>
 </div>
 </div>
 <h3 id="chapter-summary">Chapter Summary</h3>
