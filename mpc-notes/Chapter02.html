@@ -86,7 +86,6 @@
 <script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import minimize_scalar
-import matplotlib.pyplot as plt
 </script>
 <pre><code># Box Volume Maximisation
 # Cardboard size: L x L (try changing L!)
@@ -104,25 +103,6 @@ print(f"Optimal cut size: x* = {x_opt:.6f} m")
 print(f"Maximum volume:   V* = {V_max:.6f} m^3")
 print(f"Box: {L-2*x_opt:.4f} x {L-2*x_opt:.4f} x {x_opt:.4f} m")
 print(f"Analytical: x* = L/6 = {L/6:.6f}")</code></pre>
-<script type="pyodide-plot">
-x_range = np.linspace(0, L/2, 300)
-V_range = x_range * (L - 2*x_range)**2
-
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(x_range, V_range, '#2E5090', linewidth=2, label='$V(x) = x(L-2x)^2$')
-ax.axvline(x_opt, color='#C62828', linestyle='--', alpha=0.7, label=f'$x^* = {x_opt:.4f}$')
-ax.plot(x_opt, V_max, 'r*', markersize=14, zorder=5)
-ax.annotate(f'  $V^* = {V_max:.4f}$', xy=(x_opt, V_max),
-            fontsize=10, color='#C62828', fontweight='bold')
-ax.set_xlabel('Cut size $x$ (m)')
-ax.set_ylabel('Volume $V$ (m$^3$)')
-ax.set_title('Box Volume vs. Corner Cut Size')
-ax.legend(framealpha=0.9)
-ax.set_xlim(0, L/2)
-ax.set_ylim(bottom=0)
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 </div>
 <div class="examplebox">
@@ -147,7 +127,6 @@ plt.show()
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
-import matplotlib.pyplot as plt
 </script>
 <pre><code># Linear Regression — try changing the true model or noise!
 np.random.seed(42)
@@ -167,28 +146,6 @@ a_opt, b_opt = theta
 SSE = np.sum((y_data - (a_opt * x_data + b_opt))**2)
 print(f"Slope a* = {a_opt:.4f},  Intercept b* = {b_opt:.4f}")
 print(f"SSE = {SSE:.4f}")</code></pre>
-<script type="pyodide-plot">
-fig, ax = plt.subplots(figsize=(7, 4.5))
-ax.scatter(x_data, y_data, c='#2E5090', s=40, zorder=5, label='Data points')
-
-x_fit = np.linspace(x_data.min()-0.3, x_data.max()+0.3, 100)
-ax.plot(x_fit, a_opt*x_fit + b_opt, '#C62828', linewidth=2,
-        label=f'Fitted: $y = {a_opt:.2f}x + {b_opt:.2f}$')
-ax.plot(x_fit, true_slope*x_fit + true_intercept, '#888888',
-        linewidth=1.5, linestyle='--', label=f'True: $y = {true_slope}x + {true_intercept}$')
-
-# Draw residual lines
-y_pred = a_opt * x_data + b_opt
-for xi, yi, yp in zip(x_data, y_data, y_pred):
-    ax.plot([xi, xi], [yi, yp], color='#C62828', alpha=0.25, linewidth=1)
-
-ax.set_xlabel('$x$')
-ax.set_ylabel('$y$')
-ax.set_title(f'Least Squares Fit  (SSE = {SSE:.2f})')
-ax.legend(framealpha=0.9)
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 </div>
 <h2 id="ingredients-of-multi-variable-optimisation">Ingredients of Multi-Variable Optimisation</h2>
@@ -458,8 +415,6 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 <script type=”pyodide-setup”>
 import numpy as np
 from scipy.optimize import minimize
-import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon as MplPolygon
 </script>
 <pre><code># Minimise x1^2 + x2^2 subject to inequality constraints
 # Try changing the objective or constraint coefficients!
@@ -479,49 +434,6 @@ result = minimize(objective, x0=[1, 1], method='SLSQP',
 
 print(f”Optimal x* = ({result.x[0]:.4f}, {result.x[1]:.4f})”)
 print(f”Minimum cost J = {result.fun:.4f}”)</code></pre>
-<script type=”pyodide-plot”>
-fig, ax = plt.subplots(figsize=(6.5, 5.5))
-
-# Grid for contours and feasibility
-x1g = np.linspace(-0.3, 4, 400)
-x2g = np.linspace(-0.3, 4, 400)
-X1, X2 = np.meshgrid(x1g, x2g)
-Z = X1**2 + X2**2
-
-# Feasible mask
-feas = (X1 + 2*X2 >= 5) & (2*X1 + X2 <= 5) & (X1 >= 0) & (X2 >= 0)
-ax.contourf(X1, X2, feas.astype(float), levels=[0.5, 1.5],
-            colors=['#E0E8F5'], alpha=0.9)
-ax.contour(X1, X2, feas.astype(float), levels=[0.5],
-           colors=['#2E5090'], linewidths=1.8)
-
-# Objective contours
-levels = np.linspace(1, 30, 12)
-cs = ax.contour(X1, X2, Z, levels=levels, colors='#5B86C7', linewidths=0.7, alpha=0.6)
-ax.clabel(cs, inline=True, fontsize=7, fmt='%.0f')
-
-# Constraint boundary lines
-x1_line = np.linspace(0, 3.5, 100)
-ax.plot(x1_line, (5 - x1_line)/2, '--', color='#1565C0', linewidth=1.2,
-        label='$x_1 + 2x_2 = 5$')
-ax.plot(x1_line, 5 - 2*x1_line, '--', color='#C62828', linewidth=1.2,
-        label='$2x_1 + x_2 = 5$')
-
-# Optimal point
-xo = result.x
-ax.plot(xo[0], xo[1], 'r*', markersize=16, zorder=10,
-        label=f'$x^*=({xo[0]:.2f},{xo[1]:.2f})$')
-
-ax.set_xlim(-0.3, 3.8)
-ax.set_ylim(-0.3, 3.8)
-ax.set_xlabel('$x_1$')
-ax.set_ylabel('$x_2$')
-ax.set_title(f'Inequality-Constrained QP   ($J^* = {result.fun:.2f}$)')
-ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
-ax.set_aspect('equal')
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 <p><strong>Visualisation:</strong> Geometrically, the optimiser “expands” the level curves (blue circles) from the origin until they first touch the feasible region (grey polygon).</p>
 <div class="center">
@@ -563,7 +475,6 @@ plt.show()
 <script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import minimize
-import matplotlib.pyplot as plt
 </script>
 <pre><code># Mixed constraints: inequalities + equality
 # Try changing the equality constraint value (e.g. 6 instead of 7)
@@ -589,48 +500,6 @@ result = minimize(objective, x0=[1, 1], method='SLSQP',
 print(f"Optimal x* = ({result.x[0]:.4f}, {result.x[1]:.4f})")
 print(f"Minimum cost J = {result.fun:.4f}")
 print(f"Equality check: x1 + 2x2 = {result.x[0]+2*result.x[1]:.4f}")</code></pre>
-<script type="pyodide-plot">
-fig, ax = plt.subplots(figsize=(6.5, 5.5))
-
-x1g = np.linspace(-0.3, 4, 400)
-x2g = np.linspace(-0.3, 5.5, 400)
-X1, X2 = np.meshgrid(x1g, x2g)
-Z = X1**2 + X2**2
-
-feas = (X1 + 2*X2 >= 5) & (2*X1 + X2 <= 5) & (X1 >= 0) & (X2 >= 0)
-ax.contourf(X1, X2, feas.astype(float), levels=[0.5, 1.5],
-            colors=['#E0E8F5'], alpha=0.9)
-ax.contour(X1, X2, feas.astype(float), levels=[0.5],
-           colors=['#2E5090', '#2E5090'], linewidths=1.5)
-
-levels = np.linspace(1, 40, 14)
-cs = ax.contour(X1, X2, Z, levels=levels, colors='#5B86C7', linewidths=0.6, alpha=0.5)
-ax.clabel(cs, inline=True, fontsize=7, fmt='%.0f')
-
-x1_line = np.linspace(0, 3.5, 100)
-ax.plot(x1_line, (5 - x1_line)/2, '--', color='#1565C0', linewidth=1.2)
-ax.plot(x1_line, 5 - 2*x1_line, '--', color='#C62828', linewidth=1.2)
-
-# Equality constraint line
-x1_eq = np.linspace(0, min(eq_rhs, 4), 100)
-x2_eq = (eq_rhs - x1_eq) / 2
-ax.plot(x1_eq, x2_eq, color='#E65100', linewidth=2.5, linestyle='-.',
-        label=f'$x_1 + 2x_2 = {eq_rhs}$  (equality)')
-
-xo = result.x
-ax.plot(xo[0], xo[1], 'r*', markersize=16, zorder=10,
-        label=f'$x^*=({xo[0]:.2f},{xo[1]:.2f}),\\ J^*={result.fun:.1f}$')
-
-ax.set_xlim(-0.3, 3.8)
-ax.set_ylim(-0.3, 5.2)
-ax.set_xlabel('$x_1$')
-ax.set_ylabel('$x_2$')
-ax.set_title('Equality + Inequality Constrained QP')
-ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
-ax.set_aspect('equal')
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 <p><strong>Visualisation and Analysis:</strong> The geometry of this problem is illustrated in Figure <a href="#fig:Intersection_of_constraints" data-reference-type="ref" data-reference="fig:Intersection_of_constraints">[fig:Intersection_of_constraints]</a>.</p>
 <ul>
@@ -752,7 +621,6 @@ plt.show()
 <script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import linprog
-import matplotlib.pyplot as plt
 </script>
 <pre><code># Stigler's Diet Problem (LP)
 # Try changing costs or nutrient requirements!
@@ -781,45 +649,6 @@ result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=[(0, None), (0, None)])
 print(f"x1 (Corn)  = {result.x[0]:.4f} kg")
 print(f"x2 (Bread) = {result.x[1]:.4f} kg")
 print(f"Min Cost   = ${result.fun:.4f}")</code></pre>
-<script type="pyodide-plot">
-fig, ax = plt.subplots(figsize=(6.5, 5.5))
-
-x1g = np.linspace(0, 5, 400)
-x2g = np.linspace(0, 6, 400)
-X1, X2 = np.meshgrid(x1g, x2g)
-
-feas = ((750*X1 + 650*X2 >= energy_min) & (750*X1 + 650*X2 <= energy_max) &
-        (250*X1 >= vitA_min) & (250*X1 <= vitA_max) & (X1 >= 0) & (X2 >= 0))
-ax.contourf(X1, X2, feas.astype(float), levels=[0.5, 1.5],
-            colors=['#E0E8F5'], alpha=0.9)
-ax.contour(X1, X2, feas.astype(float), levels=[0.5],
-           colors=['#2E5090'], linewidths=1.5)
-
-# Cost contours
-Z = cost_corn * X1 + cost_bread * X2
-lev = np.linspace(2, 10, 8)
-cs = ax.contour(X1, X2, Z, levels=lev, colors='#888888', linewidths=0.6, linestyles='--')
-ax.clabel(cs, inline=True, fontsize=7, fmt='$%.1f')
-
-# Constraint boundary labels
-x1r = np.linspace(0, 5, 100)
-ax.plot(x1r, (energy_min - 750*x1r)/650, ':', color='#1565C0', linewidth=1, alpha=0.7)
-ax.plot(x1r, (energy_max - 750*x1r)/650, ':', color='#1565C0', linewidth=1, alpha=0.7)
-ax.axvline(vitA_min/250, color='#2E7D32', linewidth=1, linestyle=':', alpha=0.7)
-ax.axvline(vitA_max/250, color='#2E7D32', linewidth=1, linestyle=':', alpha=0.7)
-
-xo = result.x
-ax.plot(xo[0], xo[1], 'r*', markersize=16, zorder=10,
-        label=f'Optimal: ({xo[0]:.2f}, {xo[1]:.2f})')
-ax.set_xlabel('$x_1$ (Corn, kg)')
-ax.set_ylabel('$x_2$ (Bread, kg)')
-ax.set_title(f"Stigler's Diet Problem  (Cost\\$ = {result.fun:.2f})")
-ax.legend(framealpha=0.9, fontsize=9)
-ax.set_xlim(0, 5)
-ax.set_ylim(0, 5.5)
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 </div>
 <figure id="fig:stigler2d" data-latex-placement="h!">
@@ -962,8 +791,6 @@ plt.show()
 <script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import minimize
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 </script>
 <pre><code># Robot Distance to a Restricted Zone
 # Try moving the robot or changing the box size!
@@ -980,47 +807,6 @@ result = minimize(objective, x0=[0, 0], method='SLSQP', bounds=bounds)
 dist = np.sqrt(result.fun)
 print(f"Closest point: x* = ({result.x[0]:.2f}, {result.x[1]:.2f})")
 print(f"Distance = {dist:.4f}")</code></pre>
-<script type="pyodide-plot">
-fig, ax = plt.subplots(figsize=(6.5, 5.5))
-
-# Draw the restricted zone (box)
-box_w = box_hi - box_lo
-rect = Rectangle((box_lo, box_lo), box_w, box_w,
-                 facecolor='#E0E8F5', edgecolor='#2E5090', linewidth=2,
-                 label='Restricted zone $\\mathcal{X}$')
-ax.add_patch(rect)
-
-# Distance contours from robot
-x1g = np.linspace(-2, 5, 300)
-x2g = np.linspace(-2, 4, 300)
-X1, X2 = np.meshgrid(x1g, x2g)
-Z = (X1 - robot_pos[0])**2 + (X2 - robot_pos[1])**2
-lev = np.array([0.5, 1, 2, 4, 6, 8, 12, 16])
-cs = ax.contour(X1, X2, Z, levels=lev, colors='#5B86C7', linewidths=0.6, alpha=0.5)
-ax.clabel(cs, inline=True, fontsize=7, fmt='%.0f')
-
-# Robot
-ax.plot(*robot_pos, 'o', color='#C62828', markersize=10, zorder=10, label=f'Robot $p=({robot_pos[0]:.0f},{robot_pos[1]:.0f})$')
-# Closest point
-xo = result.x
-ax.plot(xo[0], xo[1], '*', color='#2E7D32', markersize=14, zorder=10,
-        label=f'Closest $x^*=({xo[0]:.1f},{xo[1]:.1f})$')
-# Distance line
-ax.plot([robot_pos[0], xo[0]], [robot_pos[1], xo[1]], 'k--', linewidth=1.5, alpha=0.6)
-ax.annotate(f'd = {dist:.2f}', xy=((robot_pos[0]+xo[0])/2, (robot_pos[1]+xo[1])/2),
-            fontsize=10, fontweight='bold', ha='center',
-            xytext=(10, 10), textcoords='offset points')
-
-ax.set_xlabel('$x_1$')
-ax.set_ylabel('$x_2$')
-ax.set_title('Robot Distance to Restricted Zone (QP)')
-ax.legend(loc='upper left', framealpha=0.9, fontsize=9)
-ax.set_aspect('equal')
-ax.set_xlim(-2, 5)
-ax.set_ylim(-2, 4)
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 </div>
 <h4 id="nonconvex-quadratic-programmes">Nonconvex Quadratic Programmes</h4>
@@ -1333,7 +1119,6 @@ plt.show()
 <script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import linprog
-import matplotlib.pyplot as plt
 </script>
 <pre><code># Smart Grid Energy Management — try changing parameters!
 N = 24            # horizon (hours)
@@ -1376,46 +1161,6 @@ P_grid = result.x[0:N]
 P_bat  = result.x[N:2*N]
 E_bat  = result.x[2*N:]
 print(f"Total daily cost: ${result.fun:.2f}")</code></pre>
-<script type="pyodide-plot">
-fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True,
-                         gridspec_kw={'height_ratios': [1, 2, 1.2]})
-hours = np.arange(N)
-
-# Panel 1: Price signal
-ax = axes[0]
-ax.step(hours, Price, where='post', color='#C62828', linewidth=2)
-ax.fill_between(hours, Price, step='post', color='#C62828', alpha=0.15)
-ax.axvspan(peak_start, peak_end, alpha=0.08, color='#C62828')
-ax.set_ylabel('Price ($/kWh)')
-ax.set_title(f'Smart Grid Optimisation — Daily Cost: ${result.fun:.2f}')
-ax.set_ylim(0, price_peak * 1.3)
-
-# Panel 2: Power flows
-ax = axes[1]
-ax.step(hours, Load, where='post', color='#333', linewidth=2, label='Load')
-ax.step(hours, Solar, where='post', color='#F9A825', linewidth=2, label='Solar')
-ax.step(hours, P_grid, where='post', color='#C62828', linewidth=2, label='Grid')
-ax.bar(hours + 0.5, P_bat, width=0.8, color='#2E5090', alpha=0.6, label='Battery')
-ax.axhline(0, color='#888', linewidth=0.5)
-ax.set_ylabel('Power (kW)')
-ax.legend(loc='upper left', fontsize=8, ncol=4, framealpha=0.9)
-
-# Panel 3: Battery SOC
-ax = axes[2]
-ax.step(np.arange(N+1), E_bat, where='post', color='#2E5090', linewidth=2)
-ax.fill_between(np.arange(N+1), E_bat, step='post', color='#2E5090', alpha=0.15)
-ax.axhline(E_cap, color='#888', linewidth=0.8, linestyle='--', alpha=0.5)
-ax.set_ylabel('SOC (kWh)')
-ax.set_xlabel('Hour of Day')
-ax.set_ylim(0, E_cap * 1.1)
-ax.set_xlim(0, N)
-
-for a in axes:
-    a.axvspan(peak_start, peak_end, alpha=0.04, color='#C62828')
-
-plt.tight_layout()
-plt.show()
-</script>
 </div>
 <h4 id="visualising-the-result">Visualising the Result</h4>
 <p>The result is best understood visually (Figure <a href="#fig:smartgrid" data-reference-type="ref" data-reference="fig:smartgrid">1.10</a>).</p>
