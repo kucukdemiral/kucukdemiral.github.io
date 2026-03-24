@@ -411,8 +411,8 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
         % 5. Extract Result
         % The symbolic variable &#39;x&#39; now holds the optimal value.
         x_star = value(x) % Result: (1, 2)</code></pre>
-<div class=”pyodide-runner”>
-<script type=”pyodide-setup”>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
 import numpy as np
 from scipy.optimize import minimize
 </script>
@@ -432,8 +432,8 @@ bounds = [(0, None), (0, None)]
 result = minimize(objective, x0=[1, 1], method='SLSQP',
                   bounds=bounds, constraints=constraints)
 
-print(f”Optimal x* = ({result.x[0]:.4f}, {result.x[1]:.4f})”)
-print(f”Minimum cost J = {result.fun:.4f}”)</code></pre>
+print(f"Optimal x* = ({result.x[0]:.4f}, {result.x[1]:.4f})")
+print(f"Minimum cost J = {result.fun:.4f}")</code></pre>
 </div>
 <p><strong>Visualisation:</strong> Geometrically, the optimiser “expands” the level curves (blue circles) from the origin until they first touch the feasible region (grey polygon).</p>
 <div class="center">

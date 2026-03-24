@@ -65,10 +65,16 @@
     }
 
     // ── Run code and capture stdout / stderr ───────────────────────────
+    function finishRun(btnEl) {
+        btnEl.disabled = false;
+        btnEl.textContent = '\u25B6 Run';
+    }
+
     function runCode(setup, userCode, outputEl, btnEl) {
         btnEl.disabled = true;
         btnEl.textContent = 'Running...';
         outputEl.textContent = '';
+        outputEl.classList.remove('pyodide-error');
         outputEl.style.display = 'block';
 
         ensurePyodide()
@@ -87,8 +93,12 @@
                     py.runPython(fullCode);
                 } catch (e) {
                     hasError = true;
-                    var stderr = py.runPython('_pyodide_stderr.getvalue()');
-                    outputEl.textContent = stderr || e.message;
+                    try {
+                        var stderr = py.runPython('_pyodide_stderr.getvalue()');
+                        outputEl.textContent = stderr || e.message;
+                    } catch (_) {
+                        outputEl.textContent = e.message;
+                    }
                     outputEl.classList.add('pyodide-error');
                 }
 
@@ -99,18 +109,19 @@
                     if (stdout) text += stdout;
                     if (stderr) text += (text ? '\n' : '') + stderr;
                     outputEl.textContent = text || '(no output)';
-                    outputEl.classList.remove('pyodide-error');
                 }
 
-                py.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
-                btnEl.disabled = false;
-                btnEl.textContent = '\u25B6 Run';
+                // Always restore streams
+                try {
+                    py.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
+                } catch (_) {}
+                finishRun(btnEl);
             })
             .catch(function (err) {
                 outputEl.textContent = 'Error: ' + err.message;
                 outputEl.classList.add('pyodide-error');
-                btnEl.disabled = false;
-                btnEl.textContent = '\u25B6 Run';
+                outputEl.style.display = 'block';
+                finishRun(btnEl);
             });
     }
 
@@ -177,6 +188,7 @@
             textarea.value = editableCode;
             textarea.rows = Math.max(editableCode.split('\n').length + 1, 4);
             output.textContent = '';
+            output.classList.remove('pyodide-error');
             output.style.display = 'none';
         });
 
