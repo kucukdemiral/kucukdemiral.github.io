@@ -58,7 +58,7 @@
 <div class="examplebox">
 <p><span>Maximising Box Volume</span> <strong>Problem Statement:</strong> Given a square piece of cardboard with dimensions <span class="math inline">\(1\,\text{m} \times 1\,\text{m}\)</span> as shown in Figure <a href="#fig:box_volume" data-reference-type="ref" data-reference="fig:box_volume">[fig:box_volume]</a>, we wish to construct an open-top box with the maximum possible volume. We achieve this by cutting equal squares of side length <span class="math inline">\(x\)</span> from the four corners and folding up the sides.</p>
 <div class="center">
-
+<p><img src="figures/tikz_ch02_1.png" style="width:85.0%" alt="image" /></p>
 </div>
 <p><span id="fig:box_volume" data-label="fig:box_volume"></span></p>
 <p>We map this problem to the three components of optimisation:</p>
@@ -87,7 +87,7 @@
 <p><span>Linear Regression (Least Squares)</span> <strong>Problem Statement:</strong> Suppose we are given a dataset containing <span class="math inline">\(N\)</span> pairs of experimental measurements: <span class="math inline">\(\{(x_1, y_1), (x_2, y_2), \dots, (x_N, y_N)\}\)</span> as shown in Figure <a href="#fig:linear_regression" data-reference-type="ref" data-reference="fig:linear_regression">[fig:linear_regression]</a>.</p>
 <p>We want to find the linear model (a straight line) that "best fits" this data.</p>
 <div class="center">
-<p><span id="fig:linear_regression" data-label="fig:linear_regression"></span></p>
+<p><img src="figures/tikz_ch02_2.png" style="width:85.0%" alt="image" /> <span id="fig:linear_regression" data-label="fig:linear_regression"></span></p>
 </div>
 <p>Note that in this specific problem, the <span class="math inline">\(x\)</span> values are <strong>constants</strong> (data we measured), not decision variables.</p>
 <ol>
@@ -117,12 +117,12 @@
 <ol>
 <li><p><strong>The Vector (<span class="math inline">\(x\)</span>):</strong> Your shopping basket contains many different items. You might have 2 loaves of bread, 6 eggs, and 1 litre of milk. We can list these quantities as a vector: <span class="math display">\[x = \begin{bmatrix} 2 \\ 6 \\ 1 \end{bmatrix} 
     \begin{matrix} \leftarrow \text{Bread} \\ \leftarrow \text{Eggs} \\ \leftarrow \text{Milk} \end{matrix}\]</span> This vector represents the <em>state</em> of your shopping. It is multi-dimensional because it contains different types of information.</p></li>
-<li><p><strong>The Objective Function (<span class="math inline">\(J\)</span>):</strong> The checkout till scans your items. It applies a specific rule (the price list) to your vector. It multiplies each item by its value and sums them up: <span class="math display">\[J(x) = (2 \times \pounds 1.00) + (6 \times \pounds 0.20) + (1 \times \pounds 0.80)\]</span></p></li>
+<li><p><strong>The Objective Function (<span class="math inline">\(J\)</span>):</strong> The checkout till scans your items. It applies a specific rule (the price list) to your vector. It multiplies each item by its value and sums them up: <span class="math display">\[J(x) = (2 \times £ 1.00) + (6 \times £ 0.20) + (1 \times £ 0.80)\]</span></p></li>
 <li><p><strong>The Scalar (<span class="math inline">\(J\)</span>):</strong> The till produces a single number: <span>£4.00</span>.</p></li>
 </ol>
 <p>This is visually described in Figure <a href="#fig:cost_function_analogy" data-reference-type="ref" data-reference="fig:cost_function_analogy">[fig:cost_function_analogy]</a>.</p>
 <div class="center">
-<p><span id="fig:cost_function_analogy" data-label="fig:cost_function_analogy"></span></p>
+<p><img src="figures/tikz_ch02_3.png" style="width:85.0%" alt="image" /> <span id="fig:cost_function_analogy" data-label="fig:cost_function_analogy"></span></p>
 </div>
 <h4 class="unnumbered" id="why-is-this-important-in-engineering">Why is this important in Engineering?</h4>
 <p>You cannot easily say which of two shopping baskets is <em>larger</em> just by looking at the items—one might have more eggs but no milk. However, once you map them to a <span>scalar</span> (the total price), comparison becomes easy. You can instantly say which basket costs less.</p>
@@ -152,7 +152,7 @@
 </ol>
 <p>The feasible set <span class="math inline">\(S\)</span> is the intersection of these two regions (the purple area as shown in Figure <a href="#fig:intersection_of_constraints" data-reference-type="ref" data-reference="fig:intersection_of_constraints">[fig:intersection_of_constraints]</a>).</p>
 <div class="center">
-<p><span id="fig:intersection_of_constraints" data-label="fig:intersection_of_constraints"></span></p>
+<p><img src="figures/tikz_ch02_4.png" style="width:85.0%" alt="image" /> <span id="fig:intersection_of_constraints" data-label="fig:intersection_of_constraints"></span></p>
 </div>
 </div>
 <h3 id="standard-form-minimisation-vs.-maximisation">Standard Form: Minimisation vs. Maximisation</h3>
@@ -173,7 +173,7 @@ With this notation in mind, we can state the equivalence principle. We do not ne
 <p>Visually, multiplying the objective function by <span class="math inline">\(-1\)</span> flips the curve upside down. A peak (maximum) in the original function becomes a valley (minimum) in the negated function. While the vertical values flip signs, the <strong>horizontal location (<span class="math inline">\(x\)</span>)</strong> of the optimal point remains exactly the same. This is pictured in Figure <a href="#fig:minimization_vs_max" data-reference-type="ref" data-reference="fig:minimization_vs_max">1.1</a>.</p>
 <figure id="fig:minimization_vs_max">
 <div class="center">
-
+<img src="figures/tikz_ch02_5.png" style="width:85.0%" />
 </div>
 <figcaption>Visual representation of the equivalence between maximisation and minimisation. To maximise an objective function <span class="math inline">\(f(x)\)</span> (green curve), one can equivalently minimise its negative, <span class="math inline">\(-f(x)\)</span> (red curve). Note that while the vertical value flips sign, the optimal decision variable <span class="math inline">\(x^*\)</span> (the horizontal position of the black dot) remains identical.</figcaption>
 </figure>
@@ -210,7 +210,7 @@ With this notation in mind, we can state the equivalence principle. We do not ne
 </div>
 <p>Hyperplanes and half-spaces are always convex sets. This property ensures that optimisation problems with linear constraints remain convex.</p>
 <figure id="fig:hyperplane_halfspace" data-latex-placement="!h">
-
+<img src="figures/tikz_ch02_6.png" style="width:85.0%" />
 <figcaption>Visual representation of a hyperplane (left) and a closed half-space (right). The vector <span class="math inline">\(a\)</span> is normal to the boundary.</figcaption>
 </figure>
 <div class="examplebox">
@@ -230,7 +230,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
         a = \nabla_x f = \begin{pmatrix} \dfrac{\partial f}{\partial x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{pmatrix} = \begin{pmatrix} 2 \\ 1 \end{pmatrix}
 \end{equation}\]</span> This confirms that the vector <span class="math inline">\(a = (2, 1)^\top\)</span> is the gradient of the linear function defining the hyperplane. Geometrically, the gradient vector is perpendicular to the level sets of the function, meaning <span class="math inline">\(a\)</span> is perpendicular to the line <span class="math inline">\(2x_1 + x_2 = 2\)</span>, as shown in Figure <a href="#fig:example_hyperplane" data-reference-type="ref" data-reference="fig:example_hyperplane">[fig:example_hyperplane]</a>.</p>
 <div class="center">
-<p><span id="fig:example_hyperplane" data-label="fig:example_hyperplane"></span></p>
+<p><img src="figures/tikz_ch02_7.png" style="width:85.0%" alt="image" /> <span id="fig:example_hyperplane" data-label="fig:example_hyperplane"></span></p>
 </div>
 </div>
 <div class="defnbox">
@@ -267,7 +267,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
     P := \{x\in\mathbb{R}^2 \mid Ax \le b\}.\]</span> The intersection of these half–spaces is a bounded polygon with vertices <span class="math display">\[\{(0,0),\ (3,0),\ (3,1),\ (2,2),\ (0,2)\},\]</span> so <span class="math inline">\(P\)</span> is a polytope.</p>
 <p>The polytope <span class="math inline">\(P\)</span> can be visualised in the <span class="math inline">\((x_1,x_2)\)</span>–plane as shown in Figure <a href="#fig:polyhedron" data-reference-type="ref" data-reference="fig:polyhedron">[fig:polyhedron]</a>:</p>
 <div class="center">
-<p><span id="fig:polyhedron" data-label="fig:polyhedron"></span></p>
+<p><img src="figures/tikz_ch02_8.png" style="width:85.0%" alt="image" /> <span id="fig:polyhedron" data-label="fig:polyhedron"></span></p>
 </div>
 </div>
 <h3 id="convex-functions">Convex Functions</h3>
@@ -282,7 +282,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 </div>
 <p>The concept of convexity is illustrated in Figure <a href="#fig:convex_func" data-reference-type="ref" data-reference="fig:convex_func">1.4</a>. The curve represents the function <span class="math inline">\(f\)</span>. The red secant line connects two points <span class="math inline">\((z_1, f(z_1))\)</span> and <span class="math inline">\((z_2, f(z_2))\)</span>. For a convex function, the value of the function evaluated at a weighted average of two points (the black dot on the curve) is always less than or equal to the weighted average of the function values (the black dot on the red line).</p>
 <figure id="fig:convex_func" data-latex-placement="h">
-
+<img src="figures/tikz_ch02_9.png" style="width:85.0%" />
 <figcaption>Geometric interpretation of a convex function. The line segment connecting any two points on the curve lies above the function values.</figcaption>
 </figure>
 <h2 id="classification-of-optimisation-problems">Classification of Optimisation Problems</h2>
@@ -310,7 +310,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 </ul>
 <p>Figure <a href="#fig:level_curves" data-reference-type="ref" data-reference="fig:level_curves">[fig:level_curves]</a> shows several level curves <span class="math inline">\(J=2\)</span>, <span class="math inline">\(J=6\)</span>, <span class="math inline">\(J=12\)</span> and <span class="math inline">\(J=20\)</span>.</p>
 <div class="center">
-<p><span id="fig:level_curves" data-label="fig:level_curves"></span></p>
+<p><img src="figures/tikz_ch02_10.png" style="width:85.0%" alt="image" /> <span id="fig:level_curves" data-label="fig:level_curves"></span></p>
 </div>
 <p>The optimiser searches for the level curve with the smallest possible <span class="math inline">\(c\)</span>. Geometrically, this is the centre of the concentric circles.</p>
 </div>
@@ -329,7 +329,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 \end{equation*}\]</span></p>
 <p><strong>Visualisation:</strong> This problem is visualised in Figure <a href="#fig:optimization_with_constraints" data-reference-type="ref" data-reference="fig:optimization_with_constraints">[fig:optimization_with_constraints]</a>.</p>
 <div class="center">
-<p>. <span id="fig:optimization_with_constraints" data-label="fig:optimization_with_constraints"></span></p>
+<p><img src="figures/tikz_ch02_11.png" style="width:85.0%" alt="image" /> . <span id="fig:optimization_with_constraints" data-label="fig:optimization_with_constraints"></span></p>
 </div>
 <p>The optimal point is found where the constraint line is exactly <span>tangent</span> to a level curve.</p>
 </div>
@@ -368,7 +368,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
         x_star = value(x) % Result: (1, 2)</code></pre>
 <p><strong>Visualisation:</strong> Geometrically, the optimiser “expands” the level curves (blue circles) from the origin until they first touch the feasible region (grey polygon).</p>
 <div class="center">
-
+<p><img src="figures/tikz_ch02_12.png" style="width:85.0%" alt="image" /></p>
 </div>
 </div>
 <h5 id="type-c-general-constraints">Type C: General Constraints</h5>
@@ -409,7 +409,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 </ul>
 <p>A valid solution must satisfy <em>both</em> conditions. Therefore, the feasible set is reduced to the specific line segment where the orange line slices through the grey triangle.</p>
 <div class="center">
-<p><span id="fig:Intersection_of_constraints" data-label="fig:Intersection_of_constraints"></span></p>
+<p><img src="figures/tikz_ch02_13.png" style="width:85.0%" alt="image" /> <span id="fig:Intersection_of_constraints" data-label="fig:Intersection_of_constraints"></span></p>
 </div>
 <p><strong>The Cost of Constraints:</strong> In the previous example (inequalities only), the optimiser could reach the point <span class="math inline">\((1,2)\)</span>, which yielded a cost of <span class="math inline">\(J=5\)</span>.</p>
 <p>However, the new equality constraint forces the solution to lie on the line <span class="math inline">\(x_1 + 2x_2 = 7\)</span>. The point <span class="math inline">\((1,2)\)</span> is no longer valid because <span class="math inline">\(1 + 2(2) = 5 \neq 7\)</span>. The solver is forced to move further away from the origin to satisfy this new rule, settling at <span class="math inline">\((1,3)\)</span> with a higher cost of <span class="math inline">\(J=10\)</span>.</p>
@@ -426,7 +426,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 \end{align*}\]</span></p>
 <p>The feasible set of an LP is a polyhedron, and the optimum, when it exists, is attained at an extreme point (vertex) of this polyhedron. Linear optimisation on a polytope may be visualised as shifting parallel hyperplanes of constant cost until they touch the feasible region. Figure <a href="#fig:LP" data-reference-type="ref" data-reference="fig:LP">1.5</a> shows a 2D example where the polytope corresponds to the closed area modelled by <span class="math inline">\(Gx\le h\)</span> and dashed lines shows the cost for different values of <span class="math inline">\(c^\top x\)</span>.</p>
 <figure id="fig:LP" data-latex-placement="!htb">
-
+<img src="figures/tikz_ch02_14.png" style="width:85.0%" />
 <figcaption>Linear optimisation on a polytope.</figcaption>
 </figure>
 <div class="examplebox">
@@ -561,7 +561,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 <p>In the strictly convex case (where <span class="math inline">\(P \succ 0\)</span>), the level sets of the objective function form concentric ellipses. This structure guarantees that the optimisation problem yields a <strong>unique global minimiser</strong>, provided the feasible region is non-empty.</p>
 <p>Geometrically, the solver searches for the smallest possible ellipse that still overlaps with the constraints. The optimal solution is found at the precise point where this lowest-cost contour touches (or <em>grazes</em>) the feasible polytope. This graphical interpretation is illustrated in Figure <a href="#fig:QP" data-reference-type="ref" data-reference="fig:QP">1.7</a>.</p>
 <figure id="fig:QP" data-latex-placement="!h">
-
+<img src="figures/tikz_ch02_15.png" style="width:85.0%" />
 <figcaption>Convex quadratic optimisation on a polytope. Contours indicate decreasing objective value towards the optimal point <span class="math inline">\(x^\star\)</span>.</figcaption>
 </figure>
 <p>Convex QPs benefit from strong theoretical guarantees and can be solved efficiently using interior-point, active-set, or first-order optimisation methods. They are widely used in control, signal processing, finance, estimation, and engineering design.</p>
@@ -578,7 +578,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 \end{align*}\]</span></p>
 <p><strong>Visualising the Solution:</strong> By inspecting the geometry (see Figure <a href="#fig:qp_distance" data-reference-type="ref" data-reference="fig:qp_distance">[fig:qp_distance]</a>), the closest point within the box to <span class="math inline">\((3,2)\)</span> is the upper-right corner of the box, <span class="math inline">\(x^* = (1, 1)\)</span>.</p>
 <div class="center">
-<p><span id="fig:qp_distance" data-label="fig:qp_distance"></span></p>
+<p><img src="figures/tikz_ch02_16.png" style="width:85.0%" alt="image" /> <span id="fig:qp_distance" data-label="fig:qp_distance"></span></p>
 </div>
 <p>To solve this problem numerically using a solver (like OSQP, quadprog, or GUROBI), we must map the problem into the standard Quadratic Programming form: <span class="math display">\[\begin{equation}
         \min_{x} \; \frac{1}{2} x^\top P x + q^\top x \quad \text{subject to} \quad Gx \leq h
@@ -666,7 +666,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
     &amp; Ax = b
 \end{align*}\]</span></p>
 <figure id="fig:NonconvexQP" data-latex-placement="h">
-
+<img src="figures/tikz_ch02_17.png" style="width:85.0%" />
 <figcaption>Nonconvex quadratic optimisation on a polytope. The dashed lines represent the contours of a saddle-shaped objective function. The global optimum is likely at a vertex, but local minima may exist.</figcaption>
 </figure>
 <h4 id="mixed-integer-linear-programmes-milps">Mixed-Integer Linear Programmes (MILPs)</h4>
@@ -731,7 +731,7 @@ Readers needing a refresher on vectors, matrices, and eigenvalues may consult Ap
 <p><strong>Solving this problem:</strong> The model above is a Mixed-Integer Linear Programme (MILP) due to the binary variables <span class="math inline">\(u(k), s(k), z(k)\)</span>. It requires specialised solvers like Gurobi or CPLEX. In the software section later, we will implement a <strong>simplified</strong> version of this (a continuous LP) to demonstrate the concept in MATLAB.</p>
 </div>
 <figure id="fig:MIP" data-latex-placement="!htb">
-
+<img src="figures/tikz_ch02_18.png" style="width:85.0%" />
 <figcaption>MILP feasible set: discrete integer lattice points within a polytope.</figcaption>
 </figure>
 <h2 id="software-tools-for-optimisation">Software Tools for Optimisation</h2>

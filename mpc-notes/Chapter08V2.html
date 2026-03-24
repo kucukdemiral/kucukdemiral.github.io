@@ -89,7 +89,7 @@ C_{\mathrm{aug}} =
 </ul>
 <h2 id="the-mpc-formulation">The MPC Formulation</h2>
 <figure id="fig:offset_free_architecture" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch08_1.png" style="width:85.0%" />
 <figcaption>Offset-free control architecture. The target calculator uses the disturbance estimate <span class="math inline">\(\hat d_k\)</span> to compute the steady-state targets <span class="math inline">\((x_{ss},u_{ss})\)</span>. The MPC regulator steers the system towards these targets using the estimated state <span class="math inline">\(\hat x_k\)</span>. The augmented observer uses the measurement <span class="math inline">\(y_k\)</span> and the previously applied control input <span class="math inline">\(u_{k-1}\)</span>. The disturbance filter is optional and is included here to reduce noise in the disturbance estimate.</figcaption>
 </figure>
 <figure id="fig:offset_free_architecture_detailed" data-latex-placement="htbp">
@@ -363,7 +363,7 @@ A standard MPC controller based on the nominal model would exhibit a steady-stat
 <p>Figure <a href="#fig:offset_free_results" data-reference-type="ref" data-reference="fig:offset_free_results">1.3</a> shows the closed-loop output, the control signals, the disturbance estimate and the activity of the soft output constraint.</p>
 </div>
 <figure id="fig:offset_free_results" data-latex-placement="!htb">
-<embed src="figures/Offsetfree_MPC.png" style="width:100.0%" />
+<embed src="figures/Offsetfree_MPC.pdf.png" style="width:100.0%" />
 <figcaption>Closed-loop performance of the offset-free MPC with soft output constraints under piecewise-constant reference changes and an unknown step disturbance. The top panel shows accurate output tracking of the constrained reference whilst keeping the output close to the prescribed bounds. The second panel shows the applied control input together with the steady-state target input, with brief transient peaks at the reference-switching instants. The third panel shows that the augmented observer estimates the constant input disturbance well, including the disturbance sign change. The bottom panel shows that the soft output constraint is active only briefly during the disturbance transition, indicating that constraint violations are small and short-lived.</figcaption>
 </figure>
 <p>The code follows the algorithm summarised in Algorithm <a href="#alg:offset_free_mpc" data-reference-type="ref" data-reference="alg:offset_free_mpc">[alg:offset_free_mpc]</a>.</p>
@@ -421,6 +421,7 @@ A standard MPC controller based on the nominal model would exhibit a steady-stat
         \end{aligned}
 \end{equation}\]</span></p>
 <div class="center">
+<p><img src="figures/tikz_ch08_3.png" style="width:85.0%" alt="image" /></p>
 <p><span id="fig:quadrotor_control_architecture" data-label="fig:quadrotor_control_architecture"></span></p>
 </div>
 <p>Substituting these virtual inputs into the linearised model decouples the motion into three double integrators, so that the discrete-time predictor used by the MPC has the form <span class="math display">\[x_{k+1} = A x_k + B u_{\mathrm{lin},k}.\]</span></p>
@@ -446,7 +447,7 @@ A standard MPC controller based on the nominal model would exhibit a steady-stat
 <p>Finally, the virtual control input is mapped back to the physical commands <span class="math inline">\((\phi,\theta,T)\)</span> using <a href="#eq:virtual_mapping" data-reference-type="eqref" data-reference="eq:virtual_mapping">[eq:virtual_mapping]</a>.</p>
 <p><strong>4. MATLAB Implementation</strong></p>
 <p>The code below simulates this strategy. The controller uses a linear prediction model, but the plant is simulated with the full nonlinear dynamics using RK4 integration. A step wind disturbance is applied at <span class="math inline">\(t=50\)</span> s. Figure <a href="#fig:quad_mpc_result" data-reference-type="ref" data-reference="fig:quad_mpc_result">[fig:quad_mpc_result]</a> shows the simulation result for tracking and disturbance observation.</p>
-<p><embed src="figures/Quadrotor_MPC.png" style="width:90.0%" /> <span id="fig:quad_mpc_result" data-label="fig:quad_mpc_result"></span></p>
+<p><embed src="figures/Quadrotor_MPC.pdf.png" style="width:90.0%" /> <span id="fig:quad_mpc_result" data-label="fig:quad_mpc_result"></span></p>
 <pre class="matlab" data-language="Matlab"><code>clear; clc; close all;
 
 %% 1. System &amp; Linear Model
@@ -632,7 +633,7 @@ y_k = C x_k,\]</span> where <span class="math inline">\(u_k \in [0, 2000]\)</spa
 <li><p><strong>Outdoor temperature</strong> <span class="math inline">\((T_{\mathrm{amb},k})\)</span>: <span class="math display">\[T_{\mathrm{amb},k} = 5 + 6\sin\!\left(\tfrac{2\pi(t_k-14)}{24}\right) + 0.5\,\eta_k,\]</span> ranging nominally between <span class="math inline">\(-1\,^\circ\)</span>C and <span class="math inline">\(11\,^\circ\)</span>C; treated as a known feedforward.</p></li>
 <li><p><strong>Solar irradiance</strong> <span class="math inline">\((\varphi_{\mathrm{sol},k})\)</span>: <span class="math display">\[\varphi_{\mathrm{sol},k} = \max\!\left(0,\; 600\sin\!\left(\tfrac{\pi(\mathrm{mod}(t_k,24)-8)}{9}\right)\right),\]</span> treated as a known feedforward.</p></li>
 <li><p><strong>Occupancy disturbance</strong> <span class="math inline">\((d_k)\)</span>: an effective scaled thermal disturbance, <span class="math display">\[d_k = \begin{cases} 0.191\,^\circ\text{C/step} &amp; 08{:}00 \le \mathrm{time}(t_k) &lt; 18{:}00, \\ 0 &amp; \text{otherwise,} \end{cases}\]</span> corresponding to 300 W of internal gains; <em>unknown</em> to the controller and estimated by the Kalman filter.</p></li>
-<li><p><strong>Electricity price</strong> <span class="math inline">\((p_k)\)</span>: <span class="math display">\[p_k = \begin{cases} 0.28\,\pounds/\text{kWh} &amp; 07{:}00 \le \mathrm{time}(t_k) &lt; 22{:}00, \\ 0.05\,\pounds/\text{kWh} &amp; \text{otherwise.} \end{cases}\]</span></p></li>
+<li><p><strong>Electricity price</strong> <span class="math inline">\((p_k)\)</span>: <span class="math display">\[p_k = \begin{cases} 0.28\,£/\text{kWh} &amp; 07{:}00 \le \mathrm{time}(t_k) &lt; 22{:}00, \\ 0.05\,£/\text{kWh} &amp; \text{otherwise.} \end{cases}\]</span></p></li>
 </ul>
 <p><strong>Time-varying comfort bounds:</strong> <span class="math display">\[[y_{\min,k},\,y_{\max,k}] = \begin{cases} [20,\,23]\,^\circ\text{C} &amp; \text{daytime }(07{:}00\text{--}22{:}00), \\ [15,\,26]\,^\circ\text{C} &amp; \text{night-time.}\end{cases}\]</span></p>
 <p><strong>Control architecture (three layers):</strong></p>
@@ -819,7 +820,7 @@ y_k = C x_k,\]</span> where <span class="math inline">\(u_k \in [0, 2000]\)</spa
     fprintf(&#39;Total heating cost: GBP %.3f\n&#39;, sum(log_cost));
     
     % Visualisation is omitted for brevity</code></pre>
-<p><embed src="figures/hvac.png" style="width:90.0%" /> <span id="fig:singlezone2" data-label="fig:singlezone2"></span></p>
+<p><embed src="figures/hvac.pdf.png" style="width:90.0%" /> <span id="fig:singlezone2" data-label="fig:singlezone2"></span></p>
 </div>
 <div class="examplebox">
 <p><span>Offset-free MPC of a 3-DOF Articulated Robot Manipulator</span></p>
@@ -829,7 +830,7 @@ y_k = C x_k,\]</span> where <span class="math inline">\(u_k \in [0, 2000]\)</spa
 <p><strong><span class="sans-serif">Kinematic Configuration</span></strong></p>
 <p>Figure <a href="#fig:3dof_arm" data-reference-type="ref" data-reference="fig:3dof_arm">1.4</a> shows the side-view projection of the arm and the definition of the joint angles <span class="math inline">\(q_1\)</span>, <span class="math inline">\(q_2\)</span>, and <span class="math inline">\(q_3\)</span>. The base yaw axis is perpendicular to the plane of the figure.</p>
 <figure id="fig:3dof_arm" data-latex-placement="H">
-
+<img src="figures/tikz_ch08_4.png" style="width:85.0%" />
 <figcaption>Side-view projection of the 3-DOF RRR articulated arm. Joint 1 (base yaw) is perpendicular to the page; joints 2 and 3 (shoulder and elbow pitch) lie in the plane shown.</figcaption>
 </figure>
 <p><strong><span class="sans-serif">Physical Parameters</span></strong></p>
@@ -1027,7 +1028,7 @@ y_k = C x_k,\]</span> where <span class="math inline">\(u_k \in [0, 2000]\)</spa
 </table>
 </div>
 <div class="center">
-<p><span id="fig:CTMPC_robot_block_diagram" data-label="fig:CTMPC_robot_block_diagram"></span></p>
+<p><img src="figures/tikz_ch08_5.png" style="width:85.0%" alt="image" /> <span id="fig:CTMPC_robot_block_diagram" data-label="fig:CTMPC_robot_block_diagram"></span></p>
 </div>
 <pre class="MATLAB" data-language="MATLAB"><code>clear; clc; close all; rng(1);
     

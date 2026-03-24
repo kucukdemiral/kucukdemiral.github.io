@@ -68,7 +68,7 @@ y(t) = h\big(x(t), u(t), t\big).\]</span> While this vector notation is elegant,
 <div class="examplebox">
 <p><span>Nonlinear Modelling of a Simple Pendulum</span> To illustrate the transition from physical laws to state-space equations, consider the classic simple pendulum system shown in Figure <a href="#fig:Pendulum" data-reference-type="ref" data-reference="fig:Pendulum">[fig:Pendulum]</a>, consisting of a mass <span class="math inline">\(m\)</span> attached to a rigid, massless rod of length <span class="math inline">\(\ell\)</span>. The pivot is acted upon by an external control torque <span class="math inline">\(u(t)\)</span> and a viscous friction coefficient <span class="math inline">\(b\)</span>.</p>
 <div class="center">
-<p><span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
+<p><img src="figures/tikz_ch03_1.png" style="width:85.0%" alt="image" /> <span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
 </div>
 <p><strong>1. Physical Laws</strong><br />
 We apply Newton’s second law for rotational motion: <span class="math display">\[\tau_{\text{net}} = I \ddot{\theta}\]</span> where <span class="math inline">\(I = m\ell^2\)</span> is the moment of inertia and <span class="math inline">\(\theta\)</span> is the angular position measured from the vertical downward position. The torques acting on the system are:</p>
@@ -149,7 +149,7 @@ y(t) &amp;= C x(t) + D u(t),
 <p><span>State–Space Modelling of an RLC Circuit</span></p>
 <p>Consider the electrical circuit shown in Figure <a href="#fig:RLC01" data-reference-type="ref" data-reference="fig:RLC01">[fig:RLC01]</a>, consisting of a voltage source <span class="math inline">\(V_i\)</span>, resistors <span class="math inline">\(R_1\)</span> and <span class="math inline">\(R_2\)</span>, an inductor <span class="math inline">\(L\)</span>, and a capacitor <span class="math inline">\(C\)</span>. Write state equations in matrix form.</p>
 <div class="center">
-<p><span id="fig:RLC01" data-label="fig:RLC01"></span></p>
+<p><img src="figures/tikz_ch03_2.png" style="width:85.0%" alt="image" /> <span id="fig:RLC01" data-label="fig:RLC01"></span></p>
 </div>
 <p>We select the energy variables as state variables: <span class="math display">\[x_1 = i_L \quad \text{(inductor current)}, 
     \qquad 
@@ -189,7 +189,7 @@ y(t) &amp;= C x(t) + D u(t),
 <div class="examplebox">
 <p><span>Mass–Spring–Damper with External Forcing (State–Space Modelling)</span> <strong>Question.</strong> A mass–spring–damper system shown in Figure <a href="#fig:MDS_system" data-reference-type="ref" data-reference="fig:MDS_system">[fig:MDS_system]</a> is subjected to an external force input <span class="math inline">\(F(t)\)</span>. The displacement of the mass from equilibrium is denoted by <span class="math inline">\(\zeta(t)\)</span> (positive to the right). The system parameters are mass <span class="math inline">\(m\)</span>, damping coefficient <span class="math inline">\(c\)</span>, and spring stiffness <span class="math inline">\(k\)</span>.</p>
 <div class="center">
-<p><span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
+<p><img src="figures/tikz_ch03_3.png" style="width:85.0%" alt="image" /> <span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
 </div>
 <ol>
 <li><p>Write the equation of motion for the system in terms of <span class="math inline">\(\zeta(t)\)</span>, <span class="math inline">\(\dot{\zeta}(t)\)</span>, <span class="math inline">\(\ddot{\zeta}(t)\)</span>, and the input force <span class="math inline">\(F(t)\)</span>.</p></li>
@@ -336,7 +336,7 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
         J\ddot{\theta} &amp;= \frac{\ell }{2}(u_2 - u_1)
 \end{align*}\]</span> where <span class="math inline">\(p_x\)</span> is the horizontal position and <span class="math inline">\(p_y\)</span> is the vertical position. Linearise these dynamics around the hover equilibrium (<span class="math inline">\(\theta=0, u_1=u_2=mg/2\)</span>) to obtain an LTI state-space model, <span class="math inline">\(\dot{{x}} = A{x} + B{u}\)</span>.</p>
 <div class="center">
-<p><span id="fig:duorotor_model" data-label="fig:duorotor_model"></span></p>
+<p><img src="figures/tikz_ch03_4.png" style="width:85.0%" alt="image" /> <span id="fig:duorotor_model" data-label="fig:duorotor_model"></span></p>
 </div>
 <p><strong>1) Define states and inputs:</strong> We select the state vector such that the generalized coordinates appear first, followed by their velocities: <span class="math display">\[x(t) = 
     \begin{bmatrix} x_1 &amp; x_2 &amp; x_3 &amp; x_4 &amp; x_5 &amp; x_6 \end{bmatrix}^\top
@@ -506,7 +506,7 @@ Figure <a href="#fig:integrator_comparison" data-reference-type="ref" data-refe
 <p>It can be observed that the <strong>Forward Euler</strong> method is numerically unstable for every selection of sampling time <span class="math inline">\(h\)</span>; it introduces artificial energy into the system, causing the amplitude to grow unbounded (spiralling out) as time progresses. In contrast, the <strong>RK4</strong> method maintains high accuracy and preserves stability even at larger time steps.</p>
 </div>
 <figure id="fig:integrator_comparison">
-<embed src="figures/RK4_vs_euler.png" style="width:100.0%" />
+<embed src="figures/RK4_vs_euler.pdf.png" style="width:100.0%" />
 <figcaption>Comparison of numerical integration accuracy for an undamped harmonic oscillator (<span class="math inline">\(\ddot{p} + p = 0\)</span>) across increasing time steps <span class="math inline">\(h \in \{0.05, 0.10, 0.25, 0.50\}\)</span> seconds. For this system (purely imaginary eigenvalues), the <strong>Forward Euler</strong> method (red dashed) is numerically unstable; it introduces artificial energy into the simulation, causing the amplitude to grow unbounded as time progresses. This error scales linearly with <span class="math inline">\(h\)</span>. In contrast, the <strong>Runge–Kutta 4 (RK4)</strong> method (blue dash-dot) maintains high fidelity to the <strong>Exact</strong> solution (solid gray), preserving stability even at the coarsest time step of <span class="math inline">\(h=0.50\)</span> s.</figcaption>
 </figure>
 <h2 id="stability-of-discrete-time-systems">Stability of Discrete-Time Systems</h2>
@@ -527,7 +527,7 @@ Figure <a href="#fig:integrator_comparison" data-reference-type="ref" data-refe
 <li><p><strong>Marginally Stable:</strong> Eigenvalues lie <em>on</em> the unit circle (<span class="math inline">\(|\lambda| = 1\)</span>). The system may oscillate or remain constant, but does not decay.</p></li>
 </ul>
 <figure id="fig:unit_circle" data-latex-placement="h">
-
+<img src="figures/tikz_ch03_5.png" style="width:85.0%" />
 <figcaption>Stability in the Z-plane. For the system to be stable, all eigenvalues (poles) must reside within the shaded blue region. Blue eigenvalues are stable whereas red ones are unstable. Therefore the system having these eigenvalues is unstable.</figcaption>
 </figure>
 <h3 id="lyapunov-stability-and-the-stein-equation">Lyapunov Stability and the Stein Equation</h3>

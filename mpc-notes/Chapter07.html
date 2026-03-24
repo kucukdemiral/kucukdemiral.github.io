@@ -306,7 +306,7 @@ J &amp;= \underbrace{x_0^2}_{=1} + u_0^2 + \underbrace{x_1^2}_{(1+u_0)^2} + u_1^
 </ol>
 <p>While short horizons can lead to instability, a more common issue in practice is <strong>Performance Degradation</strong>. If the control authority is "expensive" (high <span class="math inline">\(R\)</span>) and the horizon is short, the controller becomes "lazy."</p>
 <figure id="fig:mpc_lazy" data-latex-placement="h">
-<embed src="figures/Effect_of_N.png" style="width:90.0%" />
+<embed src="figures/Effect_of_N.pdf.png" style="width:90.0%" />
 <figcaption><strong>Performance Degradation with Short Horizons.</strong> The system starts at <span class="math inline">\(x_0=4\)</span> with expensive control (<span class="math inline">\(R=10\)</span>). The Short Horizon controller (Red) tries to save control effort in the short term as it cannot see long enough, leading to extremely slow convergence. The Terminal Cost controller (Green) recognises the long-term value of aggressive action, matching the performance of the Long Horizon controller (Blue).</figcaption>
 </figure>
 <div class="examplebox">
@@ -456,7 +456,7 @@ Rigorous MPC &amp; <span class="math inline">\(Q_N = P\)</span> (DARE) &amp; <sp
 <p>However, there is an upper limit: <span class="math inline">\(\mathcal{X}_f\)</span> cannot exceed the <em>maximal positive invariant set</em> for the closed-loop system <span class="math inline">\((A-BK)\)</span> under the given constraints. Any state outside this maximal set will eventually be driven to a constraint violation by the LQR controller, so it cannot belong to <span class="math inline">\(\mathcal{X}_f\)</span>.</p>
 <p>The ideal design therefore computes the largest possible <span class="math inline">\(\mathcal{X}_f\)</span> (the maximal positive invariant set), which maximises the region of attraction.</p>
 <div class="center">
-
+<p><img src="figures/tikz_ch07_1.png" style="width:85.0%" alt="image" /></p>
 </div>
 <p>In the figure above, the dashed box is the state constraint set <span class="math inline">\(\mathcal{X}\)</span>. With a small <span class="math inline">\(\mathcal{X}_f\)</span> (red), the MPC must work harder to hit the target. With a large <span class="math inline">\(\mathcal{X}_f\)</span> (blue), more initial states lead to feasible problems.</p>
 <h4 id="computing-mathcalx_f-for-multi-state-systems-using-mpt3">Computing <span class="math inline">\(\mathcal{X}_f\)</span> for Multi-State Systems Using MPT3</h4>

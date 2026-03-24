@@ -7,7 +7,7 @@
 <p>Model Predictive Control (MPC) must first be placed within the framework of classical control theory in order to be understood. The goal of a typical control loop, illustrated in Figure <a href="#fig:classic_loop" data-reference-type="ref" data-reference="fig:classic_loop">1.1</a>, is to adjust a system (or plant) so that its outputs follow a desired reference.</p>
 <p>In the classical approach, a controller is designed, usually represented as a transfer function <span class="math inline">\(G_c(s)\)</span> in the Laplace domain. On its own, this controller is a dynamic system. In order to produce an input for the plant, it processes measurements and reference signals. The goal of the design process is to create a dynamic system (the controller) with characteristics like stability, quick rise time, and little overshoot in the closed-loop transfer function.</p>
 <figure id="fig:classic_loop" data-latex-placement="H">
-
+<img src="figures/tikz_ch01_1.png" style="width:85.0%" />
 <figcaption>The Classical Control Loop. The controller is a pre-designed dynamic block (e.g., PID) that maps error to input of the controlled system called <em>plant</em>.</figcaption>
 </figure>
 <p>To give an example, in classical control (e.g., Proportional-Integral-Derivative or PID), the engineer explicitly defines <em>how</em> the controller calculates the input. The internal structure of a PID controller is shown in Figure <a href="#fig:pid_structure" data-reference-type="ref" data-reference="fig:pid_structure">1.2</a>. A PID controller is explicitly instructed to:</p>
@@ -19,7 +19,7 @@
 </ol>
 <p>This sum constitutes the control input that is applied to the plant. The behaviour is fixed by the mathematical structure of the controller. That means when one knows <span class="math inline">\(e(t)\)</span> numerically and once the control gains (<span class="math inline">\(K_p, K_i, K_d\)</span>) are selected, the control signal applied to the plant can be precisely calculated in closed form.</p>
 <figure id="fig:pid_structure" data-latex-placement="t">
-
+<img src="figures/tikz_ch01_2.png" style="width:85.0%" />
 <figcaption>The internal structure of a PID controller. The error (<span class="math inline">\(e\)</span>) is processed in parallel: it is integrated, differentiated, and scaled by specific gains before being summed to produce the control input (<span class="math inline">\(u\)</span>).</figcaption>
 </figure>
 <h4 id="the-mpc-approach-optimisation-based-control">The MPC Approach: Optimisation-Based Control</h4>
@@ -33,7 +33,7 @@
 <li><p><strong>Constraints:</strong> Limitations on the system (e.g., maximum valve opening, safety limits, temperature limits, rate bounds of the actuator etc.).</p></li>
 </ol>
 <figure id="fig:mpc_loop" data-latex-placement="t">
-
+<img src="figures/tikz_ch01_3.png" style="width:85.0%" />
 <figcaption>The MPC Control Loop. The fixed controller is replaced by an on-line optimiser that uses a model and constraints of the plant as well as predefined objective function to solve for the optimal control input.</figcaption>
 </figure>
 <p>The optimiser processes this information to select the input that brings the plant to ideal form by minimising an objective (cost) while strictly respecting constraints.</p>
@@ -47,7 +47,7 @@
 </ul>
 <p>Consider racing track shown in Figure <a href="#fig:racing_car" data-reference-type="ref" data-reference="fig:racing_car">1.4</a>. A human driver naturally performs predictive control. Upon approaching a corner, the driver does not simply react to the car’s current position. Instead, they look ahead—establishing a <em>prediction horizon</em>. They anticipate the car’s future trajectory based on its current momentum and adjust their inputs <em>proactively</em>. For example, a driver will pull to the outside of the track to flatten the turn radius, anticipating the geometry of the road ahead before they even reach the apex.</p>
 <figure id="fig:racing_car" data-latex-placement="t">
-<embed src="figures/racing1.png" style="width:90.0%" />
+<embed src="figures/racing1.pdf.png" style="width:90.0%" />
 <figcaption>Model Predictive Control for trajectory optimisation in a racing scenario. The controller plans an optimal path (cyan) over the prediction horizon that minimises a cost function (tracking the reference line) while satisfying state constraints (track edges) and avoiding obstacles (red cars).</figcaption>
 </figure>
 <p>Imagine if the driver planned the entire lap at the starting line based on a map, closed their eyes, and executed that plan blindly. This "open-loop" execution would inevitably result in a crash. This failure occurs because the internal model is never perfect. There are several reasons for this failure:</p>
@@ -83,7 +83,7 @@
 <p><strong>Classical Control:</strong> Ignores constraints during design and is inherently <em>blind</em> to these boundaries. A PID controller, for instance, may calculate a control action that the hardware cannot physically execute. This often leads to <em>integrator windup</em>, where the controller’s internal logic becomes saturated, resulting in large overshoots or sluggish recovery.</p>
 <p><strong>MPC:</strong> Includes constraints directly in the optimisation. The optimiser knows the limits and will find the best control action that resides <em>on the boundary</em> of those limits without crossing them. MPC behaves non-linearly: it acts gently when far from a constraint but aggressively when approaching a limit to prevent violation. (See Figure <a href="#fig:constraints_comparison" data-reference-type="ref" data-reference="fig:constraints_comparison">1.6</a>). MPC treats constraints as fundamental components of the control problem. By predicting future behaviour, the optimiser can anticipate a potential constraint violation and adjust the control signal proactively <em>before</em> the limit is reached. This ability to operate safely at the very edge of the feasible operating space is perhaps the most significant economic driver for MPC in industry.</p>
 <figure id="fig:constraints_comparison" data-latex-placement="h">
-
+<img src="figures/tikz_ch01_5.png" style="width:85.0%" />
 <figcaption><strong>Top:</strong> Classical control showing significant overshoot violating constraints. <strong>Bottom:</strong> Predictive control respecting constraints by adjusting the trajectory.</figcaption>
 </figure>
 <h4 id="future-knowledge-and-preview-capability">Future Knowledge and Preview Capability</h4>
@@ -214,7 +214,7 @@
 <p>This matrix formulation defines a <strong>feasible region</strong>—a geometric <em>safe space</em> within which the system must operate. If the predicted trajectory tries to leave this space (e.g., predicting a velocity of <span class="math inline">\(51 \, m/s\)</span>), the optimiser will actively alter the input <span class="math inline">\(u_k\)</span> to prevent the violation, ensuring the car slows down <em>before</em> it breaks the speed limit.</p>
 </div>
 <figure id="fig:mpc_math_formulation" data-latex-placement="h">
-
+<img src="figures/tikz_ch01_6.png" style="width:85.0%" />
 <figcaption>Mathematical formulation of the MPC problem and the Receding Horizon implementation.</figcaption>
 </figure>
 <h4 id="the-receding-horizon-principle">The Receding Horizon Principle</h4>
@@ -231,7 +231,7 @@
 </ol>
 <p>= [rectangle, draw, fill=blue!10, text width=8em, text centered, rounded corners, minimum height=3em] = [ellipse, draw, fill=red!10, text width=4em, text centered, minimum height=2.5em] = [draw, -latex’, thick]</p>
 <figure id="fig:rhc_flowchart" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch01_7.png" style="width:85.0%" />
 <figcaption>Summary of the Receding Horizon Control (RHC) loop.</figcaption>
 </figure>
 <p>The reader might ask: <em>"Why waste computational power calculating <span class="math inline">\(N\)</span> steps if we only use the first?"</em></p>

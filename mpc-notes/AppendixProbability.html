@@ -111,7 +111,7 @@ ylim([0, 0.4]); grid on;</code></pre>
   \quad x \in \mathbb{R},\]</span> where <span class="math inline">\(\mu\)</span> is the <strong>mean</strong> (centre) and <span class="math inline">\(\sigma^2\)</span> is the <strong>variance</strong> (spread). The <strong>standard deviation</strong> is <span class="math inline">\(\sigma = \sqrt{\sigma^2}\)</span>.</p>
 </div>
 <figure id="fig:gauss_pdf" data-latex-placement="htbp">
-
+<img src="figures/tikz_appProb_1.png" style="width:85.0%" />
 <figcaption>Gaussian PDFs. Increasing <span class="math inline">\(\sigma^2\)</span> widens the bell curve (more uncertainty); shifting <span class="math inline">\(\mu\)</span> moves its centre (different expected value).</figcaption>
 </figure>
 <p><strong>The 68–95–99.7 rule</strong> (essential for engineering): <span class="math display">\[P(\mu - \sigma \leq X \leq \mu + \sigma)    \approx 0.683,\quad
@@ -267,7 +267,7 @@ xlabel(&#39;x&#39;); ylabel(&#39;y_2&#39;); title(sprintf(&#39;\\rho = %.2f&#39;
 </div>
 <p>The diagonal entries of <span class="math inline">\(\Sigma\)</span> are the individual variances: <span class="math inline">\(\Sigma_{ii} = \mathrm{Var}(x_i)\)</span>. The off-diagonal entries are covariances: <span class="math inline">\(\Sigma_{ij} = \mathrm{Cov}(x_i, x_j)\)</span>.</p>
 <figure id="fig:bivariate_gauss" data-latex-placement="htbp">
-
+<img src="figures/tikz_appProb_2.png" style="width:85.0%" />
 <figcaption>Equal-probability contours of two bivariate Gaussian distributions. When <span class="math inline">\(\Sigma = I\)</span> the contours are circles (independent components). When off-diagonal covariance is large the contours tilt into ellipses aligned with the correlated direction.</figcaption>
 </figure>
 <div class="notebox">

@@ -573,7 +573,7 @@
     yyaxis left;  stairs(tout, log_u, &#39;LineWidth&#39;, 1.5);
     ylabel(&#39;Heater power (W)&#39;);
     yyaxis right; stairs(tout, log_price, &#39;--&#39;,&#39;LineWidth&#39;, 1.2);
-    ylabel(&#39;Price (\pounds/kWh)&#39;);
+    ylabel(&#39;Price (£/kWh)&#39;);
     grid on; title(&#39;Heater power and electricity price&#39;);
     
     nexttile;
@@ -587,8 +587,8 @@
     nexttile;
     stairs(tout, cumsum(log_cost), &#39;LineWidth&#39;, 1.5);
     grid on; xlabel(&#39;Time (hours)&#39;);
-    ylabel(&#39;Cumulative cost (\pounds)&#39;);
-    title(sprintf(&#39;Cumulative heating cost  (total: \pounds %.3f)&#39;, sum(log_cost)));
+    ylabel(&#39;Cumulative cost (£)&#39;);
+    title(sprintf(&#39;Cumulative heating cost  (total: £ %.3f)&#39;, sum(log_cost)));
     
     set(findall(gcf,&#39;-property&#39;,&#39;FontSize&#39;),&#39;FontSize&#39;,13);</code></pre>
 <figure id="fig:simulinkbuilding">
