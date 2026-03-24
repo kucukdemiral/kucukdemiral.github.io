@@ -34,6 +34,19 @@
 n_days   = 5;
 p_none   = (1 - p_fail)^n_days    % 0.9039
 p_atleast1 = 1 - p_none           % 0.0961</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>p_fail = 0.02
+n_days = 5
+p_none = (1 - p_fail)**n_days
+p_atleast1 = 1 - p_none
+
+print(f"P(no failure in {n_days} days) = {p_none:.4f}")
+print(f"P(at least 1 failure)          = {p_atleast1:.4f}")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_conditional">Conditional Probability and Independence</h2>
 <div class="defnbox">
@@ -55,6 +68,21 @@ P_Oc  = 1 - P_O;
 
 P_T   = P_T_O*P_O + P_T_Oc*P_Oc;     % 0.6450
 P_O_T = P_T_O * P_O / P_T             % 0.9767</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>P_O    = 0.7       # P(obstacle present)
+P_T_O  = 0.9       # true positive rate
+P_T_Oc = 0.05      # false alarm rate
+
+P_T   = P_T_O * P_O + P_T_Oc * (1 - P_O)
+P_O_T = P_T_O * P_O / P_T
+
+print(f"P(trigger)              = {P_T:.4f}")
+print(f"P(obstacle | trigger)   = {P_O_T:.4f}")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_bayes">Bayes’ Theorem</h2>
 <div class="defnbox">
@@ -88,6 +116,20 @@ xlabel(&#39;Sensor reading x&#39;);
 ylabel(&#39;P(X = x)&#39;);
 title(&#39;PMF of quantised sensor&#39;);
 ylim([0, 0.4]); grid on;</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>x   = np.arange(-2, 3)
+pmf = np.ones(5) / 5
+
+print("PMF of quantised sensor:")
+print(f"  {'x':>3s}  {'P(X=x)':>8s}")
+for xi, pi in zip(x, pmf):
+    print(f"  {xi:3d}  {pi:8.4f}")
+print(f"  Sum = {np.sum(pmf):.1f}")</code></pre>
+</div>
 </div>
 <h3 id="subsec:app_continuous">Continuous Random Variables</h3>
 <p>A continuous RV is characterised by its <strong>probability density function</strong> (PDF) <span class="math inline">\(f_X(x)\)</span>, defined so that: <span class="math display">\[P(a \leq X \leq b) = \int_a^b f_X(x)\,\mathrm{d}x,
@@ -143,6 +185,27 @@ xlabel(&#39;Measurement (deg C)&#39;);
 ylabel(&#39;Probability density&#39;);
 title(&#39;Simulated Gaussian sensor noise&#39;);
 legend(&#39;Histogram&#39;,&#39;True PDF&#39;); grid on;</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>mu, sigma = 20, 0.5
+N = 10000
+np.random.seed(42)
+meas = mu + sigma * np.random.randn(N)
+
+in1 = np.mean(np.abs(meas - mu) <= 1*sigma)
+in2 = np.mean(np.abs(meas - mu) <= 2*sigma)
+in3 = np.mean(np.abs(meas - mu) <= 3*sigma)
+
+print("68-95-99.7 rule verification:")
+print(f"  Within 1 sigma: {in1:.4f}  (theory: 0.6827)")
+print(f"  Within 2 sigma: {in2:.4f}  (theory: 0.9545)")
+print(f"  Within 3 sigma: {in3:.4f}  (theory: 0.9973)")
+print(f"\n  Sample mean: {np.mean(meas):.4f} (true: {mu})")
+print(f"  Sample std:  {np.std(meas):.4f} (true: {sigma})")</code></pre>
+</div>
 <p>Running the code confirms all three percentages to within 1% of their theoretical values. <code>normpdf(x,mu,sigma)</code> evaluates the Gaussian PDF; <code>normcdf</code> evaluates the CDF.</p>
 </div>
 <h3 id="exponential-and-other-useful-distributions">Exponential and Other Useful Distributions</h3>
@@ -223,6 +286,28 @@ prob2 = 2*normcdf(z) - 1                             % 0.9545
 v = sigma * randn(1, 1e6);
 fprintf(&#39;Sample mean:     %.4f\n&#39;, mean(v))    % ~0
 fprintf(&#39;Sample variance: %.4f\n&#39;, var(v))     % ~0.25</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>R = 0.25
+sigma = np.sqrt(R)
+
+prob = normal_dist.cdf(1, 0, sigma) - normal_dist.cdf(-1, 0, sigma)
+print(f"P(|error| <= 1 deg) = {prob:.4f}")
+
+z = 1 / sigma
+prob2 = 2 * normal_dist.cdf(z) - 1
+print(f"Via z-score (z={z:.1f}): {prob2:.4f}")
+
+# Monte Carlo
+v = sigma * np.random.randn(1_000_000)
+print(f"\nMonte Carlo (N=10^6):")
+print(f"  Sample mean:     {np.mean(v):.4f}")
+print(f"  Sample variance: {np.var(v):.4f}  (true: {R})")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_covariance">Covariance and Correlation</h2>
 <div class="defnbox">
@@ -255,6 +340,25 @@ subplot(1,2,1); scatter(x, y1, 5, &#39;.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_1&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho1));
 subplot(1,2,2); scatter(x, y2, 5, &#39;r.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_2&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho2));</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>np.random.seed(0)
+N = 1000
+x  = np.random.randn(N)
+y1 = 2*x + 0.5*np.random.randn(N)   # correlated
+y2 = np.random.randn(N)              # independent
+
+print("Cov(x, y1) — correlated:"); print(np.cov(x, y1))
+print("\nCov(x, y2) — independent:"); print(np.cov(x, y2))
+
+rho1 = np.corrcoef(x, y1)[0, 1]
+rho2 = np.corrcoef(x, y2)[0, 1]
+print(f"\nCorrelation(x, y1) = {rho1:.4f}  (expect ~ +1)")
+print(f"Correlation(x, y2) = {rho2:.4f}  (expect ~  0)")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_mvgauss">The Multivariate Gaussian Distribution</h2>
 <p>State vectors in control systems are multi-dimensional. The Kalman filter propagates a full <em>joint</em> probability distribution over all state components simultaneously, which requires the multivariate generalisation of the Gaussian.</p>
@@ -304,6 +408,25 @@ legend(&#39;Samples&#39;,&#39;Mean&#39;); grid on; axis equal;
 % Verify sample statistics
 fprintf(&#39;Sample mean:  [%.3f, %.3f]\n&#39;, mean(samples));
 disp(&#39;Sample covariance:&#39;); disp(cov(samples))</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>mu    = np.array([1, -2])
+Sigma = np.array([[2, 0.8], [0.8, 1]])
+
+ev = np.linalg.eigvals(Sigma)
+print(f"Eigenvalues of Sigma: {ev} — PD? {bool(np.all(ev > 0))}")
+
+np.random.seed(1)
+samples = np.random.multivariate_normal(mu, Sigma, 2000)
+
+print(f"\nSample mean:  {np.mean(samples, axis=0)}")
+print(f"True mean:    {mu}")
+print(f"\nSample covariance:"); print(np.cov(samples.T))
+print(f"\nTrue covariance:"); print(Sigma)</code></pre>
+</div>
 </div>
 <h2 id="sec:app_linear_gauss">Linear Transformations of Gaussian Variables</h2>
 <p>A crucial property that makes Gaussian distributions so convenient for control is that they are <em>closed under linear transformations</em>: a linear function of a Gaussian is still Gaussian.</p>
@@ -347,6 +470,27 @@ plot(0:N, P_log, &#39;r-o&#39;, &#39;LineWidth&#39;, 1.5);
 yline(Q/(1-a^2), &#39;k--&#39;, &#39;Steady state&#39;, &#39;LineWidth&#39;, 1);
 ylabel(&#39;\sigma^2_k&#39;); xlabel(&#39;Step k&#39;);
 title(&#39;Propagated variance&#39;); grid on;</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>a, Q = 0.9, 0.01
+mu, P = 5.0, 1.0
+N = 10
+
+print(f"  {'k':>3s}  {'mu_k':>8s}  {'P_k':>10s}")
+print(f"  {'---':>3s}  {'--------':>8s}  {'----------':>10s}")
+print(f"  {0:3d}  {mu:8.4f}  {P:10.6f}")
+
+for k in range(1, N+1):
+    mu = a * mu
+    P  = a**2 * P + Q
+    print(f"  {k:3d}  {mu:8.4f}  {P:10.6f}")
+
+P_ss = Q / (1 - a**2)
+print(f"\n  Steady-state variance: {P_ss:.6f}")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_stochastic">Stochastic Processes</h2>
 <p>A <strong>stochastic process</strong> is a sequence of random variables indexed by time: <span class="math inline">\(\{X_k\}_{k=0}^{\infty}\)</span> (discrete time) or <span class="math inline">\(\{X(t)\}_{t\geq0}\)</span> (continuous time). In control, the key stochastic processes are:</p>
@@ -389,6 +533,32 @@ x = cumsum(w);
 subplot(3,1,3);
 plot(x, &#39;r&#39;); xlabel(&#39;k&#39;); ylabel(&#39;x_k&#39;);
 title(&#39;Random walk (cumulative sum of white noise)&#39;); grid on;</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>N, Q = 200, 0.5
+np.random.seed(7)
+w = np.sqrt(Q) * np.random.randn(N)
+
+print("White noise statistics:")
+print(f"  Mean: {np.mean(w):.4f}  (expect 0)")
+print(f"  Var:  {np.var(w):.4f}  (expect {Q})")
+
+# Autocorrelation at several lags
+print("\nAutocorrelation (expect ~0 for lag > 0):")
+for lag in range(6):
+    if lag == 0:
+        acf = 1.0
+    else:
+        acf = np.corrcoef(w[:-lag], w[lag:])[0, 1]
+    print(f"  lag {lag}: {acf:+.4f}")
+
+# Random walk
+x = np.cumsum(w)
+print(f"\nRandom walk: start={x[0]:.3f}, end={x[-1]:.3f}, std={np.std(x):.3f}")</code></pre>
+</div>
 <p>The autocorrelation plot confirms that white noise has zero correlation at all non-zero lags (within statistical fluctuation). The random walk drifts unpredictably because its variance grows as <span class="math inline">\(k \cdot Q\)</span>.</p>
 </div>
 <h2 id="sec:app_lln_clt">The Law of Large Numbers and the Central Limit Theorem</h2>
@@ -426,6 +596,28 @@ for idx = 1:4
     xlim([-4 4]);
 end
 sgtitle(&#39;Central Limit Theorem: convergence to Gaussian&#39;);</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>n_trials = 5000
+np.random.seed(42)
+
+print("Central Limit Theorem: mean of N uniform samples -> Gaussian")
+print(f"  {'N':>7s}  {'Mean(z)':>8s}  {'Std(z)':>8s}  {'Kurtosis':>10s}")
+
+for idx in range(1, 5):
+    N_val = 10**idx
+    raw   = np.random.rand(n_trials, N_val)
+    xbar  = np.mean(raw, axis=1)
+    sig_u = 1 / np.sqrt(12 * N_val)
+    z     = (xbar - 0.5) / sig_u
+    kurt  = np.mean(z**4) - 3
+    print(f"  {N_val:7d}  {np.mean(z):8.4f}  {np.std(z):8.4f}  {kurt:10.4f}")
+
+print("\n  (Kurtosis -> 0 = Gaussian)")</code></pre>
+</div>
 <p>Even for <span class="math inline">\(N=10\)</span> the histogram already resembles a bell curve. By <span class="math inline">\(N=1000\)</span> the agreement with the standard Gaussian (red curve) is almost perfect.</p>
 </div>
 <h2 id="sec:app_montecarlo">Monte Carlo Methods</h2>
@@ -454,6 +646,24 @@ p_exact   = 1 - normcdf(21, mu_x, sqrt(var_x))  % 0.9938
 
 fprintf(&#39;Monte Carlo: %.4f\n&#39;, p_mc);
 fprintf(&#39;Exact:       %.4f\n&#39;, p_exact);</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>mu_x, var_x = 21.5, 0.04
+N = 100000
+np.random.seed(3)
+x_samples = mu_x + np.sqrt(var_x) * np.random.randn(N)
+
+p_mc    = np.mean(x_samples >= 21)
+p_exact = 1 - normal_dist.cdf(21, mu_x, np.sqrt(var_x))
+
+print(f"P(x >= 21):")
+print(f"  Monte Carlo (N={N}): {p_mc:.4f}")
+print(f"  Exact (CDF):         {p_exact:.4f}")</code></pre>
+</div>
 <p>Both methods give <span class="math inline">\(P(x_1 \geq 21) \approx 0.9938\)</span>, i.e. the comfort constraint is satisfied 99.4% of the time. In stochastic MPC this would be expressed as the chance constraint <span class="math inline">\(P(x_1 \geq 21) \geq 0.95\)</span>.</p>
 </div>
 <h2 id="sec:app_kalman_prob">Connecting Probability to the Kalman Filter</h2>
@@ -509,6 +719,41 @@ plot(x_hat,  &#39;r-&#39;,  &#39;LineWidth&#39;, 2);
 legend(&#39;True state&#39;,&#39;Measurements&#39;,&#39;Kalman estimate&#39;);
 xlabel(&#39;Time step k&#39;); ylabel(&#39;Position&#39;);
 title(&#39;1-D Kalman Filter&#39;); grid on;</code></pre>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>A, C, Q, R = 1, 1, 0.1, 2
+N = 60
+np.random.seed(5)
+
+# True state (random walk) and measurements
+w = np.sqrt(Q) * np.random.randn(N); w[0] = 0
+x_true = 10 + np.cumsum(w)
+y_meas = x_true + np.sqrt(R) * np.random.randn(N)
+
+# Kalman filter
+x_hat = np.zeros(N)
+P, x_est = 10.0, 10.0
+
+for k in range(N):
+    x_pred = A * x_est
+    P_pred = A**2 * P + Q
+    K      = P_pred * C / (C**2 * P_pred + R)
+    x_est  = x_pred + K * (y_meas[k] - C * x_pred)
+    P      = (1 - K * C) * P_pred
+    x_hat[k] = x_est
+
+err = x_true - x_hat
+print("1-D Kalman Filter Results:")
+print(f"  RMSE = {np.sqrt(np.mean(err**2)):.4f}")
+print(f"  Final gain K = {K:.4f},  Final P = {P:.4f}")
+
+print(f"\n  {'k':>3s}  {'True':>8s}  {'Meas':>8s}  {'Est':>8s}  {'Error':>8s}")
+for k in [0, 1, 2, 5, 10, 20, 40, 59]:
+    print(f"  {k:3d}  {x_true[k]:8.3f}  {y_meas[k]:8.3f}  {x_hat[k]:8.3f}  {err[k]:8.3f}")</code></pre>
+</div>
 <p>The Kalman estimate (red) tracks the true state (black) much more closely than the raw noisy measurements (blue dots), demonstrating the filter’s noise-rejection capability.</p>
 </div>
 <h2 id="sec:app_rl_prob">Probability in Reinforcement Learning</h2>
