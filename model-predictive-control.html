@@ -675,60 +675,56 @@
             min-height: 300px;
             display: block;
         }
-        /* algorithm phases */
+        /* algorithm phases — always readable, highlight = accent */
         .kf-phase {
             margin-bottom: 0.35rem;
-            padding: 0.35rem 0.55rem;
-            border-left: 3px solid transparent;
+            padding: 0.4rem 0.6rem;
+            border-left: 3px solid rgba(255,255,255,0.08);
             border-radius: 2px;
-            transition: all 0.25s ease;
-            opacity: 0.45;
+            transition: all 0.3s ease;
         }
-        .kf-phase.kf-active {
-            opacity: 1;
-        }
-        .kf-ph-meas.kf-active { border-left-color: #3498db; background: rgba(52,152,219,0.08); }
-        .kf-ph-pred.kf-active { border-left-color: #e67e22; background: rgba(230,126,34,0.08); }
-        .kf-ph-gain.kf-active { border-left-color: #9b59b6; background: rgba(155,89,182,0.08); }
-        .kf-ph-corr.kf-active { border-left-color: #27ae60; background: rgba(39,174,96,0.08); }
+        /* active phase: colored border + bright bg */
+        .kf-ph-meas.kf-active { border-left-color: #3498db; background: rgba(52,152,219,0.15); }
+        .kf-ph-pred.kf-active { border-left-color: #e67e22; background: rgba(230,126,34,0.15); }
+        .kf-ph-gain.kf-active { border-left-color: #9b59b6; background: rgba(155,89,182,0.15); }
+        .kf-ph-corr.kf-active { border-left-color: #27ae60; background: rgba(39,174,96,0.15); }
+        /* done phase: subtle border, values stay visible */
+        .kf-phase.kf-done { border-left-color: rgba(255,255,255,0.15); }
         .kf-phase-title {
-            font-size: 0.65rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            color: #556677;
+            color: #8899AA;
             letter-spacing: 0.9px;
             text-transform: uppercase;
             margin-bottom: 0.15rem;
         }
-        .kf-active .kf-phase-title { color: #D4E0ED; }
-        .kf-ph-meas.kf-active .kf-phase-title { color: #3498db; }
-        .kf-ph-pred.kf-active .kf-phase-title { color: #e67e22; }
-        .kf-ph-gain.kf-active .kf-phase-title { color: #9b59b6; }
-        .kf-ph-corr.kf-active .kf-phase-title { color: #27ae60; }
+        .kf-active .kf-phase-title { color: #fff; }
+        .kf-ph-meas.kf-active .kf-phase-title { color: #5dade2; }
+        .kf-ph-pred.kf-active .kf-phase-title { color: #f0a04b; }
+        .kf-ph-gain.kf-active .kf-phase-title { color: #bb8fce; }
+        .kf-ph-corr.kf-active .kf-phase-title { color: #58d68d; }
+        .kf-done .kf-phase-title { color: #99AABB; }
         .kf-eq {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 0.82rem;
-            color: #667788;
-            padding: 0.1rem 0 0.1rem 0.7rem;
-            line-height: 1.45;
+            font-size: 0.84rem;
+            color: #99AABB;
+            padding: 0.12rem 0 0.12rem 0.7rem;
+            line-height: 1.5;
         }
-        .kf-active .kf-eq { color: #C0CCDD; }
+        .kf-active .kf-eq { color: #E0E8F0; }
+        .kf-done .kf-eq { color: #AABBCC; }
         .kf-eq em { font-style: italic; }
         .kf-formula { white-space: nowrap; }
         .kf-computed { white-space: nowrap; margin-left: 0.5rem; }
-        .kf-computed .kv-y,
-        .kf-computed .kv-xpred,
-        .kf-computed .kv-Ppred,
-        .kf-computed .kv-S,
-        .kf-computed .kv-L,
-        .kf-computed .kv-innov,
-        .kf-computed .kv-xhat,
-        .kf-computed .kv-P {
+        .kf-computed span {
             font-family: 'SF Mono', 'Fira Code', monospace;
             font-weight: 600;
-            color: #f39c12;
+            color: #f5b041;
         }
+        .kf-active .kf-computed span { color: #f9e154; font-size: 0.88rem; }
+        .kf-done .kf-computed span { color: #f0a04b; }
         @media (max-width: 720px) {
             .kf-body { flex-direction: column; }
             .kf-algo { flex: none; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }

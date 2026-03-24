@@ -357,10 +357,10 @@
         function getV() { return parseFloat(vSlider.value); }
 
         function clearHL() {
-            phaseEls.meas.classList.remove('kf-active');
-            phaseEls.pred.classList.remove('kf-active');
-            phaseEls.gain.classList.remove('kf-active');
-            phaseEls.corr.classList.remove('kf-active');
+            phaseEls.meas.classList.remove('kf-active', 'kf-done');
+            phaseEls.pred.classList.remove('kf-active', 'kf-done');
+            phaseEls.gain.classList.remove('kf-active', 'kf-done');
+            phaseEls.corr.classList.remove('kf-active', 'kf-done');
         }
 
         function clearAnims() {
@@ -387,33 +387,43 @@
             /* phase 2: predict */
             animTimers.push(setTimeout(function () {
                 clearHL();
+                phaseEls.meas.classList.add('kf-done');
                 phaseEls.pred.classList.add('kf-active');
                 valEls.xpred.textContent = fmt(c.x_pred);
                 valEls.Ppred.textContent = fmt(c.P_pred);
-            }, 350));
+            }, 700));
 
             /* phase 3: gain */
             animTimers.push(setTimeout(function () {
                 clearHL();
+                phaseEls.meas.classList.add('kf-done');
+                phaseEls.pred.classList.add('kf-done');
                 phaseEls.gain.classList.add('kf-active');
                 valEls.S.textContent = fmt(c.S);
                 valEls.L.textContent = fmt(c.L);
-            }, 700));
+            }, 1400));
 
             /* phase 4: correct + update plot */
             animTimers.push(setTimeout(function () {
                 clearHL();
+                phaseEls.meas.classList.add('kf-done');
+                phaseEls.pred.classList.add('kf-done');
+                phaseEls.gain.classList.add('kf-done');
                 phaseEls.corr.classList.add('kf-active');
                 valEls.innov.textContent = fmt(c.innov);
                 valEls.xhat.textContent = fmt(c.x_hat);
                 valEls.P.textContent = fmt(c.P);
                 drawPlot(canvas, state);
-            }, 1050));
+            }, 2100));
 
-            /* fade highlight */
+            /* after animation: keep all phases visible with values */
             animTimers.push(setTimeout(function () {
                 clearHL();
-            }, 1600));
+                phaseEls.meas.classList.add('kf-done');
+                phaseEls.pred.classList.add('kf-done');
+                phaseEls.gain.classList.add('kf-done');
+                phaseEls.corr.classList.add('kf-done');
+            }, 2700));
         }
 
         function doReset() {
@@ -429,7 +439,7 @@
             autoBtn.textContent = '\u23F8 Stop';
             autoBtn.classList.add('kf-auto-active');
             doStep();
-            autoTimer = setInterval(doStep, 1800);
+            autoTimer = setInterval(doStep, 3500);
         }
 
         function stopAuto() {
