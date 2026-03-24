@@ -435,6 +435,130 @@
             border-radius: 0 0 4px 0;
         }
 
+        /* ========== Pyodide Interactive Code Blocks ========== */
+        .chapter-body .pyodide-runner {
+            margin: 1rem 0 1.5rem;
+            border: 2px solid #0D7C66;
+            border-radius: var(--radius);
+            background: #0F1923;
+            overflow: hidden;
+        }
+        .pyodide-label {
+            background: #0D7C66;
+            color: #fff;
+            padding: 0.35rem 0.9rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        .pyodide-label .pyodide-lang {
+            font-weight: 800;
+            margin-right: 0.35rem;
+        }
+        .pyodide-editor {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            background: #111D2B;
+            color: #D4E0ED;
+            border: none;
+            padding: 0.9rem 1.15rem;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.84rem;
+            line-height: 1.65;
+            resize: vertical;
+            outline: none;
+            tab-size: 4;
+        }
+        .pyodide-editor:focus {
+            background: #13202F;
+        }
+        .pyodide-btn-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.45rem 0.9rem;
+            background: #0E1720;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .pyodide-run-btn {
+            padding: 0.35rem 1.3rem;
+            background: #0D7C66;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .pyodide-run-btn:hover:not(:disabled) {
+            background: #0A6B58;
+        }
+        .pyodide-run-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+        .pyodide-reset-btn {
+            padding: 0.35rem 0.9rem;
+            background: transparent;
+            color: #8899AA;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 4px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pyodide-reset-btn:hover {
+            color: #D4E0ED;
+            border-color: rgba(255,255,255,0.25);
+        }
+        .pyodide-output {
+            margin: 0;
+            padding: 0.85rem 1.15rem;
+            background: #0A1219;
+            color: #A8D8A8;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 350px;
+            overflow-y: auto;
+            border-radius: 0;
+        }
+        .pyodide-output.pyodide-error {
+            color: #F28B82;
+        }
+        .pyodide-global-status {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            background: #0D7C66;
+            color: #fff;
+            padding: 0.65rem 1.2rem;
+            border-radius: 6px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            animation: pyodide-pulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes pyodide-pulse {
+            from { opacity: 0.85; }
+            to { opacity: 1; }
+        }
+
         /* ========== Center blocks (for standalone figures/images) ========== */
         .chapter-body .center {
             text-align: center;
@@ -627,6 +751,7 @@
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
 
+    <script src="pyodide-runner.js"></script>
     <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -673,6 +798,7 @@
             body.innerHTML = cache[id];
             body.scrollTop = 0;
             typesetMath();
+            if (window.PyodideRunner) PyodideRunner.initAll(body);
             return;
         }
 
@@ -687,6 +813,7 @@
                 body.innerHTML = html;
                 body.scrollTop = 0;
                 typesetMath();
+                if (window.PyodideRunner) PyodideRunner.initAll(body);
             })
             .catch(function() {
                 body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
