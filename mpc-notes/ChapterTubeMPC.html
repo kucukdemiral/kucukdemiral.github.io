@@ -734,36 +734,52 @@ the best we can hope for with persistent disturbances — we cannot drive
 the state to exactly zero when the disturbance keeps pushing it
 around.</p>
 <h2 id="sec:tube_comparison">Tube MPC vs Standard MPC: A Comparison</h2>
-<div class="center">
-<div class="tabular">
-<p><span>L<span>4cm</span> C<span>4.5cm</span>
-C<span>4.5cm</span></span> &amp; <strong>Standard MPC</strong> &amp;
-<strong>Tube MPC</strong><br />
-Model &amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>
-&amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k +
-w_k\)</span><br />
-Disturbance &amp; Ignored &amp; Bounded: <span class="math inline">\(w_k
-\in \mathcal{W}\)</span><br />
-Constraint guarantee &amp; Nominal only &amp; Robust (for all <span
-class="math inline">\(w \in \mathcal{W}\)</span>)<br />
-Online computation &amp; Solve QP &amp; Solve QP (same size) +
-feedback<br />
-Offline computation &amp; <span class="math inline">\(P\)</span>, <span
-class="math inline">\(K\)</span>, <span
-class="math inline">\(\mathcal{X}_f\)</span> &amp; <span
-class="math inline">\(P\)</span>, <span
-class="math inline">\(K\)</span>, <span
-class="math inline">\(\mathcal{E}\)</span>, <span
-class="math inline">\(\mathcal{X}_t\)</span>, <span
-class="math inline">\(\mathcal{V}\)</span>, <span
-class="math inline">\(\mathcal{X}_f\)</span><br />
-Convergence &amp; <span class="math inline">\(x_k \to 0\)</span> &amp;
-<span class="math inline">\(x_k \to \mathcal{E}\)</span> (neighbourhood
-of 0)<br />
-Feasible region &amp; Larger &amp; Smaller (due to tightening)<br />
-</p>
-</div>
-</div>
+<table style="width:100%; border-collapse:collapse; margin:1em 0;">
+<thead>
+<tr style="border-bottom:2px solid #333;">
+<th style="text-align:left; padding:8px 12px;"></th>
+<th style="text-align:center; padding:8px 12px;">Standard MPC</th>
+<th style="text-align:center; padding:8px 12px;">Tube MPC</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Model</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_{k+1} = Ax_k + Bu_k + w_k\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Disturbance</td>
+<td style="text-align:center; padding:6px 12px;">Ignored</td>
+<td style="text-align:center; padding:6px 12px;">Bounded: <span class="math inline">\(w_k \in \mathcal{W}\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Constraint guarantee</td>
+<td style="text-align:center; padding:6px 12px;">Nominal only</td>
+<td style="text-align:center; padding:6px 12px;">Robust (for all <span class="math inline">\(w \in \mathcal{W}\)</span>)</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Online computation</td>
+<td style="text-align:center; padding:6px 12px;">Solve QP</td>
+<td style="text-align:center; padding:6px 12px;">Solve QP (same size) + feedback</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Offline computation</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{E}\)</span>, <span class="math inline">\(\mathcal{X}_t\)</span>, <span class="math inline">\(\mathcal{V}\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Convergence</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_k \to 0\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_k \to \mathcal{E}\)</span> (neighbourhood of 0)</td>
+</tr>
+<tr style="border-bottom:2px solid #333;">
+<td style="padding:6px 12px;">Feasible region</td>
+<td style="text-align:center; padding:6px 12px;">Larger</td>
+<td style="text-align:center; padding:6px 12px;">Smaller (due to tightening)</td>
+</tr>
+</tbody>
+</table>
 <p>The main takeaway: Tube MPC achieves robust guarantees at essentially
 no additional online cost. The extra work is in the offline design
 (computing <span class="math inline">\(\mathcal{E}\)</span> and

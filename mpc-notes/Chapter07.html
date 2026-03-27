@@ -1080,23 +1080,36 @@ constraint.</p></li>
 </ul>
 <p>The following table summarises the three levels of MPC design, from
 simplest to most rigorous:</p>
-<div class="center">
-<div class="tabular">
-<p><span>L<span>3.5cm</span> C<span>2.5cm</span> C<span>2.5cm</span>
-C<span>3.5cm</span></span> <strong>Design</strong> &amp;
-<strong>Terminal cost</strong> &amp; <strong>Terminal set</strong> &amp;
-<strong>Guarantee</strong><br />
-Basic MPC &amp; <span class="math inline">\(Q_N = Q\)</span> &amp; None
-&amp; No formal guarantee<br />
-MPC with <span class="math inline">\(P\)</span> &amp; <span
-class="math inline">\(Q_N = P\)</span> (DARE) &amp; None &amp; Works in
-practice; no proof<br />
-Rigorous MPC &amp; <span class="math inline">\(Q_N = P\)</span> (DARE)
-&amp; <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> &amp;
-Recursive feasibility + stability<br />
-</p>
-</div>
-</div>
+<table style="width:100%; border-collapse:collapse; margin:1em 0;">
+<thead>
+<tr style="border-bottom:2px solid #333;">
+<th style="text-align:left; padding:8px 12px;">Design</th>
+<th style="text-align:center; padding:8px 12px;">Terminal cost</th>
+<th style="text-align:center; padding:8px 12px;">Terminal set</th>
+<th style="text-align:center; padding:8px 12px;">Guarantee</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Basic MPC</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = Q\)</span></td>
+<td style="text-align:center; padding:6px 12px;">None</td>
+<td style="text-align:center; padding:6px 12px;">No formal guarantee</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">MPC with <span class="math inline">\(P\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = P\)</span> (DARE)</td>
+<td style="text-align:center; padding:6px 12px;">None</td>
+<td style="text-align:center; padding:6px 12px;">Works in practice; no proof</td>
+</tr>
+<tr style="border-bottom:2px solid #333;">
+<td style="padding:6px 12px;">Rigorous MPC</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = P\)</span> (DARE)</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_N \in \mathcal{X}_f\)</span></td>
+<td style="text-align:center; padding:6px 12px;">Recursive feasibility + stability</td>
+</tr>
+</tbody>
+</table>
 <p>For an MSc-level course and most industrial applications, using <span
 class="math inline">\(Q_N = P\)</span> with a sufficiently long horizon
 is the standard approach. The rigorous formulation with <span
