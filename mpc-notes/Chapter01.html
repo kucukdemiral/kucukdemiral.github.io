@@ -69,7 +69,7 @@
 <li><p><strong>Repeat:</strong> At the next time step <span class="math inline">\(t+1\)</span>, the entire process begins again. The horizon "recedes" (shifts forward by one step), and a new optimisation problem is solved from the new state <span class="math inline">\(x(t+1)\)</span>.</p></li>
 </ol>
 <figure id="fig:mpc_concept_and_timeline" data-latex-placement="h">
-
+<img src="figures/tikz_ch01_4.png" style="width:80.0%" />
 <figcaption><strong>Top</strong>: The closed-loop architecture. The controller uses an internal Model to predict plant behavior, an Optimiser to minimize a cost function (Objectives) subject to safety limits (Constraints), and real-time Measurements to correct prediction errors. <strong>Bottom</strong>: The Receding Horizon strategy. At each time step, an optimal trajectory is computed over a long prediction horizon (<em>Plan</em>), but only the first control action is applied (<em>Do</em>). The horizon then shifts forward, and the optimisation repeats with updated feedback, turning an open-loop prediction into a closed-loop controller.</figcaption>
 </figure>
 <p>The reader may naturally ask: <em>"If the plan calculated at step <span class="math inline">\(t\)</span> was <em>optimal</em>, why discard the rest of it and repeat the work at step <span class="math inline">\(t+1\)</span>?"</em></p>
@@ -229,9 +229,8 @@
 <li><p><strong>Evolve:</strong> Wait for one sample step (<span class="math inline">\(t \to t+1\)</span>), measure the new state <span class="math inline">\(x_{t+1}\)</span>, and shift the horizon forward by one step.</p></li>
 <li><p><strong>Repeat:</strong> Solve the entire optimisation problem again from scratch.</p></li>
 </ol>
-<p>= [rectangle, draw, fill=blue!10, text width=8em, text centered, rounded corners, minimum height=3em] = [ellipse, draw, fill=red!10, text width=4em, text centered, minimum height=2.5em] = [draw, -latex’, thick]</p>
 <figure id="fig:rhc_flowchart" data-latex-placement="htbp">
-<img src="figures/tikz_ch01_7.png" style="width:85.0%" />
+<img src="figures/tikz_ch01_7.png" style="width:55.0%" />
 <figcaption>Summary of the Receding Horizon Control (RHC) loop.</figcaption>
 </figure>
 <p>The reader might ask: <em>"Why waste computational power calculating <span class="math inline">\(N\)</span> steps if we only use the first?"</em></p>

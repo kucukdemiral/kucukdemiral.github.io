@@ -1,25 +1,65 @@
-<h1 id="state-space-representation-of-dynamic-systems">State-Space Representation of Dynamic Systems</h1>
+<h1 id="chap:statespace">State-Space Representation of Dynamic
+Systems</h1>
 <blockquote>
-<p><em>“The sciences do not try to explain, they hardly even try to interpret, they mainly make models. By a model is meant a mathematical construct which, with the addition of certain verbal interpretations, describes observed phenomena.”</em><br />
+<p><em>“The sciences do not try to explain, they hardly even try to
+interpret, they mainly make models. By a model is meant a mathematical
+construct which, with the addition of certain verbal interpretations,
+describes observed phenomena.”</em><br />
 — <strong>John von Neumann</strong></p>
 </blockquote>
-<p>The success of any Model Predictive Control strategy hinges on the quality of the controlled system’s internal model. To predict the future evolution of a system and optimise control actions, we require a mathematical representation that is both accurate enough to capture the relevant dynamics and computationally efficient enough to be solved in real-time.</p>
-<p>While the physical world operates in continuous time and is inherently nonlinear, MPC algorithms typically run on digital processors in discrete time steps. Furthermore, to utilise fast convex solvers (such as Quadratic Programming), we often approximate these dynamics as linear systems. Therefore, the ability to translate physical laws into Linear Time-Invariant (LTI) state-space models and discretise them accurately is a fundamental prerequisite for MPC design.</p>
-<p>In this chapter, we establish the mathematical modelling framework used by the predictive controllers developed in later chapters. We will cover:</p>
+<p>The success of any Model Predictive Control strategy hinges on the
+quality of the controlled system’s internal model. To predict the future
+evolution of a system and optimise control actions, we require a
+mathematical representation that is both accurate enough to capture the
+relevant dynamics and computationally efficient enough to be solved in
+real-time.</p>
+<p>While the physical world operates in continuous time and is
+inherently nonlinear, MPC algorithms typically run on digital processors
+in discrete time steps. Furthermore, to utilise fast convex solvers
+(such as Quadratic Programming), we often approximate these dynamics as
+linear systems. Therefore, the ability to translate physical laws into
+Linear Time-Invariant (LTI) state-space models and discretise them
+accurately is a fundamental prerequisite for MPC design.</p>
+<p>In this chapter, we establish the mathematical modelling framework
+used by the predictive controllers developed in later chapters. We will
+cover:</p>
 <ul>
-<li><p>A very short review of the <strong>Continuous-Time (CT) LTI state-space</strong> formulation.</p></li>
-<li><p>Practical methods for deriving models of <strong>electrical and mechanical systems</strong> from first principles.</p></li>
-<li><p>The concept of <strong>equilibrium points</strong> and <strong>local linearisation</strong> to approximate nonlinear dynamics.</p></li>
-<li><p>Techniques for <strong>discretisation</strong>, including the analytic solution for linear systems (Zero-Order Hold) and numerical integration methods (Forward Euler, Runge-Kutta) for nonlinear systems.</p></li>
-<li><p>An analysis of <strong>stability</strong> in the discrete-time domain.</p></li>
+<li><p>A very short review of the <strong>Continuous-Time (CT) LTI
+state-space</strong> formulation.</p></li>
+<li><p>Practical methods for deriving models of <strong>electrical and
+mechanical systems</strong> from first principles.</p></li>
+<li><p>The concept of <strong>equilibrium points</strong> and
+<strong>local linearisation</strong> to approximate nonlinear
+dynamics.</p></li>
+<li><p>Techniques for <strong>discretisation</strong>, including the
+analytic solution for linear systems (Zero-Order Hold) and numerical
+integration methods (Forward Euler, Runge-Kutta) for nonlinear
+systems.</p></li>
+<li><p>An analysis of <strong>stability</strong> in the discrete-time
+domain.</p></li>
 </ul>
-<h2 id="what-is-state-space-and-why-is-it-central-to-mpc">What is state-space, and why is it central to MPC?</h2>
-<p>In control theory, and particularly in Model Predictive Control (MPC), the state-space formulation provides the fundamental language for modelling dynamic systems. Rather than describing behaviour only through input–output relationships, the state-space approach characterises a system through a set of internal variables—called <em>states</em>—that capture the system’s stored energy, configuration, or memory.</p>
-<p>The key idea is that, if the state of a system is known at a given time, together with future inputs, then its future evolution is fully determined. This property makes the state-space framework especially well suited to prediction-based control strategies such as MPC.</p>
-<h3 class="unnumbered" id="general-form-of-a-state-space-model">General form of a state-space model</h3>
-<p>A general nonlinear continuous-time state-space model is compactly written as: <span class="math display">\[\dot{x}(t) = f\big(x(t), u(t), t\big), 
-\qquad 
-y(t) = h\big(x(t), u(t), t\big).\]</span> While this vector notation is elegant, it represents a system of coupled first-order differential equations. Explicitly expanding the vectors reveals the underlying structure:</p>
+<h2 id="what-is-state-space-and-why-is-it-central-to-mpc">What is
+state-space, and why is it central to MPC?</h2>
+<p>In control theory, and particularly in Model Predictive Control
+(MPC), the state-space formulation provides the fundamental language for
+modelling dynamic systems. Rather than describing behaviour only through
+input–output relationships, the state-space approach characterises a
+system through a set of internal variables—called <em>states</em>—that
+capture the system’s stored energy, configuration, or memory.</p>
+<p>The key idea is that, if the state of a system is known at a given
+time, together with future inputs, then its future evolution is fully
+determined. This property makes the state-space framework especially
+well suited to prediction-based control strategies such as MPC.</p>
+<h3 class="unnumbered" id="general-form-of-a-state-space-model">General
+form of a state-space model</h3>
+<p>A general nonlinear continuous-time state-space model is compactly
+written as: <span class="math display">\[\dot{x}(t) = f\big(x(t), u(t),
+t\big),
+\qquad
+y(t) = h\big(x(t), u(t), t\big).\]</span> While this vector notation is
+elegant, it represents a system of coupled first-order differential
+equations. Explicitly expanding the vectors reveals the underlying
+structure:</p>
 <p><span class="math display">\[\begin{equation}
     \underbrace{
         \begin{bmatrix}
@@ -32,14 +72,18 @@ y(t) = h\big(x(t), u(t), t\big).\]</span> While this vector notation is elegant,
     =
     \underbrace{
         \begin{bmatrix}
-            f_1 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big) \\
-            f_2 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big) \\
+            f_1 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big) \\
+            f_2 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big) \\
             \vdots \\
-            f_n \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big)
+            f_n \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big)
         \end{bmatrix}
     }_{f(x(t), u(t), t)}
 \end{equation}\]</span></p>
-<p>Similarly, the output equation relates the internal states to the measurable quantities:</p>
+<p>Similarly, the output equation relates the internal states to the
+measurable quantities:</p>
 <p><span class="math display">\[\begin{equation}
     \underbrace{
         \begin{bmatrix}
@@ -52,119 +96,265 @@ y(t) = h\big(x(t), u(t), t\big).\]</span> While this vector notation is elegant,
     =
     \underbrace{
         \begin{bmatrix}
-            h_1 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big) \\
-            h_2 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big) \\
+            h_1 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big) \\
+            h_2 \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big) \\
             \vdots \\
-            h_p \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t), \, t \big)
+            h_p \big( x_1(t), \dots, x_n(t), \, u_1(t), \dots, u_m(t),
+\, t \big)
         \end{bmatrix}
     }_{h(x(t), u(t), t)}
 \end{equation}\]</span></p>
 <p>Here:</p>
 <ul>
-<li><p><span class="math inline">\(x_i(t)\)</span> represents the <span class="math inline">\(i\)</span>-th state variable (e.g., position, voltage).</p></li>
-<li><p><span class="math inline">\(u_j(t)\)</span> represents the <span class="math inline">\(j\)</span>-th control input (e.g., force, current).</p></li>
-<li><p><span class="math inline">\(f_i(\cdot)\)</span> describes the dynamic evolution of the <span class="math inline">\(i\)</span>-th state.</p></li>
+<li><p><span class="math inline">\(x_i(t)\)</span> represents the <span
+class="math inline">\(i\)</span>-th state variable (e.g., position,
+voltage).</p></li>
+<li><p><span class="math inline">\(u_j(t)\)</span> represents the <span
+class="math inline">\(j\)</span>-th control input (e.g., force,
+current).</p></li>
+<li><p><span class="math inline">\(f_i(\cdot)\)</span> describes the
+dynamic evolution of the <span class="math inline">\(i\)</span>-th
+state.</p></li>
 </ul>
 <div class="examplebox">
-<p><span>Nonlinear Modelling of a Simple Pendulum</span> To illustrate the transition from physical laws to state-space equations, consider the classic simple pendulum system shown in Figure <a href="#fig:Pendulum" data-reference-type="ref" data-reference="fig:Pendulum">[fig:Pendulum]</a>, consisting of a mass <span class="math inline">\(m\)</span> attached to a rigid, massless rod of length <span class="math inline">\(\ell\)</span>. The pivot is acted upon by an external control torque <span class="math inline">\(u(t)\)</span> and a viscous friction coefficient <span class="math inline">\(b\)</span>.</p>
+<p><span>Nonlinear Modelling of a Simple Pendulum</span> To illustrate
+the transition from physical laws to state-space equations, consider the
+classic simple pendulum system shown in Figure <a href="#fig:Pendulum"
+data-reference-type="ref"
+data-reference="fig:Pendulum">[fig:Pendulum]</a>, consisting of a mass
+<span class="math inline">\(m\)</span> attached to a rigid, massless rod
+of length <span class="math inline">\(\ell\)</span>. The pivot is acted
+upon by an external control torque <span
+class="math inline">\(u(t)\)</span> and a viscous friction coefficient
+<span class="math inline">\(b\)</span>.</p>
 <div class="center">
-<p><img src="figures/tikz_ch03_1.png" style="width:85.0%" alt="image" /> <span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
+<p><span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
 </div>
 <p><strong>1. Physical Laws</strong><br />
-We apply Newton’s second law for rotational motion: <span class="math display">\[\tau_{\text{net}} = I \ddot{\theta}\]</span> where <span class="math inline">\(I = m\ell^2\)</span> is the moment of inertia and <span class="math inline">\(\theta\)</span> is the angular position measured from the vertical downward position. The torques acting on the system are:</p>
+We apply Newton’s second law for rotational motion: <span
+class="math display">\[\tau_{\text{net}} = I \ddot{\theta}\]</span>
+where <span class="math inline">\(I = m\ell^2\)</span> is the moment of
+inertia and <span class="math inline">\(\theta\)</span> is the angular
+position measured from the vertical downward position. The torques
+acting on the system are:</p>
 <ul>
-<li><p><strong>Control Torque:</strong> <span class="math inline">\(+u(t)\)</span> (applied at the pivot).</p></li>
-<li><p><strong>Gravity:</strong> <span class="math inline">\(-mg\ell \sin\theta\)</span> (restoring torque).</p></li>
-<li><p><strong>Friction:</strong> <span class="math inline">\(-b \dot{\theta}\)</span> (viscous damping opposing motion).</p></li>
+<li><p><strong>Control Torque:</strong> <span
+class="math inline">\(+u(t)\)</span> (applied at the pivot).</p></li>
+<li><p><strong>Gravity:</strong> <span class="math inline">\(-mg\ell
+\sin\theta\)</span> (restoring torque).</p></li>
+<li><p><strong>Friction:</strong> <span class="math inline">\(-b
+\dot{\theta}\)</span> (viscous damping opposing motion).</p></li>
 </ul>
-<p>Substituting these into the equation of motion: <span class="math display">\[m\ell^2 \ddot{\theta} = u(t) - mg\ell \sin\theta - b \dot{\theta}\]</span> Solving for the angular acceleration <span class="math inline">\(\ddot{\theta}\)</span>: <span class="math display">\[\begin{equation*}
-        \ddot{\theta} = -\frac{g}{\ell} \sin\theta - \frac{b}{m\ell^2} \dot{\theta} + \frac{1}{m\ell^2} u(t)
+<p>Substituting these into the equation of motion: <span
+class="math display">\[m\ell^2 \ddot{\theta} = u(t) - mg\ell \sin\theta
+- b \dot{\theta}\]</span> Solving for the angular acceleration <span
+class="math inline">\(\ddot{\theta}\)</span>: <span
+class="math display">\[\begin{equation*}
+        \ddot{\theta} = -\frac{g}{\ell} \sin\theta - \frac{b}{m\ell^2}
+\dot{\theta} + \frac{1}{m\ell^2} u(t)
 \end{equation*}\]</span></p>
 <p><strong>2. State-Space Formulation</strong><br />
-To convert this second-order differential equation into first-order state-space form, we define the state variables: <span class="math display">\[x_1(t) = \theta(t) \quad \text{(Angle)}, \qquad x_2(t) = \dot{\theta}(t) \quad \text{(Angular Velocity)}\]</span> Taking the time derivative of the state vector: <span class="math display">\[\begin{align*}
+To convert this second-order differential equation into first-order
+state-space form, we define the state variables: <span
+class="math display">\[x_1(t) = \theta(t) \quad \text{(Angle)}, \qquad
+x_2(t) = \dot{\theta}(t) \quad \text{(Angular Velocity)}\]</span> Taking
+the time derivative of the state vector: <span
+class="math display">\[\begin{align*}
         \dot{x}_1 &amp;= \dot{\theta} = x_2 \\
-        \dot{x}_2 &amp;= \ddot{\theta} = -\frac{g}{\ell} \sin x_1 - \frac{b}{m\ell^2} x_2 + \frac{1}{m\ell^2} u
+        \dot{x}_2 &amp;= \ddot{\theta} = -\frac{g}{\ell} \sin x_1 -
+\frac{b}{m\ell^2} x_2 + \frac{1}{m\ell^2} u
 \end{align*}\]</span></p>
-<p>We can now write this explicitly in the vector form <span class="math inline">\(\dot{x} = f(x, u)\)</span> introduced previously: <span class="math display">\[\begin{equation}
-        \underbrace{\begin{bmatrix} \dot{x}_1 \\[10pt] \dot{x}_2 \end{bmatrix}}_{\dot{x}(t)} 
-        = 
-        \underbrace{\begin{bmatrix} 
+<p>We can now write this explicitly in the vector form <span
+class="math inline">\(\dot{x} = f(x, u)\)</span> introduced previously:
+<span class="math display">\[\begin{equation}
+        \underbrace{\begin{bmatrix} \dot{x}_1 \\[10pt] \dot{x}_2
+\end{bmatrix}}_{\dot{x}(t)}
+        =
+        \underbrace{\begin{bmatrix}
                 x_2 \\[10pt]
-                -\dfrac{g}{\ell} \sin(x_1) - \dfrac{b}{m\ell^2} x_2 + \dfrac{1}{m\ell^2} u 
+                -\dfrac{g}{\ell} \sin(x_1) - \dfrac{b}{m\ell^2} x_2 +
+\dfrac{1}{m\ell^2} u
         \end{bmatrix}}_{f(x, u)}
 \end{equation}\]</span></p>
-<p>If our objective is to measure the angle, the output equation becomes: <span class="math display">\[y(t) = \underbrace{\begin{bmatrix} 1 &amp; 0 \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}}_{h(x)} = x_1\]</span> This clearly demonstrates the nonlinear nature of the system, arising from the trigonometric term <span class="math inline">\(\sin(x_1)\)</span> inside the vector function <span class="math inline">\(f\)</span>.</p>
+<p>If our objective is to measure the angle, the output equation
+becomes: <span class="math display">\[y(t) = \underbrace{\begin{bmatrix}
+1 &amp; 0 \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}}_{h(x)}
+= x_1\]</span> This clearly demonstrates the nonlinear nature of the
+system, arising from the trigonometric term <span
+class="math inline">\(\sin(x_1)\)</span> inside the vector function
+<span class="math inline">\(f\)</span>.</p>
 <p><strong>3. Linearisation (Small Angle Approximation)</strong><br />
-While nonlinear models capture the full physics, they are computationally expensive to use in real-time optimisation. However, for many control applications, the pendulum operates near the vertical downward equilibrium (<span class="math inline">\(\theta = 0\)</span>).</p>
-<p>For small deviations from this equilibrium (<span class="math inline">\(|\theta| \ll 1\)</span> rad), we can apply the small-angle approximation: <span class="math display">\[\sin(\theta) \approx \theta \implies \sin(x_1) \approx x_1\]</span> Substituting this into the nonlinear state equation for <span class="math inline">\(\dot{x}_2\)</span>, the dynamics become linear: <span class="math display">\[\dot{x}_2 = -\frac{g}{\ell} x_1 - \frac{b}{m\ell^2} x_2 + \frac{1}{m\ell^2} u\]</span> We can now rewrite the entire system in the standard LTI matrix form <span class="math inline">\(\dot{x} = Ax + Bu\)</span>: <span class="math display">\[\begin{equation}
-        \underbrace{\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix}}_{\dot{x}}
+While nonlinear models capture the full physics, they are
+computationally expensive to use in real-time optimisation. However, for
+many control applications, the pendulum operates near the vertical
+downward equilibrium (<span class="math inline">\(\theta =
+0\)</span>).</p>
+<p>For small deviations from this equilibrium (<span
+class="math inline">\(|\theta| \ll 1\)</span> rad), we can apply the
+small-angle approximation: <span class="math display">\[\sin(\theta)
+\approx \theta \implies \sin(x_1) \approx x_1\]</span> Substituting this
+into the nonlinear state equation for <span
+class="math inline">\(\dot{x}_2\)</span>, the dynamics become linear:
+<span class="math display">\[\dot{x}_2 = -\frac{g}{\ell} x_1 -
+\frac{b}{m\ell^2} x_2 + \frac{1}{m\ell^2} u\]</span> We can now rewrite
+the entire system in the standard LTI matrix form <span
+class="math inline">\(\dot{x} = Ax + Bu\)</span>: <span
+class="math display">\[\begin{equation}
+        \underbrace{\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2
+\end{bmatrix}}_{\dot{x}}
         =
-        \underbrace{\begin{bmatrix} 
-                0 &amp; 1 \\ 
-                -\dfrac{g}{\ell} &amp; -\dfrac{b}{m\ell^2} 
-        \end{bmatrix}}_{A} 
+        \underbrace{\begin{bmatrix}
+                0 &amp; 1 \\
+                -\dfrac{g}{\ell} &amp; -\dfrac{b}{m\ell^2}
+        \end{bmatrix}}_{A}
         \underbrace{\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}}_{x}
         +
-        \underbrace{\begin{bmatrix} 
-                0 \\ 
-                \dfrac{1}{m\ell^2} 
-        \end{bmatrix}}_{B} 
+        \underbrace{\begin{bmatrix}
+                0 \\
+                \dfrac{1}{m\ell^2}
+        \end{bmatrix}}_{B}
         u
 \end{equation}\]</span></p>
-<p>The output equation remains linear: <span class="math display">\[\begin{equation}
-        y = \underbrace{\begin{bmatrix} 1 &amp; 0 \end{bmatrix}}_{C} x + \underbrace{\begin{bmatrix} 0 \end{bmatrix}}_{D} u
+<p>The output equation remains linear: <span
+class="math display">\[\begin{equation}
+        y = \underbrace{\begin{bmatrix} 1 &amp; 0 \end{bmatrix}}_{C} x +
+\underbrace{\begin{bmatrix} 0 \end{bmatrix}}_{D} u
 \end{equation}\]</span></p>
-<p>This yields the familiar state-space quadruplet <span class="math inline">\((A, B, C, D)\)</span>. Throughout the majority of this course, we will focus on systems that can be described by (or approximated by) such linear models, as they allow for the use of highly efficient convex optimisation solvers (e.g., Quadratic Programming).</p>
+<p>This yields the familiar state-space quadruplet <span
+class="math inline">\((A, B, C, D)\)</span>. Throughout the majority of
+this course, we will focus on systems that can be described by (or
+approximated by) such linear models, as they allow for the use of highly
+efficient convex optimisation solvers (e.g., Quadratic Programming).</p>
 </div>
 <div class="notebox">
-<p><span>Summary</span> The state vector <span class="math inline">\(x(t)\)</span> contains the minimal set of variables required to describe the system’s internal condition. Knowledge of <span class="math inline">\(x(t)\)</span> at the current time allows prediction of future states and outputs, which is precisely the information required by MPC.</p>
-<p>For linear time-invariant (LTI) systems, which form the backbone of most MPC formulations, the model reduces to <span class="math display">\[\begin{align*}
+<p><span>Summary</span> The state vector <span
+class="math inline">\(x(t)\)</span> contains the minimal set of
+variables required to describe the system’s internal condition.
+Knowledge of <span class="math inline">\(x(t)\)</span> at the current
+time allows prediction of future states and outputs, which is precisely
+the information required by MPC.</p>
+<p>For linear time-invariant (LTI) systems, which form the backbone of
+most MPC formulations, the model reduces to <span
+class="math display">\[\begin{align*}
 \dot{x}(t) &amp;= A x(t) + B u(t) \\
 y(t) &amp;= C x(t) + D u(t),
-\end{align*}\]</span> with constant matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span> formed by physical parameters of the system.</p>
+\end{align*}\]</span> with constant matrices <span
+class="math inline">\(A\)</span>, <span
+class="math inline">\(B\)</span>, <span
+class="math inline">\(C\)</span>, and <span
+class="math inline">\(D\)</span> formed by physical parameters of the
+system.</p>
 </div>
-<h3 class="unnumbered" id="physical-interpretation-of-states">Physical interpretation of states</h3>
-<p>In practice, states are not abstract quantities: they usually correspond to physically meaningful variables associated with energy storage. Typical examples include:</p>
+<h3 class="unnumbered" id="physical-interpretation-of-states">Physical
+interpretation of states</h3>
+<p>In practice, states are not abstract quantities: they usually
+correspond to physically meaningful variables associated with energy
+storage. Typical examples include:</p>
 <ul>
-<li><p><strong>Electrical:</strong> Currents in inductors and voltages across capacitors (magnetic and electric energy).</p></li>
-<li><p><strong>Mechanical:</strong> Positions and velocities of masses (potential and kinetic energy).</p></li>
-<li><p><strong>Process:</strong> Temperatures, pressures, or concentrations (thermal and chemical potential).</p></li>
+<li><p><strong>Electrical:</strong> Currents in inductors and voltages
+across capacitors (magnetic and electric energy).</p></li>
+<li><p><strong>Mechanical:</strong> Positions and velocities of masses
+(potential and kinetic energy).</p></li>
+<li><p><strong>Process:</strong> Temperatures, pressures, or
+concentrations (thermal and chemical potential).</p></li>
 </ul>
-<p>This interpretation provides a systematic way to construct models from first principles. Starting from physical laws—such as Kirchhoff’s laws in electrical systems or Newton’s laws in mechanical systems—we obtain differential equations whose natural variables become the system states.</p>
+<p>This interpretation provides a systematic way to construct models
+from first principles. Starting from physical laws—such as Kirchhoff’s
+laws in electrical systems or Newton’s laws in mechanical systems—we
+obtain differential equations whose natural variables become the system
+states.</p>
 <div class="notebox">
-<p><span>Caveat: Intentionally incorporated states</span> It is also common to extend the state vector with non-physical variables to improve control performance. For instance, to ensure the controller eliminates steady-state error (offset-free tracking), we often add an <strong>integrator state</strong> or a <strong>disturbance estimate</strong> to the model.</p>
-<p>These are mathematical constructs rather than physical ones, yet they are treated identically within the state-space framework. We will explore these techniques in the upcoming chapters.</p>
+<p><span>Caveat: Intentionally incorporated states</span> It is also
+common to extend the state vector with non-physical variables to improve
+control performance. For instance, to ensure the controller eliminates
+steady-state error (offset-free tracking), we often add an
+<strong>integrator state</strong> or a <strong>disturbance
+estimate</strong> to the model.</p>
+<p>These are mathematical constructs rather than physical ones, yet they
+are treated identically within the state-space framework. We will
+explore these techniques in the upcoming chapters.</p>
 </div>
-<h3 class="unnumbered" id="why-does-mpc-rely-on-state-space-models">Why does MPC rely on state-space models?</h3>
-<p>The importance of the state-space formulation in MPC can be summarised as follows:</p>
+<h3 class="unnumbered" id="why-does-mpc-rely-on-state-space-models">Why
+does MPC rely on state-space models?</h3>
+<p>The importance of the state-space formulation in MPC can be
+summarised as follows:</p>
 <ul>
-<li><p><strong>Recursive Prediction:</strong> The state-space form (<span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>) is inherently recursive. This allows the controller to compute the future evolution of the system over a horizon <span class="math inline">\(N\)</span> simply by iterating matrix multiplications, which is computationally efficient for real-time optimisation.</p></li>
-<li><p><strong>Native MIMO Capability:</strong> Unlike transfer functions, which require complex coupling terms to model interactions, state-space models naturally accommodate Multi-Input Multi-Output (MIMO) systems via matrix dimensions. This is essential for industrial processes where inputs are rarely isolated.</p></li>
-<li><p><strong>Direct Constraint Handling:</strong> MPC is defined by its ability to respect limits. Physical bounds (e.g., valve positions or safety pressures) map directly onto simple linear inequalities involving the state and input vectors (<span class="math inline">\(Cx + Du \leq b\)</span>), making them easy for standard solvers to process.</p></li>
-<li><p><strong>Systematic Discretisation:</strong> While physical laws are derived in continuous time (differential equations), digital controllers operate in discrete time (difference equations). State-space theory provides exact methods (such as the Zero-Order Hold) to convert continuous models into discrete forms without losing physical insight.</p></li>
+<li><p><strong>Recursive Prediction:</strong> The state-space form
+(<span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>) is
+inherently recursive. This allows the controller to compute the future
+evolution of the system over a horizon <span
+class="math inline">\(N\)</span> simply by iterating matrix
+multiplications, which is computationally efficient for real-time
+optimisation.</p></li>
+<li><p><strong>Native MIMO Capability:</strong> Unlike transfer
+functions, which require complex coupling terms to model interactions,
+state-space models naturally accommodate Multi-Input Multi-Output (MIMO)
+systems via matrix dimensions. This is essential for industrial
+processes where inputs are rarely isolated.</p></li>
+<li><p><strong>Direct Constraint Handling:</strong> MPC is defined by
+its ability to respect limits. Physical bounds (e.g., valve positions or
+safety pressures) map directly onto simple linear inequalities involving
+the state and input vectors (<span class="math inline">\(Cx + Du \leq
+b\)</span>), making them easy for standard solvers to process.</p></li>
+<li><p><strong>Systematic Discretisation:</strong> While physical laws
+are derived in continuous time (differential equations), digital
+controllers operate in discrete time (difference equations). State-space
+theory provides exact methods (such as the Zero-Order Hold) to convert
+continuous models into discrete forms without losing physical
+insight.</p></li>
 </ul>
-<p>The state-space representation provides a modelling framework that connects physical intuition, mathematical analysis, and predictive control design. MPC relies on it directly.</p>
-<p>In the following examples, we remind readers how to derive state-space models directly from physical principles in order to build intuition and highlight common modelling patterns.</p>
+<p>The state-space representation provides a modelling framework that
+connects physical intuition, mathematical analysis, and predictive
+control design. MPC relies on it directly.</p>
+<p>In the following examples, we remind readers how to derive
+state-space models directly from physical principles in order to build
+intuition and highlight common modelling patterns.</p>
 <div class="examplebox">
 <p><span>State–Space Modelling of an RLC Circuit</span></p>
-<p>Consider the electrical circuit shown in Figure <a href="#fig:RLC01" data-reference-type="ref" data-reference="fig:RLC01">[fig:RLC01]</a>, consisting of a voltage source <span class="math inline">\(V_i\)</span>, resistors <span class="math inline">\(R_1\)</span> and <span class="math inline">\(R_2\)</span>, an inductor <span class="math inline">\(L\)</span>, and a capacitor <span class="math inline">\(C\)</span>. Write state equations in matrix form.</p>
+<p>Consider the electrical circuit shown in Figure <a href="#fig:RLC01"
+data-reference-type="ref" data-reference="fig:RLC01">[fig:RLC01]</a>,
+consisting of a voltage source <span class="math inline">\(V_i\)</span>,
+resistors <span class="math inline">\(R_1\)</span> and <span
+class="math inline">\(R_2\)</span>, an inductor <span
+class="math inline">\(L\)</span>, and a capacitor <span
+class="math inline">\(C\)</span>. Write state equations in matrix
+form.</p>
 <div class="center">
-<p><img src="figures/tikz_ch03_2.png" style="width:85.0%" alt="image" /> <span id="fig:RLC01" data-label="fig:RLC01"></span></p>
+<p><span id="fig:RLC01" data-label="fig:RLC01"></span></p>
 </div>
-<p>We select the energy variables as state variables: <span class="math display">\[x_1 = i_L \quad \text{(inductor current)}, 
-    \qquad 
-    x_2 = v_C \quad \text{(capacitor voltage)},\]</span> and take the input as <span class="math display">\[u = v_i .\]</span></p>
-<p>We begin with the constitutive relations of the energy–storage elements. Since the state variables are chosen as the inductor current and the capacitor voltage, all other variables are expressed in terms of these states and the input. <span class="math display">\[\begin{align}
+<p>We select the energy variables as state variables: <span
+class="math display">\[x_1 = i_L \quad \text{(inductor current)},
+    \qquad
+    x_2 = v_C \quad \text{(capacitor voltage)},\]</span> and take the
+input as <span class="math display">\[u = v_i .\]</span></p>
+<p>We begin with the constitutive relations of the energy–storage
+elements. Since the state variables are chosen as the inductor current
+and the capacitor voltage, all other variables are expressed in terms of
+these states and the input. <span class="math display">\[\begin{align}
     v_L &amp;= L \frac{d i_L}{dt}, \\
     i_C &amp;= C \frac{d v_C}{dt}.
 \end{align}\]</span></p>
-<p>The current flowing through resistor <span class="math inline">\(R_2\)</span> is given by Ohm’s law as <span class="math display">\[i_{R_2} = \frac{v_L - v_C}{R_2}.\]</span> Applying Kirchhoff’s Current Law (KCL) at node <span class="math inline">\(v_C\)</span> and noting that the capacitor current equals the current through <span class="math inline">\(R_2\)</span> yields <span class="math display">\[C \dot{v}_C = \frac{v_L - v_C}{R_2}.\]</span></p>
-<p>Applying KCL at node <span class="math inline">\(v_L\)</span> yields <span class="math display">\[\frac{v_i - v_L}{R_1} = i_L + \frac{v_L - v_C}{R_2}.\]</span></p>
-<p>Solving for <span class="math inline">\(v_L\)</span>: <span class="math display">\[v_L =
+<p>The current flowing through resistor <span
+class="math inline">\(R_2\)</span> is given by Ohm’s law as <span
+class="math display">\[i_{R_2} = \frac{v_L - v_C}{R_2}.\]</span>
+Applying Kirchhoff’s Current Law (KCL) at node <span
+class="math inline">\(v_C\)</span> and noting that the capacitor current
+equals the current through <span class="math inline">\(R_2\)</span>
+yields <span class="math display">\[C \dot{v}_C = \frac{v_L -
+v_C}{R_2}.\]</span></p>
+<p>Applying KCL at node <span class="math inline">\(v_L\)</span> yields
+<span class="math display">\[\frac{v_i - v_L}{R_1} = i_L + \frac{v_L -
+v_C}{R_2}.\]</span></p>
+<p>Solving for <span class="math inline">\(v_L\)</span>: <span
+class="math display">\[v_L =
     \frac{R_2}{R_1 + R_2} v_i
     - \frac{R_1 R_2}{R_1 + R_2} i_L
     + \frac{R_1}{R_1 + R_2} v_C .\]</span></p>
-<p><strong>State equations.</strong> Substituting <span class="math inline">\(v_L\)</span> into the inductor and capacitor equations gives <span class="math display">\[\begin{align}
+<p><strong>State equations.</strong> Substituting <span
+class="math inline">\(v_L\)</span> into the inductor and capacitor
+equations gives <span class="math display">\[\begin{align}
          \frac{d}{dt}{i}_L &amp;=
         -\frac{R_1 R_2}{L(R_1 + R_2)} i_L
         + \frac{R_1}{L(R_1 + R_2)} v_C
@@ -174,9 +364,14 @@ y(t) &amp;= C x(t) + D u(t),
         -\frac{1}{C(R_1 + R_2)} v_C
         + \frac{1}{C(R_1 + R_2)} v_i.
 \end{align}\]</span></p>
-<p><strong>State–space representation.</strong> Defining the state vector <span class="math inline">\(x = [\, i_L \;\; v_C \,]^\top\)</span>, the system can be written compactly as <span class="math display">\[\dot{x} = A x + B u,\]</span> where <span class="math display">\[A =
+<p><strong>State–space representation.</strong> Defining the state
+vector <span class="math inline">\(x = [\, i_L \;\; v_C
+\,]^\top\)</span>, the system can be written compactly as <span
+class="math display">\[\dot{x} = A x + B u,\]</span> where <span
+class="math display">\[A =
     \begin{bmatrix}
-        -\dfrac{R_1 R_2}{L(R_1 + R_2)} &amp; \dfrac{R_1}{L(R_1 + R_2)} \\[8pt]
+        -\dfrac{R_1 R_2}{L(R_1 + R_2)} &amp; \dfrac{R_1}{L(R_1 + R_2)}
+\\[8pt]
         -\dfrac{R_1}{C(R_1 + R_2)} &amp; -\dfrac{1}{C(R_1 + R_2)}
     \end{bmatrix},
     \qquad
@@ -187,22 +382,60 @@ y(t) &amp;= C x(t) + D u(t),
     \end{bmatrix}.\]</span></p>
 </div>
 <div class="examplebox">
-<p><span>Mass–Spring–Damper with External Forcing (State–Space Modelling)</span> <strong>Question.</strong> A mass–spring–damper system shown in Figure <a href="#fig:MDS_system" data-reference-type="ref" data-reference="fig:MDS_system">[fig:MDS_system]</a> is subjected to an external force input <span class="math inline">\(F(t)\)</span>. The displacement of the mass from equilibrium is denoted by <span class="math inline">\(\zeta(t)\)</span> (positive to the right). The system parameters are mass <span class="math inline">\(m\)</span>, damping coefficient <span class="math inline">\(c\)</span>, and spring stiffness <span class="math inline">\(k\)</span>.</p>
+<p><span>Mass–Spring–Damper with External Forcing (State–Space
+Modelling)</span> <strong>Question.</strong> A mass–spring–damper system
+shown in Figure <a href="#fig:MDS_system" data-reference-type="ref"
+data-reference="fig:MDS_system">[fig:MDS_system]</a> is subjected to an
+external force input <span class="math inline">\(F(t)\)</span>. The
+displacement of the mass from equilibrium is denoted by <span
+class="math inline">\(\zeta(t)\)</span> (positive to the right). The
+system parameters are mass <span class="math inline">\(m\)</span>,
+damping coefficient <span class="math inline">\(c\)</span>, and spring
+stiffness <span class="math inline">\(k\)</span>.</p>
 <div class="center">
-<p><img src="figures/tikz_ch03_3.png" style="width:85.0%" alt="image" /> <span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
+<p><span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
 </div>
 <ol>
-<li><p>Write the equation of motion for the system in terms of <span class="math inline">\(\zeta(t)\)</span>, <span class="math inline">\(\dot{\zeta}(t)\)</span>, <span class="math inline">\(\ddot{\zeta}(t)\)</span>, and the input force <span class="math inline">\(F(t)\)</span>.</p></li>
-<li><p>Choose a suitable state vector and write the continuous-time state-space model <span class="math display">\[\dot{x}(t) = A x(t) + B u(t),\]</span> clearly defining <span class="math inline">\(x(t)\)</span> and <span class="math inline">\(u(t)\)</span>.</p></li>
-<li><p>If the output is the displacement, i.e. <span class="math inline">\(y(t)=\zeta(t)\)</span>, write the output equation <span class="math display">\[y(t) = C x(t) + D u(t).\]</span></p></li>
+<li><p>Write the equation of motion for the system in terms of <span
+class="math inline">\(\zeta(t)\)</span>, <span
+class="math inline">\(\dot{\zeta}(t)\)</span>, <span
+class="math inline">\(\ddot{\zeta}(t)\)</span>, and the input force
+<span class="math inline">\(F(t)\)</span>.</p></li>
+<li><p>Choose a suitable state vector and write the continuous-time
+state-space model <span class="math display">\[\dot{x}(t) = A x(t) + B
+u(t),\]</span> clearly defining <span
+class="math inline">\(x(t)\)</span> and <span
+class="math inline">\(u(t)\)</span>.</p></li>
+<li><p>If the output is the displacement, i.e. <span
+class="math inline">\(y(t)=\zeta(t)\)</span>, write the output equation
+<span class="math display">\[y(t) = C x(t) + D u(t).\]</span></p></li>
 </ol>
-<p><strong>1) Equation of motion:</strong> Let <span class="math inline">\(\zeta(t)\)</span> denote the displacement of the mass from equilibrium (positive to the right), and let <span class="math inline">\(F(t)\)</span> be the applied external force. By Newton’s second law, the sum of forces on the mass equals <span class="math inline">\(m\ddot{\zeta}(t)\)</span>. The spring force is <span class="math inline">\(-k\zeta(t)\)</span> and the damper force is <span class="math inline">\(-c\dot{\zeta}(t)\)</span>. Hence, <span class="math display">\[m\ddot{\zeta}(t) = F(t) - c\dot{\zeta}(t) - k\zeta(t),\]</span> or equivalently, <span class="math display">\[m\ddot{\zeta}(t) + c\dot{\zeta}(t) + k\zeta(t) = F(t).\]</span></p>
-<p><strong>2) Choice of states and state equations:</strong> Choose the standard second-order state variables <span class="math display">\[x_1(t)=\zeta(t), 
-    \qquad 
+<p><strong>1) Equation of motion:</strong> Let <span
+class="math inline">\(\zeta(t)\)</span> denote the displacement of the
+mass from equilibrium (positive to the right), and let <span
+class="math inline">\(F(t)\)</span> be the applied external force. By
+Newton’s second law, the sum of forces on the mass equals <span
+class="math inline">\(m\ddot{\zeta}(t)\)</span>. The spring force is
+<span class="math inline">\(-k\zeta(t)\)</span> and the damper force is
+<span class="math inline">\(-c\dot{\zeta}(t)\)</span>. Hence, <span
+class="math display">\[m\ddot{\zeta}(t) = F(t) - c\dot{\zeta}(t) -
+k\zeta(t),\]</span> or equivalently, <span
+class="math display">\[m\ddot{\zeta}(t) + c\dot{\zeta}(t) + k\zeta(t) =
+F(t).\]</span></p>
+<p><strong>2) Choice of states and state equations:</strong> Choose the
+standard second-order state variables <span
+class="math display">\[x_1(t)=\zeta(t),
+    \qquad
     x_2(t)=\dot{\zeta}(t),
-    \qquad 
-    u(t)=F(t).\]</span> Then <span class="math display">\[\dot{x}_1(t) = x_2(t),\]</span> and, from the equation of motion, <span class="math display">\[\dot{x}_2(t)=\ddot{\zeta}(t) = -\frac{k}{m}x_1(t) - \frac{c}{m}x_2(t) + \frac{1}{m}u(t).\]</span></p>
-<p><strong>3) State-space form:</strong> Defining <span class="math inline">\(x(t)=\begin{bmatrix}x_1(t)\\x_2(t)\end{bmatrix}\)</span>, the system can be written as <span class="math display">\[\dot{x}(t)=A x(t)+B u(t),\]</span> with <span class="math display">\[A=
+    \qquad
+    u(t)=F(t).\]</span> Then <span class="math display">\[\dot{x}_1(t) =
+x_2(t),\]</span> and, from the equation of motion, <span
+class="math display">\[\dot{x}_2(t)=\ddot{\zeta}(t) = -\frac{k}{m}x_1(t)
+- \frac{c}{m}x_2(t) + \frac{1}{m}u(t).\]</span></p>
+<p><strong>3) State-space form:</strong> Defining <span
+class="math inline">\(x(t)=\begin{bmatrix}x_1(t)\\x_2(t)\end{bmatrix}\)</span>,
+the system can be written as <span class="math display">\[\dot{x}(t)=A
+x(t)+B u(t),\]</span> with <span class="math display">\[A=
     \begin{bmatrix}
         0 &amp; 1\\[4pt]
         -\dfrac{k}{m} &amp; -\dfrac{c}{m}
@@ -213,73 +446,138 @@ y(t) &amp;= C x(t) + D u(t),
         0\\[4pt]
         \dfrac{1}{m}
     \end{bmatrix}.\]</span></p>
-<p><strong>4) Output equation.</strong> If the measured output is the displacement <span class="math inline">\(y(t)=\zeta(t)=x_1(t)\)</span>, then <span class="math display">\[y(t)=C x(t)+D u(t),\]</span> where <span class="math display">\[C=\begin{bmatrix}1 &amp; 0\end{bmatrix},
+<p><strong>4) Output equation.</strong> If the measured output is the
+displacement <span class="math inline">\(y(t)=\zeta(t)=x_1(t)\)</span>,
+then <span class="math display">\[y(t)=C x(t)+D u(t),\]</span> where
+<span class="math display">\[C=\begin{bmatrix}1 &amp; 0\end{bmatrix},
     \qquad
     D=\begin{bmatrix}0\end{bmatrix}.\]</span></p>
 </div>
-<h2 id="nonlinear-systems-and-local-linearisation">Nonlinear Systems and Local Linearisation</h2>
-<p>Many real-world systems are inherently nonlinear. Nonlinearities may arise from physical laws, geometric effects, saturation, friction, or actuator limits. While linear state-space models play a central role in MPC, they are often obtained as local approximations of an underlying nonlinear system.</p>
-<p>In this section, we introduce nonlinear state-space models, define equilibrium points, and show how nonlinear dynamics can be approximated locally using Taylor expansion. This leads naturally to the concept of Jacobian linearisation.</p>
+<h2 id="nonlinear-systems-and-local-linearisation">Nonlinear Systems and
+Local Linearisation</h2>
+<p>Many real-world systems are inherently nonlinear. Nonlinearities may
+arise from physical laws, geometric effects, saturation, friction, or
+actuator limits. While linear state-space models play a central role in
+MPC, they are often obtained as local approximations of an underlying
+nonlinear system.</p>
+<p>In this section, we introduce nonlinear state-space models, define
+equilibrium points, and show how nonlinear dynamics can be approximated
+locally using Taylor expansion. This leads naturally to the concept of
+Jacobian linearisation.</p>
 <h3 id="nonlinear-state-space-models">Nonlinear state-space models</h3>
-<p>A general nonlinear continuous-time system is described by <span class="math display">\[\begin{align*}
+<p>A general nonlinear continuous-time system is described by <span
+class="math display">\[\begin{align*}
 \dot{x}(t) &amp;= f\big(x(t), u(t)\big) \\
 y(t) &amp;= h\big(x(t), u(t)\big),
-\end{align*}\]</span> where the functions <span class="math inline">\(f(\cdot)\)</span> and <span class="math inline">\(h(\cdot)\)</span> are nonlinear mappings.</p>
+\end{align*}\]</span> where the functions <span
+class="math inline">\(f(\cdot)\)</span> and <span
+class="math inline">\(h(\cdot)\)</span> are nonlinear mappings.</p>
 <p>Unlike linear systems, nonlinear systems:</p>
 <ul>
 <li><p>may have multiple equilibrium points,</p></li>
-<li><p>exhibit behaviour that depends strongly on the operating point,</p></li>
+<li><p>exhibit behaviour that depends strongly on the operating
+point,</p></li>
 <li><p>cannot, in general, be analysed using superposition.</p></li>
 </ul>
-<p>For MPC design, it is common to operate the system near a desired steady state. Linearisation provides a systematic way to approximate the nonlinear dynamics locally around such an operating point.</p>
+<p>For MPC design, it is common to operate the system near a desired
+steady state. Linearisation provides a systematic way to approximate the
+nonlinear dynamics locally around such an operating point.</p>
 <h3 id="equilibrium-points">Equilibrium points</h3>
-<p>An equilibrium point represents a state of operation where the system’s dynamic evolution ceases. If a system is initialised at an equilibrium state and the external inputs remain constant, the state will not change over time.</p>
-<p>We distinguish between the definitions for continuous-time and discrete-time systems below.</p>
+<p>An equilibrium point represents a state of operation where the
+system’s dynamic evolution ceases. If a system is initialised at an
+equilibrium state and the external inputs remain constant, the state
+will not change over time.</p>
+<p>We distinguish between the definitions for continuous-time and
+discrete-time systems below.</p>
 <div class="defnbox">
-<p><span>Definition: Equilibrium Points</span> <strong>1. Continuous-Time Case:</strong><br />
-For a continuous-time system <span class="math inline">\(\dot{x}(t) = f(x(t), u(t))\)</span>, an equilibrium point is a pair <span class="math inline">\((x_e, u_e)\)</span> such that the time derivative vanishes: <span class="math display">\[\begin{equation}
+<p><span>Definition: Equilibrium Points</span> <strong>1.
+Continuous-Time Case:</strong><br />
+For a continuous-time system <span class="math inline">\(\dot{x}(t) =
+f(x(t), u(t))\)</span>, an equilibrium point is a pair <span
+class="math inline">\((x_e, u_e)\)</span> such that the time derivative
+vanishes: <span class="math display">\[\begin{equation}
         f(x_e, u_e) = 0
 \end{equation}\]</span></p>
 <p><strong>2. Discrete-Time Case:</strong><br />
-For a discrete-time system <span class="math inline">\(x_{k+1} = f(x_k, u_k)\)</span>, an equilibrium point is a pair <span class="math inline">\((x_e, u_e)\)</span> such that the next state is identical to the current state (a fixed point): <span class="math display">\[\begin{equation}
+For a discrete-time system <span class="math inline">\(x_{k+1} = f(x_k,
+u_k)\)</span>, an equilibrium point is a pair <span
+class="math inline">\((x_e, u_e)\)</span> such that the next state is
+identical to the current state (a fixed point): <span
+class="math display">\[\begin{equation}
         x_e = f(x_e, u_e)
 \end{equation}\]</span></p>
 </div>
-<h3 class="unnumbered" id="determination-of-equilibria">Determination of Equilibria</h3>
-<p>To find the equilibrium points for a given constant input <span class="math inline">\(u_e\)</span>, one must solve a set of algebraic equations:</p>
+<h3 class="unnumbered" id="determination-of-equilibria">Determination of
+Equilibria</h3>
+<p>To find the equilibrium points for a given constant input <span
+class="math inline">\(u_e\)</span>, one must solve a set of algebraic
+equations:</p>
 <ul>
-<li><p><strong>Continuous:</strong> Solve the system of equations <span class="math inline">\(f(x, u_e) = 0\)</span> for <span class="math inline">\(x\)</span>.</p></li>
-<li><p><strong>Discrete:</strong> Solve the fixed-point equation <span class="math inline">\(x - f(x, u_e) = 0\)</span> for <span class="math inline">\(x\)</span>.</p></li>
+<li><p><strong>Continuous:</strong> Solve the system of equations <span
+class="math inline">\(f(x, u_e) = 0\)</span> for <span
+class="math inline">\(x\)</span>.</p></li>
+<li><p><strong>Discrete:</strong> Solve the fixed-point equation <span
+class="math inline">\(x - f(x, u_e) = 0\)</span> for <span
+class="math inline">\(x\)</span>.</p></li>
 </ul>
-<p>Note that nonlinear systems may have multiple equilibrium points, a single unique equilibrium, or no equilibrium points at all for a specific input.</p>
-<h3 class="unnumbered" id="physical-interpretation">Physical Interpretation</h3>
-<p>In engineering contexts, equilibrium points are often referred to as <em>operating points</em>, <em>trim points</em>, or <em>steady states</em>. Physically, they correspond to:</p>
+<p>Note that nonlinear systems may have multiple equilibrium points, a
+single unique equilibrium, or no equilibrium points at all for a
+specific input.</p>
+<h3 class="unnumbered" id="physical-interpretation">Physical
+Interpretation</h3>
+<p>In engineering contexts, equilibrium points are often referred to as
+<em>operating points</em>, <em>trim points</em>, or <em>steady
+states</em>. Physically, they correspond to:</p>
 <ul>
-<li><p><strong>Mechanical Systems:</strong> A position of rest (velocity and acceleration are zero) or motion at a constant velocity (acceleration is zero).</p></li>
-<li><p><strong>Thermal/Chemical Systems:</strong> A state where inflows equal outflows, resulting in constant temperature, pressure, or concentration.</p></li>
-<li><p><strong>Electrical Systems:</strong> A state where capacitor voltages and inductor currents have settled to constant DC values.</p></li>
+<li><p><strong>Mechanical Systems:</strong> A position of rest (velocity
+and acceleration are zero) or motion at a constant velocity
+(acceleration is zero).</p></li>
+<li><p><strong>Thermal/Chemical Systems:</strong> A state where inflows
+equal outflows, resulting in constant temperature, pressure, or
+concentration.</p></li>
+<li><p><strong>Electrical Systems:</strong> A state where capacitor
+voltages and inductor currents have settled to constant DC
+values.</p></li>
 </ul>
-<p>Ideally, a control system is designed to steer the dynamic system from an arbitrary initial state towards a desired equilibrium point <span class="math inline">\((x_{ref}, u_{ref})\)</span>.</p>
-<h3 id="local-approximation-via-taylor-expansion">Local approximation via Taylor expansion</h3>
-<p>To analyse system behaviour near an equilibrium, we approximate the nonlinear dynamics using a Taylor series expansion.</p>
+<p>Ideally, a control system is designed to steer the dynamic system
+from an arbitrary initial state towards a desired equilibrium point
+<span class="math inline">\((x_{ref}, u_{ref})\)</span>.</p>
+<h3 id="local-approximation-via-taylor-expansion">Local approximation
+via Taylor expansion</h3>
+<p>To analyse system behaviour near an equilibrium, we approximate the
+nonlinear dynamics using a Taylor series expansion.</p>
 <h4 class="unnumbered" id="scalar-case">Scalar case</h4>
-<p>Consider a scalar nonlinear system <span class="math display">\[\dot{x} = f(x,u),\]</span> and let <span class="math inline">\((x_e,u_e)\)</span> be an equilibrium point.</p>
-<p>The first-order Taylor expansion of <span class="math inline">\(f(x,u)\)</span> about <span class="math inline">\((x_e,u_e)\)</span> is <span class="math display">\[f(x,u) \approx f(x_e,u_e)
+<p>Consider a scalar nonlinear system <span
+class="math display">\[\dot{x} = f(x,u),\]</span> and let <span
+class="math inline">\((x_e,u_e)\)</span> be an equilibrium point.</p>
+<p>The first-order Taylor expansion of <span
+class="math inline">\(f(x,u)\)</span> about <span
+class="math inline">\((x_e,u_e)\)</span> is <span
+class="math display">\[f(x,u) \approx f(x_e,u_e)
 + \frac{\partial f}{\partial x}\Big|_{(x_e,u_e)} (x-x_e)
 + \frac{\partial f}{\partial u}\Big|_{(x_e,u_e)} (u-u_e).\]</span></p>
-<p>Since <span class="math inline">\(f(x_e,u_e)=0\)</span> at equilibrium, this simplifies to <span class="math display">\[\dot{x} \approx 
+<p>Since <span class="math inline">\(f(x_e,u_e)=0\)</span> at
+equilibrium, this simplifies to <span class="math display">\[\dot{x}
+\approx
 \frac{\partial f}{\partial x}\Big|_{(x_e,u_e)} (x-x_e)
 + \frac{\partial f}{\partial u}\Big|_{(x_e,u_e)} (u-u_e).\]</span></p>
-<p>This expression describes a <em>linear approximation</em> of the nonlinear system near the equilibrium.</p>
+<p>This expression describes a <em>linear approximation</em> of the
+nonlinear system near the equilibrium.</p>
 <h4 class="unnumbered" id="multivariable-case">Multivariable case</h4>
-<p>Now consider the nonlinear vector-valued system <span class="math display">\[\dot{x} = f(x,u), 
-\qquad 
+<p>Now consider the nonlinear vector-valued system <span
+class="math display">\[\dot{x} = f(x,u),
+\qquad
 x \in \mathbb{R}^n, \; u \in \mathbb{R}^m.\]</span></p>
-<p>Expanding <span class="math inline">\(f(x,u)\)</span> about the equilibrium <span class="math inline">\((x_e,u_e)\)</span> yields <span class="math display">\[f(x,u) \approx f(x_e,u_e)
+<p>Expanding <span class="math inline">\(f(x,u)\)</span> about the
+equilibrium <span class="math inline">\((x_e,u_e)\)</span> yields <span
+class="math display">\[f(x,u) \approx f(x_e,u_e)
 + \frac{\partial f}{\partial x}\Big|_{(x_e,u_e)} (x-x_e)
 + \frac{\partial f}{\partial u}\Big|_{(x_e,u_e)} (u-u_e).\]</span></p>
-<p>Again using <span class="math inline">\(f(x_e,u_e)=0\)</span>, we obtain <span class="math display">\[\dot{x} \approx A (x-x_e) + B (u-u_e),\]</span> where the matrix <span class="math display">\[A = \left.\frac{\partial f}{\partial x}\right|_{(x_e,u_e)} 
- =
+<p>Again using <span class="math inline">\(f(x_e,u_e)=0\)</span>, we
+obtain <span class="math display">\[\dot{x} \approx A (x-x_e) + B
+(u-u_e),\]</span> where the matrix <span class="math display">\[A =
+\left.\frac{\partial f}{\partial x}\right|_{(x_e,u_e)}
+=
 \left[
 \begin{array}{cccc}
     \dfrac{\partial f_1}{\partial x_1} &amp;
@@ -300,8 +598,13 @@ x \in \mathbb{R}^n, \; u \in \mathbb{R}^m.\]</span></p>
     \dfrac{\partial f_n}{\partial x_n}
 \end{array}
 \right]_{(x_e,u_e)}.\]</span></p>
-<p>Note that each entry <span class="math inline">\(A_{ij}\)</span> represents the sensitivity of the <span class="math inline">\(i\)</span>th state equation to the <span class="math inline">\(j\)</span>th state variable, evaluated at the equilibrium point.</p>
-<p>Similarly, <span class="math display">\[B = \left.\frac{\partial f}{\partial u}\right|_{(x_e,u_e)} =
+<p>Note that each entry <span class="math inline">\(A_{ij}\)</span>
+represents the sensitivity of the <span
+class="math inline">\(i\)</span>th state equation to the <span
+class="math inline">\(j\)</span>th state variable, evaluated at the
+equilibrium point.</p>
+<p>Similarly, <span class="math display">\[B = \left.\frac{\partial
+f}{\partial u}\right|_{(x_e,u_e)} =
 \left[
 \begin{array}{cccc}
     \dfrac{\partial f_1}{\partial u_1} &amp;
@@ -322,27 +625,58 @@ x \in \mathbb{R}^n, \; u \in \mathbb{R}^m.\]</span></p>
     \dfrac{\partial f_n}{\partial u_m}
 \end{array}
 \right]_{(x_e,u_e)}.\]</span></p>
-<p>Each entry <span class="math inline">\(B_{ij}\)</span> quantifies how the <span class="math inline">\(j\)</span>th input influences the <span class="math inline">\(i\)</span>th state equation in the neighbourhood of the equilibrium.</p>
-<p>With these matrices, the linearised dynamics in deviation variables <span class="math display">\[\tilde{x} = x - x_e,
+<p>Each entry <span class="math inline">\(B_{ij}\)</span> quantifies how
+the <span class="math inline">\(j\)</span>th input influences the <span
+class="math inline">\(i\)</span>th state equation in the neighbourhood
+of the equilibrium.</p>
+<p>With these matrices, the linearised dynamics in deviation variables
+<span class="math display">\[\tilde{x} = x - x_e,
 \qquad
-\tilde{u} = u - u_e\]</span> are given by <span class="math display">\[\dot{\tilde{x}} = A \tilde{x} + B \tilde{u}.\]</span></p>
-<p>If the output equation is nonlinear, <span class="math display">\[y = h(x,u),\]</span> a similar expansion gives <span class="math display">\[\tilde{y} = C \tilde{x} + D \tilde{u},\]</span> with <span class="math display">\[C = \left.\frac{\partial h}{\partial x}\right|_{(x_e,u_e)},
+\tilde{u} = u - u_e\]</span> are given by <span
+class="math display">\[\dot{\tilde{x}} = A \tilde{x} + B
+\tilde{u}.\]</span></p>
+<p>If the output equation is nonlinear, <span class="math display">\[y =
+h(x,u),\]</span> a similar expansion gives <span
+class="math display">\[\tilde{y} = C \tilde{x} + D \tilde{u},\]</span>
+with <span class="math display">\[C = \left.\frac{\partial h}{\partial
+x}\right|_{(x_e,u_e)},
 \qquad
 D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
 <div class="examplebox">
-<p><span>Nonlinear Planar Duorotor</span> <strong>Question:</strong> The nonlinear dynamics of a planar duorotor (shown in Figure <a href="#fig:duorotor_model" data-reference-type="ref" data-reference="fig:duorotor_model">[fig:duorotor_model]</a>) with mass <span class="math inline">\(m\)</span>, inertia <span class="math inline">\(J\)</span>, and arm length <span class="math inline">\(\ell\)</span> are given by: <span class="math display">\[\begin{align*}
+<p><span>Nonlinear Planar Duorotor</span> <strong>Question:</strong> The
+nonlinear dynamics of a planar duorotor (shown in Figure <a
+href="#fig:duorotor_model" data-reference-type="ref"
+data-reference="fig:duorotor_model">[fig:duorotor_model]</a>) with mass
+<span class="math inline">\(m\)</span>, inertia <span
+class="math inline">\(J\)</span>, and arm length <span
+class="math inline">\(\ell\)</span> are given by: <span
+class="math display">\[\begin{align*}
         m\ddot{p}_x &amp;= -(u_1+u_2)\sin(\theta) \\
         m\ddot{p}_y &amp;= (u_1+u_2)\cos(\theta) - mg \\
         J\ddot{\theta} &amp;= \frac{\ell }{2}(u_2 - u_1)
-\end{align*}\]</span> where <span class="math inline">\(p_x\)</span> is the horizontal position and <span class="math inline">\(p_y\)</span> is the vertical position. Linearise these dynamics around the hover equilibrium (<span class="math inline">\(\theta=0, u_1=u_2=mg/2\)</span>) to obtain an LTI state-space model, <span class="math inline">\(\dot{{x}} = A{x} + B{u}\)</span>.</p>
+\end{align*}\]</span> where <span class="math inline">\(p_x\)</span> is
+the horizontal position and <span class="math inline">\(p_y\)</span> is
+the vertical position. Linearise these dynamics around the hover
+equilibrium (<span class="math inline">\(\theta=0,
+u_1=u_2=mg/2\)</span>) to obtain an LTI state-space model, <span
+class="math inline">\(\dot{{x}} = A{x} + B{u}\)</span>.</p>
 <div class="center">
-<p><img src="figures/tikz_ch03_4.png" style="width:85.0%" alt="image" /> <span id="fig:duorotor_model" data-label="fig:duorotor_model"></span></p>
+<p><span id="fig:duorotor_model"
+data-label="fig:duorotor_model"></span></p>
 </div>
-<p><strong>1) Define states and inputs:</strong> We select the state vector such that the generalized coordinates appear first, followed by their velocities: <span class="math display">\[x(t) = 
-    \begin{bmatrix} x_1 &amp; x_2 &amp; x_3 &amp; x_4 &amp; x_5 &amp; x_6 \end{bmatrix}^\top
+<p><strong>1) Define states and inputs:</strong> We select the state
+vector such that the generalized coordinates appear first, followed by
+their velocities: <span class="math display">\[x(t) =
+    \begin{bmatrix} x_1 &amp; x_2 &amp; x_3 &amp; x_4 &amp; x_5 &amp;
+x_6 \end{bmatrix}^\top
     =
-    \begin{bmatrix} p_x &amp; p_y &amp; \theta &amp; \dot{p}_x &amp; \dot{p}_y &amp; \dot{\theta} \end{bmatrix}^\top.\]</span> The input vector is <span class="math inline">\(u = [\, u_1 \;\; u_2 \,]^\top\)</span>.</p>
-<p>The nonlinear state-space equations <span class="math inline">\(\dot{x} = f(x,u)\)</span> are: <span class="math display">\[\begin{align*}
+    \begin{bmatrix} p_x &amp; p_y &amp; \theta &amp; \dot{p}_x &amp;
+\dot{p}_y &amp; \dot{\theta} \end{bmatrix}^\top.\]</span> The input
+vector is <span class="math inline">\(u = [\, u_1 \;\; u_2
+\,]^\top\)</span>.</p>
+<p>The nonlinear state-space equations <span
+class="math inline">\(\dot{x} = f(x,u)\)</span> are: <span
+class="math display">\[\begin{align*}
         \dot{x}_1 &amp;= x_4, \\
         \dot{x}_2 &amp;= x_5, \\
         \dot{x}_3 &amp;= x_6, \\
@@ -350,22 +684,56 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
         \dot{x}_5 &amp;= \frac{1}{m}(u_1+u_2)\cos(x_3) - g, \\
         \dot{x}_6 &amp;= \frac{\ell}{2J}(u_2 - u_1).
 \end{align*}\]</span></p>
-<p><strong>2) Determine the equilibrium point:</strong> At hover, the drone is stationary at the origin with zero angle: <span class="math display">\[x_e = [\, 0 \;\; 0 \;\; 0 \;\; 0 \;\; 0 \;\; 0 \,]^\top.\]</span> Setting accelerations (<span class="math inline">\(\dot{x}_4, \dot{x}_5, \dot{x}_6\)</span>) to zero:</p>
+<p><strong>2) Determine the equilibrium point:</strong> At hover, the
+drone is stationary at the origin with zero angle: <span
+class="math display">\[x_e = [\, 0 \;\; 0 \;\; 0 \;\; 0 \;\; 0 \;\; 0
+\,]^\top.\]</span> Setting accelerations (<span
+class="math inline">\(\dot{x}_4, \dot{x}_5, \dot{x}_6\)</span>) to
+zero:</p>
 <ul>
-<li><p>From <span class="math inline">\(\dot{x}_5=0\)</span>: <span class="math inline">\(\dfrac{1}{m}(u_{1,e}+u_{2,e})\cos(0) - g = 0 \implies u_{1,e}+u_{2,e} = mg\)</span>.</p></li>
-<li><p>From <span class="math inline">\(\dot{x}_6=0\)</span>: <span class="math inline">\(\dfrac{\ell}{2J}(u_{2,e}-u_{1,e}) = 0 \implies u_{1,e} = u_{2,e}\)</span>.</p></li>
+<li><p>From <span class="math inline">\(\dot{x}_5=0\)</span>: <span
+class="math inline">\(\dfrac{1}{m}(u_{1,e}+u_{2,e})\cos(0) - g = 0
+\implies u_{1,e}+u_{2,e} = mg\)</span>.</p></li>
+<li><p>From <span class="math inline">\(\dot{x}_6=0\)</span>: <span
+class="math inline">\(\dfrac{\ell}{2J}(u_{2,e}-u_{1,e}) = 0 \implies
+u_{1,e} = u_{2,e}\)</span>.</p></li>
 </ul>
-<p>Thus, the equilibrium inputs are <span class="math inline">\(u_{1,e} = u_{2,e} = \dfrac{mg}{2}\)</span>.</p>
-<p><strong>3) Jacobian Linearisation:</strong> We compute the Jacobian matrices <span class="math inline">\(A = \dfrac{\partial f}{\partial x}\)</span> and <span class="math inline">\(B = \frac{\partial f}{\partial u}\)</span> evaluated at <span class="math inline">\((x_e, u_e)\)</span>.</p>
-<p>For matrix <span class="math inline">\(A\)</span>: Rows 1–3 are purely kinematic (<span class="math inline">\(\dot{p} = v\)</span>), resulting in an identity matrix in the top-right block. For rows 4–6, we check the derivatives with respect to the angle <span class="math inline">\(\theta\)</span> (state <span class="math inline">\(x_3\)</span>): <span class="math display">\[\begin{align*}
-        \frac{\partial \dot{x}_4}{\partial x_3} \bigg|_{eq} &amp;= -\frac{u_{1,e}+u_{2,e}}{m}\cos(x_{3,e}) = -\frac{mg}{m}(1) = -g, \\
-        \frac{\partial \dot{x}_5}{\partial x_3} \bigg|_{eq} &amp;= -\frac{u_{1,e}+u_{2,e}}{m}\sin(x_{3,e}) = -\frac{mg}{m}(0) = 0.
+<p>Thus, the equilibrium inputs are <span class="math inline">\(u_{1,e}
+= u_{2,e} = \dfrac{mg}{2}\)</span>.</p>
+<p><strong>3) Jacobian Linearisation:</strong> We compute the Jacobian
+matrices <span class="math inline">\(A = \dfrac{\partial f}{\partial
+x}\)</span> and <span class="math inline">\(B = \frac{\partial
+f}{\partial u}\)</span> evaluated at <span class="math inline">\((x_e,
+u_e)\)</span>.</p>
+<p>For matrix <span class="math inline">\(A\)</span>: Rows 1–3 are
+purely kinematic (<span class="math inline">\(\dot{p} = v\)</span>),
+resulting in an identity matrix in the top-right block. For rows 4–6, we
+check the derivatives with respect to the angle <span
+class="math inline">\(\theta\)</span> (state <span
+class="math inline">\(x_3\)</span>): <span
+class="math display">\[\begin{align*}
+        \frac{\partial \dot{x}_4}{\partial x_3} \bigg|_{eq} &amp;=
+-\frac{u_{1,e}+u_{2,e}}{m}\cos(x_{3,e}) = -\frac{mg}{m}(1) = -g, \\
+        \frac{\partial \dot{x}_5}{\partial x_3} \bigg|_{eq} &amp;=
+-\frac{u_{1,e}+u_{2,e}}{m}\sin(x_{3,e}) = -\frac{mg}{m}(0) = 0.
 \end{align*}\]</span></p>
-<p>For matrix <span class="math inline">\(B\)</span>: We compute derivatives of the accelerations with respect to inputs <span class="math inline">\(u_1\)</span> and <span class="math inline">\(u_2\)</span>: <span class="math display">\[\begin{align*}
-        \frac{\partial \dot{x}_4}{\partial u} \bigg|_{eq} &amp;= -\frac{1}{m}\sin(x_{3,e}) = 0, \\
-        \frac{\partial \dot{x}_5}{\partial u} \bigg|_{eq} &amp;= \frac{1}{m}\cos(x_{3,e}) = \frac{1}{m}.
-\end{align*}\]</span> The angular acceleration <span class="math inline">\(\dot{x}_6\)</span> remains linear in <span class="math inline">\(u\)</span>, with coefficients <span class="math inline">\(\mp \frac{\ell}{2J}\)</span>.</p>
-<p><strong>4) Final State-Space Model:</strong> Substituting these values, we obtain the linearized model <span class="math inline">\(\dot{\tilde{x}} = A \tilde{x} + B \tilde{u}\)</span>: <span class="math display">\[A = 
+<p>For matrix <span class="math inline">\(B\)</span>: We compute
+derivatives of the accelerations with respect to inputs <span
+class="math inline">\(u_1\)</span> and <span
+class="math inline">\(u_2\)</span>: <span
+class="math display">\[\begin{align*}
+        \frac{\partial \dot{x}_4}{\partial u} \bigg|_{eq} &amp;=
+-\frac{1}{m}\sin(x_{3,e}) = 0, \\
+        \frac{\partial \dot{x}_5}{\partial u} \bigg|_{eq} &amp;=
+\frac{1}{m}\cos(x_{3,e}) = \frac{1}{m}.
+\end{align*}\]</span> The angular acceleration <span
+class="math inline">\(\dot{x}_6\)</span> remains linear in <span
+class="math inline">\(u\)</span>, with coefficients <span
+class="math inline">\(\mp \frac{\ell}{2J}\)</span>.</p>
+<p><strong>4) Final State-Space Model:</strong> Substituting these
+values, we obtain the linearised model <span
+class="math inline">\(\dot{\tilde{x}} = A \tilde{x} + B
+\tilde{u}\)</span>: <span class="math display">\[A =
     \begin{bmatrix}
         0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 \\
         0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 \\
@@ -375,7 +743,7 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
         0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0
     \end{bmatrix},
     \quad
-    B = 
+    B =
     \begin{bmatrix}
         0 &amp; 0 \\
         0 &amp; 0 \\
@@ -383,16 +751,36 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
         0 &amp; 0 \\
         \dfrac{1}{m} &amp; \dfrac{1}{m} \\[4pt]
         -\dfrac{\ell}{2J} &amp; \dfrac{\ell}{2J}
-    \end{bmatrix}.\]</span> where <span class="math inline">\(\tilde{x} = x - x_e\)</span> and <span class="math inline">\(\tilde{u} = u - u_e\)</span>.</p>
+    \end{bmatrix}.\]</span> where <span class="math inline">\(\tilde{x}
+= x - x_e\)</span> and <span class="math inline">\(\tilde{u} = u -
+u_e\)</span>.</p>
 </div>
-<h2 id="obtaining-dt-realisation-of-ct-lti-state-space-systems">Obtaining DT Realisation of CT LTI State-space systems</h2>
-<p>For a homogeneous LTI system <span class="math inline">\(\dot{{x}} = {A}{x}\)</span>, the state at a future time <span class="math inline">\(t+\Delta t\)</span> is given by: <span class="math display">\[\begin{equation}
+<h2
+id="obtaining-dt-realisation-of-ct-lti-state-space-systems">Obtaining DT
+Realisation of CT LTI State-space systems</h2>
+<p>For a homogeneous LTI system <span class="math inline">\(\dot{{x}} =
+{A}{x}\)</span>, the state at a future time <span
+class="math inline">\(t+\Delta t\)</span> is given by: <span
+class="math display">\[\begin{equation}
     {x}(t+\Delta t) = e^{{A}\Delta t} {x}(t)
-\end{equation}\]</span> The term <span class="math inline">\(e^{{A}\Delta t}\)</span> is the matrix exponential. It is not computed element-wise; rather, it is defined by the infinite Taylor series expansion: <span class="math display">\[e^{{M}} = {I} + {M} + \frac{1}{2!}{M}^2 + \frac{1}{3!}{M}^3 + \cdots\]</span> In MATLAB, this is computed efficiently using the <code>expm()</code> function.</p>
-<h3 id="exact-discretisation-of-lti-systems">Exact Discretisation of LTI Systems</h3>
-<p>This analytical solution gives us a way to <em>exactly</em> discretise a linear system. If we choose a fixed time step <span class="math inline">\(h = \Delta t\)</span>, the discrete-time dynamics are: <span class="math display">\[\begin{equation}
+\end{equation}\]</span> The term <span
+class="math inline">\(e^{{A}\Delta t}\)</span> is the matrix
+exponential. It is not computed element-wise; rather, it is defined by
+the infinite Taylor series expansion: <span
+class="math display">\[e^{{M}} = {I} + {M} + \frac{1}{2!}{M}^2 +
+\frac{1}{3!}{M}^3 + \cdots\]</span> In MATLAB, this is computed
+efficiently using the <code>expm()</code> function.</p>
+<h3 id="exact-discretisation-of-lti-systems">Exact Discretisation of LTI
+Systems</h3>
+<p>This analytical solution gives us a way to <em>exactly</em>
+discretise a linear system. If we choose a fixed time step <span
+class="math inline">\(h = \Delta t\)</span>, the discrete-time dynamics
+are: <span class="math display">\[\begin{equation}
     {x}_{k+1} = {A}_d {x}_k \quad \text{where} \quad {A}_d = e^{{A}h}
-\end{equation}\]</span> This is fundamentally different from numerical integrators like Euler or RK4, which are approximations. For LTI systems, the matrix exponential provides the exact transition matrix <span class="math inline">\({A}_d\)</span>.</p>
+\end{equation}\]</span> This is fundamentally different from numerical
+integrators like Euler or RK4, which are approximations. For LTI
+systems, the matrix exponential provides the exact transition matrix
+<span class="math inline">\({A}_d\)</span>.</p>
 <table>
 <caption>Comparison of solving linear vs. nonlinear ODEs.</caption>
 <thead>
@@ -403,188 +791,476 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.\]</span></p>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><span class="math inline">\(\dot{{x}} = {A}{x}\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(\dot{{x}} = {f}({x})\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dot{{x}} =
+{A}{x}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dot{{x}} =
+{f}({x})\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">Can be solved exactly in closed form.</td>
-<td style="text-align: left;">Almost never have closed-form solutions.</td>
+<td style="text-align: left;">Almost never have closed-form
+solutions.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Discretised exactly using <span class="math inline">\(e^{{A}h}\)</span>.</td>
-<td style="text-align: left;">Discretised approximately using numerical</td>
+<td style="text-align: left;">Discretised exactly using <span
+class="math inline">\(e^{{A}h}\)</span>.</td>
+<td style="text-align: left;">Discretised approximately using
+numerical</td>
 </tr>
 <tr>
 <td style="text-align: left;"></td>
-<td style="text-align: left;">integrators (Euler, RK4, ODE45, etc.).</td>
+<td style="text-align: left;">integrators (Euler, RK4, ODE45,
+etc.).</td>
 </tr>
 </tbody>
 </table>
-<h2 id="discretisation-of-forced-linear-systems">Discretisation of Forced Linear Systems</h2>
-<p>How do we discretise a forced system <span class="math inline">\(\dot{{x}} = {A}{x} + {B}{u}\)</span>? The matrix exponential only applies to homogeneous systems (of the form <span class="math inline">\(\dot{{z}} = {T}{z}\)</span>). We can use a clever trick: augment the state to absorb the input and then apply the matrix exponential.</p>
-<p>First, we must assume something about how the control input <span class="math inline">\({u}(t)\)</span> behaves <em>between</em> discrete time steps. The most common assumption is a <em>Zero-Order Hold (ZOH)</em>, which means the control input is held constant over each time step: <span class="math display">\[{u}(t) = {u}_k \quad \text{for} \quad t \in [t_k, t_{k+1})\]</span> This is equivalent to stating that the derivative of the input is zero during the interval: <span class="math inline">\(\dot{{u}} = {0}\)</span>.</p>
-<p>With the ZOH assumption, we can create an augmented state vector <span class="math inline">\({z} = [{x}^T, {u}^T]^T\)</span>. The dynamics of this new state are: <span class="math display">\[\dot{{z}} = \begin{bmatrix} \dot{{x}} \\ \dot{{u}} \end{bmatrix} = \begin{bmatrix} {A}{x} + {B}{u} \\ {0} \end{bmatrix} = \underbrace{\begin{bmatrix} {A} &amp; {B} \\ {0} &amp; {0} \end{bmatrix}}_{{T}} \begin{bmatrix} {x} \\ {u} \end{bmatrix} = {T}{z}\]</span> We now have a larger, but homogeneous, linear system. We can apply the matrix exponential to find its exact discrete-time solution: <span class="math display">\[{z}_{k+1} = e^{{T}h} {z}_k \implies \begin{bmatrix} {x}_{k+1} \\ {u}_{k+1} \end{bmatrix} = e^{\begin{bmatrix} {A} &amp; {B} \\ {0} &amp; {0} \end{bmatrix}h} \begin{bmatrix} {x}_k \\ {u}_k \end{bmatrix}\]</span> The matrix exponential of this block matrix has a special structure that gives us our final discrete-time system: <span class="math display">\[e^{{T}h} = \begin{bmatrix} {A}_d &amp; {B}_d \\ {0} &amp; {I} \end{bmatrix}\]</span> Expanding the equation for <span class="math inline">\({x}_{k+1}\)</span> gives the standard discrete-time form: <span class="math display">\[\begin{equation}
+<h2 id="discretisation-of-forced-linear-systems">Discretisation of
+Forced Linear Systems</h2>
+<p>How do we discretise a forced system <span
+class="math inline">\(\dot{{x}} = {A}{x} + {B}{u}\)</span>? The matrix
+exponential only applies to homogeneous systems (of the form <span
+class="math inline">\(\dot{{z}} = {T}{z}\)</span>). We can use a clever
+trick: augment the state to absorb the input and then apply the matrix
+exponential.</p>
+<p>First, we must assume something about how the control input <span
+class="math inline">\({u}(t)\)</span> behaves <em>between</em> discrete
+time steps. The most common assumption is a <em>Zero-Order Hold
+(ZOH)</em>, which means the control input is held constant over each
+time step: <span class="math display">\[{u}(t) = {u}_k \quad \text{for}
+\quad t \in [t_k, t_{k+1})\]</span> This is equivalent to stating that
+the derivative of the input is zero during the interval: <span
+class="math inline">\(\dot{{u}} = {0}\)</span>.</p>
+<p>With the ZOH assumption, we can create an augmented state vector
+<span class="math inline">\({z} = [{x}^T, {u}^T]^T\)</span>. The
+dynamics of this new state are: <span class="math display">\[\dot{{z}} =
+\begin{bmatrix} \dot{{x}} \\ \dot{{u}} \end{bmatrix} = \begin{bmatrix}
+{A}{x} + {B}{u} \\ {0} \end{bmatrix} = \underbrace{\begin{bmatrix} {A}
+&amp; {B} \\ {0} &amp; {0} \end{bmatrix}}_{{T}} \begin{bmatrix} {x} \\
+{u} \end{bmatrix} = {T}{z}\]</span> We now have a larger, but
+homogeneous, linear system. We can apply the matrix exponential to find
+its exact discrete-time solution: <span class="math display">\[{z}_{k+1}
+= e^{{T}h} {z}_k \implies \begin{bmatrix} {x}_{k+1} \\ {u}_{k+1}
+\end{bmatrix} = e^{\begin{bmatrix} {A} &amp; {B} \\ {0} &amp; {0}
+\end{bmatrix}h} \begin{bmatrix} {x}_k \\ {u}_k \end{bmatrix}\]</span>
+The matrix exponential of this block matrix has a special structure that
+gives us our final discrete-time system: <span
+class="math display">\[e^{{T}h} = \begin{bmatrix} {A}_d &amp; {B}_d \\
+{0} &amp; {I} \end{bmatrix}\]</span> Expanding the equation for <span
+class="math inline">\({x}_{k+1}\)</span> gives the standard
+discrete-time form: <span class="math display">\[\begin{equation}
 \label{eqn:stateEquation}
     {x}_{k+1} = {A}_d {x}_k + {B}_d {u}_k
 \end{equation}\]</span></p>
-<pre id="lst:matlab_zoh" class="matlab" data-language="Matlab" data-caption="MATLAB code to perform ZOH discretization of a forced LTI system." data-label="lst:matlab_zoh"><code>    A = [0, 1; -5, -2]; % Example A matrix
-    B = [0; 1];         % Example B matrix
-    h = 0.1;            % Time step
-    
-    n = size(A, 1); % Number of states
-    m = size(B, 2); % Number of inputs
-    
-    % Form the augmented matrix T
-    T = [A, B; 
-          zeros(m, n), zeros(m, m)];
-    
-    % Compute the matrix exponential of T*h
-    M = expm(T * h);
-    
-    % Extract the discrete-time matrices Ad and Bd
-    Ad = M(1:n, 1:n);
-    Bd = M(1:n, n+1:end);
-    
-    disp(&#39;Ad = &#39;); disp(Ad);
-    disp(&#39;Bd = &#39;); disp(Bd);</code></pre>
-<h2 id="numerical-discretisation-of-nonlinear-systems">Numerical Discretisation of Nonlinear Systems</h2>
-<p>In the previous sections, we established that Linear Time-Invariant (LTI) systems can be discretised <em>exactly</em> using the matrix exponential (<span class="math inline">\(e^{Ah}\)</span>). However, the majority of physical systems—such as robotic arms, chemical reactors, and aerial vehicles—are inherently nonlinear: <span class="math display">\[\dot{x}(t) = f(x(t), u(t)).\]</span> For these systems, a closed-form solution for <span class="math inline">\(x(t)\)</span> rarely exists. To implement MPC, or to simulate these systems on a computer, we must approximate the continuous-time evolution using numerical integration methods.</p>
-<p>In digital control, we typically assume a Zero-Order Hold (ZOH) on the input, meaning the control input is held constant over the sampling interval <span class="math inline">\(h\)</span>: <span class="math display">\[u(t) = u_k \quad \text{for} \quad t \in [t_k, t_{k+1}).\]</span></p>
+<div class="sourceCode" id="lst:matlab_zoh" data-language="Matlab"
+data-caption="MATLAB code to perform ZOH discretization of a forced LTI system."
+data-label="lst:matlab_zoh"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:matlab_zoh-1"><a href="#lst:matlab_zoh-1" aria-hidden="true" tabindex="-1"></a>    <span class="va">A</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">,</span> <span class="fl">1</span><span class="op">;</span> <span class="op">-</span><span class="fl">5</span><span class="op">,</span> <span class="op">-</span><span class="fl">2</span>]<span class="op">;</span> <span class="co">% Example A matrix</span></span>
+<span id="lst:matlab_zoh-2"><a href="#lst:matlab_zoh-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">B</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span>         <span class="co">% Example B matrix</span></span>
+<span id="lst:matlab_zoh-3"><a href="#lst:matlab_zoh-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">h</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>            <span class="co">% Time step</span></span>
+<span id="lst:matlab_zoh-4"><a href="#lst:matlab_zoh-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:matlab_zoh-5"><a href="#lst:matlab_zoh-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">n</span> <span class="op">=</span> <span class="va">size</span>(<span class="va">A</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span> <span class="co">% Number of states</span></span>
+<span id="lst:matlab_zoh-6"><a href="#lst:matlab_zoh-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">m</span> <span class="op">=</span> <span class="va">size</span>(<span class="va">B</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> <span class="co">% Number of inputs</span></span>
+<span id="lst:matlab_zoh-7"><a href="#lst:matlab_zoh-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:matlab_zoh-8"><a href="#lst:matlab_zoh-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Form the augmented matrix T</span></span>
+<span id="lst:matlab_zoh-9"><a href="#lst:matlab_zoh-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">T</span> <span class="op">=</span> [<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">;</span> </span>
+<span id="lst:matlab_zoh-10"><a href="#lst:matlab_zoh-10" aria-hidden="true" tabindex="-1"></a>          <span class="va">zeros</span>(<span class="va">m</span><span class="op">,</span> <span class="va">n</span>)<span class="op">,</span> <span class="va">zeros</span>(<span class="va">m</span><span class="op">,</span> <span class="va">m</span>)]<span class="op">;</span></span>
+<span id="lst:matlab_zoh-11"><a href="#lst:matlab_zoh-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:matlab_zoh-12"><a href="#lst:matlab_zoh-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Compute the matrix exponential of T*h</span></span>
+<span id="lst:matlab_zoh-13"><a href="#lst:matlab_zoh-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">M</span> <span class="op">=</span> <span class="va">expm</span>(<span class="va">T</span> <span class="op">*</span> <span class="va">h</span>)<span class="op">;</span></span>
+<span id="lst:matlab_zoh-14"><a href="#lst:matlab_zoh-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:matlab_zoh-15"><a href="#lst:matlab_zoh-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Extract the discrete-time matrices Ad and Bd</span></span>
+<span id="lst:matlab_zoh-16"><a href="#lst:matlab_zoh-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ad</span> <span class="op">=</span> <span class="va">M</span>(<span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">,</span> <span class="fl">1</span><span class="op">:</span><span class="va">n</span>)<span class="op">;</span></span>
+<span id="lst:matlab_zoh-17"><a href="#lst:matlab_zoh-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">Bd</span> <span class="op">=</span> <span class="va">M</span>(<span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">,</span> <span class="va">n</span><span class="op">+</span><span class="fl">1</span><span class="op">:</span><span class="kw">end</span>)<span class="op">;</span></span>
+<span id="lst:matlab_zoh-18"><a href="#lst:matlab_zoh-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:matlab_zoh-19"><a href="#lst:matlab_zoh-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Ad = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Ad</span>)<span class="op">;</span></span>
+<span id="lst:matlab_zoh-20"><a href="#lst:matlab_zoh-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Bd = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Bd</span>)<span class="op">;</span></span></code></pre></div>
+<h2 id="numerical-discretisation-of-nonlinear-systems">Numerical
+Discretisation of Nonlinear Systems</h2>
+<p>In the previous sections, we established that Linear Time-Invariant
+(LTI) systems can be discretised <em>exactly</em> using the matrix
+exponential (<span class="math inline">\(e^{Ah}\)</span>). However, the
+majority of physical systems—such as robotic arms, chemical reactors,
+and aerial vehicles—are inherently nonlinear: <span
+class="math display">\[\dot{x}(t) = f(x(t), u(t)).\]</span> For these
+systems, a closed-form solution for <span
+class="math inline">\(x(t)\)</span> rarely exists. To implement MPC, or
+to simulate these systems on a computer, we must approximate the
+continuous-time evolution using numerical integration methods.</p>
+<p>In digital control, we typically assume a Zero-Order Hold (ZOH) on
+the input, meaning the control input is held constant over the sampling
+interval <span class="math inline">\(h\)</span>: <span
+class="math display">\[u(t) = u_k \quad \text{for} \quad t \in [t_k,
+t_{k+1}).\]</span></p>
 <h3 id="forward-euler-method">Forward Euler Method</h3>
-<p>The simplest numerical approach is the Forward Euler method, which approximates the derivative as a constant slope evaluated at the beginning of the interval. It is derived from the first-order truncation of the Taylor series: <span class="math display">\[\begin{equation}
+<p>The simplest numerical approach is the Forward Euler method, which
+approximates the derivative as a constant slope evaluated at the
+beginning of the interval. It is derived from the first-order truncation
+of the Taylor series: <span class="math display">\[\begin{equation}
     x_{k+1} = x_k + h \cdot f(x_k, u_k).
 \end{equation}\]</span></p>
-<p>While Euler’s method is algebraically simple and easy to differentiate (which is useful for optimization gradients), it suffers from significant drawbacks.</p>
+<p>While Euler’s method is algebraically simple and easy to
+differentiate (which is useful for optimization gradients), it suffers
+from significant drawbacks.</p>
 <div class="alertbox">
-<p><span>Warning: Avoid Euler’s Method</span> Forward Euler is a first-order method, meaning the global error scales linearly with the step size (<span class="math inline">\(\mathcal{O}(h)\)</span>). It is notoriously inaccurate and numerically unstable for <em>stiff</em> systems (systems with fast dynamics).</p>
-<p>Using Euler’s method can introduce artificial energy into the simulation, causing stable physical systems to appear unstable (blow up) unless the time step <span class="math inline">\(h\)</span> is chosen to be infinitesimally small. <span>For this reason, Forward Euler should generally be avoided for accurate simulation of physical plants.</span></p>
+<p><span>Warning: Avoid Euler’s Method</span> Forward Euler is a
+first-order method, meaning the global error scales linearly with the
+step size (<span class="math inline">\(\mathcal{O}(h)\)</span>). It is
+notoriously inaccurate and numerically unstable for <em>stiff</em>
+systems (systems with fast dynamics).</p>
+<p>Using Euler’s method can introduce artificial energy into the
+simulation, causing stable physical systems to appear unstable (blow up)
+unless the time step <span class="math inline">\(h\)</span> is chosen to
+be infinitesimally small. <span>For this reason, Forward Euler should
+generally be avoided for accurate simulation of physical
+plants.</span></p>
 </div>
 <h3 id="rungekutta-4-rk4-method">Runge–Kutta 4 (RK4) Method</h3>
-<p>The standard workhorse for engineering simulation is the 4th-order Runge–Kutta (RK4) method. Rather than relying on a single slope calculation, RK4 takes a weighted average of four slopes calculated at different points within the time step.</p>
-<p>Given the current state <span class="math inline">\(x_k\)</span>, input <span class="math inline">\(u_k\)</span>, and time step <span class="math inline">\(h\)</span>, the update is calculated as follows: <span class="math display">\[\begin{align*}
+<p>The standard workhorse for engineering simulation is the 4th-order
+Runge–Kutta (RK4) method. Rather than relying on a single slope
+calculation, RK4 takes a weighted average of four slopes calculated at
+different points within the time step.</p>
+<p>Given the current state <span class="math inline">\(x_k\)</span>,
+input <span class="math inline">\(u_k\)</span>, and time step <span
+class="math inline">\(h\)</span>, the update is calculated as follows:
+<span class="math display">\[\begin{align*}
     k_1 &amp;= f(x_k, u_k) \nonumber \\
     k_2 &amp;= f\left(x_k + \frac{h}{2} k_1, u_k\right) \nonumber \\
     k_3 &amp;= f\left(x_k + \frac{h}{2} k_2, u_k\right) \nonumber \\
     k_4 &amp;= f(x_k + h k_3, u_k) \nonumber \\
     x_{k+1} &amp;= x_k + \frac{h}{6} (k_1 + 2k_2 + 2k_3 + k_4).
-\end{align*}\]</span> The RK4 method has a global error of <span class="math inline">\(\mathcal{O}(h^4)\)</span>, providing a significantly higher degree of accuracy and stability than Euler’s method for the same time step.</p>
+\end{align*}\]</span> The RK4 method has a global error of <span
+class="math inline">\(\mathcal{O}(h^4)\)</span>, providing a
+significantly higher degree of accuracy and stability than Euler’s
+method for the same time step.</p>
 <div class="examplebox">
-<p><span>MATLAB Implementation: RK4 Integrator</span> A robust implementation of a single RK4 step in MATLAB for a generic nonlinear system:</p>
-<pre class="matlab" data-language="Matlab"><code>function x_next = rk4_step(f_dynamics, x_curr, u_curr, h)
-            % f_dynamics: Function handle @(x,u) ...
-            % x_curr:     Current state vector [n x 1]
-            % u_curr:     Current input vector [m x 1]
-            % h:          Time step (dt)
-        
-            k1 = f_dynamics(x_curr, u_curr);
-            k2 = f_dynamics(x_curr + 0.5*h*k1, u_curr);
-            k3 = f_dynamics(x_curr + 0.5*h*k2, u_curr);
-            k4 = f_dynamics(x_curr + h*k3, u_curr);
-        
-            x_next = x_curr + (h/6)*(k1 + 2*k2 + 2*k3 + k4);
-        end</code></pre>
+<p><span>MATLAB Implementation: RK4 Integrator</span> A robust
+implementation of a single RK4 step in MATLAB for a generic nonlinear
+system:</p>
+<div class="sourceCode" id="cb1" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">x_next</span> <span class="op">=</span> <span class="va">rk4_step</span>(<span class="va">f_dynamics</span><span class="op">,</span> <span class="va">x_curr</span><span class="op">,</span> <span class="va">u_curr</span><span class="op">,</span> <span class="va">h</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>            <span class="co">% f_dynamics: Function handle @(x,u) ...</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="co">% x_curr:     Current state vector [n x 1]</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="co">% u_curr:     Current input vector [m x 1]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            <span class="co">% h:          Time step (dt)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">k1</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">k2</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">*</span><span class="va">k1</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">k3</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">*</span><span class="va">k2</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">k4</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="va">h</span><span class="op">*</span><span class="va">k3</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">x_next</span> <span class="op">=</span> <span class="va">x_curr</span> <span class="op">+</span> (<span class="va">h</span><span class="op">/</span><span class="fl">6</span>)<span class="op">*</span>(<span class="va">k1</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k2</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k3</span> <span class="op">+</span> <span class="va">k4</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span></code></pre></div>
 </div>
 <div class="examplebox">
-<p><span>Comparison of Numerical Integrators: The Harmonic Oscillator</span> <strong>System Description</strong><br />
-Consider a simple undamped mass-spring system (harmonic oscillator) with mass <span class="math inline">\(m=1\)</span> and spring constant <span class="math inline">\(k=1\)</span>. The equation of motion is: <span class="math display">\[\ddot{p}(t) + p(t) = 0\]</span> We define the state vector <span class="math inline">\(x = [x_1, x_2]^\top = [p, \dot{p}]^\top\)</span>. The continuous-time dynamics <span class="math inline">\(\dot{x} = f(x)\)</span> are: <span class="math display">\[\frac{d}{dt} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} 
-    = 
-    \begin{bmatrix} x_2 \\ -x_1 \end{bmatrix}.\]</span> The exact analytical solution for an initial condition <span class="math inline">\(x_0 = [1, 0]^\top\)</span> is a perfect sinusoid, <span class="math inline">\(x_1(t) = \cos(t)\)</span>, which represents a circle in the phase plane (energy is conserved).</p>
+<p><span>Comparison of Numerical Integrators: The Harmonic
+Oscillator</span> <strong>System Description</strong><br />
+Consider a simple undamped mass-spring system (harmonic oscillator) with
+mass <span class="math inline">\(m=1\)</span> and spring constant <span
+class="math inline">\(k=1\)</span>. The equation of motion is: <span
+class="math display">\[\ddot{p}(t) + p(t) = 0\]</span> We define the
+state vector <span class="math inline">\(x = [x_1, x_2]^\top = [p,
+\dot{p}]^\top\)</span>. The continuous-time dynamics <span
+class="math inline">\(\dot{x} = f(x)\)</span> are: <span
+class="math display">\[\frac{d}{dt} \begin{bmatrix} x_1 \\ x_2
+\end{bmatrix}
+    =
+    \begin{bmatrix} x_2 \\ -x_1 \end{bmatrix}.\]</span> The exact
+analytical solution for an initial condition <span
+class="math inline">\(x_0 = [1, 0]^\top\)</span> is a perfect sinusoid,
+<span class="math inline">\(x_1(t) = \cos(t)\)</span>, which represents
+a circle in the phase plane (energy is conserved).</p>
 <p><strong>1. Forward Euler Discretisation</strong><br />
-Applying the Euler update law <span class="math inline">\(x_{k+1} = x_k + h f(x_k)\)</span> yields: <span class="math display">\[\begin{align*}
+Applying the Euler update law <span class="math inline">\(x_{k+1} = x_k
++ h f(x_k)\)</span> yields: <span class="math display">\[\begin{align*}
         x_{1, k+1} &amp;= x_{1,k} + h \cdot x_{2,k} \\
         x_{2, k+1} &amp;= x_{2,k} - h \cdot x_{1,k}
-\end{align*}\]</span> Notice that the new state depends linearly on the current slope.</p>
+\end{align*}\]</span> Notice that the new state depends linearly on the
+current slope.</p>
 <p><strong>2. Runge–Kutta 4 (RK4) Discretisation</strong><br />
-Applying the RK4 method requires four evaluations of the dynamics function <span class="math inline">\(f(x)\)</span> per step: <span class="math display">\[\begin{align*}
+Applying the RK4 method requires four evaluations of the dynamics
+function <span class="math inline">\(f(x)\)</span> per step: <span
+class="math display">\[\begin{align*}
         k_1 &amp;= f(x_k) \\
         k_2 &amp;= f(x_k + 0.5 h k_1) \\
         k_3 &amp;= f(x_k + 0.5 h k_2) \\
         k_4 &amp;= f(x_k + h k_3)
-\end{align*}\]</span> <span class="math display">\[x_{k+1} = x_k + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4).\]</span></p>
+\end{align*}\]</span> <span class="math display">\[x_{k+1} = x_k +
+\frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4).\]</span></p>
 <p><strong>Simulation Results</strong><br />
-Figure <a href="#fig:integrator_comparison" data-reference-type="ref" data-reference="fig:integrator_comparison">1.1</a> compares these two methods against the exact solution across different sampling times <span class="math inline">\(h\)</span>.</p>
-<p>It can be observed that the <strong>Forward Euler</strong> method is numerically unstable for every selection of sampling time <span class="math inline">\(h\)</span>; it introduces artificial energy into the system, causing the amplitude to grow unbounded (spiralling out) as time progresses. In contrast, the <strong>RK4</strong> method maintains high accuracy and preserves stability even at larger time steps.</p>
+Figure <a href="#fig:integrator_comparison" data-reference-type="ref"
+data-reference="fig:integrator_comparison">1.1</a> compares these two
+methods against the exact solution across different sampling times <span
+class="math inline">\(h\)</span>.</p>
+<p>It can be observed that the <strong>Forward Euler</strong> method is
+numerically unstable for every selection of sampling time <span
+class="math inline">\(h\)</span>; it introduces artificial energy into
+the system, causing the amplitude to grow unbounded (spiralling out) as
+time progresses. This occurs because the continuous-time eigenvalues are
+purely imaginary (<span class="math inline">\(\pm j\omega\)</span>),
+placing them outside the Forward Euler stability region for any <span
+class="math inline">\(h &gt; 0\)</span>. In contrast, the
+<strong>RK4</strong> method maintains high accuracy and preserves
+stability even at larger time steps.</p>
 </div>
 <figure id="fig:integrator_comparison">
-<img src="figures/RK4_vs_euler.png" style="width:100.0%" />
-<figcaption>Comparison of numerical integration accuracy for an undamped harmonic oscillator (<span class="math inline">\(\ddot{p} + p = 0\)</span>) across increasing time steps <span class="math inline">\(h \in \{0.05, 0.10, 0.25, 0.50\}\)</span> seconds. For this system (purely imaginary eigenvalues), the <strong>Forward Euler</strong> method (red dashed) is numerically unstable; it introduces artificial energy into the simulation, causing the amplitude to grow unbounded as time progresses. This error scales linearly with <span class="math inline">\(h\)</span>. In contrast, the <strong>Runge–Kutta 4 (RK4)</strong> method (blue dash-dot) maintains high fidelity to the <strong>Exact</strong> solution (solid gray), preserving stability even at the coarsest time step of <span class="math inline">\(h=0.50\)</span> s.</figcaption>
+<embed src="figures/RK4_vs_euler.png" style="width:100.0%" />
+<figcaption>Comparison of numerical integration accuracy for an undamped
+harmonic oscillator (<span class="math inline">\(\ddot{p} + p =
+0\)</span>) across increasing time steps <span class="math inline">\(h
+\in \{0.05, 0.10, 0.25, 0.50\}\)</span> seconds. For this system (purely
+imaginary eigenvalues), the <strong>Forward Euler</strong> method (red
+dashed) is numerically unstable; it introduces artificial energy into
+the simulation, causing the amplitude to grow unbounded as time
+progresses. This error scales linearly with <span
+class="math inline">\(h\)</span>. In contrast, the <strong>Runge–Kutta 4
+(RK4)</strong> method (blue dash-dot) maintains high fidelity to the
+<strong>Exact</strong> solution (solid gray), preserving stability even
+at the coarsest time step of <span
+class="math inline">\(h=0.50\)</span> s.</figcaption>
 </figure>
-<h2 id="stability-of-discrete-time-systems">Stability of Discrete-Time Systems</h2>
-<p>The dynamics of a discrete-time system can be viewed as an iterated map: <span class="math display">\[{x}_{k+1} = {f}_d({x}_k).\]</span> An equilibrium point <span class="math inline">\({x}^*\)</span> satisfies <span class="math inline">\({f}_d({x}^*) = {x}^*\)</span>. To analyze the local stability of <span class="math inline">\({x}^*\)</span>, we linearize the dynamics around this point: <span class="math display">\[\delta {x}_{k+1} \approx {A}_d \delta {x}_k,
-\quad \text{where} \quad 
-{A}_d = \left. \frac{\partial {f}_d}{\partial {x}} \right|_{{x} = {x}^*}.\]</span></p>
+<h2 id="stability-of-discrete-time-systems">Stability of Discrete-Time
+Systems</h2>
+<p>The dynamics of a discrete-time system can be viewed as an iterated
+map: <span class="math display">\[{x}_{k+1} = {f}_d({x}_k).\]</span> An
+equilibrium point <span class="math inline">\({x}^*\)</span> satisfies
+<span class="math inline">\({f}_d({x}^*) = {x}^*\)</span>. To analyse
+the local stability of <span class="math inline">\({x}^*\)</span>, we
+linearise the dynamics around this point: <span
+class="math display">\[\delta {x}_{k+1} \approx {A}_d \delta {x}_k,
+\quad \text{where} \quad
+{A}_d = \left. \frac{\partial {f}_d}{\partial {x}} \right|_{{x} =
+{x}^*}.\]</span></p>
 <div class="alertbox">
-<p><span>Discrete-Time Stability Condition</span> The equilibrium point <span class="math inline">\({x}^*\)</span> is (locally) asymptotically stable if and only if all eigenvalues of <span class="math inline">\({A}_d\)</span> lie strictly inside the unit circle in the complex plane: <span class="math display">\[\begin{equation*}
+<p><span>Discrete-Time Stability Condition</span> The equilibrium point
+<span class="math inline">\({x}^*\)</span> is (locally) asymptotically
+stable if and only if all eigenvalues of <span
+class="math inline">\({A}_d\)</span> lie strictly inside the unit circle
+in the complex plane: <span class="math display">\[\begin{equation*}
         |\lambda_i({A}_d)| &lt; 1 \quad \forall i.
 \end{equation*}\]</span></p>
 </div>
-<p>For linear systems <span class="math inline">\({x}_{k+1} = {A}_d {x}_k\)</span>, this condition is both necessary and sufficient.</p>
-<h3 id="geometric-interpretation-the-unit-circle">Geometric Interpretation: The Unit Circle</h3>
-<p>Unlike continuous-time systems, where stability is defined by the Left Half Plane (LHP), discrete-time stability is determined by the <strong>Unit Circle</strong>. The mapping between the two domains is governed by the relation <span class="math inline">\(z = e^{sh}\)</span>, where <span class="math inline">\(h\)</span> is the sampling time. Figure <a href="#fig:unit_circle" data-reference-type="ref" data-reference="fig:unit_circle">1.2</a> shows an unstable system having 4 eigenvalues.</p>
+<p>For linear systems <span class="math inline">\({x}_{k+1} = {A}_d
+{x}_k\)</span>, this condition is both necessary and sufficient.</p>
+<h3 id="geometric-interpretation-the-unit-circle">Geometric
+Interpretation: The Unit Circle</h3>
+<p>Unlike continuous-time systems, where stability is defined by the
+Left Half Plane (LHP), discrete-time stability is determined by the
+<strong>Unit Circle</strong>. The mapping between the two domains is
+governed by the relation <span class="math inline">\(z =
+e^{sh}\)</span>, where <span class="math inline">\(h\)</span> is the
+sampling time. Figure <a href="#fig:unit_circle"
+data-reference-type="ref" data-reference="fig:unit_circle">1.2</a> shows
+an unstable system having 4 eigenvalues.</p>
 <ul>
-<li><p><strong>Stable:</strong> Eigenvalues lie strictly <em>inside</em> the unit circle (<span class="math inline">\(|\lambda| &lt; 1\)</span>). The state vector decays to zero.</p></li>
-<li><p><strong>Unstable:</strong> At least one eigenvalue lies <em>outside</em> the unit circle (<span class="math inline">\(|\lambda| &gt; 1\)</span>). The state vector grows unbounded.</p></li>
-<li><p><strong>Marginally Stable:</strong> Eigenvalues lie <em>on</em> the unit circle (<span class="math inline">\(|\lambda| = 1\)</span>). The system may oscillate or remain constant, but does not decay.</p></li>
+<li><p><strong>Stable:</strong> Eigenvalues lie strictly <em>inside</em>
+the unit circle (<span class="math inline">\(|\lambda| &lt; 1\)</span>).
+The state vector decays to zero.</p></li>
+<li><p><strong>Unstable:</strong> At least one eigenvalue lies
+<em>outside</em> the unit circle (<span class="math inline">\(|\lambda|
+&gt; 1\)</span>). The state vector grows unbounded.</p></li>
+<li><p><strong>Marginally Stable:</strong> Eigenvalues lie <em>on</em>
+the unit circle (<span class="math inline">\(|\lambda| = 1\)</span>).
+The system may oscillate or remain constant, but does not
+decay.</p></li>
 </ul>
 <figure id="fig:unit_circle" data-latex-placement="h">
-<img src="figures/tikz_ch03_5.png" style="width:85.0%" />
-<figcaption>Stability in the Z-plane. For the system to be stable, all eigenvalues (poles) must reside within the shaded blue region. Blue eigenvalues are stable whereas red ones are unstable. Therefore the system having these eigenvalues is unstable.</figcaption>
+<img src="figures/tikz_ch03_5.png" style="width:45.0%" />
+<figcaption>Stability in the Z-plane. For the system to be stable, all
+eigenvalues (poles) must reside within the shaded blue region. Blue
+eigenvalues are stable whereas red ones are unstable. Therefore the
+system having these eigenvalues is unstable.</figcaption>
 </figure>
-<h3 id="lyapunov-stability-and-the-stein-equation">Lyapunov Stability and the Stein Equation</h3>
-<p>While eigenvalue analysis is useful for linear analysis, a more general approach—fundamental to optimal control—is the <strong>Lyapunov method</strong>. Instead of looking at roots of a polynomial, we look at the system’s "energy".</p>
-<p>For a linear discrete-time system <span class="math inline">\(x_{k+1} = A x_k\)</span>, let us define a quadratic energy candidate function: <span class="math display">\[\begin{equation}
+<h3 id="lyapunov-stability-and-the-stein-equation">Lyapunov Stability
+and the Stein Equation</h3>
+<p>While eigenvalue analysis is useful for linear analysis, a more
+general approach—fundamental to optimal control—is the <strong>Lyapunov
+method</strong>. Instead of looking at roots of a polynomial, we look at
+the system’s "energy".</p>
+<p>For a linear discrete-time system <span class="math inline">\(x_{k+1}
+= A x_k\)</span>, let us define a quadratic energy candidate function:
+<span class="math display">\[\begin{equation}
     V(x_k) = x_k^\top P x_k
-\end{equation}\]</span> where <span class="math inline">\(P\)</span> is a symmetric, positive definite matrix (<span class="math inline">\(P \succ 0\)</span>). For the system to be stable, this energy must decrease at every time step (<span class="math inline">\(V(x_{k+1}) &lt; V(x_k)\)</span>).</p>
-<p>Substituting the dynamics into the energy difference yields: <span class="math display">\[\begin{align*}
-    V(x_{k+1}) - V(x_k) &amp;= x_{k+1}^\top P x_{k+1} - x_k^\top P x_k \\
+\end{equation}\]</span> where <span class="math inline">\(P\)</span> is
+a symmetric, positive definite matrix (<span class="math inline">\(P
+\succ 0\)</span>). For the system to be stable, this energy must
+decrease at every time step (<span class="math inline">\(V(x_{k+1}) &lt;
+V(x_k)\)</span>).</p>
+<p>Substituting the dynamics into the energy difference yields: <span
+class="math display">\[\begin{align*}
+    V(x_{k+1}) - V(x_k) &amp;= x_{k+1}^\top P x_{k+1} - x_k^\top P x_k
+\\
     &amp;= (A x_k)^\top P (A x_k) - x_k^\top P x_k \\
     &amp;= x_k^\top (A^\top P A - P) x_k
-\end{align*}\]</span> For the energy to decrease strictly, the term in the brackets must be negative definite. This leads to the <strong>Discrete Lyapunov Equation</strong>, also known as the <em>Stein Equation</em>.</p>
+\end{align*}\]</span> For the energy to decrease strictly, the term in
+the brackets must be negative definite. This leads to the
+<strong>Discrete Lyapunov Equation</strong>, also known as the <em>Stein
+Equation</em>.</p>
 <div class="alertbox">
-<p><span>Lyapunov Stability Theorem</span> The discrete-time linear system <span class="math inline">\(x_{k+1} = A x_k\)</span> is asymptotically stable if and only if, for any given positive definite matrix <span class="math inline">\(Q \succ 0\)</span>, there exists a unique positive definite matrix <span class="math inline">\(P \succ 0\)</span> satisfying: <span class="math display">\[\begin{equation*}
+<p><span>Lyapunov Stability Theorem</span> The discrete-time linear
+system <span class="math inline">\(x_{k+1} = A x_k\)</span> is
+asymptotically stable if and only if, for any given positive definite
+matrix <span class="math inline">\(Q \succ 0\)</span>, there exists a
+unique positive definite matrix <span class="math inline">\(P \succ
+0\)</span> satisfying: <span class="math display">\[\begin{equation*}
         A^\top P A - P = -Q
 \end{equation*}\]</span></p>
 </div>
 <div class="notebox">
-<p><span>Connection to LQR</span> This equation is not just a stability check; it is the foundation of the Linear Quadratic Regulator. In LQR, we essentially look for a control law that shapes the matrix <span class="math inline">\(A_{cl} = (A-BK)\)</span> such that this energy-decrease condition is satisfied optimally.</p>
+<p><span>Connection to LQR</span> This equation is not just a stability
+check; it is the foundation of the Linear Quadratic Regulator. In LQR,
+we essentially look for a control law that shapes the matrix <span
+class="math inline">\(A_{cl} = (A-BK)\)</span> such that this
+energy-decrease condition is satisfied optimally.</p>
+</div>
+<div class="notebox">
+<p><span>Further reading</span> Standard references for state-space
+modelling and discretisation include <span class="citation"
+data-cites="Ogata2010"></span> and <span class="citation"
+data-cites="Franklin2015"></span>. The reader seeking a deeper treatment
+of continuous-to-discrete conversion methods is referred to these
+texts.</p>
 </div>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
-<li><p><strong>Transfer Function to State-Space Conversion.</strong> A system is described by the transfer function <span class="math display">\[G(s) = \frac{s + 3}{s^3 + 4s^2 + 6s + 4}.\]</span></p>
+<li><p><strong>Transfer Function to State-Space Conversion.</strong> A
+system is described by the transfer function <span
+class="math display">\[G(s) = \frac{s + 3}{s^3 + 4s^2 + 6s +
+4}.\]</span></p>
 <ol>
-<li><p>Convert <span class="math inline">\(G(s)\)</span> into a continuous-time state-space representation <span class="math inline">\(\dot{x} = Ax + Bu\)</span>, <span class="math inline">\(y = Cx + Du\)</span> using the controllable canonical form. Clearly state the matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span>.</p></li>
-<li><p>Verify that <span class="math inline">\(D = 0\)</span> and explain, in terms of the degrees of numerator and denominator, why this is the case.</p></li>
+<li><p>Convert <span class="math inline">\(G(s)\)</span> into a
+continuous-time state-space representation <span
+class="math inline">\(\dot{x} = Ax + Bu\)</span>, <span
+class="math inline">\(y = Cx + Du\)</span> using the controllable
+canonical form. Clearly state the matrices <span
+class="math inline">\(A\)</span>, <span
+class="math inline">\(B\)</span>, <span
+class="math inline">\(C\)</span>, and <span
+class="math inline">\(D\)</span>.</p></li>
+<li><p>Verify that <span class="math inline">\(D = 0\)</span> and
+explain, in terms of the degrees of numerator and denominator, why this
+is the case.</p></li>
 </ol></li>
-<li><p><strong>Matrix Exponential Computation.</strong> Consider the continuous-time system <span class="math inline">\(\dot{x} = Ax\)</span> with <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ 0 &amp; 0 \end{bmatrix}.\]</span></p>
+<li><p><strong>Matrix Exponential Computation.</strong> Consider the
+continuous-time system <span class="math inline">\(\dot{x} = Ax\)</span>
+with <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ 0
+&amp; 0 \end{bmatrix}.\]</span></p>
 <ol>
-<li><p>Using the Taylor series definition <span class="math inline">\(e^{M} = I + M + \frac{1}{2!}M^2 + \frac{1}{3!}M^3 + \cdots\)</span>, compute <span class="math inline">\(e^{Ah}\)</span> analytically by first evaluating <span class="math inline">\(A^2\)</span>, <span class="math inline">\(A^3\)</span>, etc.</p></li>
-<li><p>For the initial condition <span class="math inline">\(x(0) = [\,1 \;\; 2\,]^\top\)</span>, write the closed-form expression for <span class="math inline">\(x(t)\)</span>.</p></li>
-<li><p>Now let <span class="math inline">\(A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -3 \end{bmatrix}\)</span>. Compute <span class="math inline">\(e^{Ah}\)</span> and comment on how the diagonal structure simplifies the computation.</p></li>
+<li><p>Using the Taylor series definition <span
+class="math inline">\(e^{M} = I + M + \frac{1}{2!}M^2 + \frac{1}{3!}M^3
++ \cdots\)</span>, compute <span class="math inline">\(e^{Ah}\)</span>
+analytically by first evaluating <span
+class="math inline">\(A^2\)</span>, <span
+class="math inline">\(A^3\)</span>, etc.</p></li>
+<li><p>For the initial condition <span class="math inline">\(x(0) = [\,1
+\;\; 2\,]^\top\)</span>, write the closed-form expression for <span
+class="math inline">\(x(t)\)</span>.</p></li>
+<li><p>Now let <span class="math inline">\(A = \begin{bmatrix} -1 &amp;
+0 \\ 0 &amp; -3 \end{bmatrix}\)</span>. Compute <span
+class="math inline">\(e^{Ah}\)</span> and comment on how the diagonal
+structure simplifies the computation.</p></li>
 </ol></li>
-<li><p><strong>Zero-Order Hold Discretisation.</strong> A mass–spring–damper system with mass <span class="math inline">\(m = 1\,\text{kg}\)</span>, damping coefficient <span class="math inline">\(c = 2\,\text{Ns/m}\)</span>, and spring stiffness <span class="math inline">\(k = 5\,\text{N/m}\)</span> has the continuous-time state-space model <span class="math display">\[\dot{x} = \begin{bmatrix} 0 &amp; 1 \\ -5 &amp; -2 \end{bmatrix} x + \begin{bmatrix} 0 \\ 1 \end{bmatrix} u, \qquad y = \begin{bmatrix} 1 &amp; 0 \end{bmatrix} x.\]</span></p>
+<li><p><strong>Zero-Order Hold Discretisation.</strong> A
+mass–spring–damper system with mass <span class="math inline">\(m =
+1\,\text{kg}\)</span>, damping coefficient <span class="math inline">\(c
+= 2\,\text{Ns/m}\)</span>, and spring stiffness <span
+class="math inline">\(k = 5\,\text{N/m}\)</span> has the continuous-time
+state-space model <span class="math display">\[\dot{x} = \begin{bmatrix}
+0 &amp; 1 \\ -5 &amp; -2 \end{bmatrix} x + \begin{bmatrix} 0 \\ 1
+\end{bmatrix} u, \qquad y = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}
+x.\]</span></p>
 <ol>
-<li><p>Form the augmented matrix <span class="math inline">\(T = \begin{bmatrix} A &amp; B \\ 0 &amp; 0 \end{bmatrix}\)</span> and explain why computing <span class="math inline">\(e^{Th}\)</span> yields the exact discrete-time matrices <span class="math inline">\(A_d\)</span> and <span class="math inline">\(B_d\)</span> under a ZOH assumption.</p></li>
-<li><p>Using MATLAB (or by hand for bonus practice), compute <span class="math inline">\(A_d\)</span> and <span class="math inline">\(B_d\)</span> for a sampling time <span class="math inline">\(h = 0.1\,\text{s}\)</span>.</p></li>
-<li><p>Write the resulting discrete-time state-space model <span class="math inline">\(x_{k+1} = A_d x_k + B_d u_k\)</span> and the output equation <span class="math inline">\(y_k = C_d x_k\)</span>.</p></li>
+<li><p>Form the augmented matrix <span class="math inline">\(T =
+\begin{bmatrix} A &amp; B \\ 0 &amp; 0 \end{bmatrix}\)</span> and
+explain why computing <span class="math inline">\(e^{Th}\)</span> yields
+the exact discrete-time matrices <span
+class="math inline">\(A_d\)</span> and <span
+class="math inline">\(B_d\)</span> under a ZOH assumption.</p></li>
+<li><p>Using MATLAB (or by hand for bonus practice), compute <span
+class="math inline">\(A_d\)</span> and <span
+class="math inline">\(B_d\)</span> for a sampling time <span
+class="math inline">\(h = 0.1\,\text{s}\)</span>.</p></li>
+<li><p>Write the resulting discrete-time state-space model <span
+class="math inline">\(x_{k+1} = A_d x_k + B_d u_k\)</span> and the
+output equation <span class="math inline">\(y_k = C_d
+x_k\)</span>.</p></li>
 </ol></li>
-<li><p><strong>Deviation Variables and Linearisation.</strong> Consider the nonlinear system describing a continuously stirred tank reactor (CSTR): <span class="math display">\[\dot{x}_1 = -x_1 + D_a(1 - x_1)\exp\!\left(\frac{x_2}{1 + x_2/\gamma}\right), \qquad
-\dot{x}_2 = -(1+\beta)x_2 + D_a B(1 - x_1)\exp\!\left(\frac{x_2}{1 + x_2/\gamma}\right) + \beta\, u,\]</span> where <span class="math inline">\(x_1\)</span> is the dimensionless concentration, <span class="math inline">\(x_2\)</span> is the dimensionless temperature, <span class="math inline">\(u\)</span> is the coolant temperature, and <span class="math inline">\(D_a\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(\beta\)</span>, <span class="math inline">\(\gamma\)</span> are positive parameters.</p>
+<li><p><strong>Deviation Variables and Linearisation.</strong> Consider
+the nonlinear system describing a continuously stirred tank reactor
+(CSTR): <span class="math display">\[\dot{x}_1 = -x_1 + D_a(1 -
+x_1)\exp\!\left(\frac{x_2}{1 + x_2/\gamma}\right), \qquad
+\dot{x}_2 = -(1+\beta)x_2 + D_a B(1 - x_1)\exp\!\left(\frac{x_2}{1 +
+x_2/\gamma}\right) + \beta\, u,\]</span> where <span
+class="math inline">\(x_1\)</span> is the dimensionless concentration,
+<span class="math inline">\(x_2\)</span> is the dimensionless
+temperature, <span class="math inline">\(u\)</span> is the coolant
+temperature, and <span class="math inline">\(D_a\)</span>, <span
+class="math inline">\(B\)</span>, <span
+class="math inline">\(\beta\)</span>, <span
+class="math inline">\(\gamma\)</span> are positive parameters.</p>
 <ol>
-<li><p>Suppose an equilibrium <span class="math inline">\((x_{1,e},\, x_{2,e},\, u_e)\)</span> has been found numerically. Write the general expressions for the Jacobian matrices <span class="math inline">\(A = \dfrac{\partial f}{\partial x}\Big|_{(x_e, u_e)}\)</span> and <span class="math inline">\(B = \dfrac{\partial f}{\partial u}\Big|_{(x_e, u_e)}\)</span>.</p></li>
-<li><p>Define the deviation variables <span class="math inline">\(\tilde{x} = x - x_e\)</span> and <span class="math inline">\(\tilde{u} = u - u_e\)</span>, and write the linearised model <span class="math inline">\(\dot{\tilde{x}} = A\tilde{x} + B\tilde{u}\)</span>.</p></li>
-<li><p>Explain why the linearised model is only valid in a neighbourhood of <span class="math inline">\((x_e, u_e)\)</span> and what happens to its accuracy as <span class="math inline">\(\|\tilde{x}\|\)</span> and <span class="math inline">\(\|\tilde{u}\|\)</span> increase.</p></li>
+<li><p>Suppose an equilibrium <span class="math inline">\((x_{1,e},\,
+x_{2,e},\, u_e)\)</span> has been found numerically. Write the general
+expressions for the Jacobian matrices <span class="math inline">\(A =
+\dfrac{\partial f}{\partial x}\Big|_{(x_e, u_e)}\)</span> and <span
+class="math inline">\(B = \dfrac{\partial f}{\partial u}\Big|_{(x_e,
+u_e)}\)</span>.</p></li>
+<li><p>Define the deviation variables <span
+class="math inline">\(\tilde{x} = x - x_e\)</span> and <span
+class="math inline">\(\tilde{u} = u - u_e\)</span>, and write the
+linearised model <span class="math inline">\(\dot{\tilde{x}} =
+A\tilde{x} + B\tilde{u}\)</span>.</p></li>
+<li><p>Explain why the linearised model is only valid in a neighbourhood
+of <span class="math inline">\((x_e, u_e)\)</span> and what happens to
+its accuracy as <span class="math inline">\(\|\tilde{x}\|\)</span> and
+<span class="math inline">\(\|\tilde{u}\|\)</span> increase.</p></li>
 </ol></li>
-<li><p><strong>Eigenvalue Analysis for Stability.</strong> Consider the discrete-time system <span class="math inline">\(x_{k+1} = A_d x_k\)</span> with <span class="math display">\[A_d = \begin{bmatrix} 0.5 &amp; 0.3 \\ -0.2 &amp; 0.4 \end{bmatrix}.\]</span></p>
+<li><p><strong>Eigenvalue Analysis for Stability.</strong> Consider the
+discrete-time system <span class="math inline">\(x_{k+1} = A_d
+x_k\)</span> with <span class="math display">\[A_d = \begin{bmatrix} 0.5
+&amp; 0.3 \\ -0.2 &amp; 0.4 \end{bmatrix}.\]</span></p>
 <ol>
-<li><p>Compute the eigenvalues of <span class="math inline">\(A_d\)</span> by solving <span class="math inline">\(\det(A_d - \lambda I) = 0\)</span>.</p></li>
-<li><p>Determine whether the system is asymptotically stable by checking the discrete-time stability condition <span class="math inline">\(|\lambda_i(A_d)| &lt; 1\)</span> for all <span class="math inline">\(i\)</span>.</p></li>
-<li><p>Now consider the modified system matrix <span class="math inline">\(A_d&#39; = \begin{bmatrix} 0.8 &amp; 0.6 \\ -0.6 &amp; 0.8 \end{bmatrix}\)</span>. Compute the eigenvalues of <span class="math inline">\(A_d&#39;\)</span> and determine whether the system is stable, unstable, or marginally stable. Sketch the location of the eigenvalues relative to the unit circle in the <span class="math inline">\(z\)</span>-plane.</p></li>
+<li><p>Compute the eigenvalues of <span
+class="math inline">\(A_d\)</span> by solving <span
+class="math inline">\(\det(A_d - \lambda I) = 0\)</span>.</p></li>
+<li><p>Determine whether the system is asymptotically stable by checking
+the discrete-time stability condition <span
+class="math inline">\(|\lambda_i(A_d)| &lt; 1\)</span> for all <span
+class="math inline">\(i\)</span>.</p></li>
+<li><p>Now consider the modified system matrix <span
+class="math inline">\(A_d&#39; = \begin{bmatrix} 0.8 &amp; 0.6 \\ -0.6
+&amp; 0.8 \end{bmatrix}\)</span>. Compute the eigenvalues of <span
+class="math inline">\(A_d&#39;\)</span> and determine whether the system
+is stable, unstable, or marginally stable. Sketch the location of the
+eigenvalues relative to the unit circle in the <span
+class="math inline">\(z\)</span>-plane.</p></li>
 </ol></li>
-<li><p><strong>From Physics to Discrete-Time Model (Combined Exercise).</strong> An electrical circuit consists of a single resistor <span class="math inline">\(R\)</span> in series with an inductor <span class="math inline">\(L\)</span>, driven by a voltage source <span class="math inline">\(v_i(t)\)</span>. The current through the inductor is <span class="math inline">\(i_L(t)\)</span>.</p>
+<li><p><strong>From Physics to Discrete-Time Model (Combined
+Exercise).</strong> An electrical circuit consists of a single resistor
+<span class="math inline">\(R\)</span> in series with an inductor <span
+class="math inline">\(L\)</span>, driven by a voltage source <span
+class="math inline">\(v_i(t)\)</span>. The current through the inductor
+is <span class="math inline">\(i_L(t)\)</span>.</p>
 <ol>
-<li><p>Using Kirchhoff’s voltage law, derive the first-order differential equation governing <span class="math inline">\(i_L(t)\)</span>.</p></li>
-<li><p>Write the continuous-time state-space model with <span class="math inline">\(x = i_L\)</span> and <span class="math inline">\(u = v_i\)</span>, identifying the scalars <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span> (assume the output is the inductor current).</p></li>
-<li><p>Compute the exact ZOH discrete-time model <span class="math inline">\(x_{k+1} = A_d x_k + B_d u_k\)</span> analytically. <em>Hint:</em> For a scalar system, <span class="math inline">\(A_d = e^{Ah}\)</span> and <span class="math inline">\(B_d = \int_0^h e^{A\tau}\,d\tau \cdot B\)</span>.</p></li>
-<li><p>Compute the eigenvalue of <span class="math inline">\(A_d\)</span> and determine the condition on <span class="math inline">\(R\)</span>, <span class="math inline">\(L\)</span>, and <span class="math inline">\(h\)</span> for which the discrete-time system is stable.</p></li>
+<li><p>Using Kirchhoff’s voltage law, derive the first-order
+differential equation governing <span
+class="math inline">\(i_L(t)\)</span>.</p></li>
+<li><p>Write the continuous-time state-space model with <span
+class="math inline">\(x = i_L\)</span> and <span class="math inline">\(u
+= v_i\)</span>, identifying the scalars <span
+class="math inline">\(A\)</span>, <span
+class="math inline">\(B\)</span>, <span
+class="math inline">\(C\)</span>, and <span
+class="math inline">\(D\)</span> (assume the output is the inductor
+current).</p></li>
+<li><p>Compute the exact ZOH discrete-time model <span
+class="math inline">\(x_{k+1} = A_d x_k + B_d u_k\)</span> analytically.
+<em>Hint:</em> For a scalar system, <span class="math inline">\(A_d =
+e^{Ah}\)</span> and <span class="math inline">\(B_d = \int_0^h
+e^{A\tau}\,d\tau \cdot B\)</span>.</p></li>
+<li><p>Compute the eigenvalue of <span
+class="math inline">\(A_d\)</span> and determine the condition on <span
+class="math inline">\(R\)</span>, <span
+class="math inline">\(L\)</span>, and <span
+class="math inline">\(h\)</span> for which the discrete-time system is
+stable.</p></li>
 </ol></li>
 </ol>

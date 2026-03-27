@@ -1,207 +1,80 @@
-<h1 id="chap:conclusion">Course Conclusion and Further Topics<span class="math inline">\(^{(*)}\)</span></h1>
-<p>This chapter concludes the introduction to Model Predictive Control. We began with the <em>Linear Quadratic Regulator (LQR)</em>, deriving the optimal feedback gain for unconstrained systems. We then introduced <em>Model Predictive Control (MPC)</em> to explicitly handle physical constraints (actuator saturation and safety limits). Finally, we bridged the "reality gap" by incorporating <em>State Estimation</em> and <em>Disturbance Modelling</em>, creating an architecture capable of offset-free tracking in the presence of noise and uncertainty.</p>
-<p>The structure presented here—<strong>MPC + Estimator + Target Calculator</strong>—represents the standard architecture for modern industrial control. However, due to time constraints, we have focused on the <em>practical</em> application of these methods, necessarily omitting several advanced topics that define the forefront of control research. For students wishing to deepen their understanding, we outline the key areas and fundamental literature below.</p>
+<h1 id="chap:conclusion">Course Conclusion and Further Topics<span
+class="math inline">\(^{(*)}\)</span></h1>
+<p>The course progressed from the <em>Linear Quadratic Regulator
+(LQR)</em> through <em>Model Predictive Control (MPC)</em> with explicit
+constraint handling, to <em>State Estimation</em> and <em>Disturbance
+Modelling</em> for offset-free tracking in the presence of noise and
+uncertainty.</p>
+<p>The structure presented here—<strong>MPC + Estimator + Target
+Calculator</strong>—is the standard architecture for linear MPC in
+process control. We omitted several advanced topics; this chapter
+provides pointers for further study.</p>
 <h2 id="rigorous-stability-analysis">Rigorous Stability Analysis</h2>
-<p>Throughout this course, we relied on the <em>Terminal Cost</em> (<span class="math inline">\(x_N^\top P x_N\)</span>) to encourage stability. While effective in practice, this does not mathematically <em>guarantee</em> stability for constrained systems.</p>
-<p>Rigorous MPC theory relies on Lyapunov analysis. To prove stability, one must often include a <strong>Terminal Set Constraint</strong> (<span class="math inline">\(x_N \in \mathcal{X}_f\)</span>) in the optimisation. This forces the state to land in a <em>safe haven</em> (a Positive Invariant Set, meaning that once the trajectory enters the terminal set, it remains inside) at the end of the horizon, ensuring recursive feasibility.</p>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Mayne, D. Q., Rawlings, J. B., Rao, C. V., &amp; Scokaert, P. O. M. (2000). Survey: Constrained model predictive control: Stability and optimality. <em>Automatica</em>, 36(6), 789–814.</p></li>
-</ul>
+<p>In the basic MPC formulation without a terminal set constraint, the
+<em>Terminal Cost</em> (<span class="math inline">\(x_N^\top P
+x_N\)</span>) encourages stability but does not mathematically
+<em>guarantee</em> it for constrained systems. (Chapter <a
+href="#chap:linear_mpc" data-reference-type="ref"
+data-reference="chap:linear_mpc">[chap:linear_mpc]</a>, Section <a
+href="#sec:mpc_stability_theory" data-reference-type="ref"
+data-reference="sec:mpc_stability_theory">[sec:mpc_stability_theory]</a>
+provides the rigorous proof when the terminal set <em>is</em>
+included.)</p>
+<p>Rigorous MPC theory relies on Lyapunov analysis. To prove stability,
+one must often include a <strong>Terminal Set Constraint</strong> (<span
+class="math inline">\(x_N \in \mathcal{X}_f\)</span>) in the
+optimisation. This forces the state to land in a <em>safe haven</em> (a
+Positive Invariant Set, meaning that once the trajectory enters the
+terminal set, it remains inside) at the end of the horizon, ensuring
+recursive feasibility.</p>
+<p>The fundamental reference for this topic is Mayne et al. <span
+class="citation" data-cites="Mayne2000"></span>.</p>
 <h2 id="robust-mpc">Robust MPC</h2>
-<p>Robust MPC addresses the problem of guaranteeing constraint satisfaction when the system model is not perfect. The most practical framework is <strong>Tube MPC</strong>, which separates the control into a nominal trajectory planner and a feedback controller that keeps the real state within a bounded “tube” around the plan. This topic is developed in full detail — including the required set operations, constraint tightening, worked examples, and MATLAB implementations — in Chapter <a href="#chap:tube_mpc" data-reference-type="ref" data-reference="chap:tube_mpc">[chap:tube_mpc]</a>.</p>
+<p>Robust MPC, specifically the Tube MPC approach, is covered in detail
+in Chapter <a href="#chap:tube_mpc" data-reference-type="ref"
+data-reference="chap:tube_mpc">[chap:tube_mpc]</a>. The reader is
+referred there for the full development including Minkowski sums,
+Pontryagin differences, minimal robust positively invariant sets, and
+constraint tightening.</p>
 <h2 id="nonlinear-mpc-nmpc">Nonlinear MPC (NMPC)</h2>
-<p>In previous sections, we relied heavily on linearising the system dynamics (<span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>). While effective near an equilibrium point, this approach may fail for highly nonlinear systems, such as chemical reactors with Arrhenius kinetics or agile fighter jets performing aggressive manoeuvres.</p>
-<p><strong>Nonlinear MPC</strong> <span class="citation" data-cites="Grune2017"></span> addresses this by solving the optimisation problem using the full nonlinear dynamic model directly. The general <span class="math inline">\(N\)</span>-step finite horizon optimal control problem (OCP) solved at each time step <span class="math inline">\(t\)</span> is formulated as:</p>
-<p><span class="math display">\[\begin{align}
-        \min_{{u}, {x}} \quad &amp; J = \sum_{k=0}^{N-1} \ell(x_k, u_k) + V_f(x_N),&amp; \nonumber\\
-        \text{subject to:} \quad &amp; x_{0} = x(t),&amp; \nonumber\\
-        &amp; x_{k+1} = f(x_k, u_k), \quad &amp;k=0,\dots,N-1, \label{eq:nl_dynamics} \\
-        &amp; h(x_k, u_k) \leq 0, \quad &amp;k=0,\dots,N-1, \nonumber
-\end{align}\]</span></p>
-<p>where <span class="math inline">\(\ell(\cdot)\)</span> is the stage cost, <span class="math inline">\(V_f(\cdot)\)</span> is the terminal cost, and <span class="math inline">\(f(x_k, u_k)\)</span> represents the nonlinear discretised system dynamics (often obtained via numerical integration, such as RK4).</p>
-<h3 class="unnumbered" id="challenges-non-convexity-and-computation">Challenges: Non-Convexity and Computation</h3>
-<p>Unlike linear MPC, which typically results in a Convex Quadratic Programme (QP) with a guaranteed unique global minimum, NMPC results in a <strong>Nonlinear Programme (NLP)</strong>. Because the equality constraints in (<a href="#eq:nl_dynamics" data-reference-type="ref" data-reference="eq:nl_dynamics">[eq:nl_dynamics]</a> ) are nonlinear, the feasible set is often non-convex. This introduces two major difficulties:</p>
+<p>Nonlinear MPC is covered in detail in Chapter <a href="#chap:nmpc"
+data-reference-type="ref" data-reference="chap:nmpc">[chap:nmpc]</a>.
+The reader is referred there for direct transcription methods, the
+CasADi/IPOPT workflow, successive convexification (SCvx), GuSTO, a
+powered rocket landing application, and Real-Time Iteration.</p>
+<h2 id="real-time-implementation-and-embedded-mpc">Real-Time
+Implementation and Embedded MPC</h2>
+<p>In our examples, we used solvers such as MATLAB’s
+<code>quadprog</code> or the open-source solver IPOPT (accessed via
+CasADi or other interfaces), which are sufficient for offline
+simulations but insufficient for millisecond-level control on
+microcontrollers or DSPs. Deploying MPC on embedded hardware requires
+specialised techniques:</p>
 <ul>
-<li><p><strong>Local Minima:</strong> Solvers may converge to a local optimum rather than the global optimum, potentially resulting in suboptimal control performance.</p></li>
-<li><p><strong>Computational Cost:</strong> Solving an NLP is iteratively expensive (requiring the computation of Jacobians and Hessians at every step). Since the optimisation must complete within the sampling time <span class="math inline">\(T_s\)</span>, real-time feasibility is a critical bottleneck.</p></li>
+<li><p><strong>Explicit MPC (Multiparametric Programming) <span
+class="citation" data-cites="Bemporad2002"></span>:</strong> For small
+systems, we can pre-calculate the solution offline. The result is a
+lookup table of affine gains, one per polyhedral region of the state
+space. On the chip, the “optimisation” reduces to <code>if-else</code>
+checks to find the correct region, requiring microseconds to execute.
+Section <a href="#sec:explicit_mpc" data-reference-type="ref"
+data-reference="sec:explicit_mpc">[sec:explicit_mpc]</a> develops this
+approach with worked examples and MPT3 code.</p></li>
+<li><p><strong>Code Generation:</strong> Tools like <a
+href="https://acado.github.io/">ACADO</a>, <a
+href="https://cvxgen.com/">CVXGEN</a>, or <a
+href="https://osqp.org/">OSQP</a> generate highly optimised,
+library-free C-code specifically tailored to the structure of the MPC
+problem, allowing convex MPC to run on standard automotive
+ECUs.</p></li>
 </ul>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Chen, H., &amp; Allgöwer, F. (1998). A quasi-infinite horizon nonlinear model predictive control scheme with guaranteed stability. <em>Automatica</em>, 34(10), 1205–1217.</p></li>
-</ul>
-<h3 class="unnumbered" id="numerical-methods-and-tools">Numerical Methods and Tools</h3>
-<p>To solve these NLPs efficiently, modern NMPC implementations typically rely on <em>Direct Methods</em>, which transcribe the continuous control problem into a finite-dimensional NLP. Two popular approaches are:</p>
-<ul>
-<li><p><strong>Direct Single Shooting:</strong> Only the control inputs <span class="math inline">\(u_k\)</span> are optimisation variables; states are eliminated by simulating the model forward. This results in small but dense matrices.</p></li>
-<li><p><strong>Direct Multiple Shooting:</strong> Both states <span class="math inline">\(x_k\)</span> and controls <span class="math inline">\(u_k\)</span> are treated as decision variables. This increases the problem size but preserves the sparsity structure and improves convergence stability, making it the preferred choice for stiff systems.</p></li>
-</ul>
-<p>Standard solvers typically employ Sequential Quadratic Programming (SQP) or Interior Point Methods (IPM). In practice, engineers rely on specialised high-performance software frameworks rather than writing solvers from scratch:</p>
-<ul>
-<li><p><strong><a href="https://web.casadi.org/">CasADi</a>:</strong> An open-source tool for algorithmic differentiation (AD) and optimisation. It is widely used in academia for prototyping NMPC controllers in MATLAB and Python, interfacing directly with NLP solvers like <strong><a href="https://coin-or.github.io/Ipopt/">IPOPT</a></strong>.</p></li>
-<li><p><strong><a href="https://acados.org/">ACADOS</a>:</strong> A modular software package designed for embedded optimisation. It focuses on speed, utilising <a href="https://github.com/giaf/blasfeo">BLASFEO</a> (linear algebra optimised for small matrices) to achieve microsecond-scale solution times suitable for robotics and automotive applications.</p></li>
-<li><p><strong><a href="https://www.embotech.com/forcespro">FORCES Pro</a>:</strong> A commercial code-generation tool tailored for high-speed embedded NMPC, often used in the automotive and aerospace industries.</p></li>
-</ul>
-<div class="examplebox">
-<p><span>Case Study: Pendulum Swing-Up and Balance</span> In this scenario, the pendulum starts in the stable downward position (<span class="math inline">\(\theta = \pi\)</span>). The NMPC controller must "pump" energy into the system to swing it up and then stabilise it at the unstable upright equilibrium (<span class="math inline">\(\theta = 0\)</span>).</p>
-<p><strong>Problem Formulation:</strong><br />
-The objective is to minimise the quadratic cost function subject to the nonlinear dynamics and constraints. We define the state vector <span class="math inline">\(x = [\theta, \dot{\theta}]^\top = [x_1, x_2]^\top\)</span> and input <span class="math inline">\(u\)</span>.</p>
-<p>The optimisation problem is formulated as: <span class="math display">\[\begin{align*}
-        \min_{{x}, {u}} \quad &amp; J = \sum_{k=0}^{N-1} (x_k^\top Q x_k + u_k^\top R u_k) + x_N^\top P x_N \\
-        \text{subject to:} 
-        &amp; \begin{bmatrix} \dot{x}_1 \\[12pt] \dot{x}_2 \end{bmatrix} = \begin{bmatrix} x_2 \\[10pt] \dfrac{g}{L}\sin(x_1) + u \end{bmatrix}, \\
-        &amp; -5 \leq u_k \leq 5, \\
-        &amp; -2\pi \leq x_{1,k} \leq 2\pi
-\end{align*}\]</span> where <span class="math inline">\(Q = \text{diag}(50, 0.1)\)</span>, <span class="math inline">\(R = 0.1\)</span>, and the terminal weight <span class="math inline">\(P = \text{diag}(1000, 10)\)</span>. The notation <span class="math inline">\(\text{RK4}(\cdot)\)</span> denotes the explicit Runge-Kutta 4 integration of the continuous dynamics over the sampling interval <span class="math inline">\(\Delta t\)</span>.</p>
-<p><strong>Implementation Details:</strong><br />
-The horizon is selected as <span class="math inline">\(N=40\)</span> (<span class="math inline">\(2.0\)</span>s) to allow the solver to plan the momentum build-up required for the swing-up manoeuvre. Figure <a href="#fig:nmpcpendulum" data-reference-type="ref" data-reference="fig:nmpcpendulum">1.1</a> shows the simulation results.</p>
-<pre id="lst:casadi_swingup" class="matlab" data-language="Matlab" data-caption="Pendulum Swing-Up using CasADi." data-label="lst:casadi_swingup"><code>clear; clc;
-        import casadi.*
-        
-        opti = casadi.Opti(); 
-        
-        N  = 40;     % Horizon (2.0s)
-        dt = 0.05;   % Sampling time
-        
-        X = opti.variable(2, N+1); % States x = [theta; theta_dot]
-        
-        U = opti.variable(1, N);   % Input u
-        
-        x_init = opti.parameter(2, 1);
-        
-        g = 9.81; L = 1;
-        
-        f_continuous = @(x,u) [x(2); (g/L)*sin(x(1)) + u];
-        
-        rk4_step = @(x,u,h) rk4_integrator(x, u, h, f_continuous);
-        
-        opti.subject_to(X(:,1) == x_init);
-        
-        objective = 0;
-        Q = diag([50, 0.1]);  R = 0.1; P = diag([1000, 10]); 
-        
-        for k = 1:N
-            x_next = rk4_step(X(:,k), U(k), dt);
-            opti.subject_to(X(:,k+1) == x_next);
-            opti.subject_to(-5 &lt;= U(k) &lt;= 5);
-            opti.subject_to(-2*pi &lt;= X(1,k) &lt;= 2*pi);
-        
-            objective = objective + X(:,k)&#39;*Q*X(:,k) + U(k)&#39;*R*U(k);
-        end
-        
-        objective = objective + X(:,N+1)&#39;*P*X(:,N+1);
-        
-        opti.minimize(objective);
-        
-        p_opts = struct(&#39;expand&#39;,true);
-        s_opts = struct(&#39;max_iter&#39;,2000, &#39;print_level&#39;,0, &#39;tol&#39;,1e-4);
-        opti.solver(&#39;ipopt&#39;, p_opts, s_opts);
-        
-        M = opti.to_function(&#39;M&#39;, {x_init}, {U(:,1)});
-        
-        T_sim = 200;
-        x_curr = [pi; 0]; % Start hanging DOWN (pi)
-        
-        x_hist = zeros(2, T_sim);
-        u_hist = zeros(1, T_sim);
-        
-        fprintf(&#39;Swinging up...\n&#39;);
-        for t = 1:T_sim
-            u_val = full(M(x_curr)); 
-            x_curr = full(rk4_step(x_curr, u_val, dt));
-            x_hist(:, t) = x_curr;
-            u_hist(t) = u_val;
-        end
-        
-        function x_next = rk4_integrator(x, u, h, f)
-            k1 = f(x, u);
-            k2 = f(x + h/2 * k1, u);
-            k3 = f(x + h/2 * k2, u);
-            k4 = f(x + h * k3, u);
-            x_next = x + (h/6) * (k1 + 2*k2 + 2*k3 + k4);
-        end</code></pre>
-</div>
-<figure id="fig:nmpcpendulum">
-<img src="figures/NMPC_pendulum.png" style="width:70.0%" />
-<figcaption>Simulation results for the NMPC pendulum swing-up manoeuvre. The top panel shows the angle trajectory <span class="math inline">\(\theta(t)\)</span> starting from the stable downward position (<span class="math inline">\(\theta = \pi\)</span> rad) and settling at the unstable upright equilibrium (<span class="math inline">\(\theta = 0\)</span> rad). The bottom panel displays the control torque <span class="math inline">\(u(t)\)</span>. Note how the controller utilises the full actuator authority (saturating at <span class="math inline">\(\pm 5\)</span> Nm) to ’pump’ energy into the system before smoothly stabilising the pendulum after approximately 5 seconds.</figcaption>
-</figure>
-<h2 id="real-time-implementation-and-embedded-mpc">Real-Time Implementation and Embedded MPC</h2>
-<p>In our examples, we used solvers such as MATLAB’s <code>quadprog</code> or the open-source solver IPOPT (accessed via CasADi or other interfaces), which are sufficient for offline simulations but insufficient for millisecond-level control on microcontrollers or DSPs. Deploying MPC on embedded hardware requires specialised techniques:</p>
-<ul>
-<li><p><strong>Explicit MPC (Multiparametric Programming) <span class="citation" data-cites="Bemporad2002"></span>:</strong> For small systems, we can pre-calculate the solution offline. The result is a giant "lookup table" of linear gains. On the chip, the "optimisation" reduces to simple <code>if-else</code> checks to find the correct region, requiring microseconds to execute.</p></li>
-<li><p><strong>Code Generation:</strong> Tools like <a href="https://acado.github.io/">ACADO</a>, <a href="https://cvxgen.com/">CVXGEN</a>, or <a href="https://osqp.org/">OSQP</a> generate highly optimised, library-free C-code specifically tailored to the structure of the MPC problem, allowing convex MPC to run on standard automotive ECUs.</p></li>
-</ul>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Bemporad, A., Morari, M., Dua, V., &amp; Pistikopoulos, E. N. (2002). The explicit linear quadratic regulator for constrained systems. <em>Automatica</em>, 38(1), 3–20.</p></li>
-</ul>
-<h2 id="data-driven-and-learning-based-mpc">Data-Driven and Learning-Based MPC</h2>
-<p>A major bottleneck in implementing MPC is obtaining an accurate mathematical model (<span class="math inline">\(A, B\)</span> or <span class="math inline">\(f(x,u)\)</span>). Deriving models from first principles (Newton’s laws, thermodynamics) is time-consuming and often fails to capture complex phenomena like aerodynamic drag or tire friction.</p>
-<p>Modern research addresses this through three primary paradigms: <strong>Model Learning</strong>, where the dynamic equations are approximated from data; <strong>Direct Data-Driven Control</strong>, where the controller relies directly on raw data trajectories; and <strong>Iterative Learning</strong>, where the control policy itself is refined over repeated trials.</p>
-<h3 id="learning-dynamics-gaussian-processes-and-neural-networks">Learning Dynamics: Gaussian Processes and Neural Networks</h3>
-<p>Instead of relying on a fixed physical model, we can approximate the system dynamics using function approximators <span class="citation" data-cites="Hewing2020"></span>. A popular approach is to combine a simple nominal model with a learned residual term: <span class="math display">\[x_{k+1} = \underbrace{A x_k + B u_k}_{\text{Nominal Physics}} + \underbrace{g(x_k, u_k)}_{\text{Learned Residual}}\]</span></p>
-<ul>
-<li><p><strong>Gaussian Processes (GPs):</strong> GP-MPC models <span class="math inline">\(g(\cdot)\)</span> as a distribution over functions. The key advantage is that a GP provides both a prediction mean <span class="math inline">\(\mu(x,u)\)</span> and a variance <span class="math inline">\(\Sigma(x,u)\)</span>. This uncertainty quantification allows the controller to be <em>cautious</em> in unexplored regions of the state space (linking naturally to Robust MPC).</p></li>
-<li><p><strong>Neural Networks (NNs):</strong> Deep Neural Networks can approximate highly complex nonlinearities. However, embedding a non-convex NN directly into the OCP constraints makes the optimisation difficult.</p></li>
-</ul>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Kocijan, J., Murray-Smith, R., Rasmussen, C. E., &amp; Girard, A. (2004). Gaussian process model based predictive control. <em>Proceedings of the 2004 American Control Conference</em>, pp. 2214–2219, vol.3, Boston, MA.</p></li>
-</ul>
-<h3 id="linear-embeddings-koopman-and-dmd">Linear Embeddings: Koopman and DMD</h3>
-<p>To avoid the computational burden of non-convex optimisation required by NNs, techniques like <strong>Dynamic Mode Decomposition (DMD)</strong> and the <strong>Koopman Operator</strong> seek to <em>lift</em> the nonlinear system into a higher-dimensional space where the dynamics behave linearly.</p>
-<p>Given a discrete-time nonlinear system <span class="math inline">\(x_{k+1} = f(x_k)\)</span>, we define a set of observable functions <span class="math inline">\(\psi(x)\)</span> (e.g., <span class="math inline">\([x, x^2, \sin(x), \dots]^\top\)</span>). In this lifted space <span class="math inline">\(z = \psi(x)\)</span>, the evolution is linear: <span class="math display">\[z_{k+1} = \mathcal{K} z_k\]</span> where <span class="math inline">\(\mathcal{K}\)</span> is the Koopman matrix identified from data. This allows the use of fast, convex Quadratic Programming (QP) solvers (standard Linear MPC tools) to control fundamentally nonlinear systems.</p>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Korda, M., &amp; Mezić, I. (2018). Linear predictors for nonlinear dynamical systems: Koopman operator meets model predictive control. <em>Automatica</em>, 93, 149–160.</p></li>
-</ul>
-<h3 id="direct-data-driven-control-data-enabled-mpc">Direct Data-Driven Control (Data-Enabled MPC)</h3>
-<p>While the methods above use data to identify a model (indirect approach), <strong>Data-Enabled MPC (DeePC)</strong> <span class="citation" data-cites="Coulson2019"></span> skips the system identification step entirely. It relies on <em>Willems’ Fundamental Lemma</em>, which states that for a linear time-invariant system, any valid future trajectory can be represented as a linear combination of sufficiently rich past data trajectories.</p>
-<h4 class="unnumbered" id="hankel-matrix-construction">Hankel Matrix Construction</h4>
-<p>To apply Willems’ Lemma, we construct a Hankel matrix from a single, sufficiently rich pre-recorded trajectory of inputs <span class="math inline">\(u^d\)</span> and outputs <span class="math inline">\(y^d\)</span> of length <span class="math inline">\(T_D\)</span>. We define a window length <span class="math inline">\(L = T_{ini} + N\)</span>, where <span class="math inline">\(T_{ini}\)</span> is the length of past data required to fix the initial state, and <span class="math inline">\(N\)</span> is the prediction horizon.</p>
-<p>The data is arranged into Hankel matrices and partitioned explicitly into <strong>Past</strong> (<span class="math inline">\(p\)</span>) and <strong>Future</strong> (<span class="math inline">\(f\)</span>) blocks: <span class="math display">\[\mathcal{H}(u^d) = 
-\begin{bmatrix} 
-    u^d_0 &amp; u^d_1 &amp; \cdots &amp; u^d_{T_D-L} \\ 
-    \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ 
-    u^d_{T_{ini}-1} &amp; u^d_{T_{ini}} &amp; \cdots &amp; u^d_{T_D-N-1} \\ \hline
-    u^d_{T_{ini}} &amp; u^d_{T_{ini}+1} &amp; \cdots &amp; u^d_{T_D-N} \\ 
-    \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ 
-    u^d_{L-1} &amp; u^d_{L} &amp; \cdots &amp; u^d_{T_D-1} 
-\end{bmatrix}
-= \begin{bmatrix} U_p \\ \hline U_f \end{bmatrix}\]</span> The output matrix <span class="math inline">\(\mathcal{H}(y^d)\)</span> is partitioned identically into <span class="math inline">\(Y_p\)</span> and <span class="math inline">\(Y_f\)</span>.</p>
-<h4 class="unnumbered" id="the-deepc-optimisation">The DeePC Optimisation</h4>
-<p>The optimisation variables are the future control sequence <span class="math inline">\(u\)</span> and the operator vector <span class="math inline">\(g\)</span>, which selects a linear combination of the columns to construct a valid trajectory. The Optimal Control Problem is: <span class="math display">\[\begin{align*}
-    \min_{u, g, \sigma_y} \quad &amp; \sum_{k=0}^{N-1} \|y_{f,k} - y_{ref}\|^2_Q + \|u_{f,k}\|^2_R + \lambda_g \|g\|^2 + \lambda_\sigma \|\sigma_y\|^2 \\
-    \text{subject to:} \quad &amp; 
-    \begin{bmatrix} U_p \\ Y_p \\ \hline U_f \\ Y_f \end{bmatrix} g = 
-    \begin{bmatrix} u_{\text{ini}} \\ y_{\text{ini}} \\ \hline u \\ y_f \end{bmatrix} + 
-    \begin{bmatrix} 0 \\ \sigma_y \\ \hline 0 \\ 0 \end{bmatrix} \\
-    &amp; u \in \mathbb{U}, \quad y_f \in \mathbb{Y}
-\end{align*}\]</span> Here, <span class="math inline">\(u_{\text{ini}}\)</span> and <span class="math inline">\(y_{\text{ini}}\)</span> are the most recent <span class="math inline">\(T_{ini}\)</span> measurements used to fix the initial condition. The slack variable <span class="math inline">\(\sigma_y\)</span> accounts for measurement noise in the initial condition, and the regularisation <span class="math inline">\(\lambda_g \|g\|^2\)</span> prevents overfitting to specific noisy data samples in the library.</p>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Coulson, J., Lygeros, J., &amp; Dörfler, F. (2019). Data-Enabled Predictive Control: In the Shallows of the DeePC. <em>European Control Conference (ECC)</em>, 307–312.</p></li>
-</ul>
-<h3 id="learning-mpc-lmpc">Learning MPC (LMPC)</h3>
-<p>While the methods above focus on identifying the plant, <strong>Learning MPC</strong> focuses on improving performance for repetitive tasks (e.g., a robot arm picking up an object or a race car driving laps).</p>
-<p>LMPC uses trajectories from previous successful iterations (indexed by <span class="math inline">\(j\)</span>) to construct a safe set and a terminal cost. If the task is to minimise time or energy, the controller updates its terminal cost <span class="math inline">\(V_f(x)\)</span> based on the realised cost of previous runs: <span class="math display">\[V_f(x) = \min_{j &lt; \text{current}} \{ J_{\text{realised}}^{(j)}(x) \}\]</span> Mathematically, this guarantees <em>recursive feasibility</em> and <em>non-increasing cost</em>: the controller learns to perform at least as well as its best previous attempt, eventually converging to the optimal trajectory without needing a perfect model.</p>
-<ul>
-<li><p><strong>Fundamental Reference:</strong> Rosolia, U., &amp; Borrelli, F. (2018). Learning Model Predictive Control for Iterative Tasks: A Data-Driven Control Framework. <em>IEEE Transactions on Automatic Control</em>, 63(9), 3018–3033.</p></li>
-</ul>
-<h2 class="unnumbered" id="exercises">Exercises</h2>
-<ol>
-<li><p><strong>(Nonlinear MPC: Formulating an NLP for a Pendulum)</strong> Consider a simple pendulum with continuous-time dynamics: <span class="math display">\[\dot{\theta} = \omega, \qquad \dot{\omega} = \frac{g}{L}\sin(\theta) + u,\]</span> where <span class="math inline">\(\theta\)</span> is the angle from the upright position, <span class="math inline">\(\omega\)</span> is the angular velocity, <span class="math inline">\(g = 9.81\;\text{m/s}^2\)</span>, <span class="math inline">\(L = 1\;\text{m}\)</span>, and <span class="math inline">\(u\)</span> is the control torque.</p>
-<ol>
-<li><p>Discretise the dynamics using a single Euler step with sampling time <span class="math inline">\(\Delta t = 0.05\;\text{s}\)</span>. Write out the resulting discrete-time equations <span class="math inline">\(x_{k+1} = f_d(x_k, u_k)\)</span>, where <span class="math inline">\(x = [\theta,\, \omega]^\top\)</span>.</p></li>
-<li><p>Formulate the NMPC optimisation problem as a Nonlinear Programme (NLP) using the direct multiple shooting approach over a horizon <span class="math inline">\(N = 20\)</span>. Use cost matrices <span class="math inline">\(Q = \text{diag}(10,\, 0.1)\)</span>, <span class="math inline">\(R = 0.01\)</span>, and <span class="math inline">\(P = \text{diag}(100,\, 1)\)</span>. The input is constrained as <span class="math inline">\(|u_k| \leq 5\)</span>. Write out all decision variables, the objective function, and the full set of equality and inequality constraints.</p></li>
-<li><p>Explain why this NLP is non-convex and discuss the practical consequences: what difficulties might a solver encounter, and what strategies can mitigate them?</p></li>
-</ol></li>
-<li><p><strong>(Linear MPC with Successive Linearisation vs. Full Nonlinear MPC)</strong> Consider using MPC to stabilise the pendulum from Exercise 1 at the upright equilibrium <span class="math inline">\((\theta, \omega) = (0, 0)\)</span>.</p>
-<ol>
-<li><p>Linearise the pendulum dynamics about the upright equilibrium to obtain <span class="math inline">\(x_{k+1} = A x_k + B u_k\)</span>. State the matrices <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> for the Euler-discretised system with <span class="math inline">\(\Delta t = 0.05\;\text{s}\)</span>.</p></li>
-<li><p>Describe the <em>successive linearisation</em> (also known as Real-Time Iteration) approach: at each time step, linearise the nonlinear model about the current predicted trajectory and solve the resulting QP. Compare this to solving the full NLP at each step in terms of (i) computational cost per iteration, (ii) optimality of the solution, and (iii) the domain of attraction.</p></li>
-<li><p>For which initial conditions would the linear MPC from part (a) likely succeed? For which would it likely fail? Justify your answer by considering the validity of the linearisation.</p></li>
-</ol></li>
-<li><p><strong>(When Is Nonlinear MPC Necessary?)</strong> For each of the following systems and control tasks, discuss whether a linear MPC controller (possibly with successive linearisation) would be adequate, or whether a full nonlinear MPC formulation is required. Justify each answer by identifying the key nonlinearities and assessing whether they are significant within the expected operating range.</p>
-<ol>
-<li><p>Temperature regulation of a room using an HVAC system, where the setpoint varies between 20°C and 24°C.</p></li>
-<li><p>Swing-up control of an inverted pendulum from the downward equilibrium to the upright equilibrium.</p></li>
-<li><p>Altitude hold of a quadrotor at a fixed hover point in calm conditions, subject to small perturbations.</p></li>
-<li><p>Autonomous racing of a ground vehicle near the limits of tyre grip, where lateral forces saturate nonlinearly.</p></li>
-<li><p>Controlling the concentration in a continuously stirred tank reactor (CSTR) with an exothermic reaction exhibiting multiple steady states.</p></li>
-</ol></li>
-</ol>
+<p>The fundamental reference for explicit MPC is Bemporad et al. <span
+class="citation" data-cites="Bemporad2002"></span>.</p>
+<h2 id="data-driven-and-learning-based-mpc">Data-Driven and
+Learning-Based MPC</h2>
+<p>Data-driven and learning-based MPC methods are covered in detail in
+Chapter <a href="#chap:learning_mpc" data-reference-type="ref"
+data-reference="chap:learning_mpc">[chap:learning_mpc]</a>. The reader
+is referred there for GP-MPC, Koopman MPC, DeePC (including Willems’
+Fundamental Lemma), and Learning MPC, with full derivations, worked
+examples, and MATLAB/YALMIP implementations.</p>

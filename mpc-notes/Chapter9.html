@@ -78,7 +78,7 @@
 <p><strong>Layer 1 — the Simulink canvas</strong> contains only standard Simulink blocks and thin MATLAB Function wrapper blocks. Each wrapper declares one helper function as extrinsic, pre-allocates its outputs, and forwards its inputs. Signal routing, the feedback connection, noise injection, and input saturation are all handled by built-in Simulink blocks.</p>
 <p><strong>Layer 2 — the helper <code>.m</code> files</strong> contain all computation: observer updates, YALMIP calls, QP solves, and persistent state. Because they execute in the full MATLAB interpreter they impose no restrictions on the code they contain.</p>
 <figure id="fig:architecture" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch09_1.png" style="width:95.0%" />
 <figcaption>General two-layer architecture for Simulink-based MPC without the MPC Toolbox. Layer 1 (Simulink canvas) contains only thin MATLAB Function wrapper blocks; all optimisation logic is delegated to Layer 2 helper files via <code>coder.extrinsic</code> calls. Persistent variables in the helper files carry state across time steps and store the compiled <code>optimizer</code> objects for the lifetime of the simulation.</figcaption>
 </figure>
 <h3 id="subsec:algloop_general">Eliminating the Algebraic Loop</h3>
@@ -123,7 +123,7 @@
 <h3 id="subsec:workflow_summary">Summary of the Implementation Workflow</h3>
 <p>Figure <a href="#fig:workflow" data-reference-type="ref" data-reference="fig:workflow">1.2</a> summarises the complete development workflow. The left column shows the <em>offline</em> design steps that are completed once before the Simulink model is built. The right column shows the <em>runtime</em> sequence that executes automatically during simulation.</p>
 <figure id="fig:workflow" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch09_2.png" style="width:95.0%" />
 <figcaption>Complete Simulink MPC development and execution workflow. The offline design phase (left) produces all <code>.m</code> helper files and the Simulink model. On each new simulation run the persistent variables are cleared manually, after which the runtime sequence (right) executes automatically, compiling YALMIP objects once on the first step and solving the QP at every subsequent step.</figcaption>
 </figure>
 <h2 id="sec:simulink_building">Case Study: Single-Zone Building Heating</h2>
@@ -351,7 +351,7 @@
 <h3 id="subsec:controller">Step 4 — <code>mpc_controller_step.m</code></h3>
 <p>This is the main control file, fulfilling the role of the generic <code>mpc_step.m</code>. It implements the persistent-variable pattern described in Section <a href="#subsec:persistent" data-reference-type="ref" data-reference="subsec:persistent">1.1.3</a>: on the first call it invokes <code>build_mpc_optimizers</code> and initialises the augmented Kalman state; on every subsequent call it executes the three-stage pipeline shown in Figure <a href="#fig:control_pipeline" data-reference-type="ref" data-reference="fig:control_pipeline">1.3</a>.</p>
 <figure id="fig:control_pipeline" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch09_3.png" style="width:95.0%" />
 <figcaption>Three-stage control pipeline executed at every sampling instant inside <code>mpc_controller_step.m</code>. The dashed arrow carries the <span class="math inline">\(N\)</span>-step future comfort bounds <em>and</em> electricity-price sequence directly from the input port to the MPC Regulator, bypassing the observer and target stages. All persistent quantities are retained between calls via MATLAB’s <code>persistent</code> keyword.</figcaption>
 </figure>
 <pre id="lst:controller" class="matlab" data-language="Matlab" data-caption="\texttt{mpc\_controller\_step.m} --- complete economic
@@ -539,7 +539,7 @@
         Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut);
     end</code></pre>
 <figure id="fig:simulink_flow" data-latex-placement="htbp">
-
+<img src="figures/tikz_ch09_4.png" style="width:95.0%" />
 <figcaption>Complete conceptual Simulink signal flow for the single-zone building economic MPC. The Clock output <span class="math inline">\(t\)</span> is passed both to the Profile Generator (for exogenous profiles) and to the Plant block (to compute the true occupancy schedule). The Unit Delay on the feedback path breaks the algebraic loop by supplying <span class="math inline">\(u_{k-1}\)</span> to the plant, consistent with the observer prediction step.</figcaption>
 </figure>
 <h3 id="subsec:running">Step 6 — Running the Simulation and Post-Processing</h3>
