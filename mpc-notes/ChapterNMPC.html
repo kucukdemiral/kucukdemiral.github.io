@@ -1538,12 +1538,8 @@ def qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar):
 # ── Hessian-vector product ──────────────────────────────
 def qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar):
     N = len(pdir)
-    dx = np.zeros(NX)
     hvp = np.zeros((N, NU))
-    for k in range(N):
-        hvp[k] = (Rd + w_tr) * pdir[k] + Bb[k].T @ (Qd * (Bb[k-1] @ dx if k > 0 else np.zeros(NX)))
-        # Forward pass for dx
-    # Redo properly: forward then backward
+    # Forward pass: propagate perturbation through linearised dynamics
     dxs = np.zeros((N+1, NX))
     for k in range(N):
         dxs[k+1] = Ab[k] @ dxs[k] + Bb[k] @ pdir[k]
