@@ -725,7 +725,8 @@
         var r = setupCanvas(canvas), ctx = r.ctx, W = r.w, H = r.h;
         ctx.fillStyle = '#0F1923'; ctx.fillRect(0, 0, W, H);
 
-        var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55,
+        var cam = { az: sim.camAz, el: sim.camEl,
+                    cx: W*0.5 + (sim.camPanX || 0), cy: H*0.55 + (sim.camPanY || 0),
                     sc: Math.min(W,H) * 0.07 * sim.camZoom };
 
         drawGround(ctx, W, H, cam);
@@ -739,7 +740,7 @@
         var theta = sim.lastU ? sim.lastU[1] : 0;
         drawQuadrotor(ctx, sim.x, phi, theta, cam, 0.35, sim.time);
 
-        /* HUD */
+        /* HUD — left column */
         ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '11px monospace';
         ctx.fillText('pos: ('+sim.x[0].toFixed(2)+', '+sim.x[1].toFixed(2)+', '+sim.x[2].toFixed(2)+')', 10, 18);
         ctx.fillText('vel: ('+sim.x[3].toFixed(2)+', '+sim.x[4].toFixed(2)+', '+sim.x[5].toFixed(2)+')', 10, 32);
@@ -747,44 +748,28 @@
             ctx.fillText('\u03C6: '+(sim.lastU[0]*180/Math.PI).toFixed(2)+'\u00B0  \u03B8: '+(sim.lastU[1]*180/Math.PI).toFixed(2)+'\u00B0  T: '+sim.lastU[2].toFixed(2)+'N', 10, 46);
         }
         ctx.fillText('t = '+sim.time.toFixed(1)+'s  step '+sim.step, 10, 60);
-        // Position tracking error
-        if (sim.target) {
-            var eP = Math.sqrt(Math.pow(sim.x[0]-sim.target[0],2)+Math.pow(sim.x[1]-sim.target[1],2)+Math.pow(sim.x[2]-sim.target[2],2));
-            ctx.fillText('|e|: '+eP.toFixed(3)+' m', 10+260, 46);
-        }
 
         var hudY = 74;
-        // EKF disturbance estimate & feedforward status
+        // EKF disturbance estimate
         if (sim.ekfOn && sim.xa) {
             ctx.fillStyle = 'rgba(160,210,255,0.7)';
             ctx.fillText('d\u0302: ('+sim.xa[6].toFixed(2)+', '+sim.xa[7].toFixed(2)+', '+sim.xa[8].toFixed(2)+') N', 10, hudY);
             hudY += 14;
-            if (sim.distFF) {
-                ctx.fillStyle = 'rgba(0,255,160,0.7)';
-                ctx.fillText('MPC FF: ('+sim.distFF[0].toFixed(2)+', '+sim.distFF[1].toFixed(2)+', '+sim.distFF[2].toFixed(2)+') N', 10, hudY);
-                hudY += 14;
-            }
-            // Show feedforward A/B comparison
-            if (sim.uNoFF && sim.lastU) {
-                var dphi = (sim.lastU[0] - sim.uNoFF[0])*180/Math.PI;
-                var dth  = (sim.lastU[1] - sim.uNoFF[1])*180/Math.PI;
-                var dT   = sim.lastU[2] - sim.uNoFF[2];
-                ctx.fillStyle = 'rgba(255,255,0,0.8)';
-                ctx.fillText('\u0394u(FF): \u0394\u03C6='+(dphi>=0?'+':'')+dphi.toFixed(2)+'\u00B0  \u0394\u03B8='+(dth>=0?'+':'')+dth.toFixed(2)+'\u00B0  \u0394T='+(dT>=0?'+':'')+dT.toFixed(2)+'N', 10, hudY);
-                hudY += 14;
-            }
         }
-        // True disturbance (if wind on)
+        // True disturbance
         if (sim.windOn && sim.windStrength > 0) {
             var wd = sim.windDir * Math.PI / 180;
             ctx.fillStyle = 'rgba(255,180,100,0.5)';
             ctx.fillText('d: ('+(sim.windStrength*Math.cos(wd)).toFixed(2)+', '+(sim.windStrength*Math.sin(wd)).toFixed(2)+', 0.00) N', 10, hudY);
+            hudY += 14;
         }
 
-        // Zoom level
-        if (Math.abs(sim.camZoom - 1.0) > 0.05) {
-            ctx.fillStyle = 'rgba(255,255,255,0.35)';
-            ctx.fillText('zoom: ' + sim.camZoom.toFixed(1) + 'x', W - 80, 18);
+        /* HUD — right column */
+        // Tracking error
+        if (sim.target) {
+            var eP = Math.sqrt(Math.pow(sim.x[0]-sim.target[0],2)+Math.pow(sim.x[1]-sim.target[1],2)+Math.pow(sim.x[2]-sim.target[2],2));
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText('|e|: '+eP.toFixed(3)+' m', W-120, 18);
         }
 
         /* Reached indicator */
@@ -793,8 +778,12 @@
         var spd = Math.sqrt(sim.x[3]*sim.x[3]+sim.x[4]*sim.x[4]+sim.x[5]*sim.x[5]);
         if (dist < 0.3 && spd < 0.5) {
             ctx.fillStyle = '#00FF88'; ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('\u2714 Target reached!', W-150, 22);
+            ctx.fillText('\u2714 Target reached!', W-150, 36);
         }
+
+        /* Camera hint (bottom-left) */
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '10px sans-serif';
+        ctx.fillText('Drag: orbit | Shift+drag: pan | Scroll: zoom', 10, H-8);
     }
 
     /* ═══ Plot panel ═══════════════════════════════════════════ */
@@ -883,7 +872,8 @@
             '.qd-sep{width:1px;height:18px;background:rgba(255,255,255,0.12);margin:0 0.2rem}',
             '.qd-body{display:flex;min-height:380px}',
             '.qd-scene-wrap{flex:1;min-width:0;position:relative}',
-            '.qd-scene{width:100%;height:100%;display:block}',
+            '.qd-scene{width:100%;height:100%;display:block;cursor:grab}',
+            '.qd-scene:active{cursor:grabbing}',
             '.qd-plot-wrap{flex:0 0 240px;border-left:1px solid rgba(255,255,255,0.06)}',
             '.qd-plots{width:100%;height:100%;display:block}',
             '@media(max-width:720px){.qd-body{flex-direction:column;min-height:auto}.qd-scene-wrap{height:320px}.qd-plot-wrap{flex:none;height:240px;border-left:none;border-top:1px solid rgba(255,255,255,0.06)}}'
@@ -904,7 +894,7 @@
           '<label>N <input type="range" class="qd-slider" data-id="hor" min="10" max="50" value="30" step="5"><span class="qd-val">30</span></label>' +
           '<span class="qd-sep"></span>' +
           '<label>Wind <input type="checkbox" class="qd-check" data-id="windOn"></label>' +
-          '<label>W<sub>str</sub> <input type="range" class="qd-slider" data-id="wstr" min="0" max="5" value="2" step="0.5"><span class="qd-val">2.0</span></label>' +
+          '<label>W<sub>str</sub> <input type="range" class="qd-slider" data-id="wstr" min="0" max="8" value="3" step="0.5"><span class="qd-val">3.0</span></label>' +
           '<label>W<sub>dir</sub> <input type="range" class="qd-slider" data-id="wdir" min="0" max="360" value="45" step="15"><span class="qd-val">45</span></label>' +
           '<span class="qd-sep"></span>' +
           '<label>EKF <input type="checkbox" class="qd-check" data-id="ekfOn"></label>' +
@@ -975,11 +965,13 @@
             camAz: -0.65,
             camEl: 0.5,
             camZoom: 1.0,
+            camPanX: 0,
+            camPanY: 0,
             log: { t:[], px:[], py:[], pz:[], T:[], dxTrue:[], dxEst:[], dyTrue:[], dyEst:[] },
             usWarm: null,
             // Wind
             windOn: false,
-            windStrength: 2.0,
+            windStrength: 3.0,
             windDir: 45,
             windParticles: [],
             // EKF
@@ -1028,6 +1020,8 @@
             sim.lastU = [0, 0, pp.m * pp.g];
             sim.time = 0; sim.step = 0;
             sim.camZoom = 1.0;
+            sim.camPanX = 0;
+            sim.camPanY = 0;
             sim.log = { t:[0], px:[0], py:[0], pz:[2], T:[pp.m*pp.g], dxTrue:[0], dxEst:[0], dyTrue:[0], dyEst:[0] };
             sim.usWarm = null;
             sim.distFF = null;
@@ -1071,12 +1065,6 @@
             sim.lastU = sol.us[0].slice();
             sim.pred = sol.xs;
             sim.usWarm = sol.us;
-
-            // A/B comparison: every 5th step, also solve WITHOUT feedforward
-            if (distEst && sim.step % 5 === 0) {
-                var solNoFF = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, null);
-                sim.uNoFF = solNoFF.us[0].slice();
-            }
 
             /* Compute actual wind disturbance */
             var windDist = computeWindDist(sim);
@@ -1166,26 +1154,77 @@
         startBtn.addEventListener('click', doStart);
         resetBtn.addEventListener('click', reset);
 
-        /* Click on scene to set target (x,y on ground) */
-        sceneCvs.addEventListener('click', function(e) {
-            var rect = sceneCvs.getBoundingClientRect();
-            var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-            var W = sceneCvs.clientWidth, H = sceneCvs.clientHeight;
-            var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55,
-                        sc: Math.min(W,H) * 0.07 * sim.camZoom };
-            var gp = unproject(sx, sy, cam);
-            if (gp && Math.abs(gp.x) <= 8 && Math.abs(gp.y) <= 8) {
-                sim.target[0] = Math.round(gp.x * 2) / 2;
-                sim.target[1] = Math.round(gp.y * 2) / 2;
-                var stx = container.querySelector('[data-id="tx"]');
-                var sty = container.querySelector('[data-id="ty"]');
-                if (stx) { stx.value = sim.target[0]; stx.nextElementSibling.textContent = sim.target[0].toFixed(1); }
-                if (sty) { sty.value = sim.target[1]; sty.nextElementSibling.textContent = sim.target[1].toFixed(1); }
-                if (!running) render();
-            }
+        /* ═══ Camera interaction: orbit / pan / zoom ═══════════ */
+        var drag = { on: false, btn: 0, shift: false, sx: 0, sy: 0,
+                     az0: 0, el0: 0, px0: 0, py0: 0 };
+
+        sceneCvs.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            drag.on = true;
+            drag.btn = e.button;
+            drag.shift = e.shiftKey;
+            drag.sx = e.clientX;
+            drag.sy = e.clientY;
+            drag.az0 = sim.camAz;
+            drag.el0 = sim.camEl;
+            drag.px0 = sim.camPanX;
+            drag.py0 = sim.camPanY;
         });
 
-        /* Zoom with mouse wheel */
+        window.addEventListener('mousemove', function(e) {
+            if (!drag.on) return;
+            var dx = e.clientX - drag.sx;
+            var dy = e.clientY - drag.sy;
+            if (drag.btn === 0 && !drag.shift) {
+                // Left drag → orbit
+                sim.camAz = drag.az0 - dx * 0.005;
+                sim.camEl = clamp(drag.el0 + dy * 0.005, 0.05, 1.5);
+            } else {
+                // Middle / right / shift+left → pan
+                sim.camPanX = drag.px0 + dx;
+                sim.camPanY = drag.py0 + dy;
+            }
+            if (!running) render();
+        });
+
+        window.addEventListener('mouseup', function() { drag.on = false; });
+
+        sceneCvs.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+        /* Touch support for orbit */
+        var touch0 = null, touchDist0 = 0;
+        sceneCvs.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                touch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY,
+                           az: sim.camAz, el: sim.camEl };
+            } else if (e.touches.length === 2) {
+                var dx = e.touches[0].clientX - e.touches[1].clientX;
+                var dy = e.touches[0].clientY - e.touches[1].clientY;
+                touchDist0 = Math.sqrt(dx*dx + dy*dy);
+                touch0 = { zoom: sim.camZoom };
+            }
+        }, { passive: true });
+        sceneCvs.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            if (e.touches.length === 1 && touch0 && touch0.az !== undefined) {
+                var dx = e.touches[0].clientX - touch0.x;
+                var dy = e.touches[0].clientY - touch0.y;
+                sim.camAz = touch0.az - dx * 0.005;
+                sim.camEl = clamp(touch0.el + dy * 0.005, 0.05, 1.5);
+                if (!running) render();
+            } else if (e.touches.length === 2 && touch0 && touch0.zoom !== undefined) {
+                var dx = e.touches[0].clientX - e.touches[1].clientX;
+                var dy = e.touches[0].clientY - e.touches[1].clientY;
+                var d = Math.sqrt(dx*dx + dy*dy);
+                if (touchDist0 > 0) {
+                    sim.camZoom = clamp(touch0.zoom * d / touchDist0, 0.3, 5.0);
+                    if (!running) render();
+                }
+            }
+        }, { passive: false });
+        sceneCvs.addEventListener('touchend', function() { touch0 = null; }, { passive: true });
+
+        /* Scroll → zoom */
         sceneCvs.addEventListener('wheel', function(e) {
             e.preventDefault();
             var delta = e.deltaY > 0 ? -0.08 : 0.08;
