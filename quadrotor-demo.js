@@ -434,16 +434,6 @@
         };
     }
 
-    function unproject(sx, sy, cam) {
-        var px = (sx - cam.cx) / cam.sc;
-        var py = -(sy - cam.cy) / cam.sc;
-        var se = Math.sin(cam.el), ce = Math.cos(cam.el);
-        if (Math.abs(se) < 0.01) return null;
-        var y1 = py / se;
-        var ca = Math.cos(cam.az), sa = Math.sin(cam.az);
-        return { x: px * ca + y1 * sa, y: -px * sa + y1 * ca };
-    }
-
     function rotBody(bx, by, bz, phi, theta) {
         var cp = Math.cos(phi), sp = Math.sin(phi);
         var y1 = by * cp - bz * sp, z1 = by * sp + bz * cp, x1 = bx;
