@@ -1212,6 +1212,50 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a hr
 <span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;x_1&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;x_2&#39;</span>)<span class="op">;</span></span>
 <span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="va">legend</span>(<span class="ss">&#39;State constraints X&#39;</span><span class="op">,</span> <span class="ss">&#39;Terminal set X_f&#39;</span>)<span class="op">;</span></span>
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="va">title</span>(<span class="ss">&#39;Maximal Positive Invariant Set&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + scipy)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing the terminal set using mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+import mpt4py as mpt
+
+# 1. System matrices
+A = np.array([[1.2, 1], [0, 1]])
+B = np.array([[0.5], [1]])
+
+# 2. LQR gain from DARE
+Q = np.eye(2);  R = np.array([[1.0]])
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)   # u = -Kx
+Acl = A - B @ K
+
+# 3. Constraint polytopes
+xmax = np.array([5.0, 5.0])
+umax = 1.0
+X = mpt.Polyhedron(lb=-xmax, ub=xmax)
+
+# Input constraint mapped through K: |Kx| <= umax
+G = np.vstack([K, -K])
+g = np.array([umax, umax])
+KPoly = mpt.Polyhedron(A=G, b=g)
+
+# Combined constraint: state + input-through-K
+X_combined = X & KPoly   # intersection
+
+# 4. Maximal positive invariant set (iterative pre-image)
+Omega = X_combined
+for i in range(50):
+    pre_image = mpt.Polyhedron(A=Omega.A @ Acl, b=Omega.b)
+    Omega_new = Omega & pre_image
+    if Omega_new == Omega:
+        print(f"Converged at iteration {i}")
+        break
+    Omega = Omega_new
+
+Xf = Omega
+print(f"Terminal set has {Xf.A.shape[0]} half-planes")
+print(f"H_f (Xf.A):\n{Xf.A}")
+print(f"h_f (Xf.b):\n{Xf.b}")</code></pre></div>
 <p>The key function is <code>sys.invariantSet()</code>, which performs
 the iterative algorithm described above automatically. For the example
 above, the result is a polytope with several faces (linear inequalities)
@@ -1437,6 +1481,86 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb4-1"><a hr
 <span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="va">x_now</span> <span class="op">=</span> [<span class="fl">3</span><span class="op">;</span> <span class="op">-</span><span class="fl">1</span>]<span class="op">;</span></span>
 <span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="va">u_star</span> <span class="op">=</span> <span class="va">empc</span>.<span class="va">evaluate</span>(<span class="va">x_now</span>)<span class="op">;</span></span>
 <span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;u*(x0) = %.4f\n&#39;</span><span class="op">,</span> <span class="va">u_star</span>)<span class="op">;</span></span></code></pre></div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + qpsolvers)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing Explicit MPC via mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+from qpsolvers import solve_qp
+import mpt4py as mpt
+
+A = np.array([[1.2, 1], [0, 1]])
+B = np.array([[0.5], [1]])
+nx, nu = 2, 1
+N = 5
+
+# Cost matrices
+Q = np.eye(nx);  R = np.eye(nu)
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
+
+# Constraints
+x_min, x_max = np.array([-5, -5]), np.array([5, 5])
+u_min, u_max = np.array([-1.0]), np.array([1.0])
+
+# Build the condensed QP matrices (H, f, G_ineq, h_ineq)
+# Decision variable: U = [u_0, u_1, ..., u_{N-1}]
+# Predict: x_k = A^k x0 + sum_{j=0}^{k-1} A^{k-1-j} B u_j
+S_x = np.zeros((nx*(N+1), nx))        # maps x0 to states
+S_u = np.zeros((nx*(N+1), nu*N))      # maps U to states
+Ak = np.eye(nx)
+for k in range(N+1):
+    S_x[k*nx:(k+1)*nx, :] = Ak
+    for j in range(min(k, N)):
+        S_u[k*nx:(k+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, k-1-j) @ B
+    if k < N:
+        Ak = Ak @ A
+
+Q_bar = np.block([[np.kron(np.eye(N), Q), np.zeros((nx*N, nx))],
+                   [np.zeros((nx, nx*N)), P]])
+R_bar = np.kron(np.eye(N), R)
+
+H = R_bar + S_u.T @ Q_bar @ S_u
+H = 0.5 * (H + H.T)
+
+def solve_mpc_qp(x0):
+    """Solve the MPC QP for a given initial state."""
+    f = (S_u.T @ Q_bar @ S_x @ x0).astype(np.float64)
+    # Input constraints: u_min <= u_k <= u_max
+    G_u = np.vstack([np.eye(nu*N), -np.eye(nu*N)])
+    h_u = np.hstack([np.tile(u_max, N), np.tile(-u_min, N)])
+    # State constraints: x_min <= x_k <= x_max (k=1..N)
+    G_x = np.vstack([S_u[nx:], -S_u[nx:]])
+    h_x = np.hstack([np.tile(x_max, N) - np.kron(np.ones(N), (S_x[nx:]@x0).reshape(-1)[:nx*N]),
+                      np.tile(-x_min, N) + np.kron(np.ones(N), (S_x[nx:]@x0).reshape(-1)[:nx*N])])
+    # Simpler: rewrite properly
+    G_xs = S_u[nx:]                    # state part of S_u (skip x0)
+    s_xs = S_x[nx:] @ x0              # free response
+    G_x_ub = G_xs
+    h_x_ub = np.tile(x_max, N) - s_xs
+    G_x_lb = -G_xs
+    h_x_lb = np.tile(-x_min, N) + s_xs
+
+    G_ineq = np.vstack([G_u, G_x_ub, G_x_lb])
+    h_ineq = np.hstack([h_u, h_x_ub, h_x_lb])
+
+    U_star = solve_qp(H.astype(np.float64), f, G_ineq.astype(np.float64),
+                       h_ineq.astype(np.float64), solver='clarabel')
+    return U_star
+
+# Simulate closed-loop
+x = np.array([4.0, -1.0])
+T_sim = 25
+x_log, u_log = [x.copy()], []
+for k in range(T_sim):
+    U = solve_mpc_qp(x)
+    u = U[:nu]
+    u_log.append(u[0])
+    x = A @ x + B @ u
+    x_log.append(x.copy())
+
+print(f"Explicit MPC: {N} horizon, solved via condensed QP")
+print(f"Final state: x = [{x_log[-1][0]:.4f}, {x_log[-1][1]:.4f}]")</code></pre></div>
 <p>Figure <a href="#fig:explicit_regions_2d" data-reference-type="ref"
 data-reference="fig:explicit_regions_2d">1.3</a> shows the resulting
 partition. Each coloured polygon is one critical region with its own
@@ -1991,7 +2115,7 @@ state constraint), how many possible active-set combinations exist? Use
 MATLAB to compute and plot <span
 class="math inline">\(u_0^*(x_0)\)</span>. How many critical regions
 arise?</p></li>
-<li><p>If you have MPT3 installed, compute the explicit controller for
+<li><p>Using MPT3 (MATLAB) or <code>mpt4py</code> + <code>qpsolvers</code> (Python), compute the explicit controller for
 the double integrator from Exercise 4 with horizons <span
 class="math inline">\(N = 3, 5, 10\)</span>. Report the number of
 critical regions for each case and comment on the growth rate.</p></li>

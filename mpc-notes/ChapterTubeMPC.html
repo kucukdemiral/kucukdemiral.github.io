@@ -956,6 +956,51 @@ class="math inline">\(A_{cl}^{s+1}\mathcal{W} \subseteq
 class="math inline">\(\hat{\mathcal{E}}\)</span> is a true RPI set while
 keeping the number of polytope faces manageable.</p>
 </div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + scipy)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing the mRPI set and tightened constraints using mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+import mpt4py as mpt
+
+# System: x+ = Ax + Bu + w
+A = np.array([[1, 1], [0, 1]])
+B = np.array([[0.5], [1]])
+Q = np.eye(2);  R = np.array([[1.0]])
+
+# LQR gain
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
+Acl = A - B @ K
+
+# Constraint sets as polytopes
+X = mpt.Polyhedron(lb=np.array([-5, -3]), ub=np.array([5, 3]))
+U = mpt.Polyhedron(lb=np.array([-1.0]),   ub=np.array([1.0]))
+W = mpt.Polyhedron(lb=np.array([-0.05, -0.05]),
+                    ub=np.array([ 0.05,  0.05]))
+
+# --- Compute the mRPI set ---
+# E = W + Acl*W + Acl^2*W + ...
+E = W
+for i in range(1, 31):
+    Acl_i = np.linalg.matrix_power(Acl, i)
+    E_new = E + Acl_i * W       # Minkowski sum
+    if E_new == E:               # convergence
+        print(f"mRPI converged at iteration {i}")
+        break
+    E = E_new
+
+# --- Tighten constraints ---
+X_tight = X - E                  # Pontryagin difference
+V = U - K * E                   # tightened input set
+
+print(f"mRPI set E has {E.A.shape[0]} half-planes")
+print(f"Tightened state set: {X_tight.A.shape[0]} half-planes")
+print(f"Tightened input set: {V.A.shape[0]} half-planes")
+
+# Verify non-emptiness
+print(f"X_tight non-empty: {not X_tight.isEmptySet()}")
+print(f"V non-empty: {not V.isEmptySet()}")</code></pre></div>
 <h2 id="sec:tube_visualisation">Visualising the Tube</h2>
 <p>Figure <a href="#fig:tube_concept" data-reference-type="ref"
 data-reference="fig:tube_concept">1.5</a> illustrates the key concept.
@@ -1088,7 +1133,7 @@ the trade-off.</p></li>
 </ol></li>
 <li><p>Consider the double integrator from Section <a
 href="#sec:tube_example_2d" data-reference-type="ref"
-data-reference="sec:tube_example_2d">1.9</a>. Using MATLAB and MPT3:</p>
+data-reference="sec:tube_example_2d">1.9</a>. Using MATLAB/MPT3 or Python (<code>mpt4py</code> + <code>qpsolvers</code>):</p>
 <ol>
 <li><p>Compute the mRPI set <span
 class="math inline">\(\mathcal{E}\)</span> for <span
