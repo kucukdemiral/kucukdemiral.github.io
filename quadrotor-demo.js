@@ -744,20 +744,41 @@
         ctx.fillText('pos: ('+sim.x[0].toFixed(2)+', '+sim.x[1].toFixed(2)+', '+sim.x[2].toFixed(2)+')', 10, 18);
         ctx.fillText('vel: ('+sim.x[3].toFixed(2)+', '+sim.x[4].toFixed(2)+', '+sim.x[5].toFixed(2)+')', 10, 32);
         if (sim.lastU) {
-            ctx.fillText('\u03C6: '+(sim.lastU[0]*180/Math.PI).toFixed(1)+'\u00B0  \u03B8: '+(sim.lastU[1]*180/Math.PI).toFixed(1)+'\u00B0  T: '+sim.lastU[2].toFixed(1)+'N', 10, 46);
+            ctx.fillText('\u03C6: '+(sim.lastU[0]*180/Math.PI).toFixed(2)+'\u00B0  \u03B8: '+(sim.lastU[1]*180/Math.PI).toFixed(2)+'\u00B0  T: '+sim.lastU[2].toFixed(2)+'N', 10, 46);
         }
         ctx.fillText('t = '+sim.time.toFixed(1)+'s  step '+sim.step, 10, 60);
+        // Position tracking error
+        if (sim.target) {
+            var eP = Math.sqrt(Math.pow(sim.x[0]-sim.target[0],2)+Math.pow(sim.x[1]-sim.target[1],2)+Math.pow(sim.x[2]-sim.target[2],2));
+            ctx.fillText('|e|: '+eP.toFixed(3)+' m', 10+260, 46);
+        }
 
-        // EKF disturbance estimate
+        var hudY = 74;
+        // EKF disturbance estimate & feedforward status
         if (sim.ekfOn && sim.xa) {
             ctx.fillStyle = 'rgba(160,210,255,0.7)';
-            ctx.fillText('d\u0302: ('+sim.xa[6].toFixed(2)+', '+sim.xa[7].toFixed(2)+', '+sim.xa[8].toFixed(2)+') N', 10, 74);
+            ctx.fillText('d\u0302: ('+sim.xa[6].toFixed(2)+', '+sim.xa[7].toFixed(2)+', '+sim.xa[8].toFixed(2)+') N', 10, hudY);
+            hudY += 14;
+            if (sim.distFF) {
+                ctx.fillStyle = 'rgba(0,255,160,0.7)';
+                ctx.fillText('MPC FF: ('+sim.distFF[0].toFixed(2)+', '+sim.distFF[1].toFixed(2)+', '+sim.distFF[2].toFixed(2)+') N', 10, hudY);
+                hudY += 14;
+            }
+            // Show feedforward A/B comparison
+            if (sim.uNoFF && sim.lastU) {
+                var dphi = (sim.lastU[0] - sim.uNoFF[0])*180/Math.PI;
+                var dth  = (sim.lastU[1] - sim.uNoFF[1])*180/Math.PI;
+                var dT   = sim.lastU[2] - sim.uNoFF[2];
+                ctx.fillStyle = 'rgba(255,255,0,0.8)';
+                ctx.fillText('\u0394u(FF): \u0394\u03C6='+(dphi>=0?'+':'')+dphi.toFixed(2)+'\u00B0  \u0394\u03B8='+(dth>=0?'+':'')+dth.toFixed(2)+'\u00B0  \u0394T='+(dT>=0?'+':'')+dT.toFixed(2)+'N', 10, hudY);
+                hudY += 14;
+            }
         }
         // True disturbance (if wind on)
         if (sim.windOn && sim.windStrength > 0) {
             var wd = sim.windDir * Math.PI / 180;
             ctx.fillStyle = 'rgba(255,180,100,0.5)';
-            ctx.fillText('d: ('+(sim.windStrength*Math.cos(wd)).toFixed(2)+', '+(sim.windStrength*Math.sin(wd)).toFixed(2)+', 0.00) N', 10, sim.ekfOn ? 88 : 74);
+            ctx.fillText('d: ('+(sim.windStrength*Math.cos(wd)).toFixed(2)+', '+(sim.windStrength*Math.sin(wd)).toFixed(2)+', 0.00) N', 10, hudY);
         }
 
         // Zoom level
@@ -927,7 +948,10 @@
             }
             if (s.classList.contains('qd-check')) {
                 sim.windOn = checkVal('windOn');
+                var wasEkf = sim.ekfOn;
                 sim.ekfOn = checkVal('ekfOn');
+                if (sim.ekfOn && !wasEkf) initEKF();
+                if (!sim.ekfOn) { sim.distFF = null; sim.uNoFF = null; }
             }
             if (!running) render();
         });
@@ -961,7 +985,9 @@
             // EKF
             ekfOn: false,
             xa: null,
-            Pa: null
+            Pa: null,
+            distFF: null,
+            uNoFF: null
         };
 
         var running = false, animId = null;
@@ -1004,6 +1030,8 @@
             sim.camZoom = 1.0;
             sim.log = { t:[0], px:[0], py:[0], pz:[2], T:[pp.m*pp.g], dxTrue:[0], dxEst:[0], dyTrue:[0], dyEst:[0] };
             sim.usWarm = null;
+            sim.distFF = null;
+            sim.uNoFF = null;
             sim.windOn = checkVal('windOn');
             sim.windStrength = sliderVal('wstr');
             sim.windDir = sliderVal('wdir');
@@ -1037,11 +1065,18 @@
 
             // Pass EKF-estimated disturbance as feedforward to the MPC model
             var distEst = (sim.ekfOn && sim.xa) ? sim.xa.slice(NX, NXA) : null;
+            sim.distFF = distEst ? distEst.slice() : null;
             var sol = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, distEst);
 
             sim.lastU = sol.us[0].slice();
             sim.pred = sol.xs;
             sim.usWarm = sol.us;
+
+            // A/B comparison: every 5th step, also solve WITHOUT feedforward
+            if (distEst && sim.step % 5 === 0) {
+                var solNoFF = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, null);
+                sim.uNoFF = solNoFF.us[0].slice();
+            }
 
             /* Compute actual wind disturbance */
             var windDist = computeWindDist(sim);
