@@ -54,18 +54,18 @@
     }
 
     /* ═══ Numerical Jacobians of the RK4 map ══════════════════ */
-    function rk4Jac(x, u, p) {
-        var eps = 1e-6, f0 = rk4(x, u, p, null);
+    function rk4Jac(x, u, p, dist) {
+        var eps = 1e-6, f0 = rk4(x, u, p, dist || null);
         var A = [], B = [];
         for (var i = 0; i < NX; i++) { A.push(new Array(NX)); B.push(new Array(NU)); }
         for (var j = 0; j < NX; j++) {
             var xp = x.slice(); xp[j] += eps;
-            var fp = rk4(xp, u, p, null);
+            var fp = rk4(xp, u, p, dist || null);
             for (var i = 0; i < NX; i++) A[i][j] = (fp[i] - f0[i]) / eps;
         }
         for (var j = 0; j < NU; j++) {
             var up = u.slice(); up[j] += eps;
-            var fp = rk4(x, up, p, null);
+            var fp = rk4(x, up, p, dist || null);
             for (var i = 0; i < NX; i++) B[i][j] = (fp[i] - f0[i]) / eps;
         }
         return { A: A, B: B };
@@ -334,18 +334,19 @@
     }
 
     /* ═══ SCvx Solver ══════════════════════════════════════════ */
-    function scvxSolve(x0, usInit, xRefs, uRef, Qd, Rd, Qfd, p, nSCP, wTR) {
+    function scvxSolve(x0, usInit, xRefs, uRef, Qd, Rd, Qfd, p, nSCP, wTR, distEst) {
         var N = usInit.length;
         var us = [];
         for (var k = 0; k < N; k++) us.push(usInit[k].slice());
+        var dEst = distEst || null; // estimated disturbance feedforward
 
         for (var scp = 0; scp < nSCP; scp++) {
             var xsBar = [x0.slice()];
-            for (var k = 0; k < N; k++) xsBar.push(rk4(xsBar[k], us[k], p, null));
+            for (var k = 0; k < N; k++) xsBar.push(rk4(xsBar[k], us[k], p, dEst));
 
             var Ab = [], Bb = [], cb = [];
             for (var k = 0; k < N; k++) {
-                var jac = rk4Jac(xsBar[k], us[k], p);
+                var jac = rk4Jac(xsBar[k], us[k], p, dEst);
                 Ab.push(jac.A); Bb.push(jac.B);
                 var ck = new Array(NX);
                 for (var i = 0; i < NX; i++) {
@@ -407,7 +408,7 @@
             }
         }
         var xs = [x0.slice()];
-        for (var k = 0; k < N; k++) xs.push(rk4(xs[k], us[k], p, null));
+        for (var k = 0; k < N; k++) xs.push(rk4(xs[k], us[k], p, dEst));
         return { xs: xs, us: us, cost: totalCost(xs, us, xRefs, uRef, Qd, Rd, Qfd) };
     }
 
@@ -1034,7 +1035,9 @@
                 for (var k = 0; k < N; k++) usInit.push(uHover.slice());
             }
 
-            var sol = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR);
+            // Pass EKF-estimated disturbance as feedforward to the MPC model
+            var distEst = (sim.ekfOn && sim.xa) ? sim.xa.slice(NX, NXA) : null;
+            var sol = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, distEst);
 
             sim.lastU = sol.us[0].slice();
             sim.pred = sol.xs;

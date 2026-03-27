@@ -1477,26 +1477,26 @@ def rk4(x, u, dist=None):
     return x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
 
 # ── Numerical Jacobians of the RK4 map ──────────────────
-def rk4_jac(x, u):
+def rk4_jac(x, u, dist=None):
     eps = 1e-6
-    f0 = rk4(x, u, None)
+    f0 = rk4(x, u, dist)
     A = np.zeros((NX, NX))
     B = np.zeros((NX, NU))
     for j in range(NX):
         xp = x.copy(); xp[j] += eps
-        A[:, j] = (rk4(xp, u, None) - f0) / eps
+        A[:, j] = (rk4(xp, u, dist) - f0) / eps
     for j in range(NU):
         up = u.copy(); up[j] += eps
-        B[:, j] = (rk4(x, up, None) - f0) / eps
+        B[:, j] = (rk4(x, up, dist) - f0) / eps
     return A, B
 
 # ── Nonlinear rollout ───────────────────────────────────
-def rollout(x0, us):
+def rollout(x0, us, dist=None):
     N = len(us)
     xs = np.zeros((N+1, NX))
     xs[0] = x0
     for k in range(N):
-        xs[k+1] = rk4(xs[k], us[k], None)
+        xs[k+1] = rk4(xs[k], us[k], dist)
     return xs
 
 # ── Reference trajectory (cubic Hermite) ────────────────
@@ -1557,16 +1557,16 @@ def qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar):
     return hvp
 
 # ── SCvx solver ─────────────────────────────────────────
-def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr):
+def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr, dist_est=None):
     N = len(us_init)
     us = us_init.copy()
     for scp in range(n_scp):
-        xs_bar = rollout(x0, us)
+        xs_bar = rollout(x0, us, dist_est)
         Ab = np.zeros((N, NX, NX))
         Bb = np.zeros((N, NX, NU))
         cb = np.zeros((N, NX))
         for k in range(N):
-            Ab[k], Bb[k] = rk4_jac(xs_bar[k], us[k])
+            Ab[k], Bb[k] = rk4_jac(xs_bar[k], us[k], dist_est)
             cb[k] = xs_bar[k+1] - Ab[k] @ xs_bar[k] - Bb[k] @ us[k]
         us_bar = us.copy()
         # Diagonal preconditioner
@@ -1605,7 +1605,7 @@ def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr):
             us[:, 0] = np.clip(us[:, 0] - alpha*pdir[:, 0], -phi_max, phi_max)
             us[:, 1] = np.clip(us[:, 1] - alpha*pdir[:, 1], -theta_max, theta_max)
             us[:, 2] = np.clip(us[:, 2] - alpha*pdir[:, 2], T_min, T_max)
-    xs = rollout(x0, us)
+    xs = rollout(x0, us, dist_est)
     return xs, us
 
 # ── EKF: Augmented Jacobian (9x9) ──────────────────────
@@ -1701,11 +1701,13 @@ print("Running SCvx MPC with" +
 for step in range(N_sim):
     # MPC uses EKF estimate (if enabled), else true state
     x_for_mpc = xa[:NX].copy() if EKF_ON else x_cur.copy()
+    # Feed estimated disturbance into MPC model for compensation
+    d_est = xa[NX:].copy() if EKF_ON else None
     refs = gen_ref(x_for_mpc, xf, N_hor)
     Qfd = Qf_mult * Qd
 
     xs_plan, us_plan = scvx_solve(
-        x_for_mpc, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr)
+        x_for_mpc, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr, d_est)
 
     u_apply = us_plan[0]
 
