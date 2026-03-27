@@ -21,16 +21,16 @@
     var DH_D     = [0.34, 0,    0,    0.34, 0,    0.06];
 
     var LINK_MASS   = [4.0, 3.5, 1.0, 2.5, 0.8, 0.5];
-    var MOTOR_INERTIA = [0.08, 0.06, 0.04, 0.02, 0.01, 0.005];
-    var B_DAMP      = [5.0, 5.0, 3.0, 2.0, 1.0, 0.5];
+    var MOTOR_INERTIA = [0.12, 0.10, 0.06, 0.04, 0.02, 0.01];
+    var B_DAMP      = [8.0, 8.0, 5.0, 3.0, 2.0, 1.0];
     var TAU_MAX     = [80, 80, 40, 20, 10, 5];
     var Q_LO = [-2.97, -2.09, -2.97, -2.09, -2.09, -6.28];
     var Q_HI = [ 2.97,  2.09,  2.97,  2.09,  2.09,  6.28];
     var GRAV = 9.81;
 
-    var SCVX_QP_ITERS = 15;
-    var SCVX_SCP_ITERS = 3;
-    var SCVX_TR = 2.0;
+    var SCVX_QP_ITERS = 20;
+    var SCVX_SCP_ITERS = 4;
+    var SCVX_TR = 4.0;
 
     /* ═══ 4x4 Matrix ops (row-major flat arrays) ═══════════════ */
     function mat4Id() {
@@ -402,7 +402,7 @@
                 for (var j = 0; j < 3; j++) {
                     for (var k = 0; k < NQ; k++) JJT[i*3+j] += J[i*NQ+k]*J[j*NQ+k];
                 }
-                JJT[i*3+i] += 0.005; // damping
+                JJT[i*3+i] += 0.01; // damping
             }
             var JJTinv = invert3(JJT);
             // tmp = JJTinv * err
@@ -433,7 +433,7 @@
                 ee0[1] + h01*(targetCart[1]-ee0[1]),
                 ee0[2] + h01*(targetCart[2]-ee0[2])
             ];
-            var qRef = solveIK(cartK, qWarm, 15);
+            var qRef = solveIK(cartK, qWarm, 25);
             qWarm = qRef.slice();
             var xRef = qRef.concat([0,0,0,0,0,0]);
             refs.push(xRef);
@@ -898,12 +898,12 @@
           '<label>Y <input type="range" class="md-slider" data-id="ty" min="-0.7" max="0.7" value="0.2" step="0.05"><span class="md-val">0.20</span></label>' +
           '<label>Z <input type="range" class="md-slider" data-id="tz" min="0.05" max="0.9" value="0.50" step="0.05"><span class="md-val">0.50</span></label>' +
           '<span class="md-sep"></span>' +
-          '<label>Q <input type="range" class="md-slider" data-id="qp" min="5" max="200" value="60" step="5"><span class="md-val">60</span></label>' +
-          '<label>R <input type="range" class="md-slider" data-id="rc" min="0.01" max="2" value="0.1" step="0.01"><span class="md-val">0.10</span></label>' +
+          '<label>Q <input type="range" class="md-slider" data-id="qp" min="5" max="200" value="80" step="5"><span class="md-val">80</span></label>' +
+          '<label>R <input type="range" class="md-slider" data-id="rc" min="0.01" max="2" value="0.05" step="0.01"><span class="md-val">0.05</span></label>' +
           '<label>N <input type="range" class="md-slider" data-id="hor" min="5" max="15" value="10" step="1"><span class="md-val">10</span></label>' +
           '<span class="md-sep"></span>' +
           '<label>Payload <input type="checkbox" class="md-check" data-id="payloadOn"></label>' +
-          '<label>kg <input type="range" class="md-slider" data-id="pmass" min="0.5" max="5" value="2" step="0.5"><span class="md-val">2.0</span></label>' +
+          '<label>kg <input type="range" class="md-slider" data-id="pmass" min="0.5" max="3" value="1" step="0.5"><span class="md-val">1.0</span></label>' +
           '<label>Friction <input type="checkbox" class="md-check" data-id="frictionOn"></label>' +
           '<span class="md-sep"></span>' +
           '<label>EKF <input type="checkbox" class="md-check" data-id="ekfOn"></label>' +
@@ -941,9 +941,9 @@
             Qa: diagMat([
                 1e-4,1e-4,1e-4,1e-4,1e-4,1e-4,
                 1e-3,1e-3,1e-3,1e-3,1e-3,1e-3,
-                0.5, 0.5, 0.5, 0.3, 0.2, 0.1
+                0.08, 0.08, 0.06, 0.04, 0.02, 0.01
             ], NXA),
-            Ra: [1e-3,1e-3,1e-3,1e-3,1e-3,1e-3, 1e-2,1e-2,1e-2,1e-2,1e-2,1e-2]
+            Ra: [5e-4,5e-4,5e-4,5e-4,5e-4,5e-4, 5e-3,5e-3,5e-3,5e-3,5e-3,5e-3]
         };
 
         var Q0 = [0, -0.3, 0.8, 0, 0.5, 0]; // initial joint angles
@@ -962,7 +962,7 @@
                    d1True:[], d1Est:[] },
             usWarm: null,
             qRefPrev: null,
-            payloadOn: false, payloadMass: 2.0,
+            payloadOn: false, payloadMass: 1.0,
             frictionOn: false,
             ekfOn: false, xa: null, Pa: null,
             distFF: null
@@ -982,10 +982,14 @@
         function getWeights() {
             var qp = sliderVal('qp'), rc = sliderVal('rc');
             var Qd = [], Qfd = [];
-            for (var i = 0; i < NQ; i++) { Qd.push(qp); Qfd.push(qp*5); }
-            for (var i = 0; i < NQ; i++) { Qd.push(qp*0.1); Qfd.push(qp*0.5); }
+            // Per-joint scaling: base/shoulder matter most, wrist less
+            var jScale = [1.0, 1.0, 0.8, 0.5, 0.3, 0.2];
+            for (var i = 0; i < NQ; i++) { Qd.push(qp * jScale[i]); Qfd.push(qp * 10 * jScale[i]); }
+            // Velocity weights: high for damping (prevents oscillation)
+            for (var i = 0; i < NQ; i++) { Qd.push(qp * 1.0 * jScale[i]); Qfd.push(qp * 5.0 * jScale[i]); }
+            // Per-joint R: normalise by torque capacity so wrist isn't driven aggressively
             var Rd = [];
-            for (var i = 0; i < NU; i++) Rd.push(rc);
+            for (var i = 0; i < NU; i++) Rd.push(rc * TAU_MAX[0] / TAU_MAX[i]);
             return { Qd: Qd, Rd: Rd, Qfd: Qfd, N: Math.round(sliderVal('hor')) };
         }
 
@@ -999,8 +1003,9 @@
                     dist[i] += J[0*NQ+i]*fg[0] + J[1*NQ+i]*fg[1] + J[2*NQ+i]*fg[2];
             }
             if (sim.frictionOn) {
+                var fricScale = [2.0, 2.0, 1.5, 1.0, 0.5, 0.3];
                 for (var i = 0; i < NQ; i++)
-                    dist[i] -= 3.0 * Math.sign(qd[i]+1e-8) * (1.0 + (Math.random()-0.5)*0.2);
+                    dist[i] -= fricScale[i] * Math.sign(qd[i]+1e-8) * (1.0 + (Math.random()-0.5)*0.15);
             }
             return dist;
         }
@@ -1055,7 +1060,15 @@
                 for (var k = 0; k < N; k++) usInit.push(uRef.slice());
             }
 
-            var distEst = (sim.ekfOn && sim.xa) ? sim.xa.slice(NX, NXA) : null;
+            // Disturbance feedforward: clamp and smooth EKF estimates
+            var distEst = null;
+            if (sim.ekfOn && sim.xa) {
+                distEst = new Array(NQ);
+                for (var i = 0; i < NQ; i++) {
+                    var raw = clamp(sim.xa[NX+i], -TAU_MAX[i]*0.4, TAU_MAX[i]*0.4);
+                    distEst[i] = (sim.distFF) ? 0.35*raw + 0.65*sim.distFF[i] : raw;
+                }
+            }
             sim.distFF = distEst ? distEst.slice() : null;
             var sol = scvxSolve(xForMPC, usInit, refs, uRef, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, distEst);
 
@@ -1085,6 +1098,14 @@
                 var upd = ekfUpdate(pred.xa, pred.Pa, meas, pp);
                 sim.xa = upd.xa;
                 sim.Pa = upd.Pa;
+                // Clamp disturbance estimates to prevent divergence
+                for (var i = 0; i < NQ; i++)
+                    sim.xa[NX+i] = clamp(sim.xa[NX+i], -TAU_MAX[i]*0.5, TAU_MAX[i]*0.5);
+                // Clamp joint estimates to physical limits
+                for (var i = 0; i < NQ; i++) {
+                    sim.xa[i] = clamp(sim.xa[i], Q_LO[i], Q_HI[i]);
+                    sim.xa[NQ+i] = clamp(sim.xa[NQ+i], -10, 10);
+                }
             }
 
             sim.time += pp.dt;
