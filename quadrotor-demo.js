@@ -2,46 +2,51 @@
  * Interactive 3D Quadrotor NMPC Demo — SCvx (Successive Convexification)
  * Nonlinear quadrotor dynamics with RK4 integration.
  * Adjoint gradient + HVP for exact QP step sizes.
+ * Features: zoom, realistic quadrotor, wind disturbance, EKF estimation.
  *
  * HTML hook:  <div class="quadrotor-demo"></div>
  */
 (function () {
     'use strict';
 
-    var NX = 6, NU = 3;
+    var NX = 6, NU = 3, NXA = 9, NZ = 6;
     // State: [px, py, pz, vx, vy, vz]
     // Input: [roll(phi), pitch(theta), thrust(T)]
+    // Augmented: [px, py, pz, vx, vy, vz, dx, dy, dz]  (dx,dy,dz = disturbance forces)
 
     function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
     /* ═══ Continuous-time quadrotor dynamics ═══════════════════
-       vdot_x =  (T/m) cos(phi) sin(theta)
-       vdot_y = -(T/m) sin(phi)
-       vdot_z =  (T/m) cos(phi) cos(theta) - g               */
-    function fCont(x, u, p) {
+       vdot_x =  (T/m) cos(phi) sin(theta) + dx/m
+       vdot_y = -(T/m) sin(phi)            + dy/m
+       vdot_z =  (T/m) cos(phi) cos(theta) - g + dz/m       */
+    function fCont(x, u, p, dist) {
         var phi = u[0], theta = u[1], T = u[2];
         var cp = Math.cos(phi), sp = Math.sin(phi);
         var ct = Math.cos(theta), st = Math.sin(theta);
         var Tm = T / p.m;
+        var ddx = dist ? dist[0] / p.m : 0;
+        var ddy = dist ? dist[1] / p.m : 0;
+        var ddz = dist ? dist[2] / p.m : 0;
         return [
             x[3], x[4], x[5],
-            Tm * cp * st,
-            -Tm * sp,
-            Tm * cp * ct - p.g
+            Tm * cp * st + ddx,
+            -Tm * sp + ddy,
+            Tm * cp * ct - p.g + ddz
         ];
     }
 
     /* ═══ RK4 integrator ═══════════════════════════════════════ */
-    function rk4(x, u, p) {
+    function rk4(x, u, p, dist) {
         var h = p.dt;
-        var k1 = fCont(x, u, p);
+        var k1 = fCont(x, u, p, dist);
         var xm = new Array(NX);
         for (var i = 0; i < NX; i++) xm[i] = x[i] + 0.5 * h * k1[i];
-        var k2 = fCont(xm, u, p);
+        var k2 = fCont(xm, u, p, dist);
         for (var i = 0; i < NX; i++) xm[i] = x[i] + 0.5 * h * k2[i];
-        var k3 = fCont(xm, u, p);
+        var k3 = fCont(xm, u, p, dist);
         for (var i = 0; i < NX; i++) xm[i] = x[i] + h * k3[i];
-        var k4 = fCont(xm, u, p);
+        var k4 = fCont(xm, u, p, dist);
         var xn = new Array(NX);
         for (var i = 0; i < NX; i++)
             xn[i] = x[i] + (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
@@ -50,20 +55,169 @@
 
     /* ═══ Numerical Jacobians of the RK4 map ══════════════════ */
     function rk4Jac(x, u, p) {
-        var eps = 1e-6, f0 = rk4(x, u, p);
+        var eps = 1e-6, f0 = rk4(x, u, p, null);
         var A = [], B = [];
         for (var i = 0; i < NX; i++) { A.push(new Array(NX)); B.push(new Array(NU)); }
         for (var j = 0; j < NX; j++) {
             var xp = x.slice(); xp[j] += eps;
-            var fp = rk4(xp, u, p);
+            var fp = rk4(xp, u, p, null);
             for (var i = 0; i < NX; i++) A[i][j] = (fp[i] - f0[i]) / eps;
         }
         for (var j = 0; j < NU; j++) {
             var up = u.slice(); up[j] += eps;
-            var fp = rk4(x, up, p);
+            var fp = rk4(x, up, p, null);
             for (var i = 0; i < NX; i++) B[i][j] = (fp[i] - f0[i]) / eps;
         }
         return { A: A, B: B };
+    }
+
+    /* ═══ EKF: Augmented Jacobian (9x9) ══════════════════════ */
+    function augJacobian(x, u, p, dist) {
+        var eps = 1e-6;
+        var f0 = rk4(x, u, p, dist);
+        var Fa = [];
+        for (var i = 0; i < NXA; i++) { Fa.push(new Array(NXA)); for (var j = 0; j < NXA; j++) Fa[i][j] = 0; }
+        // df/dx (top-left 6x6)
+        for (var j = 0; j < NX; j++) {
+            var xp = x.slice(); xp[j] += eps;
+            var fp = rk4(xp, u, p, dist);
+            for (var i = 0; i < NX; i++) Fa[i][j] = (fp[i] - f0[i]) / eps;
+        }
+        // df/dd (top-right 6x3)
+        for (var j = 0; j < 3; j++) {
+            var dp = dist ? dist.slice() : [0,0,0]; dp[j] += eps;
+            var fp = rk4(x, u, p, dp);
+            for (var i = 0; i < NX; i++) Fa[i][NX + j] = (fp[i] - f0[i]) / eps;
+        }
+        // Bottom-right 3x3: identity (random walk)
+        for (var i = 0; i < 3; i++) Fa[NX + i][NX + i] = 1.0;
+        return Fa;
+    }
+
+    /* ═══ EKF: Matrix utilities for 9x9 ═════════════════════ */
+    function matMul(A, B, n) {
+        var C = [];
+        for (var i = 0; i < n; i++) {
+            C.push(new Array(n));
+            for (var j = 0; j < n; j++) {
+                var s = 0;
+                for (var k = 0; k < n; k++) s += A[i][k] * B[k][j];
+                C[i][j] = s;
+            }
+        }
+        return C;
+    }
+    function matTrans(A, n) {
+        var T = [];
+        for (var i = 0; i < n; i++) {
+            T.push(new Array(n));
+            for (var j = 0; j < n; j++) T[i][j] = A[j][i];
+        }
+        return T;
+    }
+    function matAdd(A, B, n) {
+        var C = [];
+        for (var i = 0; i < n; i++) {
+            C.push(new Array(n));
+            for (var j = 0; j < n; j++) C[i][j] = A[i][j] + B[i][j];
+        }
+        return C;
+    }
+    function matSub(A, B, n) {
+        var C = [];
+        for (var i = 0; i < n; i++) {
+            C.push(new Array(n));
+            for (var j = 0; j < n; j++) C[i][j] = A[i][j] - B[i][j];
+        }
+        return C;
+    }
+    function diagMat(diag, n) {
+        var M = [];
+        for (var i = 0; i < n; i++) { M.push(new Array(n)); for (var j = 0; j < n; j++) M[i][j] = (i===j) ? diag[i] : 0; }
+        return M;
+    }
+    function eyeMat(n) {
+        var M = [];
+        for (var i = 0; i < n; i++) { M.push(new Array(n)); for (var j = 0; j < n; j++) M[i][j] = (i===j) ? 1 : 0; }
+        return M;
+    }
+    /* Gauss-Jordan inversion for small matrices */
+    function matInv(M, n) {
+        var A = [];
+        for (var i = 0; i < n; i++) { A.push([]); for (var j = 0; j < 2*n; j++) A[i].push(j < n ? M[i][j] : (j-n===i ? 1 : 0)); }
+        for (var c = 0; c < n; c++) {
+            var best = c;
+            for (var r = c+1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[best][c])) best = r;
+            var tmp = A[c]; A[c] = A[best]; A[best] = tmp;
+            var piv = A[c][c];
+            if (Math.abs(piv) < 1e-14) piv = 1e-14;
+            for (var j = 0; j < 2*n; j++) A[c][j] /= piv;
+            for (var r = 0; r < n; r++) {
+                if (r === c) continue;
+                var f = A[r][c];
+                for (var j = 0; j < 2*n; j++) A[r][j] -= f * A[c][j];
+            }
+        }
+        var R = [];
+        for (var i = 0; i < n; i++) { R.push([]); for (var j = 0; j < n; j++) R[i].push(A[i][j+n]); }
+        return R;
+    }
+    function symmetrise(M, n) {
+        for (var i = 0; i < n; i++) for (var j = i+1; j < n; j++) {
+            var avg = 0.5*(M[i][j]+M[j][i]); M[i][j] = avg; M[j][i] = avg;
+        }
+        return M;
+    }
+
+    /* ═══ EKF Predict & Update ══════════════════════════════ */
+    function ekfPredict(xa, Pa, u, p) {
+        var x = xa.slice(0, NX);
+        var dist = xa.slice(NX, NXA);
+        var xNext = rk4(x, u, p, dist);
+        var xaPred = xNext.concat(dist);
+        var Fa = augJacobian(x, u, p, dist);
+        var FaPaFt = matMul(matMul(Fa, Pa, NXA), matTrans(Fa, NXA), NXA);
+        var PaPred = symmetrise(matAdd(FaPaFt, p.Qa, NXA), NXA);
+        return { xa: xaPred, Pa: PaPred };
+    }
+
+    function ekfUpdate(xaPred, PaPred, z, p) {
+        // H = [I_6 | 0_{6x3}], innovation y = z - xaPred[0:6]
+        var y = new Array(NZ);
+        for (var i = 0; i < NZ; i++) y[i] = z[i] - xaPred[i];
+        // S = H*P*H^T + R  →  P[0:6,0:6] + R
+        var S = [];
+        for (var i = 0; i < NZ; i++) {
+            S.push(new Array(NZ));
+            for (var j = 0; j < NZ; j++) S[i][j] = PaPred[i][j] + (i===j ? p.Ra[i] : 0);
+        }
+        var Sinv = matInv(S, NZ);
+        // K = P*H^T * S^{-1}   →  P[:,0:6] * Sinv   (9x6 * 6x6 = 9x6)
+        var K = [];
+        for (var i = 0; i < NXA; i++) {
+            K.push(new Array(NZ));
+            for (var j = 0; j < NZ; j++) {
+                var s = 0;
+                for (var l = 0; l < NZ; l++) s += PaPred[i][l] * Sinv[l][j];
+                K[i][j] = s;
+            }
+        }
+        // xa = xaPred + K*y
+        var xaUpd = xaPred.slice();
+        for (var i = 0; i < NXA; i++) {
+            for (var j = 0; j < NZ; j++) xaUpd[i] += K[i][j] * y[j];
+        }
+        // P = (I - K*H)*P  (Joseph form for stability: (I-KH)*P*(I-KH)^T + K*R*K^T)
+        // KH is 9x9: K[:,j] for j<6 forms columns 0-5, columns 6-8 are zero
+        var IKH = eyeMat(NXA);
+        for (var i = 0; i < NXA; i++) for (var j = 0; j < NZ; j++) IKH[i][j] -= K[i][j];
+        var PaUpd = matMul(matMul(IKH, PaPred, NXA), matTrans(IKH, NXA), NXA);
+        // + K*R*K^T
+        for (var i = 0; i < NXA; i++) for (var j = 0; j < NXA; j++) {
+            for (var l = 0; l < NZ; l++) PaUpd[i][j] += K[i][l] * p.Ra[l] * K[j][l];
+        }
+        symmetrise(PaUpd, NXA);
+        return { xa: xaUpd, Pa: PaUpd };
     }
 
     /* ═══ Cost and solver constants ════════════════════════════ */
@@ -71,6 +225,7 @@
     var SCVX_QP_ITERS = 20;
     var SCVX_SCP_ITERS = 5;
     var SCVX_TR = 1.5;
+    var PROP_SPIN = 20; // rad/s visual spin
 
     function totalCost(xs, us, xRefs, uRef, Qd, Rd, Qfd) {
         var N = us.length, cost = 0;
@@ -186,7 +341,7 @@
 
         for (var scp = 0; scp < nSCP; scp++) {
             var xsBar = [x0.slice()];
-            for (var k = 0; k < N; k++) xsBar.push(rk4(xsBar[k], us[k], p));
+            for (var k = 0; k < N; k++) xsBar.push(rk4(xsBar[k], us[k], p, null));
 
             var Ab = [], Bb = [], cb = [];
             for (var k = 0; k < N; k++) {
@@ -204,7 +359,6 @@
             var usBar = [];
             for (var k = 0; k < N; k++) usBar.push(us[k].slice());
 
-            /* Diagonal preconditioner */
             var diagP = new Array(NX);
             for (var i = 0; i < NX; i++) diagP[i] = Qfd[i];
             if (xsBar[N][2] < 0) diagP[2] += GROUND_PEN;
@@ -227,7 +381,6 @@
 
             for (var qi = 0; qi < SCVX_QP_ITERS; qi++) {
                 var grad = qpGrad(us, Ab, Bb, cb, x0, xRefs, Qd, Rd, Qfd, uRef, wTR, usBar);
-                /* Project gradient at active bounds */
                 for (var k = 0; k < N; k++) {
                     if (us[k][0] <= p.phiMin + 1e-4 && grad[k][0] > 0) grad[k][0] = 0;
                     if (us[k][0] >= p.phiMax - 1e-4 && grad[k][0] < 0) grad[k][0] = 0;
@@ -254,7 +407,7 @@
             }
         }
         var xs = [x0.slice()];
-        for (var k = 0; k < N; k++) xs.push(rk4(xs[k], us[k], p));
+        for (var k = 0; k < N; k++) xs.push(rk4(xs[k], us[k], p, null));
         return { xs: xs, us: us, cost: totalCost(xs, us, xRefs, uRef, Qd, Rd, Qfd) };
     }
 
@@ -268,7 +421,6 @@
         return { ctx: ctx, w: w, h: h };
     }
 
-    /* ═══ 3D Projection (orthographic with azimuth + elevation) */
     function proj(wx, wy, wz, cam) {
         var ca = Math.cos(cam.az), sa = Math.sin(cam.az);
         var x1 = wx * ca - wy * sa;
@@ -281,7 +433,6 @@
         };
     }
 
-    /* Unproject screen click to ground plane (z=0) */
     function unproject(sx, sy, cam) {
         var px = (sx - cam.cx) / cam.sc;
         var py = -(sy - cam.cy) / cam.sc;
@@ -292,7 +443,6 @@
         return { x: px * ca + y1 * sa, y: -px * sa + y1 * ca };
     }
 
-    /* Rotate body-frame point by roll(phi) and pitch(theta) */
     function rotBody(bx, by, bz, phi, theta) {
         var cp = Math.cos(phi), sp = Math.sin(phi);
         var y1 = by * cp - bz * sp, z1 = by * sp + bz * cp, x1 = bx;
@@ -317,58 +467,217 @@
     }
 
     function drawTarget(ctx, target, cam) {
-        /* Shadow on ground */
         var gs = proj(target[0], target[1], 0, cam);
         ctx.beginPath(); ctx.arc(gs.x, gs.y, 6, 0, 2*Math.PI);
         ctx.fillStyle = 'rgba(255,165,0,0.3)'; ctx.fill();
-        /* Vertical line */
         var ts = proj(target[0], target[1], target[2], cam);
         ctx.strokeStyle = 'rgba(255,165,0,0.4)'; ctx.lineWidth = 1;
         ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(gs.x, gs.y); ctx.lineTo(ts.x, ts.y); ctx.stroke(); ctx.setLineDash([]);
-        /* Target marker */
         ctx.beginPath(); ctx.arc(ts.x, ts.y, 8, 0, 2*Math.PI);
         ctx.fillStyle = 'rgba(255,165,0,0.7)'; ctx.fill();
         ctx.strokeStyle = '#FFA500'; ctx.lineWidth = 2; ctx.stroke();
-        /* Cross */
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(ts.x-6,ts.y); ctx.lineTo(ts.x+6,ts.y); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(ts.x,ts.y-6); ctx.lineTo(ts.x,ts.y+6); ctx.stroke();
     }
 
-    function drawQuadrotor(ctx, pos, phi, theta, cam, armLen) {
+    /* ═══ Realistic Quadrotor ══════════════════════════════════ */
+    function drawQuadrotor(ctx, pos, phi, theta, cam, armLen, time) {
         var L = armLen || 0.35;
-        /* 4 arm tips in body frame (+ config) */
         var arms = [[L,0,0],[0,L,0],[-L,0,0],[0,-L,0]];
-        var colors = ['#FF4444','#4488FF','#AAAAAA','#4488FF']; // front=red, others=blue/grey
-        var rotArms = [], scrArms = [];
+        var armColors = ['#FF4444','#4488FF','#888888','#4488FF'];
+        var bodyW = 0.09, bodyH = 0.06;
+        var gearDrop = -0.07, gearSpan = 0.18, gearLen = 0.25;
+
+        // Compute all geometry in world coordinates
+        var rotArms = [], scrArms = [], depthArms = [];
         for (var i = 0; i < 4; i++) {
             var r = rotBody(arms[i][0], arms[i][1], arms[i][2], phi, theta);
             rotArms.push(r);
-            scrArms.push(proj(pos[0]+r[0], pos[1]+r[1], pos[2]+r[2], cam));
+            var p = proj(pos[0]+r[0], pos[1]+r[1], pos[2]+r[2], cam);
+            scrArms.push(p);
+            depthArms.push({ idx: i, d: p.d });
         }
         var center = proj(pos[0], pos[1], pos[2], cam);
 
-        /* Shadow on ground */
-        ctx.fillStyle = 'rgba(0,0,0,0.25)';
-        var gs = proj(pos[0], pos[1], 0, cam);
-        ctx.beginPath(); ctx.arc(gs.x, gs.y, 5, 0, 2*Math.PI); ctx.fill();
+        // Sort by depth (far first)
+        depthArms.sort(function(a,b) { return a.d - b.d; });
 
-        /* Draw arms */
-        ctx.lineWidth = 3;
-        for (var i = 0; i < 4; i++) {
-            ctx.strokeStyle = colors[i];
-            ctx.beginPath(); ctx.moveTo(center.x, center.y); ctx.lineTo(scrArms[i].x, scrArms[i].y); ctx.stroke();
+        // Shadow on ground
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        var gs = proj(pos[0], pos[1], 0, cam);
+        ctx.beginPath(); ctx.arc(gs.x, gs.y, 6, 0, 2*Math.PI); ctx.fill();
+
+        // Landing gear (skids) — draw first (below body)
+        var gearPts = [
+            [-gearLen, -gearSpan, gearDrop], [gearLen, -gearSpan, gearDrop],
+            [-gearLen,  gearSpan, gearDrop], [gearLen,  gearSpan, gearDrop]
+        ];
+        var strutPts = [
+            [[-bodyW*0.8, -gearSpan*0.6, 0], [-gearLen*0.5, -gearSpan, gearDrop]],
+            [[ bodyW*0.8, -gearSpan*0.6, 0], [ gearLen*0.5, -gearSpan, gearDrop]],
+            [[-bodyW*0.8,  gearSpan*0.6, 0], [-gearLen*0.5,  gearSpan, gearDrop]],
+            [[ bodyW*0.8,  gearSpan*0.6, 0], [ gearLen*0.5,  gearSpan, gearDrop]]
+        ];
+        ctx.strokeStyle = '#556677'; ctx.lineWidth = 1.5;
+        // Skid bars
+        for (var s = 0; s < 2; s++) {
+            var a = gearPts[s*2], b = gearPts[s*2+1];
+            var ra = rotBody(a[0],a[1],a[2],phi,theta), rb = rotBody(b[0],b[1],b[2],phi,theta);
+            var pa = proj(pos[0]+ra[0],pos[1]+ra[1],pos[2]+ra[2],cam);
+            var pb = proj(pos[0]+rb[0],pos[1]+rb[1],pos[2]+rb[2],cam);
+            ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
         }
-        /* Rotor discs */
-        var rotorR = 10;
-        for (var i = 0; i < 4; i++) {
-            ctx.beginPath(); ctx.arc(scrArms[i].x, scrArms[i].y, rotorR, 0, 2*Math.PI);
-            ctx.fillStyle = colors[i] + '44'; ctx.fill();
-            ctx.strokeStyle = colors[i]; ctx.lineWidth = 1.5; ctx.stroke();
+        // Struts
+        ctx.lineWidth = 1;
+        for (var s = 0; s < 4; s++) {
+            var a = strutPts[s][0], b = strutPts[s][1];
+            var ra = rotBody(a[0],a[1],a[2],phi,theta), rb = rotBody(b[0],b[1],b[2],phi,theta);
+            var pa = proj(pos[0]+ra[0],pos[1]+ra[1],pos[2]+ra[2],cam);
+            var pb = proj(pos[0]+rb[0],pos[1]+rb[1],pos[2]+rb[2],cam);
+            ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
         }
-        /* Center body */
-        ctx.beginPath(); ctx.arc(center.x, center.y, 4, 0, 2*Math.PI);
-        ctx.fillStyle = '#FFFFFF'; ctx.fill();
+
+        // Draw arms + rotors sorted by depth (far first)
+        for (var di = 0; di < 4; di++) {
+            var idx = depthArms[di].idx;
+            var col = armColors[idx];
+            var tip = scrArms[idx];
+
+            // Arm beam (thick line)
+            ctx.strokeStyle = col; ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(center.x, center.y); ctx.lineTo(tip.x, tip.y); ctx.stroke();
+
+            // Motor housing
+            ctx.beginPath(); ctx.arc(tip.x, tip.y, 5, 0, 2*Math.PI);
+            ctx.fillStyle = '#333'; ctx.fill();
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.stroke();
+
+            // Propeller disc (semi-transparent)
+            var rotorR = 12;
+            ctx.beginPath(); ctx.arc(tip.x, tip.y, rotorR, 0, 2*Math.PI);
+            ctx.fillStyle = col.substring(0,7) + '22'; ctx.fill();
+            ctx.strokeStyle = col.substring(0,7) + '66'; ctx.lineWidth = 1; ctx.stroke();
+
+            // Spinning blades (2 pairs at 90 degrees)
+            var bladeAngle = (time || 0) * PROP_SPIN + idx * Math.PI * 0.25;
+            ctx.lineWidth = 2; ctx.strokeStyle = col.substring(0,7) + 'AA';
+            for (var b = 0; b < 2; b++) {
+                var ang = bladeAngle + b * Math.PI * 0.5;
+                var bx1 = tip.x + rotorR * Math.cos(ang);
+                var by1 = tip.y + rotorR * Math.sin(ang);
+                var bx2 = tip.x - rotorR * Math.cos(ang);
+                var by2 = tip.y - rotorR * Math.sin(ang);
+                ctx.beginPath(); ctx.moveTo(bx1, by1); ctx.lineTo(bx2, by2); ctx.stroke();
+            }
+        }
+
+        // Body frame (central fuselage — octagonal)
+        var bodyPts = [
+            [bodyW, bodyH*0.5, 0.01], [bodyW*0.5, bodyH, 0.01],
+            [-bodyW*0.5, bodyH, 0.01], [-bodyW, bodyH*0.5, 0.01],
+            [-bodyW, -bodyH*0.5, 0.01], [-bodyW*0.5, -bodyH, 0.01],
+            [bodyW*0.5, -bodyH, 0.01], [bodyW, -bodyH*0.5, 0.01]
+        ];
+        ctx.beginPath();
+        for (var i = 0; i < bodyPts.length; i++) {
+            var rb = rotBody(bodyPts[i][0], bodyPts[i][1], bodyPts[i][2], phi, theta);
+            var pb = proj(pos[0]+rb[0], pos[1]+rb[1], pos[2]+rb[2], cam);
+            if (i === 0) ctx.moveTo(pb.x, pb.y); else ctx.lineTo(pb.x, pb.y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#2a3a4a'; ctx.fill();
+        ctx.strokeStyle = '#4a6a8a'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // Direction indicator (small triangle on front of body)
+        var fwd = rotBody(bodyW*1.2, 0, 0.02, phi, theta);
+        var fl = rotBody(bodyW*0.6, bodyH*0.4, 0.02, phi, theta);
+        var fr = rotBody(bodyW*0.6, -bodyH*0.4, 0.02, phi, theta);
+        var pf = proj(pos[0]+fwd[0],pos[1]+fwd[1],pos[2]+fwd[2],cam);
+        var pl = proj(pos[0]+fl[0],pos[1]+fl[1],pos[2]+fl[2],cam);
+        var pr = proj(pos[0]+fr[0],pos[1]+fr[1],pos[2]+fr[2],cam);
+        ctx.beginPath(); ctx.moveTo(pf.x,pf.y); ctx.lineTo(pl.x,pl.y); ctx.lineTo(pr.x,pr.y); ctx.closePath();
+        ctx.fillStyle = '#FF4444'; ctx.fill();
+    }
+
+    /* ═══ Wind particles ═══════════════════════════════════════ */
+    function updateWindParticles(sim) {
+        if (!sim.windOn) { sim.windParticles.length = 0; return; }
+        var wDir = sim.windDir * Math.PI / 180;
+        var wStr = sim.windStrength;
+        var particles = sim.windParticles;
+        var maxParts = Math.min(60, Math.floor(wStr * 12) + 5);
+        var spawnRate = Math.floor(wStr * 2) + 1;
+
+        // Spawn at upwind edge
+        for (var i = 0; i < spawnRate && particles.length < maxParts; i++) {
+            var upwind = 7;
+            var sx = -upwind * Math.cos(wDir) + (Math.random() - 0.5) * 14;
+            var sy = -upwind * Math.sin(wDir) + (Math.random() - 0.5) * 14;
+            var sz = Math.random() * 5 + 0.2;
+            particles.push({ x: sx, y: sy, z: sz, age: 0, maxAge: 35 + Math.random() * 25 });
+        }
+
+        // Advance
+        var speed = wStr * 0.08;
+        for (var i = particles.length - 1; i >= 0; i--) {
+            var p = particles[i];
+            p.x += speed * Math.cos(wDir) + (Math.random()-0.5)*0.02;
+            p.y += speed * Math.sin(wDir) + (Math.random()-0.5)*0.02;
+            p.z += (Math.random()-0.5)*0.01;
+            p.age++;
+            if (p.age > p.maxAge || Math.abs(p.x) > 10 || Math.abs(p.y) > 10) {
+                particles.splice(i, 1);
+            }
+        }
+    }
+
+    function drawWind(ctx, sim, cam, W, H) {
+        if (!sim.windOn || sim.windStrength < 0.1) return;
+        var wDir = sim.windDir * Math.PI / 180;
+        var wStr = sim.windStrength;
+        var particles = sim.windParticles;
+        var streakLen = wStr * 0.18;
+
+        ctx.lineWidth = 1.2;
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+            var alpha = (1 - p.age / p.maxAge) * 0.45;
+            var p0 = proj(p.x, p.y, p.z, cam);
+            var p1 = proj(p.x - streakLen * Math.cos(wDir), p.y - streakLen * Math.sin(wDir), p.z, cam);
+            ctx.strokeStyle = 'rgba(160,210,255,' + alpha.toFixed(2) + ')';
+            ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
+
+        // Blurred wind zone overlay near the quadrotor
+        if (sim.x && wStr > 0.5) {
+            var qp = proj(sim.x[0], sim.x[1], sim.x[2], cam);
+            var grad = ctx.createRadialGradient(qp.x - 30*Math.cos(wDir), qp.y + 30*Math.sin(wDir), 0,
+                                                qp.x - 30*Math.cos(wDir), qp.y + 30*Math.sin(wDir), 60 + wStr*8);
+            grad.addColorStop(0, 'rgba(140,190,240,' + (0.06*wStr).toFixed(2) + ')');
+            grad.addColorStop(1, 'rgba(140,190,240,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        // Wind arrow in corner
+        ctx.save();
+        var ax = W - 50, ay = H - 40;
+        ctx.strokeStyle = 'rgba(160,210,255,0.6)'; ctx.lineWidth = 2;
+        var arrLen = 12 + wStr * 3;
+        var ex = ax + arrLen * Math.cos(wDir), ey = ay - arrLen * Math.sin(wDir);
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke();
+        // Arrowhead
+        var ha = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - 6*Math.cos(wDir-ha), ey + 6*Math.sin(wDir-ha));
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - 6*Math.cos(wDir+ha), ey + 6*Math.sin(wDir+ha));
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(160,210,255,0.5)'; ctx.font = '9px sans-serif';
+        ctx.fillText('Wind ' + wStr.toFixed(1) + 'N', ax - 25, ay + 14);
+        ctx.restore();
     }
 
     function drawTrail(ctx, trail, cam) {
@@ -415,17 +724,19 @@
         var r = setupCanvas(canvas), ctx = r.ctx, W = r.w, H = r.h;
         ctx.fillStyle = '#0F1923'; ctx.fillRect(0, 0, W, H);
 
-        var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55, sc: Math.min(W,H)*0.07 };
+        var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55,
+                    sc: Math.min(W,H) * 0.07 * sim.camZoom };
 
         drawGround(ctx, W, H, cam);
         drawAxes(ctx, cam);
+        drawWind(ctx, sim, cam, W, H);
         drawTarget(ctx, sim.target, cam);
         drawTrail(ctx, sim.trail, cam);
         if (sim.pred) drawPrediction(ctx, sim.pred, cam);
 
         var phi = sim.lastU ? sim.lastU[0] : 0;
         var theta = sim.lastU ? sim.lastU[1] : 0;
-        drawQuadrotor(ctx, sim.x, phi, theta, cam, 0.35);
+        drawQuadrotor(ctx, sim.x, phi, theta, cam, 0.35, sim.time);
 
         /* HUD */
         ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '11px monospace';
@@ -435,6 +746,24 @@
             ctx.fillText('\u03C6: '+(sim.lastU[0]*180/Math.PI).toFixed(1)+'\u00B0  \u03B8: '+(sim.lastU[1]*180/Math.PI).toFixed(1)+'\u00B0  T: '+sim.lastU[2].toFixed(1)+'N', 10, 46);
         }
         ctx.fillText('t = '+sim.time.toFixed(1)+'s  step '+sim.step, 10, 60);
+
+        // EKF disturbance estimate
+        if (sim.ekfOn && sim.xa) {
+            ctx.fillStyle = 'rgba(160,210,255,0.7)';
+            ctx.fillText('d\u0302: ('+sim.xa[6].toFixed(2)+', '+sim.xa[7].toFixed(2)+', '+sim.xa[8].toFixed(2)+') N', 10, 74);
+        }
+        // True disturbance (if wind on)
+        if (sim.windOn && sim.windStrength > 0) {
+            var wd = sim.windDir * Math.PI / 180;
+            ctx.fillStyle = 'rgba(255,180,100,0.5)';
+            ctx.fillText('d: ('+(sim.windStrength*Math.cos(wd)).toFixed(2)+', '+(sim.windStrength*Math.sin(wd)).toFixed(2)+', 0.00) N', 10, sim.ekfOn ? 88 : 74);
+        }
+
+        // Zoom level
+        if (Math.abs(sim.camZoom - 1.0) > 0.05) {
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.fillText('zoom: ' + sim.camZoom.toFixed(1) + 'x', W - 80, 18);
+        }
 
         /* Reached indicator */
         var dx = sim.x[0]-sim.target[0], dy = sim.x[1]-sim.target[1], dz = sim.x[2]-sim.target[2];
@@ -451,10 +780,17 @@
         var r = setupCanvas(canvas), ctx = r.ctx, W = r.w, H = r.h;
         ctx.fillStyle = '#0F1923'; ctx.fillRect(0, 0, W, H);
 
-        var pH = Math.floor(H / 3);
+        var nPlots = (sim.ekfOn && sim.windOn) ? 4 : 3;
+        var pH = Math.floor(H / nPlots);
         drawOnePlot(ctx, 0, 0, W, pH, sim.log.t, [sim.log.pz], ['#6688FF'], ['z'], 'Altitude (m)', sim);
         drawOnePlot(ctx, 0, pH, W, pH, sim.log.t, [sim.log.px, sim.log.py], ['#FF6666','#66FF66'], ['x','y'], 'Position (m)', sim);
-        drawOnePlot(ctx, 0, 2*pH, W, H-2*pH, sim.log.t, [sim.log.T], ['#FFaa44'], ['T'], 'Thrust (N)', sim);
+        drawOnePlot(ctx, 0, 2*pH, W, pH, sim.log.t, [sim.log.T], ['#FFaa44'], ['T'], 'Thrust (N)', sim);
+        if (nPlots === 4) {
+            drawOnePlot(ctx, 0, 3*pH, W, H-3*pH, sim.log.t,
+                [sim.log.dxTrue, sim.log.dxEst, sim.log.dyTrue, sim.log.dyEst],
+                ['rgba(255,180,100,0.7)','#A0D2FF','rgba(255,140,80,0.5)','#70B0E0'],
+                ['dx','d\u0302x','dy','d\u0302y'], 'Disturbance (N)', sim);
+        }
     }
 
     function drawOnePlot(ctx, ox, oy, W, H, ts, series, colors, labels, title, sim) {
@@ -488,7 +824,6 @@
             ctx.stroke();
         }
 
-        /* Target line for altitude */
         if (title === 'Altitude (m)' && sim) {
             var tz = sim.target[2];
             var ty = pad.t + (1 - (tz-yMin)/(yMax-yMin))*ph;
@@ -500,7 +835,7 @@
         ctx.fillText(title, pad.l+4, pad.t+12);
         for (var s = 0; s < labels.length; s++) {
             ctx.fillStyle = colors[s];
-            ctx.fillText(labels[s], pad.l+pw-12*(labels.length-s), pad.t+12);
+            ctx.fillText(labels[s], pad.l+pw-14*(labels.length-s), pad.t+12);
         }
         ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '9px monospace';
         ctx.fillText(yMax.toFixed(1), pad.l-34, pad.t+9);
@@ -522,6 +857,8 @@
             '.qd-val{min-width:2.4em;text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono","Fira Code",monospace;font-size:0.78rem;color:#8cf}',
             '.qd-btn{padding:0.25rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(33,150,243,0.18);color:#8cf;font-size:0.82rem;cursor:pointer;transition:background 0.15s}',
             '.qd-btn:hover{background:rgba(33,150,243,0.35)}',
+            '.qd-check{accent-color:#2196F3;margin-right:2px}',
+            '.qd-sep{width:1px;height:18px;background:rgba(255,255,255,0.12);margin:0 0.2rem}',
             '.qd-body{display:flex;min-height:380px}',
             '.qd-scene-wrap{flex:1;min-width:0;position:relative}',
             '.qd-scene{width:100%;height:100%;display:block}',
@@ -543,6 +880,13 @@
           '<label>Q<sub>pos</sub> <input type="range" class="qd-slider" data-id="qp" min="1" max="50" value="20" step="1"><span class="qd-val">20</span></label>' +
           '<label>R<sub>ctrl</sub> <input type="range" class="qd-slider" data-id="rc" min="1" max="20" value="3" step="1"><span class="qd-val">3</span></label>' +
           '<label>N <input type="range" class="qd-slider" data-id="hor" min="10" max="50" value="30" step="5"><span class="qd-val">30</span></label>' +
+          '<span class="qd-sep"></span>' +
+          '<label>Wind <input type="checkbox" class="qd-check" data-id="windOn"></label>' +
+          '<label>W<sub>str</sub> <input type="range" class="qd-slider" data-id="wstr" min="0" max="5" value="2" step="0.5"><span class="qd-val">2.0</span></label>' +
+          '<label>W<sub>dir</sub> <input type="range" class="qd-slider" data-id="wdir" min="0" max="360" value="45" step="15"><span class="qd-val">45</span></label>' +
+          '<span class="qd-sep"></span>' +
+          '<label>EKF <input type="checkbox" class="qd-check" data-id="ekfOn"></label>' +
+          '<span class="qd-sep"></span>' +
           '<button class="qd-btn qd-start-btn">\u25B6 Start</button>' +
           '<button class="qd-btn qd-reset-btn">\u21BB Reset</button>' +
         '</div>' +
@@ -562,29 +906,39 @@
         var startBtn = container.querySelector('.qd-start-btn');
         var resetBtn = container.querySelector('.qd-reset-btn');
 
-        /* Slider state */
         function sliderVal(id) {
             var s = container.querySelector('[data-id="'+id+'"]');
             return s ? parseFloat(s.value) : 0;
         }
+        function checkVal(id) {
+            var c = container.querySelector('[data-id="'+id+'"]');
+            return c ? c.checked : false;
+        }
 
-        /* Update displayed values */
         container.addEventListener('input', function(e) {
             var s = e.target;
-            if (!s.classList.contains('qd-slider')) return;
-            var v = s.nextElementSibling;
-            if (v) v.textContent = parseFloat(s.value).toFixed(s.step < 1 ? 1 : 0);
-            sim.target = [sliderVal('tx'), sliderVal('ty'), sliderVal('tz')];
+            if (s.classList.contains('qd-slider')) {
+                var v = s.nextElementSibling;
+                if (v) v.textContent = parseFloat(s.value).toFixed(s.step < 1 ? 1 : 0);
+                sim.target = [sliderVal('tx'), sliderVal('ty'), sliderVal('tz')];
+                sim.windStrength = sliderVal('wstr');
+                sim.windDir = sliderVal('wdir');
+            }
+            if (s.classList.contains('qd-check')) {
+                sim.windOn = checkVal('windOn');
+                sim.ekfOn = checkVal('ekfOn');
+            }
             if (!running) render();
         });
 
-        /* Physics parameters */
         var pp = { m: 1.0, g: 9.81, dt: 0.1,
                    phiMin: -0.5, phiMax: 0.5,
                    thMin: -0.5, thMax: 0.5,
-                   Tmin: 0.0, Tmax: 20.0 };
+                   Tmin: 0.0, Tmax: 20.0,
+                   // EKF tuning
+                   Qa: diagMat([1e-4, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 0.15, 0.15, 0.15], NXA),
+                   Ra: [1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2] };
 
-        /* Simulation state */
         var sim = {
             x: [0, 0, 2, 0, 0, 0],
             target: [3, 3, 3],
@@ -595,11 +949,26 @@
             step: 0,
             camAz: -0.65,
             camEl: 0.5,
-            log: { t:[], px:[], py:[], pz:[], T:[] },
-            usWarm: null
+            camZoom: 1.0,
+            log: { t:[], px:[], py:[], pz:[], T:[], dxTrue:[], dxEst:[], dyTrue:[], dyEst:[] },
+            usWarm: null,
+            // Wind
+            windOn: false,
+            windStrength: 2.0,
+            windDir: 45,
+            windParticles: [],
+            // EKF
+            ekfOn: false,
+            xa: null,
+            Pa: null
         };
 
         var running = false, animId = null;
+
+        function initEKF() {
+            sim.xa = sim.x.slice().concat([0, 0, 0]);
+            sim.Pa = diagMat([0.01, 0.01, 0.01, 0.1, 0.1, 0.1, 1.0, 1.0, 1.0], NXA);
+        }
 
         function getWeights() {
             var qp = sliderVal('qp'), rc = sliderVal('rc');
@@ -611,6 +980,17 @@
             };
         }
 
+        function computeWindDist(sim) {
+            if (!sim.windOn || sim.windStrength < 0.01) return null;
+            var wDir = sim.windDir * Math.PI / 180;
+            var wStr = sim.windStrength;
+            return [
+                wStr * Math.cos(wDir) + (Math.random()-0.5) * wStr * 0.25,
+                wStr * Math.sin(wDir) + (Math.random()-0.5) * wStr * 0.25,
+                (Math.random()-0.5) * wStr * 0.08
+            ];
+        }
+
         function reset() {
             running = false;
             if (animId) { cancelAnimationFrame(animId); animId = null; }
@@ -620,8 +1000,15 @@
             sim.pred = null;
             sim.lastU = [0, 0, pp.m * pp.g];
             sim.time = 0; sim.step = 0;
-            sim.log = { t:[0], px:[0], py:[0], pz:[2], T:[pp.m*pp.g] };
+            sim.camZoom = 1.0;
+            sim.log = { t:[0], px:[0], py:[0], pz:[2], T:[pp.m*pp.g], dxTrue:[0], dxEst:[0], dyTrue:[0], dyEst:[0] };
             sim.usWarm = null;
+            sim.windOn = checkVal('windOn');
+            sim.windStrength = sliderVal('wstr');
+            sim.windDir = sliderVal('wdir');
+            sim.ekfOn = checkVal('ekfOn');
+            sim.windParticles = [];
+            initEKF();
             startBtn.textContent = '\u25B6 Start';
             render();
         }
@@ -630,7 +1017,10 @@
             var w = getWeights();
             var N = w.N;
             var uHover = [0, 0, pp.m * pp.g];
-            var refs = genReference(sim.x, sim.target, N, pp.dt);
+
+            // Use EKF-estimated state if enabled, otherwise true state
+            var xForMPC = (sim.ekfOn && sim.xa) ? sim.xa.slice(0, NX) : sim.x;
+            var refs = genReference(xForMPC, sim.target, N, pp.dt);
 
             /* Warm start */
             var usInit;
@@ -644,33 +1034,62 @@
                 for (var k = 0; k < N; k++) usInit.push(uHover.slice());
             }
 
-            var sol = scvxSolve(sim.x, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR);
+            var sol = scvxSolve(xForMPC, usInit, refs, uHover, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR);
 
             sim.lastU = sol.us[0].slice();
             sim.pred = sol.xs;
             sim.usWarm = sol.us;
 
-            /* Apply first control via nonlinear RK4 dynamics */
-            sim.x = rk4(sim.x, sim.lastU, pp);
-            sim.x[2] = Math.max(sim.x[2], 0); // ground constraint
+            /* Compute actual wind disturbance */
+            var windDist = computeWindDist(sim);
+
+            /* Apply first control via nonlinear RK4 dynamics (true plant, with wind) */
+            sim.x = rk4(sim.x, sim.lastU, pp, windDist);
+            sim.x[2] = Math.max(sim.x[2], 0);
+
+            /* EKF predict + update */
+            if (sim.ekfOn) {
+                if (!sim.xa || !sim.Pa) initEKF();
+                var pred = ekfPredict(sim.xa, sim.Pa, sim.lastU, pp);
+                // Measurement: true state (+ small sensor noise)
+                var meas = sim.x.slice(0, NX);
+                for (var i = 0; i < NZ; i++) meas[i] += (Math.random()-0.5)*0.002;
+                var upd = ekfUpdate(pred.xa, pred.Pa, meas, pp);
+                sim.xa = upd.xa;
+                sim.Pa = upd.Pa;
+            }
+
             sim.time += pp.dt;
             sim.step++;
 
             sim.trail.push([sim.x[0], sim.x[1], sim.x[2]]);
             if (sim.trail.length > 300) sim.trail.shift();
 
+            // Logging
+            var trueDistX = windDist ? windDist[0] : 0;
+            var trueDistY = windDist ? windDist[1] : 0;
             sim.log.t.push(sim.time);
             sim.log.px.push(sim.x[0]);
             sim.log.py.push(sim.x[1]);
             sim.log.pz.push(sim.x[2]);
             sim.log.T.push(sim.lastU[2]);
+            sim.log.dxTrue.push(trueDistX);
+            sim.log.dyTrue.push(trueDistY);
+            sim.log.dxEst.push(sim.xa ? sim.xa[6] : 0);
+            sim.log.dyEst.push(sim.xa ? sim.xa[7] : 0);
             if (sim.log.t.length > 500) {
                 sim.log.t.shift(); sim.log.px.shift(); sim.log.py.shift();
                 sim.log.pz.shift(); sim.log.T.shift();
+                sim.log.dxTrue.shift(); sim.log.dxEst.shift();
+                sim.log.dyTrue.shift(); sim.log.dyEst.shift();
             }
+
+            // Update wind particles
+            updateWindParticles(sim);
         }
 
         function render() {
+            updateWindParticles(sim);
             drawScene(sceneCvs, sim);
             drawPlots(plotCvs, sim);
         }
@@ -700,6 +1119,7 @@
             } else {
                 running = true;
                 lastFrame = 0; accum = 0;
+                if (sim.ekfOn && !sim.xa) initEKF();
                 startBtn.textContent = '\u23F8 Pause';
                 animId = requestAnimationFrame(animLoop);
             }
@@ -713,12 +1133,12 @@
             var rect = sceneCvs.getBoundingClientRect();
             var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
             var W = sceneCvs.clientWidth, H = sceneCvs.clientHeight;
-            var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55, sc: Math.min(W,H)*0.07 };
+            var cam = { az: sim.camAz, el: sim.camEl, cx: W*0.5, cy: H*0.55,
+                        sc: Math.min(W,H) * 0.07 * sim.camZoom };
             var gp = unproject(sx, sy, cam);
             if (gp && Math.abs(gp.x) <= 8 && Math.abs(gp.y) <= 8) {
                 sim.target[0] = Math.round(gp.x * 2) / 2;
                 sim.target[1] = Math.round(gp.y * 2) / 2;
-                /* Update sliders */
                 var stx = container.querySelector('[data-id="tx"]');
                 var sty = container.querySelector('[data-id="ty"]');
                 if (stx) { stx.value = sim.target[0]; stx.nextElementSibling.textContent = sim.target[0].toFixed(1); }
@@ -726,6 +1146,14 @@
                 if (!running) render();
             }
         });
+
+        /* Zoom with mouse wheel */
+        sceneCvs.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            var delta = e.deltaY > 0 ? -0.08 : 0.08;
+            sim.camZoom = clamp(sim.camZoom + delta * sim.camZoom, 0.3, 5.0);
+            if (!running) render();
+        }, { passive: false });
 
         reset();
     }

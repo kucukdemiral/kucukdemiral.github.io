@@ -1432,12 +1432,14 @@ print(f"Max |v|: {np.max(np.abs(U[:,0])):.2f} m/s, Max |\u03C9|: {np.max(np.abs(
 
 <p>The controller uses <strong>Successive Convexification (SCvx)</strong> in a receding-horizon loop: at each time step, the nonlinear RK4 dynamics are linearised along the current trajectory, yielding a convex QP that is solved via preconditioned projected gradient descent with exact step sizes from Hessian-vector products. The first input is applied, and the process repeats. A cubic Hermite reference trajectory smoothly interpolates from the current state to the target, and a ground penalty discourages <span class="math inline">\(p_z < 0\)</span>.</p>
 
+<p>The demo also features an optional <strong>wind disturbance</strong> (exogenous force applied to the true plant but unknown to the controller) and an <strong>Extended Kalman Filter (EKF)</strong> that jointly estimates the six states and the three disturbance force components. The augmented state is <span class="math inline">\(\hat{x}_a = [p_x, p_y, p_z, v_x, v_y, v_z, d_x, d_y, d_z]^\top\)</span>, where <span class="math inline">\(d_x, d_y, d_z\)</span> are modelled as a random walk. When the EKF is enabled, the MPC controller plans from the estimated state, providing implicit disturbance rejection through the corrected state feedback. The blurred flow animation on the canvas visualises the wind field.</p>
+
 <h4>Interactive Demo: 3D Quadrotor with SCvx MPC</h4>
 <p>The 3D animation below shows the quadrotor tracking a user-specified target position. Adjust the target coordinates, position tracking weight <span class="math inline">\(Q_{\text{pos}}\)</span>, control effort weight <span class="math inline">\(R\)</span>, and prediction horizon <span class="math inline">\(N\)</span>, then click <strong>Start</strong>. Click on the canvas to reposition the target in the horizontal plane; the quadrotor will re-plan in real time.</p>
 <div class="quadrotor-demo"></div>
 
-<h4>Try It Yourself: Quadrotor SCvx MPC in Python</h4>
-<p>This solver implements the same <strong>Successive Convexification</strong> algorithm with <strong>RK4 dynamics</strong> for the 3D quadrotor. The nonlinear dynamics are linearised at each SCP iteration, and the resulting QP is solved via <strong>preconditioned projected gradient descent</strong>. Modify the target position, cost weights, or horizon and click <strong>Run</strong>.</p>
+<h4>Try It Yourself: Quadrotor SCvx MPC with Wind &amp; EKF in Python</h4>
+<p>This solver implements <strong>Successive Convexification</strong> with <strong>RK4 dynamics</strong> for the 3D quadrotor, including <strong>wind disturbance</strong> and an <strong>Extended Kalman Filter (EKF)</strong> that jointly estimates the states and the unknown disturbance force. The MPC plans using the EKF-estimated state (unaware of the wind), while the true plant experiences the disturbance. Toggle <code>WIND_ON</code> and <code>EKF_ON</code> to compare performance with and without estimation.</p>
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -1448,43 +1450,44 @@ from mpl_toolkits.mplot3d import Axes3D
 # ── Quadrotor parameters ─────────────────────────────────
 mass, grav = 1.0, 9.81
 dt = 0.1
-NX, NU = 6, 3
+NX, NU, NXA, NZ = 6, 3, 9, 6
 phi_max, theta_max = 0.5, 0.5
 T_min, T_max = 0.0, 20.0
 u_hover = np.array([0.0, 0.0, mass * grav])
 GROUND_PEN = 3000.0
 
-# ── Continuous-time dynamics ─────────────────────────────
-def f_cont(x, u):
+# ── Continuous-time dynamics (with optional disturbance) ─
+def f_cont(x, u, dist=None):
     phi, theta, T = u[0], u[1], u[2]
     cp, sp = np.cos(phi), np.sin(phi)
     ct, st = np.cos(theta), np.sin(theta)
     Tm = T / mass
+    dd = dist / mass if dist is not None else np.zeros(3)
     return np.array([x[3], x[4], x[5],
-                     Tm * cp * st,
-                     -Tm * sp,
-                     Tm * cp * ct - grav])
+                     Tm * cp * st + dd[0],
+                     -Tm * sp + dd[1],
+                     Tm * cp * ct - grav + dd[2]])
 
 # ── RK4 integrator ──────────────────────────────────────
-def rk4(x, u):
-    k1 = f_cont(x, u)
-    k2 = f_cont(x + 0.5*dt*k1, u)
-    k3 = f_cont(x + 0.5*dt*k2, u)
-    k4 = f_cont(x + dt*k3, u)
+def rk4(x, u, dist=None):
+    k1 = f_cont(x, u, dist)
+    k2 = f_cont(x + 0.5*dt*k1, u, dist)
+    k3 = f_cont(x + 0.5*dt*k2, u, dist)
+    k4 = f_cont(x + dt*k3, u, dist)
     return x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
 
 # ── Numerical Jacobians of the RK4 map ──────────────────
 def rk4_jac(x, u):
     eps = 1e-6
-    f0 = rk4(x, u)
+    f0 = rk4(x, u, None)
     A = np.zeros((NX, NX))
     B = np.zeros((NX, NU))
     for j in range(NX):
         xp = x.copy(); xp[j] += eps
-        A[:, j] = (rk4(xp, u) - f0) / eps
+        A[:, j] = (rk4(xp, u, None) - f0) / eps
     for j in range(NU):
         up = u.copy(); up[j] += eps
-        B[:, j] = (rk4(x, up) - f0) / eps
+        B[:, j] = (rk4(x, up, None) - f0) / eps
     return A, B
 
 # ── Nonlinear rollout ───────────────────────────────────
@@ -1493,7 +1496,7 @@ def rollout(x0, us):
     xs = np.zeros((N+1, NX))
     xs[0] = x0
     for k in range(N):
-        xs[k+1] = rk4(xs[k], us[k])
+        xs[k+1] = rk4(xs[k], us[k], None)
     return xs
 
 # ── Reference trajectory (cubic Hermite) ────────────────
@@ -1604,61 +1607,140 @@ def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr):
             us[:, 2] = np.clip(us[:, 2] - alpha*pdir[:, 2], T_min, T_max)
     xs = rollout(x0, us)
     return xs, us
+
+# ── EKF: Augmented Jacobian (9x9) ──────────────────────
+def aug_jacobian(x, u, dist):
+    eps = 1e-6
+    f0 = rk4(x, u, dist)
+    Fa = np.zeros((NXA, NXA))
+    for j in range(NX):
+        xp = x.copy(); xp[j] += eps
+        Fa[:NX, j] = (rk4(xp, u, dist) - f0) / eps
+    d0 = dist if dist is not None else np.zeros(3)
+    for j in range(3):
+        dp = d0.copy(); dp[j] += eps
+        Fa[:NX, NX+j] = (rk4(x, u, dp) - f0) / eps
+    Fa[NX:, NX:] = np.eye(3)
+    return Fa
+
+# ── EKF Predict & Update ───────────────────────────────
+def ekf_predict(xa, Pa, u, Qa):
+    x, dist = xa[:NX], xa[NX:]
+    x_next = rk4(x, u, dist)
+    xa_pred = np.concatenate([x_next, dist])
+    Fa = aug_jacobian(x, u, dist)
+    Pa_pred = Fa @ Pa @ Fa.T + Qa
+    return 0.5*(Pa_pred + Pa_pred.T), xa_pred
+
+def ekf_update(xa_pred, Pa_pred, z, Ra):
+    H = np.zeros((NZ, NXA)); H[:NZ, :NZ] = np.eye(NZ)
+    y = z - xa_pred[:NZ]
+    S = H @ Pa_pred @ H.T + np.diag(Ra)
+    K = Pa_pred @ H.T @ np.linalg.inv(S)
+    xa_upd = xa_pred + K @ y
+    IKH = np.eye(NXA) - K @ H
+    Pa_upd = IKH @ Pa_pred @ IKH.T + K @ np.diag(Ra) @ K.T
+    return 0.5*(Pa_upd + Pa_upd.T), xa_upd
 </script>
-<pre><code># ═══ SCvx MPC 3D Quadrotor ═══════════════════════════════
-# Successive Convexification with RK4 nonlinear dynamics.
-# Modify target position, weights, or horizon and click Run.
+<pre><code># ═══ SCvx MPC 3D Quadrotor with Wind Disturbance &amp; EKF ═══
+# The MPC plans assuming no wind (model mismatch).
+# The EKF estimates both states and disturbance forces.
+# Toggle WIND_ON and EKF_ON to compare performance.
+
+# ── Configuration ───────────────────────────────────────
+WIND_ON  = True     # Enable wind disturbance on true plant
+EKF_ON   = True     # Enable EKF for state + disturbance estimation
+WIND_STR = 2.5      # Wind strength (N)
+WIND_DIR = 45       # Wind direction (degrees)
 
 # ── Initial and target states ────────────────────────────
-x0 = np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0])   # start near ground
-xf = np.array([3.0, 2.0, 2.5, 0.0, 0.0, 0.0])    # target position
+x0 = np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0])
+xf = np.array([3.0, 2.0, 2.5, 0.0, 0.0, 0.0])
 
 # ── MPC parameters ──────────────────────────────────────
-N_hor   = 20       # prediction horizon (2.0 s)
-N_sim   = 120      # max simulation steps
-n_scp   = 3        # SCP iterations per MPC step
-w_tr    = 1.5      # trust-region penalty weight
+N_hor   = 20
+N_sim   = 150
+n_scp   = 3
+w_tr    = 1.5
 
 # ── Cost weights ────────────────────────────────────────
-Qd  = np.array([20, 20, 20, 5, 5, 5], dtype=float)   # position + velocity
-Rd  = np.array([0.5, 0.5, 0.002])                     # roll, pitch, thrust
-Qf_mult = 150.0   # terminal cost multiplier
+Qd  = np.array([20, 20, 20, 5, 5, 5], dtype=float)
+Rd  = np.array([0.5, 0.5, 0.002])
+Qf_mult = 150.0
 
-# ── MPC loop ────────────────────────────────────────────
+# ── EKF tuning ──────────────────────────────────────────
+Qa = np.diag([1e-4, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 0.15, 0.15, 0.15])
+Ra = np.array([1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2])
+
+# ── Wind disturbance function ───────────────────────────
+def wind_force():
+    if not WIND_ON:
+        return None
+    wd = np.radians(WIND_DIR)
+    turb = 0.25  # turbulence fraction
+    return np.array([
+        WIND_STR * np.cos(wd) + np.random.uniform(-1,1) * WIND_STR * turb,
+        WIND_STR * np.sin(wd) + np.random.uniform(-1,1) * WIND_STR * turb,
+        np.random.uniform(-1,1) * WIND_STR * 0.05
+    ])
+
+# ── Initialise ──────────────────────────────────────────
 x_hist, u_hist = [x0.copy()], []
+d_true_hist, d_est_hist = [], []
 x_cur = x0.copy()
 us_warm = np.tile(u_hover, (N_hor, 1))
 
-print("Running SCvx MPC for 3D quadrotor...")
+# EKF state
+xa = np.concatenate([x0, np.zeros(3)])  # augmented: [state, disturbance]
+Pa = np.diag([0.01]*3 + [0.1]*3 + [1.0]*3)
+
+print("Running SCvx MPC with" +
+      (" wind disturbance" if WIND_ON else " no disturbance") +
+      (" + EKF estimation" if EKF_ON else "") + "...")
+
 for step in range(N_sim):
-    refs = gen_ref(x_cur, xf, N_hor)
-    Qfd  = Qf_mult * Qd
+    # MPC uses EKF estimate (if enabled), else true state
+    x_for_mpc = xa[:NX].copy() if EKF_ON else x_cur.copy()
+    refs = gen_ref(x_for_mpc, xf, N_hor)
+    Qfd = Qf_mult * Qd
 
     xs_plan, us_plan = scvx_solve(
-        x_cur, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr)
+        x_for_mpc, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr)
 
     u_apply = us_plan[0]
-    x_cur = rk4(x_cur, u_apply)
+
+    # True plant: apply control + wind disturbance
+    w_dist = wind_force()
+    x_cur = rk4(x_cur, u_apply, w_dist)
+    x_cur[2] = max(x_cur[2], 0.0)
+
+    # EKF predict + update
+    if EKF_ON:
+        Pa, xa = ekf_predict(xa, Pa, u_apply, Qa)
+        meas = x_cur[:NX] + np.random.randn(NZ) * 0.002
+        Pa, xa = ekf_update(xa, Pa, meas, Ra)
+
     x_hist.append(x_cur.copy())
     u_hist.append(u_apply.copy())
-
-    # Warm-start: shift solution by one step
+    d_true_hist.append(w_dist if w_dist is not None else np.zeros(3))
+    d_est_hist.append(xa[NX:].copy() if EKF_ON else np.zeros(3))
     us_warm = np.vstack([us_plan[1:], us_plan[-1:]])
 
-    # Convergence check
     pos_err = np.linalg.norm(x_cur[:3] - xf[:3])
     vel_err = np.linalg.norm(x_cur[3:6])
-    if pos_err < 0.05 and vel_err < 0.1:
+    if pos_err &lt; 0.05 and vel_err &lt; 0.1:
         print(f"  Converged at step {step+1}!")
         break
 
 x_hist = np.array(x_hist)
 u_hist = np.array(u_hist)
+d_true = np.array(d_true_hist)
+d_est  = np.array(d_est_hist)
 t_x = np.arange(len(x_hist)) * dt
 t_u = np.arange(len(u_hist)) * dt
 
 # ── Plot results ─────────────────────────────────────────
-fig = plt.figure(figsize=(12, 8))
+fig = plt.figure(figsize=(12, 10))
 
 # 3D trajectory
 ax3d = fig.add_subplot(2, 2, 1, projection='3d')
@@ -1687,26 +1769,33 @@ ax2.stairs(np.degrees(u_hist[:,1]), t_u.tolist()+[t_u[-1]+dt],
 ax2.axhline(np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
 ax2.axhline(-np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
 ax2.set_xlabel('Time (s)'); ax2.set_ylabel('Angle (deg)')
-ax2.set_title('Roll & Pitch'); ax2.legend(fontsize=8); ax2.grid(True, alpha=0.3)
+ax2.set_title('Roll &amp; Pitch'); ax2.legend(fontsize=8); ax2.grid(True, alpha=0.3)
 
-# Thrust
+# Disturbance estimation
 ax3 = fig.add_subplot(2, 2, 4)
-ax3.stairs(u_hist[:,2], t_u.tolist()+[t_u[-1]+dt], color='#4ECDC4', label='Thrust')
-ax3.axhline(mass*grav, ls=':', color='gray', alpha=0.5, label='Hover')
-ax3.axhline(T_max, ls='--', color='#ff6b6b', alpha=0.5, label='Bounds')
-ax3.axhline(T_min, ls='--', color='#ff6b6b', alpha=0.5)
-ax3.set_xlabel('Time (s)'); ax3.set_ylabel('Thrust (N)')
-ax3.set_title('Thrust'); ax3.legend(fontsize=8); ax3.grid(True, alpha=0.3)
+if WIND_ON:
+    ax3.plot(t_u, d_true[:,0], 'C1', alpha=0.4, lw=1, label='$d_x$ true')
+    ax3.plot(t_u, d_true[:,1], 'C3', alpha=0.4, lw=1, label='$d_y$ true')
+if EKF_ON:
+    ax3.plot(t_u, d_est[:,0], '#2196F3', lw=1.5, label='$\\hat{d}_x$ EKF')
+    ax3.plot(t_u, d_est[:,1], '#4ECDC4', lw=1.5, label='$\\hat{d}_y$ EKF')
+ax3.axhline(0, ls=':', color='gray', alpha=0.3)
+ax3.set_xlabel('Time (s)'); ax3.set_ylabel('Force (N)')
+ax3.set_title('Disturbance Estimation'); ax3.legend(fontsize=8); ax3.grid(True, alpha=0.3)
 
-fig.suptitle('SCvx MPC — 3D Quadrotor Position Control (RK4 Dynamics)', fontsize=13)
+title = 'SCvx MPC — 3D Quadrotor'
+if WIND_ON: title += ' + Wind'
+if EKF_ON: title += ' + EKF'
+fig.suptitle(title, fontsize=13)
 fig.tight_layout()
 plt.show()
 
 print(f"\nFinal pos:  ({x_hist[-1,0]:.2f}, {x_hist[-1,1]:.2f}, {x_hist[-1,2]:.2f}) m")
-print(f"Final vel:  ({x_hist[-1,3]:.2f}, {x_hist[-1,4]:.2f}, {x_hist[-1,5]:.2f}) m/s")
 print(f"Target:     ({xf[0]:.1f}, {xf[1]:.1f}, {xf[2]:.1f}) m")
+print(f"Pos error:  {np.linalg.norm(x_hist[-1,:3] - xf[:3]):.4f} m")
 print(f"Steps:      {len(u_hist)}")
-print(f"Pos error:  {np.linalg.norm(x_hist[-1,:3] - xf[:3]):.4f} m")</code></pre>
+if EKF_ON:
+    print(f"Final d_est: ({d_est[-1,0]:.2f}, {d_est[-1,1]:.2f}, {d_est[-1,2]:.2f}) N")</code></pre>
 </div>
 
 <h2 id="sec:nmpc_guidelines">Practical Guidelines</h2>
