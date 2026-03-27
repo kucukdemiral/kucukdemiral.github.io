@@ -1056,6 +1056,7 @@
     <script src="rocket-demo.js"></script>
     <script src="pendulum-demo.js"></script>
     <script src="quadrotor-demo.js"></script>
+    <script src="manipulator-demo.js"></script>
     <script src="mpc-demo.js"></script>
     <script src="robot-demo.js"></script>
     <script>
@@ -1114,6 +1115,7 @@
             if (window.MPCDemo) MPCDemo.initAll(body);
             if (window.RobotDemo) RobotDemo.initAll(body);
             if (window.QuadrotorDemo) QuadrotorDemo.initAll(body);
+            if (window.ManipulatorDemo) ManipulatorDemo.initAll(body);
             return;
         }
 
@@ -1136,6 +1138,7 @@
                 if (window.MPCDemo) MPCDemo.initAll(body);
                 if (window.RobotDemo) RobotDemo.initAll(body);
                 if (window.QuadrotorDemo) QuadrotorDemo.initAll(body);
+                if (window.ManipulatorDemo) ManipulatorDemo.initAll(body);
             })
             .catch(function() {
                 body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';

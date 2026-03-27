@@ -1800,6 +1800,28 @@ if EKF_ON:
     print(f"Final d_est: ({d_est[-1,0]:.2f}, {d_est[-1,1]:.2f}, {d_est[-1,2]:.2f}) N")</code></pre>
 </div>
 
+<h2 id="sec:manipulator_nmpc">Application: 6-DOF Industrial Manipulator</h2>
+
+<p>Industrial robot arms are the workhorse of manufacturing: welding, painting, pick-and-place, and assembly all require precise trajectory tracking under tight torque limits and potential payload changes. A serial 6-DOF manipulator is a strongly nonlinear system whose dynamics are governed by the <strong>Euler&ndash;Lagrange equations</strong>:</p>
+
+<div class="displaymath">
+\[
+M(q)\,\ddot{q} + g(q) + B\,\dot{q} = \tau + d
+\]
+</div>
+
+<p>where <span class="math inline">\(q \in \mathbb{R}^6\)</span> is the vector of joint angles, <span class="math inline">\(\tau \in \mathbb{R}^6\)</span> is the applied torque, <span class="math inline">\(M(q)\)</span> is the configuration-dependent mass (inertia) matrix, <span class="math inline">\(g(q)\)</span> is the gravity torque vector, <span class="math inline">\(B\)</span> is a diagonal viscous damping matrix, and <span class="math inline">\(d\)</span> represents unmodelled disturbance torques (e.g. from an unknown payload or Coulomb friction). The state vector is <span class="math inline">\(x = [q^\top,\; \dot{q}^\top]^\top \in \mathbb{R}^{12}\)</span> and the input is <span class="math inline">\(u = \tau \in \mathbb{R}^6\)</span>, giving a 12-state, 6-input system.</p>
+
+<p>The mass matrix <span class="math inline">\(M(q)\)</span> is computed from the link masses and geometric Jacobians using <span class="math inline">\(M(q) = \sum_{j=1}^{6} m_j\,J_{v,j}(q)^\top J_{v,j}(q) + I_{\text{motor}}\)</span>, and the gravity vector from potential energy gradients. The robot geometry follows the <strong>Denavit&ndash;Hartenberg (DH)</strong> convention with parameters chosen to resemble a typical industrial arm (link lengths 0.34&thinsp;m, masses 0.5&ndash;4.0&thinsp;kg).</p>
+
+<p>The controller uses <strong>SCvx</strong> exactly as in the quadrotor example: the nonlinear RK4 dynamics are linearised along the current trajectory, and the resulting QP is solved via projected gradient descent. The reference is generated in <strong>Cartesian space</strong> (smooth interpolation to the target end-effector position) and converted to joint space via <strong>damped least-squares inverse kinematics</strong> at each horizon step. Gravity compensation torques provide the feedforward reference.</p>
+
+<p>An <strong>Extended Kalman Filter (EKF)</strong> with augmented state <span class="math inline">\(\hat{x}_a = [q^\top,\; \dot{q}^\top,\; d^\top]^\top \in \mathbb{R}^{18}\)</span> jointly estimates joint states and disturbance torques. When enabled, disturbances such as an unknown payload mass (gravity load at the end-effector) and Coulomb friction are estimated and compensated through the MPC&rsquo;s corrected state feedback.</p>
+
+<h4>Interactive Demo: 6-DOF Manipulator with SCvx MPC</h4>
+<p>The 3D animation below shows a 6-joint serial manipulator tracking a user-specified end-effector target. Adjust the target coordinates (X, Y, Z in metres), the position tracking weight <span class="math inline">\(Q\)</span>, control effort weight <span class="math inline">\(R\)</span>, and prediction horizon <span class="math inline">\(N\)</span>. Enable <strong>Payload</strong> to add an unknown mass at the end-effector, <strong>Friction</strong> for Coulomb friction disturbances, and <strong>EKF</strong> to estimate and reject these disturbances. Drag to orbit, shift+drag to pan, scroll to zoom.</p>
+<div class="manipulator-demo"></div>
+
 <h2 id="sec:nmpc_guidelines">Practical Guidelines</h2>
 <div class="summarybox">
 <p><span>Comparison of NMPC Solution Methods</span></p>
