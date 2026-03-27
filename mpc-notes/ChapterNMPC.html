@@ -1416,6 +1416,303 @@ print(f"Mean tracking error:  {np.mean(E):.4f} m")
 print(f"Max |v|: {np.max(np.abs(U[:,0])):.2f} m/s, Max |\u03C9|: {np.max(np.abs(U[:,1])):.2f} rad/s")</code></pre>
 </div>
 
+<h2 id="sec:quadrotor_nmpc">Application: 3D Quadrotor Position Control</h2>
+
+<p>The quadrotor is a canonical nonlinear MPC benchmark: the dynamics couple translational and rotational degrees of freedom through trigonometric terms, the thrust-to-weight ratio imposes hard actuator limits, and the system is underactuated (three inputs controlling six states). We model a simplified quadrotor with state <span class="math inline">\(x = [p_x,\; p_y,\; p_z,\; v_x,\; v_y,\; v_z]^\top\)</span> (position and velocity in three axes) and input <span class="math inline">\(u = [\phi,\; \theta,\; T]^\top\)</span> (roll angle, pitch angle, total thrust). The continuous-time dynamics are:</p>
+
+<div class="displaymath">
+\[
+\dot{v}_x = \frac{T}{m}\cos\phi\,\sin\theta, \qquad
+\dot{v}_y = -\frac{T}{m}\sin\phi, \qquad
+\dot{v}_z = \frac{T}{m}\cos\phi\,\cos\theta - g
+\]
+</div>
+
+<p>with <span class="math inline">\(m = 1\,\text{kg}\)</span>, <span class="math inline">\(g = 9.81\,\text{m/s}^2\)</span>, and sampling period <span class="math inline">\(T_s = 0.1\,\text{s}\)</span>. Integration uses the RK4 scheme from Section <a href="#sec:rk4" data-reference-type="ref" data-reference="sec:rk4">1.2</a>. The input constraints are <span class="math inline">\(|\phi| \le 0.5\,\text{rad}\)</span>, <span class="math inline">\(|\theta| \le 0.5\,\text{rad}\)</span>, and <span class="math inline">\(0 \le T \le 20\,\text{N}\)</span>.</p>
+
+<p>The controller uses <strong>Successive Convexification (SCvx)</strong> in a receding-horizon loop: at each time step, the nonlinear RK4 dynamics are linearised along the current trajectory, yielding a convex QP that is solved via preconditioned projected gradient descent with exact step sizes from Hessian-vector products. The first input is applied, and the process repeats. A cubic Hermite reference trajectory smoothly interpolates from the current state to the target, and a ground penalty discourages <span class="math inline">\(p_z < 0\)</span>.</p>
+
+<h4>Interactive Demo: 3D Quadrotor with SCvx MPC</h4>
+<p>The 3D animation below shows the quadrotor tracking a user-specified target position. Adjust the target coordinates, position tracking weight <span class="math inline">\(Q_{\text{pos}}\)</span>, control effort weight <span class="math inline">\(R\)</span>, and prediction horizon <span class="math inline">\(N\)</span>, then click <strong>Start</strong>. Click on the canvas to reposition the target in the horizontal plane; the quadrotor will re-plan in real time.</p>
+<div class="quadrotor-demo"></div>
+
+<h4>Try It Yourself: Quadrotor SCvx MPC in Python</h4>
+<p>This solver implements the same <strong>Successive Convexification</strong> algorithm with <strong>RK4 dynamics</strong> for the 3D quadrotor. The nonlinear dynamics are linearised at each SCP iteration, and the resulting QP is solved via <strong>preconditioned projected gradient descent</strong>. Modify the target position, cost weights, or horizon and click <strong>Run</strong>.</p>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# ── Quadrotor parameters ─────────────────────────────────
+mass, grav = 1.0, 9.81
+dt = 0.1
+NX, NU = 6, 3
+phi_max, theta_max = 0.5, 0.5
+T_min, T_max = 0.0, 20.0
+u_hover = np.array([0.0, 0.0, mass * grav])
+GROUND_PEN = 3000.0
+
+# ── Continuous-time dynamics ─────────────────────────────
+def f_cont(x, u):
+    phi, theta, T = u[0], u[1], u[2]
+    cp, sp = np.cos(phi), np.sin(phi)
+    ct, st = np.cos(theta), np.sin(theta)
+    Tm = T / mass
+    return np.array([x[3], x[4], x[5],
+                     Tm * cp * st,
+                     -Tm * sp,
+                     Tm * cp * ct - grav])
+
+# ── RK4 integrator ──────────────────────────────────────
+def rk4(x, u):
+    k1 = f_cont(x, u)
+    k2 = f_cont(x + 0.5*dt*k1, u)
+    k3 = f_cont(x + 0.5*dt*k2, u)
+    k4 = f_cont(x + dt*k3, u)
+    return x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+
+# ── Numerical Jacobians of the RK4 map ──────────────────
+def rk4_jac(x, u):
+    eps = 1e-6
+    f0 = rk4(x, u)
+    A = np.zeros((NX, NX))
+    B = np.zeros((NX, NU))
+    for j in range(NX):
+        xp = x.copy(); xp[j] += eps
+        A[:, j] = (rk4(xp, u) - f0) / eps
+    for j in range(NU):
+        up = u.copy(); up[j] += eps
+        B[:, j] = (rk4(x, up) - f0) / eps
+    return A, B
+
+# ── Nonlinear rollout ───────────────────────────────────
+def rollout(x0, us):
+    N = len(us)
+    xs = np.zeros((N+1, NX))
+    xs[0] = x0
+    for k in range(N):
+        xs[k+1] = rk4(xs[k], us[k])
+    return xs
+
+# ── Reference trajectory (cubic Hermite) ────────────────
+def gen_ref(x0, xf, N):
+    Tf = N * dt
+    refs = np.zeros((N+1, NX))
+    for k in range(N+1):
+        s = k / N
+        h00 = 1 - 3*s**2 + 2*s**3
+        h10 = s - 2*s**2 + s**3
+        h01 = 3*s**2 - 2*s**3
+        dh00 = (-6*s + 6*s**2) / Tf
+        dh10 = (1 - 4*s + 3*s**2) / Tf
+        dh01 = (6*s - 6*s**2) / Tf
+        refs[k, 0] = x0[0]*h00 + xf[0]*h01 + x0[3]*Tf*h10
+        refs[k, 1] = x0[1]*h00 + xf[1]*h01 + x0[4]*Tf*h10
+        refs[k, 2] = max(x0[2]*h00 + xf[2]*h01 + x0[5]*Tf*h10, 0.05)
+        refs[k, 3] = x0[0]*dh00 + xf[0]*dh01 + x0[3]*Tf*dh10
+        refs[k, 4] = x0[1]*dh00 + xf[1]*dh01 + x0[4]*Tf*dh10
+        refs[k, 5] = x0[2]*dh00 + xf[2]*dh01 + x0[5]*Tf*dh10
+    return refs
+
+# ── Adjoint gradient of the QP cost ─────────────────────
+def qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar):
+    N = len(us)
+    xs = np.zeros((N+1, NX))
+    xs[0] = x0
+    for k in range(N):
+        xs[k+1] = Ab[k] @ xs[k] + Bb[k] @ us[k] + cb[k]
+    # Terminal costate
+    lam = Qfd * (xs[N] - refs[N])
+    if xs[N, 2] < 0:
+        lam[2] += GROUND_PEN * xs[N, 2]
+    grad = np.zeros((N, NU))
+    for k in range(N-1, -1, -1):
+        grad[k] = Rd * (us[k] - u_ref) + Bb[k].T @ lam + w_tr * (us[k] - us_bar[k])
+        lam = Qd * (xs[k] - refs[k]) + Ab[k].T @ lam
+        if xs[k, 2] < 0:
+            lam[2] += GROUND_PEN * xs[k, 2]
+    return grad
+
+# ── Hessian-vector product ──────────────────────────────
+def qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar):
+    N = len(pdir)
+    dx = np.zeros(NX)
+    hvp = np.zeros((N, NU))
+    for k in range(N):
+        hvp[k] = (Rd + w_tr) * pdir[k] + Bb[k].T @ (Qd * (Bb[k-1] @ dx if k > 0 else np.zeros(NX)))
+        # Forward pass for dx
+    # Redo properly: forward then backward
+    dxs = np.zeros((N+1, NX))
+    for k in range(N):
+        dxs[k+1] = Ab[k] @ dxs[k] + Bb[k] @ pdir[k]
+    dlam = Qfd * dxs[N]
+    if xs_bar[N, 2] < 0:
+        dlam[2] += GROUND_PEN * dxs[N, 2]
+    for k in range(N-1, -1, -1):
+        hvp[k] = (Rd + w_tr) * pdir[k] + Bb[k].T @ dlam
+        dlam = Qd * dxs[k] + Ab[k].T @ dlam
+        if xs_bar[k, 2] < 0:
+            dlam[2] += GROUND_PEN * dxs[k, 2]
+    return hvp
+
+# ── SCvx solver ─────────────────────────────────────────
+def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr):
+    N = len(us_init)
+    us = us_init.copy()
+    for scp in range(n_scp):
+        xs_bar = rollout(x0, us)
+        Ab = np.zeros((N, NX, NX))
+        Bb = np.zeros((N, NX, NU))
+        cb = np.zeros((N, NX))
+        for k in range(N):
+            Ab[k], Bb[k] = rk4_jac(xs_bar[k], us[k])
+            cb[k] = xs_bar[k+1] - Ab[k] @ xs_bar[k] - Bb[k] @ us[k]
+        us_bar = us.copy()
+        # Diagonal preconditioner
+        diag_p = Qfd.copy()
+        if xs_bar[N, 2] < 0:
+            diag_p[2] += GROUND_PEN
+        prec = np.zeros((N, NU))
+        for k in range(N-1, -1, -1):
+            for a in range(NU):
+                prec[k, a] = Rd[a] + w_tr + np.sum(Bb[k, :, a]**2 * diag_p)
+                prec[k, a] = max(prec[k, a], 1e-6)
+            new_dp = Qd.copy()
+            if xs_bar[k, 2] < 0:
+                new_dp[2] += GROUND_PEN
+            for i in range(NX):
+                new_dp[i] += np.sum(Ab[k, :, i]**2 * diag_p)
+            diag_p = new_dp
+        # Projected gradient descent
+        for qi in range(20):
+            grad = qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar)
+            # Zero gradient at active bounds
+            for k in range(N):
+                if us[k,0] <= -phi_max+1e-4 and grad[k,0] > 0: grad[k,0] = 0
+                if us[k,0] >= phi_max-1e-4 and grad[k,0] < 0: grad[k,0] = 0
+                if us[k,1] <= -theta_max+1e-4 and grad[k,1] > 0: grad[k,1] = 0
+                if us[k,1] >= theta_max-1e-4 and grad[k,1] < 0: grad[k,1] = 0
+                if us[k,2] <= T_min+0.01 and grad[k,2] > 0: grad[k,2] = 0
+                if us[k,2] >= T_max-0.01 and grad[k,2] < 0: grad[k,2] = 0
+            pdir = grad / prec
+            Hpd = qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar)
+            gd = np.sum(grad * pdir)
+            dHd = np.sum(pdir * Hpd)
+            if gd < 1e-8 or dHd < 1e-12:
+                break
+            alpha = gd / dHd
+            us[:, 0] = np.clip(us[:, 0] - alpha*pdir[:, 0], -phi_max, phi_max)
+            us[:, 1] = np.clip(us[:, 1] - alpha*pdir[:, 1], -theta_max, theta_max)
+            us[:, 2] = np.clip(us[:, 2] - alpha*pdir[:, 2], T_min, T_max)
+    xs = rollout(x0, us)
+    return xs, us
+</script>
+<pre><code># ═══ SCvx MPC 3D Quadrotor ═══════════════════════════════
+# Successive Convexification with RK4 nonlinear dynamics.
+# Modify target position, weights, or horizon and click Run.
+
+# ── Initial and target states ────────────────────────────
+x0 = np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0])   # start near ground
+xf = np.array([3.0, 2.0, 2.5, 0.0, 0.0, 0.0])    # target position
+
+# ── MPC parameters ──────────────────────────────────────
+N_hor   = 20       # prediction horizon (2.0 s)
+N_sim   = 120      # max simulation steps
+n_scp   = 3        # SCP iterations per MPC step
+w_tr    = 1.5      # trust-region penalty weight
+
+# ── Cost weights ────────────────────────────────────────
+Qd  = np.array([20, 20, 20, 5, 5, 5], dtype=float)   # position + velocity
+Rd  = np.array([0.5, 0.5, 0.002])                     # roll, pitch, thrust
+Qf_mult = 150.0   # terminal cost multiplier
+
+# ── MPC loop ────────────────────────────────────────────
+x_hist, u_hist = [x0.copy()], []
+x_cur = x0.copy()
+us_warm = np.tile(u_hover, (N_hor, 1))
+
+print("Running SCvx MPC for 3D quadrotor...")
+for step in range(N_sim):
+    refs = gen_ref(x_cur, xf, N_hor)
+    Qfd  = Qf_mult * Qd
+
+    xs_plan, us_plan = scvx_solve(
+        x_cur, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr)
+
+    u_apply = us_plan[0]
+    x_cur = rk4(x_cur, u_apply)
+    x_hist.append(x_cur.copy())
+    u_hist.append(u_apply.copy())
+
+    # Warm-start: shift solution by one step
+    us_warm = np.vstack([us_plan[1:], us_plan[-1:]])
+
+    # Convergence check
+    pos_err = np.linalg.norm(x_cur[:3] - xf[:3])
+    vel_err = np.linalg.norm(x_cur[3:6])
+    if pos_err < 0.05 and vel_err < 0.1:
+        print(f"  Converged at step {step+1}!")
+        break
+
+x_hist = np.array(x_hist)
+u_hist = np.array(u_hist)
+t_x = np.arange(len(x_hist)) * dt
+t_u = np.arange(len(u_hist)) * dt
+
+# ── Plot results ─────────────────────────────────────────
+fig = plt.figure(figsize=(12, 8))
+
+# 3D trajectory
+ax3d = fig.add_subplot(2, 2, 1, projection='3d')
+ax3d.plot(x_hist[:,0], x_hist[:,1], x_hist[:,2], 'b-', lw=1.5, label='Trajectory')
+ax3d.scatter(*x0[:3], color='green', s=80, zorder=5, label='Start')
+ax3d.scatter(*xf[:3], color='red', s=80, marker='*', zorder=5, label='Target')
+ax3d.set_xlabel('$p_x$ (m)'); ax3d.set_ylabel('$p_y$ (m)'); ax3d.set_zlabel('$p_z$ (m)')
+ax3d.set_title('3D Trajectory'); ax3d.legend(fontsize=8)
+
+# Position vs time
+ax1 = fig.add_subplot(2, 2, 2)
+ax1.plot(t_x, x_hist[:,0], label='$p_x$')
+ax1.plot(t_x, x_hist[:,1], label='$p_y$')
+ax1.plot(t_x, x_hist[:,2], label='$p_z$')
+for i, c in enumerate(['C0','C1','C2']):
+    ax1.axhline(xf[i], ls=':', color=c, alpha=0.4)
+ax1.set_xlabel('Time (s)'); ax1.set_ylabel('Position (m)')
+ax1.set_title('Position'); ax1.legend(fontsize=8); ax1.grid(True, alpha=0.3)
+
+# Control inputs
+ax2 = fig.add_subplot(2, 2, 3)
+ax2.stairs(np.degrees(u_hist[:,0]), t_u.tolist()+[t_u[-1]+dt],
+           color='#2196F3', label='Roll $\\phi$')
+ax2.stairs(np.degrees(u_hist[:,1]), t_u.tolist()+[t_u[-1]+dt],
+           color='#FF6B35', label='Pitch $\\theta$')
+ax2.axhline(np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
+ax2.axhline(-np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
+ax2.set_xlabel('Time (s)'); ax2.set_ylabel('Angle (deg)')
+ax2.set_title('Roll & Pitch'); ax2.legend(fontsize=8); ax2.grid(True, alpha=0.3)
+
+# Thrust
+ax3 = fig.add_subplot(2, 2, 4)
+ax3.stairs(u_hist[:,2], t_u.tolist()+[t_u[-1]+dt], color='#4ECDC4', label='Thrust')
+ax3.axhline(mass*grav, ls=':', color='gray', alpha=0.5, label='Hover')
+ax3.axhline(T_max, ls='--', color='#ff6b6b', alpha=0.5, label='Bounds')
+ax3.axhline(T_min, ls='--', color='#ff6b6b', alpha=0.5)
+ax3.set_xlabel('Time (s)'); ax3.set_ylabel('Thrust (N)')
+ax3.set_title('Thrust'); ax3.legend(fontsize=8); ax3.grid(True, alpha=0.3)
+
+fig.suptitle('SCvx MPC — 3D Quadrotor Position Control (RK4 Dynamics)', fontsize=13)
+fig.tight_layout()
+plt.show()
+
+print(f"\nFinal pos:  ({x_hist[-1,0]:.2f}, {x_hist[-1,1]:.2f}, {x_hist[-1,2]:.2f}) m")
+print(f"Final vel:  ({x_hist[-1,3]:.2f}, {x_hist[-1,4]:.2f}, {x_hist[-1,5]:.2f}) m/s")
+print(f"Target:     ({xf[0]:.1f}, {xf[1]:.1f}, {xf[2]:.1f}) m")
+print(f"Steps:      {len(u_hist)}")
+print(f"Pos error:  {np.linalg.norm(x_hist[-1,:3] - xf[:3]):.4f} m")</code></pre>
+</div>
+
 <h2 id="sec:nmpc_guidelines">Practical Guidelines</h2>
 <div class="summarybox">
 <p><span>Comparison of NMPC Solution Methods</span></p>
