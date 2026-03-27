@@ -593,6 +593,100 @@
         return { xs: xs, us: us };
     }
 
+    /* ═══ Double-integrator MPC (computed torque linearisation) ═ */
+    // The MPC operates on the feedback-linearised system: qdd = v
+    // Computed torque converts optimal acceleration v → torque tau
+    var V_MAX = [40, 40, 50, 60, 80, 100]; // per-joint accel bounds [rad/s^2]
+
+    function doubleIntStep(x, v, dt) {
+        var xn = new Array(NX);
+        for (var i = 0; i < NQ; i++) {
+            xn[i]      = x[i] + dt * x[NQ+i] + 0.5 * dt * dt * v[i];
+            xn[NQ + i] = x[NQ+i] + dt * v[i];
+        }
+        return xn;
+    }
+
+    function solveMPC(x0, vInit, xRefs, Qd, Rd, Qfd, dt, wTR) {
+        var N = vInit.length;
+        var vs = [];
+        for (var k = 0; k < N; k++) vs.push(vInit[k].slice());
+
+        // Constant A, B for double integrator (NX × NX, NX × NU)
+        var Ac = [], Bc = [];
+        for (var i = 0; i < NX; i++) {
+            Ac.push(new Array(NX).fill(0));
+            Bc.push(new Array(NU).fill(0));
+            Ac[i][i] = 1;
+            if (i < NQ) { Ac[i][NQ+i] = dt; Bc[i][i] = 0.5*dt*dt; }
+            else         { Bc[i][i-NQ] = dt; }
+        }
+        var Ab = [], Bb = [], cb = [];
+        for (var k = 0; k < N; k++) { Ab.push(Ac); Bb.push(Bc); cb.push(new Array(NX).fill(0)); }
+
+        var vsBar = [];
+        for (var k = 0; k < N; k++) vsBar.push(vs[k].slice());
+        var vRef = new Array(NU).fill(0);
+
+        // Preconditioner (constant since A/B constant)
+        var diagP = new Array(NX);
+        for (var i = 0; i < NX; i++) diagP[i] = Qfd[i];
+        var prec = new Array(N);
+        for (var k = N-1; k >= 0; k--) {
+            prec[k] = new Array(NU);
+            for (var a = 0; a < NU; a++) {
+                prec[k][a] = Rd[a] + wTR;
+                for (var i = 0; i < NX; i++) prec[k][a] += Bc[i][a]*Bc[i][a]*diagP[i];
+                if (prec[k][a] < 1e-6) prec[k][a] = 1e-6;
+            }
+            var newDP = new Array(NX);
+            for (var i = 0; i < NX; i++) {
+                newDP[i] = Qd[i];
+                for (var j = 0; j < NX; j++) newDP[i] += Ac[j][i]*Ac[j][i]*diagP[j];
+            }
+            diagP = newDP;
+        }
+
+        // QP iterations (no SCP needed — system is linear)
+        for (var qi = 0; qi < SCVX_QP_ITERS; qi++) {
+            var grad = qpGrad(vs, Ab, Bb, cb, x0, xRefs, Qd, Rd, Qfd, vRef, wTR, vsBar);
+            for (var k = 0; k < N; k++)
+                for (var a = 0; a < NU; a++) {
+                    if (vs[k][a] <= -V_MAX[a]+0.01 && grad[k][a] > 0) grad[k][a] = 0;
+                    if (vs[k][a] >=  V_MAX[a]-0.01 && grad[k][a] < 0) grad[k][a] = 0;
+                }
+            var pdir = new Array(N);
+            for (var k = 0; k < N; k++) {
+                pdir[k] = new Array(NU);
+                for (var a = 0; a < NU; a++) pdir[k][a] = grad[k][a] / prec[k][a];
+            }
+            var Hpd = qpHvp(pdir, Ab, Bb, Qd, Rd, Qfd, wTR);
+            var gd = 0, dHd = 0;
+            for (var k = 0; k < N; k++)
+                for (var a = 0; a < NU; a++) { gd += grad[k][a]*pdir[k][a]; dHd += pdir[k][a]*Hpd[k][a]; }
+            if (gd < 1e-8 || dHd < 1e-12) break;
+            var alpha = gd / dHd;
+            for (var k = 0; k < N; k++)
+                for (var a = 0; a < NU; a++)
+                    vs[k][a] = clamp(vs[k][a] - alpha*pdir[k][a], -V_MAX[a], V_MAX[a]);
+        }
+
+        var xs = [x0.slice()];
+        for (var k = 0; k < N; k++) xs.push(doubleIntStep(xs[k], vs[k], dt));
+        return { xs: xs, us: vs };
+    }
+
+    /* ═══ 6×6 matrix-vector product (flat M, vector v) ═════════ */
+    function matVec6(Mflat, v) {
+        var r = new Array(NQ);
+        for (var i = 0; i < NQ; i++) {
+            var s = 0;
+            for (var j = 0; j < NQ; j++) s += Mflat[i*NQ+j] * v[j];
+            r[i] = s;
+        }
+        return r;
+    }
+
     /* ═══ Canvas helpers ═══════════════════════════════════════ */
     function setupCanvas(canvas) {
         var dpr = window.devicePixelRatio || 1;
@@ -892,7 +986,7 @@
     /* ═══ Build HTML ══════════════════════════════════════════ */
     function buildHTML(el) {
         el.innerHTML =
-        '<div class="md-header">6-DOF Industrial Manipulator NMPC \u2014 SCvx + EKF</div>' +
+        '<div class="md-header">6-DOF Industrial Manipulator NMPC \u2014 Computed Torque + MPC + EKF</div>' +
         '<div class="md-ctrls">' +
           '<label>X <input type="range" class="md-slider" data-id="tx" min="-0.7" max="0.7" value="0.4" step="0.05"><span class="md-val">0.40</span></label>' +
           '<label>Y <input type="range" class="md-slider" data-id="ty" min="-0.7" max="0.7" value="0.2" step="0.05"><span class="md-val">0.20</span></label>' +
@@ -987,9 +1081,9 @@
             for (var i = 0; i < NQ; i++) { Qd.push(qp * jScale[i]); Qfd.push(qp * 10 * jScale[i]); }
             // Velocity weights: high for damping (prevents oscillation)
             for (var i = 0; i < NQ; i++) { Qd.push(qp * 1.0 * jScale[i]); Qfd.push(qp * 5.0 * jScale[i]); }
-            // Per-joint R: normalise by torque capacity so wrist isn't driven aggressively
+            // R penalises acceleration (uniform — computed torque handles per-joint scaling)
             var Rd = [];
-            for (var i = 0; i < NU; i++) Rd.push(rc * TAU_MAX[0] / TAU_MAX[i]);
+            for (var i = 0; i < NU; i++) Rd.push(rc);
             return { Qd: Qd, Rd: Rd, Qfd: Qfd, N: Math.round(sliderVal('hor')) };
         }
 
@@ -1039,57 +1133,63 @@
             var w = getWeights();
             var N = w.N;
 
+            // ─── 1. State for MPC planning ───
             var xForMPC = (sim.ekfOn && sim.xa) ? sim.xa.slice(0, NX) : sim.x;
             var refs = genReference(xForMPC, sim.target, N, pp.dt, sim.qRefPrev);
             sim.qRefPrev = refs[N].slice(0, NQ);
 
-            // Gravity compensation as reference input
-            var q0 = xForMPC.slice(0, NQ);
-            var frames0 = forwardKinematics(q0);
-            var uRef = computeGravVec(frames0);
-
-            // Warm start
-            var usInit;
+            // ─── 2. Warm start (accelerations from previous step) ───
+            var vRef = new Array(NU).fill(0);
+            var vInit;
             if (sim.usWarm && sim.usWarm.length >= N) {
-                usInit = [];
-                for (var k = 1; k < sim.usWarm.length; k++) usInit.push(sim.usWarm[k].slice());
-                while (usInit.length < N) usInit.push(uRef.slice());
-                usInit = usInit.slice(0, N);
+                vInit = [];
+                for (var k = 1; k < sim.usWarm.length; k++) vInit.push(sim.usWarm[k].slice());
+                while (vInit.length < N) vInit.push(vRef.slice());
+                vInit = vInit.slice(0, N);
             } else {
-                usInit = [];
-                for (var k = 0; k < N; k++) usInit.push(uRef.slice());
+                vInit = [];
+                for (var k = 0; k < N; k++) vInit.push(vRef.slice());
             }
 
-            // Disturbance feedforward: clamp and smooth EKF estimates
-            var distEst = null;
-            if (sim.ekfOn && sim.xa) {
-                distEst = new Array(NQ);
-                for (var i = 0; i < NQ; i++) {
-                    var raw = clamp(sim.xa[NX+i], -TAU_MAX[i]*0.4, TAU_MAX[i]*0.4);
-                    distEst[i] = (sim.distFF) ? 0.35*raw + 0.65*sim.distFF[i] : raw;
-                }
-            }
-            sim.distFF = distEst ? distEst.slice() : null;
-            var sol = scvxSolve(xForMPC, usInit, refs, uRef, w.Qd, w.Rd, w.Qfd, pp, SCVX_SCP_ITERS, SCVX_TR, distEst);
-
-            sim.lastU = sol.us[0].slice();
+            // ─── 3. Solve MPC on double integrator (qdd = v) ───
+            var sol = solveMPC(xForMPC, vInit, refs, w.Qd, w.Rd, w.Qfd, pp.dt, SCVX_TR);
             sim.usWarm = sol.us;
-            // Predicted EE trajectory
+
+            // ─── 4. Computed torque: tau = M(q)*v + g(q) + B*qd - d_est ───
+            var v_opt = sol.us[0];
+            var q_cur = sim.x.slice(0, NQ);
+            var qd_cur = sim.x.slice(NQ, NX);
+            var frames_cur = forwardKinematics(q_cur);
+            var M_cur = computeM(frames_cur);
+            var g_cur = computeGravVec(frames_cur);
+            var Mv = matVec6(M_cur, v_opt);
+
+            sim.lastU = new Array(NU);
+            for (var i = 0; i < NU; i++)
+                sim.lastU[i] = Mv[i] + g_cur[i] + B_DAMP[i] * qd_cur[i];
+
+            // Subtract estimated disturbance for feedforward compensation
+            if (sim.distFF) {
+                for (var i = 0; i < NQ; i++) sim.lastU[i] -= sim.distFF[i];
+            }
+            // Clamp torques to actuator limits
+            for (var i = 0; i < NQ; i++)
+                sim.lastU[i] = clamp(sim.lastU[i], -TAU_MAX[i], TAU_MAX[i]);
+
+            // ─── 5. Predicted EE trajectory ───
             sim.predEE = [];
             for (var k = 0; k <= N; k++)
                 sim.predEE.push(endEffectorPos(sol.xs[k].slice(0, NQ)));
 
-            // True plant disturbance
+            // ─── 6. True plant: RK4 with full nonlinear dynamics ───
             var trueDist = computeDisturbance(sim.x.slice(0,NQ), sim.x.slice(NQ,NX));
-            // RK4 step on true plant
             sim.x = rk4(sim.x, sim.lastU, pp, trueDist);
-            // Clamp joints
             for (var i = 0; i < NQ; i++) {
                 sim.x[i] = clamp(sim.x[i], Q_LO[i], Q_HI[i]);
                 if (sim.x[i] === Q_LO[i] || sim.x[i] === Q_HI[i]) sim.x[NQ+i] = 0;
             }
 
-            // EKF predict + update
+            // ─── 7. EKF predict + update ───
             if (sim.ekfOn) {
                 if (!sim.xa || !sim.Pa) initEKF();
                 var pred = ekfPredict(sim.xa, sim.Pa, sim.lastU, pp);
@@ -1098,20 +1198,31 @@
                 var upd = ekfUpdate(pred.xa, pred.Pa, meas, pp);
                 sim.xa = upd.xa;
                 sim.Pa = upd.Pa;
-                // Clamp disturbance estimates to prevent divergence
+                // Clamp estimates
                 for (var i = 0; i < NQ; i++)
                     sim.xa[NX+i] = clamp(sim.xa[NX+i], -TAU_MAX[i]*0.5, TAU_MAX[i]*0.5);
-                // Clamp joint estimates to physical limits
                 for (var i = 0; i < NQ; i++) {
                     sim.xa[i] = clamp(sim.xa[i], Q_LO[i], Q_HI[i]);
                     sim.xa[NQ+i] = clamp(sim.xa[NQ+i], -10, 10);
                 }
             }
 
+            // ─── 8. Disturbance feedforward for next step ───
+            if (sim.ekfOn && sim.xa) {
+                var distEst = new Array(NQ);
+                for (var i = 0; i < NQ; i++) {
+                    var raw = clamp(sim.xa[NX+i], -TAU_MAX[i]*0.4, TAU_MAX[i]*0.4);
+                    distEst[i] = sim.distFF ? 0.35*raw + 0.65*sim.distFF[i] : raw;
+                }
+                sim.distFF = distEst;
+            } else {
+                sim.distFF = null;
+            }
+
             sim.time += pp.dt;
             sim.step++;
 
-            // Logging
+            // ─── 9. Logging ───
             var ee = endEffectorPos(sim.x.slice(0,NQ));
             sim.trail.push(ee.slice());
             if (sim.trail.length > 400) sim.trail.shift();
@@ -1120,7 +1231,7 @@
             sim.log.eex.push(ee[0]); sim.log.eey.push(ee[1]); sim.log.eez.push(ee[2]);
             sim.log.errNorm.push(eNorm);
             sim.log.tau1.push(sim.lastU[0]); sim.log.tau2.push(sim.lastU[1]); sim.log.tau3.push(sim.lastU[2]);
-            sim.log.d1True.push(trueDist ? trueDist[0] : 0);
+            sim.log.d1True.push(trueDist[0]);
             sim.log.d1Est.push(sim.xa ? sim.xa[NX] : 0);
             if (sim.log.t.length > 500) {
                 sim.log.t.shift(); sim.log.eex.shift(); sim.log.eey.shift(); sim.log.eez.shift();
