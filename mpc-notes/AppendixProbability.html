@@ -138,7 +138,7 @@ ax.set_title('PMF of quantised sensor')
 ax.set_ylim([0, 0.4])
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print("PMF values:", dict(zip(x, pmf)))</code></pre>
 </div>
@@ -226,7 +226,7 @@ ax.set_title(f'Gaussian Sensor Noise: μ={mu}, σ={sigma}')
 ax.legend(fontsize=8, loc='upper right')
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 # Print 68-95-99.7 verification
 for k in [1, 2, 3]:
@@ -396,7 +396,7 @@ ax2.set_title(f'ρ = {rho2:.3f}')
 ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print(f"Cov(x,y1):\n{np.cov(x, y1)}")
 print(f"\nCov(x,y2):\n{np.cov(x, y2)}")</code></pre>
@@ -483,7 +483,7 @@ ax.legend(fontsize=9)
 ax.set_aspect('equal')
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print(f"Sample mean:  {np.mean(samples, axis=0)}")
 print(f"True mean:    {mu}")
@@ -570,7 +570,7 @@ ax2.legend(fontsize=9)
 ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print(f"Steady-state variance: {P_ss:.6f}")</code></pre>
 </div>
@@ -660,7 +660,7 @@ ax3.set_title('Random walk (cumulative sum)')
 ax3.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print(f"White noise — mean: {np.mean(w):.4f}, var: {np.var(w):.4f} (expect {Q})")</code></pre>
 </div>
@@ -731,7 +731,7 @@ for idx, ax in enumerate(axes.flat):
 
 fig.suptitle('Central Limit Theorem: convergence to Gaussian', color='#D4E0ED', fontsize=12)
 plt.tight_layout()
-plt.show()</code></pre>
+plt.close(fig)</code></pre>
 </div>
 <p>Even for <span class="math inline">\(N=10\)</span> the histogram already resembles a bell curve. By <span class="math inline">\(N=1000\)</span> the agreement with the standard Gaussian (red curve) is almost perfect.</p>
 </div>
@@ -792,7 +792,7 @@ ax.set_title(f'Monte Carlo Chance Constraint: P(x ≥ {constraint}) = {p_mc:.4f}
 ax.legend(fontsize=9)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 print(f"P(x >= {constraint}):")
 print(f"  Monte Carlo (N={N}): {p_mc:.4f}")
@@ -903,7 +903,7 @@ ax2.set_title('Error variance')
 ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.show()
+plt.close(fig)
 
 err = x_true - x_hat
 print(f"RMSE = {np.sqrt(np.mean(err**2)):.4f}")
