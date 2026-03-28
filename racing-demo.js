@@ -35,10 +35,13 @@
     var TR_WEIGHT = 2.0;
     var Rd = [0.01, 0.005];
     var TRACK_HW = 5.0;
-    var W_TRACK = 300;
+    var W_TRACK = 500;
     var W_SS = 1.0;
     var KNN_K = 5;
     var TERM_HESS = [0.5, 0.5, 1.0, 0.3, 0.1, 0.1];
+    var Q_LAT = 0.3;
+    var Q_HEAD = 0.8;
+    var TERM_SCALE = 0.05;
     var PP_SPEED = 5.0;
 
     function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -234,6 +237,7 @@
             JSum += w * topK[i].J;
         }
         var Vf = JSum / wSum;
+        Vf = TERM_SCALE * Vf;
         Vf += W_SS * topK[0].d * topK[0].d;
         return Vf;
     }
@@ -248,17 +252,39 @@
         return grad;
     }
 
-    /* ═══ Track Penalty ════════════════════════════════════════ */
+    /* ═══ Track + Centreline + Heading Cost ═════════════════════ */
     function getTrackInfo(x, track) {
         var proj = projectOnTrack(x[0], x[1], track);
         var absD = Math.abs(proj.d);
         var viol = Math.max(0, absD - TRACK_HW);
         var sgn = proj.d >= 0 ? 1 : -1;
+
+        // Boundary penalty gradient/Hessian (active only outside track)
+        var bGradX = viol > 0 ? W_TRACK * 2 * viol * sgn * proj.nx : 0;
+        var bGradY = viol > 0 ? W_TRACK * 2 * viol * sgn * proj.ny : 0;
+        var bHessXX = viol > 0 ? W_TRACK * 2 * proj.nx * proj.nx : 0;
+        var bHessYY = viol > 0 ? W_TRACK * 2 * proj.ny * proj.ny : 0;
+
+        // Centreline tracking cost: Q_LAT * d^2
+        // d = (X - cx)*nx + (Y - cy)*ny  =>  dd/dX = nx,  dd/dY = ny
+        var cGradX = Q_LAT * 2 * proj.d * proj.nx;
+        var cGradY = Q_LAT * 2 * proj.d * proj.ny;
+        var cHessXX = Q_LAT * 2 * proj.nx * proj.nx;
+        var cHessYY = Q_LAT * 2 * proj.ny * proj.ny;
+
+        // Heading cost: Q_HEAD * (phi - phi_ref)^2
+        var phiRef = Math.atan2(track.ty[proj.idx], track.tx[proj.idx]);
+        var ePhi = angleDiff(x[2], phiRef);
+        var gradPhi = Q_HEAD * 2 * ePhi;
+        var hessPhi = Q_HEAD * 2;
+
         return {
-            gradX: viol > 0 ? W_TRACK * 2 * viol * sgn * proj.nx : 0,
-            gradY: viol > 0 ? W_TRACK * 2 * viol * sgn * proj.ny : 0,
-            hessXX: viol > 0 ? W_TRACK * 2 * proj.nx * proj.nx : 0,
-            hessYY: viol > 0 ? W_TRACK * 2 * proj.ny * proj.ny : 0
+            gradX: bGradX + cGradX,
+            gradY: bGradY + cGradY,
+            hessXX: bHessXX + cHessXX,
+            hessYY: bHessYY + cHessYY,
+            gradPhi: gradPhi,
+            hessPhi: hessPhi
         };
     }
 
@@ -293,7 +319,12 @@
 
             // Diagonal preconditioner
             var diagP = new Array(NX);
-            for (var i = 0; i < NX; i++) diagP[i] = TERM_HESS[i] + (i < 2 ? trkInfo[N].hessXX : 0);
+            for (var i = 0; i < NX; i++) {
+                diagP[i] = TERM_HESS[i];
+                if (i === 0) diagP[i] += trkInfo[N].hessXX;
+                if (i === 1) diagP[i] += trkInfo[N].hessYY;
+                if (i === 2) diagP[i] += trkInfo[N].hessPhi;
+            }
             var prec = new Array(N);
             for (var k = N - 1; k >= 0; k--) {
                 prec[k] = new Array(NU);
@@ -304,7 +335,10 @@
                 }
                 var newDP = new Array(NX);
                 for (var i = 0; i < NX; i++) {
-                    newDP[i] = (i === 0 ? trkInfo[k].hessXX : (i === 1 ? trkInfo[k].hessYY : 0));
+                    newDP[i] = 0;
+                    if (i === 0) newDP[i] += trkInfo[k].hessXX;
+                    if (i === 1) newDP[i] += trkInfo[k].hessYY;
+                    if (i === 2) newDP[i] += trkInfo[k].hessPhi;
                     for (var j = 0; j < NX; j++) newDP[i] += Ab[k][j][i] * Ab[k][j][i] * diagP[j];
                 }
                 diagP = newDP;
@@ -341,6 +375,7 @@
                         newLam[i] = 0;
                         if (i === 0) newLam[i] += trkInfo[k].gradX;
                         if (i === 1) newLam[i] += trkInfo[k].gradY;
+                        if (i === 2) newLam[i] += trkInfo[k].gradPhi;
                         for (var j = 0; j < NX; j++) newLam[i] += Ab[k][j][i] * lam[j];
                     }
                     lam = newLam;
@@ -387,6 +422,7 @@
                         newDLam[i] = 0;
                         if (i === 0) newDLam[i] += trkInfo[k].hessXX * dxH[k][i];
                         if (i === 1) newDLam[i] += trkInfo[k].hessYY * dxH[k][i];
+                        if (i === 2) newDLam[i] += trkInfo[k].hessPhi * dxH[k][i];
                         for (var j = 0; j < NX; j++) newDLam[i] += Ab[k][j][i] * dLam[j];
                     }
                     dLam = newDLam;
@@ -925,9 +961,30 @@
                 completeLap();
             }
 
-            // Safety: if car is way off track, abort
+            // Safety: if car is way off track, abort WITHOUT storing data
             if (Math.abs(projNew.d) > TRACK_HW * 3) {
-                completeLap();
+                abortLap();
+            }
+        }
+
+        function abortLap() {
+            // Off-track: discard trajectory, don't add to safe set
+            console.warn('LMPC: lap aborted (off track), discarding data');
+            sim.state = 'idle';
+            running = false;
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+            resetCar();
+            updateInfo();
+            render();
+            // Auto mode: retry same iteration
+            if (sim.autoMode && sim.autoLapsLeft > 0) {
+                sim.autoLapsLeft--;
+                setTimeout(function () { startLap(); }, 300);
+            } else {
+                sim.autoMode = false;
+                runBtn.disabled = false;
+                autoBtn.disabled = false;
+                runBtn.textContent = '\u25B6 Run Lap';
             }
         }
 
