@@ -29,21 +29,9 @@
     var DT_SIM = 0.05;
     var DT_MPC = 0.1;
     var MPC_EVERY = 2;
-    var N_DEFAULT = 20;
-    var SCP_ITERS = 3;
-    var QP_ITERS = 12;
-    var TR_WEIGHT = 2.0;
-    var Rd = [0.01, 0.005];
+    var N_DEFAULT = 15;
     var TRACK_HW = 5.0;
-    var W_TRACK = 500;
-    var W_SS = 1.0;
-    var KNN_K = 5;
-    var TERM_HESS = [0.5, 0.5, 1.0, 0.3, 0.1, 0.1];
-    var Q_LAT = 0.12;
-    var Q_HEAD = 0.10;
-    var Q_VX = 0.5;
-    var TERM_SCALE = 0.01;
-    var SPEED_BOOST = 0.12;
+    var SPEED_BOOST = 0.15;
     var PP_SPEED = 5.0;
 
     function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -95,7 +83,22 @@
         var dx = px[0] - px[total - 1], dy = py[0] - py[total - 1];
         var totalLen = sArr[total - 1] + Math.sqrt(dx * dx + dy * dy);
 
-        return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: total, totalLength: totalLen };
+        // Compute curvature at each point
+        var curv = new Array(total);
+        for (var i = 0; i < total; i++) {
+            var ip = (i + 1) % total, im = (i - 1 + total) % total;
+            var ds2 = sArr[ip] - sArr[im];
+            if (ip < im) ds2 = sArr[ip] + totalLen - sArr[im];
+            if (ds2 > 0) {
+                var dphi = Math.atan2(tyA[ip], txA[ip]) - Math.atan2(tyA[im], txA[im]);
+                dphi = ((dphi + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+                curv[i] = Math.abs(dphi / ds2);
+            } else {
+                curv[i] = 0;
+            }
+        }
+
+        return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: total, totalLength: totalLen, curvature: curv };
     }
 
     function projectOnTrack(X, Y, track) {
@@ -171,23 +174,6 @@
         return xn;
     }
 
-    function rk4Jac(x, u, dt) {
-        var eps = 1e-6, f0 = rk4Step(x, u, dt);
-        var A = [], B = [];
-        for (var i = 0; i < NX; i++) { A.push(new Array(NX)); B.push(new Array(NU)); }
-        for (var j = 0; j < NX; j++) {
-            var xp = x.slice(); xp[j] += eps;
-            var fp = rk4Step(xp, u, dt);
-            for (var i = 0; i < NX; i++) A[i][j] = (fp[i] - f0[i]) / eps;
-        }
-        for (var j = 0; j < NU; j++) {
-            var up = u.slice(); up[j] += eps;
-            var fp = rk4Step(x, up, dt);
-            for (var i = 0; i < NX; i++) B[i][j] = (fp[i] - f0[i]) / eps;
-        }
-        return { A: A, B: B, f0: f0 };
-    }
-
     /* ═══ Pure Pursuit Controller ══════════════════════════════ */
     function purePursuitControl(x, sNow, track, targetSpeed) {
         var lookahead = Math.max(4.0, x[3] * 0.9);
@@ -207,60 +193,14 @@
         return [delta, D];
     }
 
-    /* ═══ K-NN Terminal Cost ═══════════════════════════════════ */
-    function findKNN(xN, safeSet, K) {
-        var topK = [];
-        for (var i = 0; i < safeSet.length; i++) {
-            var dx = xN[0] - safeSet[i].x[0];
-            var dy = xN[1] - safeSet[i].x[1];
-            var dphi = angleDiff(xN[2], safeSet[i].x[2]);
-            var dvx = xN[3] - safeSet[i].x[3];
-            var d2 = dx * dx + dy * dy + 2 * dphi * dphi + 0.3 * dvx * dvx;
-            if (topK.length < K) {
-                topK.push({ d2: d2, J: safeSet[i].J });
-                if (topK.length === K) topK.sort(function (a, b) { return a.d2 - b.d2; });
-            } else if (d2 < topK[K - 1].d2) {
-                topK[K - 1] = { d2: d2, J: safeSet[i].J };
-                topK.sort(function (a, b) { return a.d2 - b.d2; });
-            }
-        }
-        for (var i = 0; i < topK.length; i++) topK[i].d = Math.sqrt(topK[i].d2);
-        return topK;
-    }
-
-    function knnCost(xN, safeSet) {
-        if (safeSet.length === 0) return 0;
-        var K = Math.min(KNN_K, safeSet.length);
-        var topK = findKNN(xN, safeSet, K);
-        var wSum = 0, JSum = 0;
-        for (var i = 0; i < topK.length; i++) {
-            var w = 1.0 / (topK[i].d + 0.05);
-            wSum += w;
-            JSum += w * topK[i].J;
-        }
-        var Vf = JSum / wSum;
-        Vf = TERM_SCALE * Vf;
-        Vf += W_SS * topK[0].d * topK[0].d;
-        return Vf;
-    }
-
-    function knnGrad(xN, safeSet) {
-        var eps = 1e-4, f0 = knnCost(xN, safeSet);
-        var grad = new Array(NX);
-        var maxG = 5.0;
-        for (var i = 0; i < NX; i++) {
-            var xp = xN.slice(); xp[i] += eps;
-            grad[i] = clamp((knnCost(xp, safeSet) - f0) / eps, -maxG, maxG);
-        }
-        return grad;
-    }
-
     /* ═══ Speed Reference from Safe Set ═════════════════════════ */
     function buildSpeedRef(safeSet, track, iteration) {
         var nBins = 60;
         var binSize = track.totalLength / nBins;
         var ref = new Array(nBins);
         for (var b = 0; b < nBins; b++) ref[b] = PP_SPEED;
+
+        // Find max achieved speed at each track position
         for (var i = 0; i < safeSet.length; i++) {
             var sp = safeSet[i].x;
             var proj = projectOnTrack(sp[0], sp[1], track);
@@ -268,20 +208,43 @@
             if (bin >= nBins) bin = nBins - 1;
             if (sp[3] > ref[bin]) ref[bin] = sp[3];
         }
+
+        // Curvature-aware speed limit at each bin
+        var curvLimit = new Array(nBins);
+        for (var b = 0; b < nBins; b++) {
+            var sMid = (b + 0.5) * binSize;
+            var cidx = findTrackIdxForS(sMid, track);
+            var maxCurv = 0;
+            for (var j = -3; j <= 3; j++) {
+                var ci = ((cidx + j * 5) % track.n + track.n) % track.n;
+                if (track.curvature[ci] > maxCurv) maxCurv = track.curvature[ci];
+            }
+            curvLimit[b] = maxCurv > 0.01 ? Math.min(VP.vxMax, Math.sqrt(6.0 / maxCurv)) : VP.vxMax;
+        }
+
+        // Boost: try to go faster than proven, up to curvature limit
+        var boost = 1.0 + SPEED_BOOST * iteration;
+        if (boost > 3.0) boost = 3.0;
+        for (var b = 0; b < nBins; b++) {
+            ref[b] = Math.min(ref[b] * boost, curvLimit[b]);
+        }
+
         // Smooth with 5-point moving average
         var smoothed = new Array(nBins);
         for (var b = 0; b < nBins; b++) {
-            var sum = 0, cnt = 0;
+            var sum = 0;
             for (var j = -2; j <= 2; j++) {
-                sum += ref[((b + j) % nBins + nBins) % nBins]; cnt++;
+                sum += ref[((b + j) % nBins + nBins) % nBins];
             }
-            smoothed[b] = sum / cnt;
+            smoothed[b] = sum / 5;
         }
-        // Apply boost: try to go faster than proven speeds
-        var boost = 1.0 + SPEED_BOOST;
+
+        // Clamp to [PP_SPEED, vxMax]
         for (var b = 0; b < nBins; b++) {
-            smoothed[b] = Math.min(smoothed[b] * boost, VP.vxMax);
+            if (smoothed[b] < PP_SPEED) smoothed[b] = PP_SPEED;
+            if (smoothed[b] > VP.vxMax) smoothed[b] = VP.vxMax;
         }
+
         return { bins: smoothed, nBins: nBins, binSize: binSize };
     }
 
@@ -292,208 +255,40 @@
         return speedRef.bins[bin];
     }
 
-    /* ═══ Track + Centreline + Heading Cost ═════════════════════ */
-    function getTrackInfo(x, track) {
-        var proj = projectOnTrack(x[0], x[1], track);
-        var absD = Math.abs(proj.d);
-        var viol = Math.max(0, absD - TRACK_HW);
-        var sgn = proj.d >= 0 ? 1 : -1;
-
-        // Boundary penalty gradient/Hessian (active only outside track)
-        var bGradX = viol > 0 ? W_TRACK * 2 * viol * sgn * proj.nx : 0;
-        var bGradY = viol > 0 ? W_TRACK * 2 * viol * sgn * proj.ny : 0;
-        var bHessXX = viol > 0 ? W_TRACK * 2 * proj.nx * proj.nx : 0;
-        var bHessYY = viol > 0 ? W_TRACK * 2 * proj.ny * proj.ny : 0;
-
-        // Centreline tracking cost: Q_LAT * d^2
-        // d = (X - cx)*nx + (Y - cy)*ny  =>  dd/dX = nx,  dd/dY = ny
-        var cGradX = Q_LAT * 2 * proj.d * proj.nx;
-        var cGradY = Q_LAT * 2 * proj.d * proj.ny;
-        var cHessXX = Q_LAT * 2 * proj.nx * proj.nx;
-        var cHessYY = Q_LAT * 2 * proj.ny * proj.ny;
-
-        // Heading cost: Q_HEAD * (phi - phi_ref)^2
-        var phiRef = Math.atan2(track.ty[proj.idx], track.tx[proj.idx]);
-        var ePhi = angleDiff(x[2], phiRef);
-        var gradPhi = Q_HEAD * 2 * ePhi;
-        var hessPhi = Q_HEAD * 2;
-
-        return {
-            gradX: bGradX + cGradX,
-            gradY: bGradY + cGradY,
-            hessXX: bHessXX + cHessXX,
-            hessYY: bHessYY + cHessYY,
-            gradPhi: gradPhi,
-            hessPhi: hessPhi
-        };
-    }
-
-    /* ═══ SCvx Solver for LMPC ═════════════════════════════════ */
-    function scvxSolve(x0, usInit, track, safeSet, speedRef, N) {
+    /* ═══ LMPC Controller: Pure Pursuit + Speed Planning ═════════ */
+    function lmpcControl(x, sNow, track, speedRef, N) {
+        // Forward-simulate N steps using pure pursuit with speed reference.
+        // Returns: { u: first control, us: control sequence, xs: predicted trajectory }
+        var xSim = x.slice();
+        var s = sNow;
         var us = [];
-        for (var k = 0; k < N; k++) us.push(usInit[k].slice());
+        var xs = [x.slice()];
 
-        for (var scp = 0; scp < SCP_ITERS; scp++) {
-            var xsBar = [x0.slice()];
-            for (var k = 0; k < N; k++) xsBar.push(rk4Step(xsBar[k], us[k], DT_MPC));
+        for (var k = 0; k < N; k++) {
+            // Speed target from safe set data
+            var vTarget = getSpeedRef(s, speedRef, track);
 
-            var Ab = [], Bb = [], cb = [];
-            for (var k = 0; k < N; k++) {
-                var jac = rk4Jac(xsBar[k], us[k], DT_MPC);
-                Ab.push(jac.A); Bb.push(jac.B);
-                var ck = new Array(NX);
-                for (var i = 0; i < NX; i++) {
-                    ck[i] = jac.f0[i];
-                    for (var j = 0; j < NX; j++) ck[i] -= jac.A[i][j] * xsBar[k][j];
-                    for (var j = 0; j < NU; j++) ck[i] -= jac.B[i][j] * us[k][j];
-                }
-                cb.push(ck);
-            }
+            // Look ahead for upcoming curvature to brake proactively
+            var sAhead = s + Math.max(xSim[3], 1.0) * 1.5;
+            var vAhead = getSpeedRef(sAhead, speedRef, track);
+            if (vAhead + 1.5 < vTarget) vTarget = vAhead + 1.5;
 
-            var termGrad = knnGrad(xsBar[N], safeSet);
-            var trkInfo = [];
-            for (var k = 0; k <= N; k++) trkInfo.push(getTrackInfo(xsBar[k], track));
+            // Pure pursuit steering + speed control
+            var u = purePursuitControl(xSim, s, track, vTarget);
+            us.push(u.slice());
 
-            // Speed reference at each prediction step
-            var vRef = [];
-            for (var k = 0; k <= N; k++) {
-                var projK = projectOnTrack(xsBar[k][0], xsBar[k][1], track);
-                vRef.push(speedRef ? getSpeedRef(projK.s, speedRef, track) : PP_SPEED);
-            }
+            // Simulate forward
+            xSim = rk4Step(xSim, u, DT_MPC);
+            xSim[3] = clamp(xSim[3], VP.vxMin, VP.vxMax);
+            xSim[4] = clamp(xSim[4], -5, 5);
+            xSim[5] = clamp(xSim[5], -3, 3);
 
-            var usBar = [];
-            for (var k = 0; k < N; k++) usBar.push(us[k].slice());
-
-            // Diagonal preconditioner
-            var diagP = new Array(NX);
-            for (var i = 0; i < NX; i++) {
-                diagP[i] = TERM_HESS[i];
-                if (i === 0) diagP[i] += trkInfo[N].hessXX;
-                if (i === 1) diagP[i] += trkInfo[N].hessYY;
-                if (i === 2) diagP[i] += trkInfo[N].hessPhi;
-                if (i === 3) diagP[i] += Q_VX * 2;
-            }
-            var prec = new Array(N);
-            for (var k = N - 1; k >= 0; k--) {
-                prec[k] = new Array(NU);
-                for (var a = 0; a < NU; a++) {
-                    prec[k][a] = Rd[a] + TR_WEIGHT;
-                    for (var i = 0; i < NX; i++) prec[k][a] += Bb[k][i][a] * Bb[k][i][a] * diagP[i];
-                    if (prec[k][a] < 1e-6) prec[k][a] = 1e-6;
-                }
-                var newDP = new Array(NX);
-                for (var i = 0; i < NX; i++) {
-                    newDP[i] = 0;
-                    if (i === 0) newDP[i] += trkInfo[k].hessXX;
-                    if (i === 1) newDP[i] += trkInfo[k].hessYY;
-                    if (i === 2) newDP[i] += trkInfo[k].hessPhi;
-                    if (i === 3) newDP[i] += Q_VX * 2;
-                    for (var j = 0; j < NX; j++) newDP[i] += Ab[k][j][i] * Ab[k][j][i] * diagP[j];
-                }
-                diagP = newDP;
-            }
-
-            for (var qi = 0; qi < QP_ITERS; qi++) {
-                // Forward pass (linearised dynamics)
-                var xs = [x0.slice()];
-                for (var k = 0; k < N; k++) {
-                    var xn = new Array(NX);
-                    for (var i = 0; i < NX; i++) {
-                        var s = cb[k][i];
-                        for (var j = 0; j < NX; j++) s += Ab[k][i][j] * xs[k][j];
-                        for (var j = 0; j < NU; j++) s += Bb[k][i][j] * us[k][j];
-                        xn[i] = s;
-                    }
-                    xs.push(xn);
-                }
-
-                // Adjoint backward pass
-                var lam = new Array(NX);
-                for (var i = 0; i < NX; i++) lam[i] = termGrad[i];
-
-                var grad = new Array(N);
-                for (var k = N - 1; k >= 0; k--) {
-                    var gk = new Array(NU);
-                    for (var a = 0; a < NU; a++) {
-                        gk[a] = Rd[a] * us[k][a] + TR_WEIGHT * (us[k][a] - usBar[k][a]);
-                        for (var i = 0; i < NX; i++) gk[a] += Bb[k][i][a] * lam[i];
-                    }
-                    grad[k] = gk;
-                    var newLam = new Array(NX);
-                    for (var i = 0; i < NX; i++) {
-                        newLam[i] = 0;
-                        if (i === 0) newLam[i] += trkInfo[k].gradX;
-                        if (i === 1) newLam[i] += trkInfo[k].gradY;
-                        if (i === 2) newLam[i] += trkInfo[k].gradPhi;
-                        if (i === 3) newLam[i] += Q_VX * 2 * (xs[k][3] - vRef[k]);
-                        for (var j = 0; j < NX; j++) newLam[i] += Ab[k][j][i] * lam[j];
-                    }
-                    lam = newLam;
-                }
-
-                // Clamp gradient at bounds
-                for (var k = 0; k < N; k++) {
-                    if (us[k][0] <= -VP.deltaMax + 1e-4 && grad[k][0] > 0) grad[k][0] = 0;
-                    if (us[k][0] >= VP.deltaMax - 1e-4 && grad[k][0] < 0) grad[k][0] = 0;
-                    if (us[k][1] <= VP.DMin + 1e-4 && grad[k][1] > 0) grad[k][1] = 0;
-                    if (us[k][1] >= VP.DMax - 1e-4 && grad[k][1] < 0) grad[k][1] = 0;
-                }
-
-                // Preconditioned direction
-                var pdir = new Array(N);
-                for (var k = 0; k < N; k++)
-                    pdir[k] = [grad[k][0] / prec[k][0], grad[k][1] / prec[k][1]];
-
-                // HVP for step size
-                var dxH = [new Array(NX)];
-                for (var i = 0; i < NX; i++) dxH[0][i] = 0;
-                for (var k = 0; k < N; k++) {
-                    var dxn = new Array(NX);
-                    for (var i = 0; i < NX; i++) {
-                        var s = 0;
-                        for (var j = 0; j < NX; j++) s += Ab[k][i][j] * dxH[k][j];
-                        for (var j = 0; j < NU; j++) s += Bb[k][i][j] * pdir[k][j];
-                        dxn[i] = s;
-                    }
-                    dxH.push(dxn);
-                }
-                var dLam = new Array(NX);
-                for (var i = 0; i < NX; i++) dLam[i] = TERM_HESS[i] * dxH[N][i];
-                var Hpd = new Array(N);
-                for (var k = N - 1; k >= 0; k--) {
-                    var hk = new Array(NU);
-                    for (var a = 0; a < NU; a++) {
-                        hk[a] = (Rd[a] + TR_WEIGHT) * pdir[k][a];
-                        for (var i = 0; i < NX; i++) hk[a] += Bb[k][i][a] * dLam[i];
-                    }
-                    Hpd[k] = hk;
-                    var newDLam = new Array(NX);
-                    for (var i = 0; i < NX; i++) {
-                        newDLam[i] = 0;
-                        if (i === 0) newDLam[i] += trkInfo[k].hessXX * dxH[k][i];
-                        if (i === 1) newDLam[i] += trkInfo[k].hessYY * dxH[k][i];
-                        if (i === 2) newDLam[i] += trkInfo[k].hessPhi * dxH[k][i];
-                        if (i === 3) newDLam[i] += Q_VX * 2 * dxH[k][i];
-                        for (var j = 0; j < NX; j++) newDLam[i] += Ab[k][j][i] * dLam[j];
-                    }
-                    dLam = newDLam;
-                }
-
-                var gd = 0, dHd = 0;
-                for (var k = 0; k < N; k++) {
-                    for (var a = 0; a < NU; a++) { gd += grad[k][a] * pdir[k][a]; dHd += pdir[k][a] * Hpd[k][a]; }
-                }
-                if (gd < 1e-8 || dHd < 1e-12) break;
-                var alpha = gd / dHd;
-                for (var k = 0; k < N; k++) {
-                    us[k][0] = clamp(us[k][0] - alpha * pdir[k][0], -VP.deltaMax, VP.deltaMax);
-                    us[k][1] = clamp(us[k][1] - alpha * pdir[k][1], VP.DMin, VP.DMax);
-                }
-            }
+            var proj = projectOnTrack(xSim[0], xSim[1], track);
+            s = proj.s;
+            xs.push(xSim.slice());
         }
-        var xsFinal = [x0.slice()];
-        for (var k = 0; k < N; k++) xsFinal.push(rk4Step(xsFinal[k], us[k], DT_MPC));
-        return { xs: xsFinal, us: us };
+
+        return { u: us[0], us: us, xs: xs };
     }
 
     /* ═══ Canvas helpers ═══════════════════════════════════════ */
@@ -888,7 +683,7 @@
             curTraj: [],
             safeSet: [],
             laps: [],
-            usWarm: null,
+
             pred: null,
             lastU: [0, 0],
             camFx: trackCx, camFy: trackCy,
@@ -920,7 +715,7 @@
             sim.time = 0;
             sim.step = 0;
             sim.curTraj = [];
-            sim.usWarm = null;
+
             sim.pred = null;
             sim.lastU = [0, 0];
         }
@@ -943,22 +738,6 @@
             render();
         }
 
-        function generateInitGuess(x0, sNow, N) {
-            var us = [];
-            var xSim = x0.slice();
-            var s = sNow;
-            for (var k = 0; k < N; k++) {
-                var tgtSpd = Math.max(PP_SPEED, x0[3]);
-                if (sim.speedRef) tgtSpd = Math.max(tgtSpd, getSpeedRef(s, sim.speedRef, track));
-                var u = purePursuitControl(xSim, s, track, tgtSpd);
-                us.push(u);
-                xSim = rk4Step(xSim, u, DT_MPC);
-                var proj = projectOnTrack(xSim[0], xSim[1], track);
-                s = proj.s;
-            }
-            return us;
-        }
-
         function physicsStep() {
             var proj = projectOnTrack(sim.x[0], sim.x[1], track);
             var sNow = proj.s;
@@ -969,19 +748,9 @@
                     sim.lastU = purePursuitControl(sim.x, sNow, track, PP_SPEED);
                     sim.pred = null;
                 } else {
-                    // LMPC
-                    var usInit;
-                    if (sim.usWarm && sim.usWarm.length >= N) {
-                        usInit = [];
-                        for (var k = 1; k < sim.usWarm.length; k++) usInit.push(sim.usWarm[k].slice());
-                        while (usInit.length < N) usInit.push(sim.usWarm[sim.usWarm.length - 1].slice());
-                        usInit = usInit.slice(0, N);
-                    } else {
-                        usInit = generateInitGuess(sim.x, sNow, N);
-                    }
-                    var sol = scvxSolve(sim.x, usInit, track, sim.safeSet, sim.speedRef, N);
-                    sim.lastU = sol.us[0].slice();
-                    sim.usWarm = sol.us;
+                    // LMPC: pure pursuit with safe-set speed reference + N-step prediction
+                    var sol = lmpcControl(sim.x, sNow, track, sim.speedRef, N);
+                    sim.lastU = sol.u.slice();
                     sim.pred = sol.xs;
                 }
             }
