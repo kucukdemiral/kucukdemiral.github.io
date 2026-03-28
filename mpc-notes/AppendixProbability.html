@@ -140,7 +140,7 @@ ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.close(fig)
 
-print("PMF values:", dict(zip(x, pmf)))</code></pre>
+print("PMF values:", {int(k): round(float(v), 4) for k, v in zip(x, pmf)})</code></pre>
 </div>
 </div>
 <h3 id="subsec:app_continuous">Continuous Random Variables</h3>
