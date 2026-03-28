@@ -640,71 +640,90 @@ short-lived.</figcaption>
 <p>The code follows the algorithm summarised in Algorithm <a
 href="#alg:offset_free_mpc" data-reference-type="ref"
 data-reference="alg:offset_free_mpc">[alg:offset_free_mpc]</a>.</p>
-<div class="algorithm">
+<style>
+.alg-table { width: 100%; border-collapse: collapse; }
+.alg-table td { vertical-align: top; padding: 0.15rem 0; }
+.alg-ln { width: 2rem; text-align: right; padding-right: 0.8rem !important; color: #8899AA; font-size: 0.78rem; user-select: none; }
+.alg-code { padding-left: 0; }
+.alg-indent1 { padding-left: 1.5rem !important; }
+.alg-indent2 { padding-left: 3rem !important; }
+.alg-phase { background: rgba(26,54,93,0.06); border-left: 3px solid #1A365D; margin: 0.5rem 0 0.2rem 0; padding: 0.3rem 0.6rem; font-weight: 700; font-size: 0.82rem; color: #1A365D; letter-spacing: 0.3px; }
+.alg-io { background: #EDF2F7; padding: 0.55rem 0.8rem; margin-bottom: 0.3rem; border-radius: 3px; line-height: 1.65; }
+.alg-sep { border: none; border-top: 1px dashed #CBD5E0; margin: 0.4rem 0; }
+</style>
+<div class="algorithm" id="alg:offset_free_mpc">
 <div class="algorithmic">
-<p><strong>Input:</strong> System matrices <span
-class="math inline">\((A,B,B_w,C)\)</span>, optional output-bias matrix
-<span class="math inline">\(C_d\)</span>, weights <span
-class="math inline">\((Q,R,P_{\mathrm{term}},\rho)\)</span>,
-input/output constraints, prediction horizon <span
-class="math inline">\(N\)</span>. <strong>Output:</strong> Control input
-<span class="math inline">\(u_k\)</span>.</p>
-<p>Construct the augmented model <span class="math display">\[z_k=
-        \begin{bmatrix}
-            x_k\\
-            d_k
-        \end{bmatrix},\qquad
-        z_{k+1}=A_{\mathrm{aug}}z_k+B_{\mathrm{aug}}u_k,\qquad
-        y_k=C_{\mathrm{aug}}z_k .\]</span> Compute the estimator gain
-<span class="math inline">\(L\)</span> from the DARE associated with
-<span
-class="math inline">\((A_{\mathrm{aug}},C_{\mathrm{aug}},W,V)\)</span>.
-Compute the terminal cost matrix <span
-class="math inline">\(P_{\mathrm{term}}\)</span> for the deviation
-dynamics. Define the parametric MPC problem: <span
-class="math display">\[\begin{align*}
-            \min_{\tilde u,\epsilon}\quad
-            &amp;\sum_{i=0}^{N-1}
-            \left(
-            \|\tilde x_i\|_Q^2+\|\tilde u_i\|_R^2+\rho\|\epsilon_i\|^2
-            \right)
-            +\|\tilde x_N\|_{P_{\mathrm{term}}}^2 \\
-            \text{s.t.}\quad
-            &amp;\tilde x_0=\hat x_k-x_{ss},\\
-            &amp;\tilde x_{i+1}=A\tilde x_i+B\tilde u_i,\qquad
-i=0,\dots,N-1,\\
-            &amp;u_{\min}\le \tilde u_i+u_{ss}\le u_{\max},\\
-            &amp;y_{\min,i}-\epsilon_i\le C(\tilde x_i+x_{ss})\le
-y_{\max,i}+\epsilon_i,\\
-            &amp;\epsilon_i\ge 0,\qquad i=0,\dots,N-1.
-\end{align*}\]</span> Compile the solver object, including any real-time
-parameters required by the chosen formulation.</p>
-<p>Initialise <span class="math inline">\(\hat z_{0|0}\)</span>, <span
-class="math inline">\(u_{-1}\)</span>, and optionally <span
-class="math inline">\(\hat d_{0}\)</span>. Measure the output <span
-class="math inline">\(y_k\)</span>.</p>
-<p><em>// 1. Augmented-state estimation</em> <span
-class="math inline">\(\hat z_{k|k-1}\gets A_{\mathrm{aug}}\hat
-z_{k-1|k-1}+B_{\mathrm{aug}}u_{k-1}\)</span> <span
-class="math inline">\(\hat z_{k|k}\gets \hat
-z_{k|k-1}+L\bigl(y_k-C_{\mathrm{aug}}\hat z_{k|k-1}\bigr)\)</span>
-Extract <span class="math inline">\(\hat x_k\)</span> and the raw
-disturbance estimate <span class="math inline">\(\hat d_{,k}\)</span>
-from <span class="math inline">\(\hat z_{k|k}\)</span>.</p>
-<p><em>// 2. Steady-state target calculation</em> Compute <span
-class="math inline">\((x_{ss},u_{ss})\)</span> from the current
-reference and disturbance estimate, either <span
-class="math display">\[x_{ss}=Ax_{ss}+Bu_{ss}+B_w\hat d_k,\qquad
-        r_k=Cx_{ss}+C_d\hat d_k,\]</span> or, more generally, by solving
-a constrained steady-state optimisation problem.</p>
-<p><em>// 3. MPC regulation</em> Solve the MPC problem using the current
-parameters <span class="math inline">\((\hat x_k,x_{ss},u_{ss})\)</span>
-and any future bound sequences if required. Obtain the first optimal
-move <span class="math inline">\(\tilde u_0^\star\)</span>.</p>
-<p><em>// 4. Apply input</em> <span class="math inline">\(u_k \gets
-\tilde u_0^\star + u_{ss}\)</span> <span class="math inline">\(u_k \gets
-\max(u_{\min},\min(u_{\max},u_k))\)</span> Apply <span
-class="math inline">\(u_k\)</span> to the plant.</p>
+
+<!-- I/O block -->
+<div class="alg-io">
+<strong>Input:</strong> System matrices <span class="math inline">\((A,B,B_w,C)\)</span>, output-bias matrix <span class="math inline">\(C_d\)</span>, weights <span class="math inline">\((Q,R,P_{\mathrm{term}},\rho)\)</span>, input/output constraints, horizon <span class="math inline">\(N\)</span>.<br>
+<strong>Output:</strong> Control input <span class="math inline">\(u_k\)</span> at each time step.
+</div>
+
+<!-- OFFLINE PHASE -->
+<div class="alg-phase">Phase I &mdash; Offline Design</div>
+<table class="alg-table">
+<tr><td class="alg-ln">1</td><td class="alg-code">Construct the augmented model:</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><span class="math display">\[
+z_k = \begin{bmatrix} x_k \\ d_k \end{bmatrix},\qquad
+z_{k+1} = A_{\mathrm{aug}}\,z_k + B_{\mathrm{aug}}\,u_k,\qquad
+y_k = C_{\mathrm{aug}}\,z_k
+\]</span></td></tr>
+<tr><td class="alg-ln">2</td><td class="alg-code">Compute estimator gain <span class="math inline">\(L\)</span> from the DARE for <span class="math inline">\((A_{\mathrm{aug}},\,C_{\mathrm{aug}},\,W,\,V)\)</span>.</td></tr>
+<tr><td class="alg-ln">3</td><td class="alg-code">Compute terminal cost <span class="math inline">\(P_{\mathrm{term}}\)</span> for the deviation dynamics.</td></tr>
+<tr><td class="alg-ln">4</td><td class="alg-code">Define the parametric MPC problem:</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><span class="math display">\[\begin{aligned}
+\min_{\tilde u,\,\epsilon}\quad
+& \sum_{i=0}^{N-1}\!\bigl(\|\tilde x_i\|_Q^2 + \|\tilde u_i\|_R^2 + \rho\|\epsilon_i\|^2\bigr)
++ \|\tilde x_N\|_{P_{\mathrm{term}}}^2 \\[4pt]
+\text{s.t.}\quad
+& \tilde x_0 = \hat x_k - x_{ss}, \\
+& \tilde x_{i+1} = A\,\tilde x_i + B\,\tilde u_i, \quad i=0,\dots,N\!-\!1, \\
+& u_{\min} \le \tilde u_i + u_{ss} \le u_{\max}, \\
+& y_{\min,i} - \epsilon_i \le C(\tilde x_i + x_{ss}) \le y_{\max,i} + \epsilon_i, \\
+& \epsilon_i \ge 0, \quad i=0,\dots,N\!-\!1.
+\end{aligned}\]</span></td></tr>
+<tr><td class="alg-ln">5</td><td class="alg-code">Compile the solver object (including any real-time parameters).</td></tr>
+</table>
+
+<hr class="alg-sep">
+
+<!-- INITIALISATION -->
+<div class="alg-phase">Phase II &mdash; Initialisation</div>
+<table class="alg-table">
+<tr><td class="alg-ln">6</td><td class="alg-code">Set <span class="math inline">\(\hat z_{0|0}\)</span>, <span class="math inline">\(u_{-1}\)</span>, and optionally <span class="math inline">\(\hat d_0\)</span>.</td></tr>
+</table>
+
+<hr class="alg-sep">
+
+<!-- ONLINE LOOP -->
+<div class="alg-phase">Phase III &mdash; Online Loop (repeat at each sample <span class="math inline">\(k\)</span>)</div>
+<table class="alg-table">
+<tr><td class="alg-ln">7</td><td class="alg-code">Measure output <span class="math inline">\(y_k\)</span>.</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code">&nbsp;</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><em>// Step 1: Augmented-state estimation</em></td></tr>
+<tr><td class="alg-ln">8</td><td class="alg-indent1"><span class="math inline">\(\hat z_{k|k-1} \gets A_{\mathrm{aug}}\,\hat z_{k-1|k-1} + B_{\mathrm{aug}}\,u_{k-1}\)</span></td></tr>
+<tr><td class="alg-ln">9</td><td class="alg-indent1"><span class="math inline">\(\hat z_{k|k} \gets \hat z_{k|k-1} + L\bigl(y_k - C_{\mathrm{aug}}\,\hat z_{k|k-1}\bigr)\)</span></td></tr>
+<tr><td class="alg-ln">10</td><td class="alg-indent1">Extract <span class="math inline">\(\hat x_k\)</span> and disturbance estimate <span class="math inline">\(\hat d_k\)</span> from <span class="math inline">\(\hat z_{k|k}\)</span>.</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code">&nbsp;</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><em>// Step 2: Steady-state target calculation</em></td></tr>
+<tr><td class="alg-ln">11</td><td class="alg-indent1">Compute <span class="math inline">\((x_{ss},\,u_{ss})\)</span> from the current reference and <span class="math inline">\(\hat d_k\)</span>:</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-indent1"><span class="math display">\[
+x_{ss} = A\,x_{ss} + B\,u_{ss} + B_w\,\hat d_k, \qquad
+r_k = C\,x_{ss} + C_d\,\hat d_k
+\]</span></td></tr>
+<tr><td class="alg-ln"></td><td class="alg-indent1">or solve a constrained steady-state optimisation problem.</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code">&nbsp;</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><em>// Step 3: MPC regulation</em></td></tr>
+<tr><td class="alg-ln">12</td><td class="alg-indent1">Solve the MPC problem with parameters <span class="math inline">\((\hat x_k,\,x_{ss},\,u_{ss})\)</span>.</td></tr>
+<tr><td class="alg-ln">13</td><td class="alg-indent1">Obtain optimal first move <span class="math inline">\(\tilde u_0^\star\)</span>.</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code">&nbsp;</td></tr>
+<tr><td class="alg-ln"></td><td class="alg-code"><em>// Step 4: Apply input</em></td></tr>
+<tr><td class="alg-ln">14</td><td class="alg-indent1"><span class="math inline">\(u_k \gets \tilde u_0^\star + u_{ss}\)</span></td></tr>
+<tr><td class="alg-ln">15</td><td class="alg-indent1"><span class="math inline">\(u_k \gets \max\!\bigl(u_{\min},\,\min(u_{\max},\,u_k)\bigr)\)</span></td></tr>
+<tr><td class="alg-ln">16</td><td class="alg-indent1">Apply <span class="math inline">\(u_k\)</span> to the plant.</td></tr>
+</table>
+
 </div>
 </div>
 <p><strong>Note.</strong> Algorithm <a href="#alg:offset_free_mpc"
