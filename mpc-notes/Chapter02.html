@@ -143,10 +143,10 @@ construct an open-top box with the maximum possible volume. We achieve
 this by cutting equal squares of side length <span
 class="math inline">\(x\)</span> from the four corners and folding up
 the sides.</p>
-<div class="center">
-
-</div>
-<p><span id="fig:box_volume" data-label="fig:box_volume"></span></p>
+<figure id="fig:box_volume">
+<img src="figures/tikz_ch02_1.png" style="width:70.0%" />
+<figcaption>Box volume maximisation problem.</figcaption>
+</figure>
 <p>We map this problem to the three components of optimisation:</p>
 <ol>
 <li><p><strong>Decision Variable (<span
@@ -190,10 +190,10 @@ data-reference-type="ref"
 data-reference="fig:linear_regression">[fig:linear_regression]</a>.</p>
 <p>We want to find the linear model (a straight line) that "best fits"
 this data.</p>
-<div class="center">
-<p><span id="fig:linear_regression"
-data-label="fig:linear_regression"></span></p>
-</div>
+<figure id="fig:linear_regression">
+<img src="figures/tikz_ch02_2.png" style="width:70.0%" />
+<figcaption>Dataset (red), linear interpolation (blue).</figcaption>
+</figure>
 <p>Note that in this specific problem, the <span
 class="math inline">\(x\)</span> values are <strong>constants</strong>
 (data we measured), not decision variables.</p>
@@ -285,10 +285,10 @@ number: <span>£4.00</span>.</p></li>
 <p>This is visually described in Figure <a
 href="#fig:cost_function_analogy" data-reference-type="ref"
 data-reference="fig:cost_function_analogy">[fig:cost_function_analogy]</a>.</p>
-<div class="center">
-<p><span id="fig:cost_function_analogy"
-data-label="fig:cost_function_analogy"></span></p>
-</div>
+<figure id="fig:cost_function_analogy">
+<img src="figures/tikz_ch02_3.png" style="width:70.0%" />
+<figcaption>Analogy of cost function.</figcaption>
+</figure>
 <h4 class="unnumbered" id="why-is-this-important-in-engineering">Why is
 this important in Engineering?</h4>
 <p>You cannot easily say which of two shopping baskets is
@@ -369,10 +369,10 @@ x_2 \geq x_1^3\)</span> (Must be above the cubic curve).</p></li>
 intersection of these two regions (the purple area as shown in Figure <a
 href="#fig:intersection_of_constraints" data-reference-type="ref"
 data-reference="fig:intersection_of_constraints">[fig:intersection_of_constraints]</a>).</p>
-<div class="center">
-<p><span id="fig:intersection_of_constraints"
-data-label="fig:intersection_of_constraints"></span></p>
-</div>
+<figure id="fig:intersection_of_constraints">
+<img src="figures/tikz_ch02_4.png" style="width:70.0%" />
+<figcaption>Intersection of constraints. Blue region x&#x2082; &#x2265; x&#x2081;&#xB3;, red region x&#x2081;&#xB2; + x&#x2082;&#xB2; &#x2264; 4. S is the intersection and the feasible domain.</figcaption>
+</figure>
 </div>
 <h3 id="standard-form-minimisation-vs.-maximisation">Standard Form:
 Minimisation vs. Maximisation</h3>
@@ -568,10 +568,10 @@ class="math inline">\(a\)</span> is perpendicular to the line <span
 class="math inline">\(2x_1 + x_2 = 2\)</span>, as shown in Figure <a
 href="#fig:example_hyperplane" data-reference-type="ref"
 data-reference="fig:example_hyperplane">[fig:example_hyperplane]</a>.</p>
-<div class="center">
-<p><span id="fig:example_hyperplane"
-data-label="fig:example_hyperplane"></span></p>
-</div>
+<figure id="fig:example_hyperplane">
+<img src="figures/tikz_ch02_7.png" style="width:70.0%" />
+<figcaption>Geometric example of the hyperplane 2x&#x2081; + x&#x2082; = 2. The normal vector a = (2,1)&#x1D40; determines the orientation of the line.</figcaption>
+</figure>
 </div>
 <div class="defnbox">
 <p><span>Polyhedron</span> Let <span class="math inline">\(a_i \in
@@ -635,9 +635,10 @@ polytope.</p>
 in the <span class="math inline">\((x_1,x_2)\)</span>–plane as shown in
 Figure <a href="#fig:polyhedron" data-reference-type="ref"
 data-reference="fig:polyhedron">[fig:polyhedron]</a>:</p>
-<div class="center">
-<p><span id="fig:polyhedron" data-label="fig:polyhedron"></span></p>
-</div>
+<figure id="fig:polyhedron">
+<img src="figures/tikz_ch02_8.png" style="width:70.0%" />
+<figcaption>Intersection of half-spaces is a convex polyhedron.</figcaption>
+</figure>
 </div>
 <h3 id="convex-functions">Convex Functions</h3>
 <p>Let <span class="math inline">\(S\)</span> be a convex subset of a
@@ -744,9 +745,10 @@ level curves <span class="math inline">\(J=2\)</span>, <span
 class="math inline">\(J=6\)</span>, <span
 class="math inline">\(J=12\)</span> and <span
 class="math inline">\(J=20\)</span>.</p>
-<div class="center">
-<p><span id="fig:level_curves" data-label="fig:level_curves"></span></p>
-</div>
+<figure id="fig:level_curves">
+<img src="figures/tikz_ch02_10.png" style="width:70.0%" />
+<figcaption>Level curves of J(x) = x&#x2081;&#xB2; + x&#x2082;&#xB2;.</figcaption>
+</figure>
 <p>The optimiser searches for the level curve with the smallest possible
 <span class="math inline">\(c\)</span>. Geometrically, this is the
 centre of the concentric circles.</p>
@@ -779,10 +781,10 @@ subject to a linear equality constraint.</p>
 Figure <a href="#fig:optimization_with_constraints"
 data-reference-type="ref"
 data-reference="fig:optimization_with_constraints">[fig:optimization_with_constraints]</a>.</p>
-<div class="center">
-<p>. <span id="fig:optimization_with_constraints"
-data-label="fig:optimization_with_constraints"></span></p>
-</div>
+<figure id="fig:optimization_with_constraints">
+<img src="figures/tikz_ch02_11.png" style="width:70.0%" />
+<figcaption>Minimising J(x) on the line h(x) = 0.</figcaption>
+</figure>
 <p>The optimal point is found where the constraint line is exactly
 <span>tangent</span> to a level curve.</p>
 </div>
@@ -899,10 +901,10 @@ line.</p></li>
 <p>A valid solution must satisfy <em>both</em> conditions. Therefore,
 the feasible set is reduced to the specific line segment where the
 orange line slices through the grey triangle.</p>
-<div class="center">
-<p><span id="fig:Intersection_of_constraints"
-data-label="fig:Intersection_of_constraints"></span></p>
-</div>
+<figure id="fig:Intersection_of_constraints">
+<img src="figures/tikz_ch02_13.png" style="width:70.0%" />
+<figcaption>Intersection of equality and inequality constraints.</figcaption>
+</figure>
 <p><strong>The Cost of Constraints:</strong> In the previous example
 (inequalities only), the optimiser could reach the point <span
 class="math inline">\((1,2)\)</span>, which yielded a cost of <span
@@ -1256,9 +1258,10 @@ data-reference="fig:qp_distance">[fig:qp_distance]</a>), the closest
 point within the box to <span class="math inline">\((3,2)\)</span> is
 the upper-right corner of the box, <span class="math inline">\(x^* = (1,
 1)\)</span>.</p>
-<div class="center">
-<p><span id="fig:qp_distance" data-label="fig:qp_distance"></span></p>
-</div>
+<figure id="fig:qp_distance">
+<img src="figures/tikz_ch02_16.png" style="width:70.0%" />
+<figcaption>Geometry of the optimisation problem.</figcaption>
+</figure>
 <p>To solve this problem numerically using a solver (like OSQP,
 quadprog, or GUROBI), we must map the problem into the standard
 Quadratic Programming form: <span

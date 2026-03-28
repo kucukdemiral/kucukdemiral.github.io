@@ -551,7 +551,7 @@
     Optimizers ready.</code></pre>
 <p>The first step takes approximately 10–30 s; all subsequent steps complete in under 50 ms.</p>
 <h4 id="logging-and-plotting">Logging and Plotting</h4>
-<p>Connect <em>To Workspace</em> blocks to <span class="math inline">\(y_\mathrm{true}\)</span>, <span class="math inline">\(y_\mathrm{meas}\)</span>, <span class="math inline">\(u\)</span>, Price, <span class="math inline">\(\underline{y}\)</span>, and <span class="math inline">\(\bar{y}\)</span>, saving each as a MATLAB array. After the simulation use the script below to produce a four-panel result plot matching Figure <a href="#fig:singlezone2" data-reference-type="ref" data-reference="fig:singlezone2">[fig:singlezone2]</a>.</p>
+<p>Connect <em>To Workspace</em> blocks to <span class="math inline">\(y_\mathrm{true}\)</span>, <span class="math inline">\(y_\mathrm{meas}\)</span>, <span class="math inline">\(u\)</span>, Price, <span class="math inline">\(\underline{y}\)</span>, and <span class="math inline">\(\bar{y}\)</span>, saving each as a MATLAB array. After the simulation use the script below to produce a four-panel result plot matching the results figure in the single-zone building example (Chapter 8).</p>
 <pre class="matlab" data-language="Matlab" data-caption="Post-simulation plotting
         script for the single-zone building case study."><code>Ts   = 1800;
     tout = (0:length(log_y)-1) * Ts / 3600;   % hours

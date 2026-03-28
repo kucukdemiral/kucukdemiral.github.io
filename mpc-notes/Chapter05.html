@@ -412,10 +412,10 @@ recursion, however, also makes explicit the underlying time-varying
 state-feedback law <span class="math display">\[u_k = -K_k x_k,\]</span>
 which is computationally more efficient and more natural for closed-loop
 implementation.</p>
-<div class="center">
-<p><embed src="figures/Finite_LQR.png" style="width:90.0%" /> <span
-id="fig:lqr-solution" data-label="fig:lqr-solution"></span></p>
-</div>
+<figure id="fig:lqr-solution">
+<img src="figures/Finite_LQR.png" style="width:90.0%" />
+<figcaption>Optimal state and control trajectories for the double integrator.</figcaption>
+</figure>
 </div>
 <h3 id="infinite-horizon-lqr-for-stabilisation">Infinite-Horizon LQR for
 Stabilisation</h3>
@@ -639,11 +639,10 @@ look-up table of gains, this static <span
 class="math inline">\(K_{\infty}\)</span> is extremely memory-efficient,
 making it the standard choice for regulation tasks on embedded
 hardware.</p>
-<div class="center">
-<p><embed src="figures/InFinite_LQR.png" style="width:100.0%" /> <span
-id="fig:infinite_lqr-solution"
-data-label="fig:infinite_lqr-solution"></span></p>
-</div>
+<figure id="fig:infinite_lqr-solution">
+<img src="figures/InFinite_LQR.png" style="width:100.0%" />
+<figcaption>Infinite-horizon LQR solution for the double integrator.</figcaption>
+</figure>
 </div>
 <h3 id="lqr-for-non-zero-setpoint-tracking">LQR for Non-Zero Setpoint
 Tracking</h3>
@@ -872,14 +871,14 @@ class="math inline">\(u_{target}\)</span> rather than zero, validating
 the necessity of the feedforward term <span
 class="math inline">\(u_g\)</span> to maintain equilibrium against
 gravity.</p>
-<div class="center">
-<p><span id="fig:maglev_schematic"
-data-label="fig:maglev_schematic"></span></p>
-</div>
-<div class="center">
-<p><embed src="figures/Maglev.png" style="width:70.0%" /> <span
-id="fig:maglev" data-label="fig:maglev"></span></p>
-</div>
+<figure id="fig:maglev_schematic">
+<img src="figures/tikz_ch05_1.png" style="width:70.0%" />
+<figcaption>Schematic of the Magnetic Levitation system.</figcaption>
+</figure>
+<figure id="fig:maglev">
+<img src="figures/Maglev.png" style="width:70.0%" />
+<figcaption>Simulation results for the Magnetic Levitation setpoint tracking problem.</figcaption>
+</figure>
 </div>
 <h3 id="chapter-summary">Chapter Summary</h3>
 <p>This chapter has established the theoretical and numerical

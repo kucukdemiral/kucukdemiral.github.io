@@ -806,10 +806,10 @@ class="math display">\[\begin{equation}
 T_{\mathrm{cmd}} &amp;= m(a_z + g).
         \end{aligned}
 \end{equation}\]</span></p>
-<div class="center">
-<p><span id="fig:quadrotor_control_architecture"
-data-label="fig:quadrotor_control_architecture"></span></p>
-</div>
+<figure id="fig:quadrotor_control_architecture">
+<img src="figures/tikz_ch08_3.png" style="width:80.0%" />
+<figcaption>Control architecture for the quadrotor example.</figcaption>
+</figure>
 <p>Substituting these virtual inputs into the linearised model decouples
 the motion into three double integrators, so that the discrete-time
 predictor used by the MPC has the form <span
@@ -857,8 +857,10 @@ dynamics using RK4 integration. A step wind disturbance is applied at
 href="#fig:quad_mpc_result" data-reference-type="ref"
 data-reference="fig:quad_mpc_result">[fig:quad_mpc_result]</a> shows the
 simulation result for tracking and disturbance observation.</p>
-<p><embed src="figures/Quadrotor_MPC.png" style="width:90.0%" /> <span
-id="fig:quad_mpc_result" data-label="fig:quad_mpc_result"></span></p>
+<figure id="fig:quad_mpc_result">
+<img src="figures/Quadrotor_MPC.png" style="width:90.0%" />
+<figcaption>Quadrotor tracking and disturbance observation results.</figcaption>
+</figure>
 <div class="sourceCode" id="cb2" data-language="Matlab"><pre
 class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span> <span class="va">close</span> <span class="va">all</span><span class="op">;</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1325,8 +1327,10 @@ class="sourceCode MATLAB"><code class="sourceCode matlab"><span id="cb3-1"><a hr
 <span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>    <span class="va">fprintf</span>(<span class="ss">&#39;Total heating cost: GBP %.3f\n&#39;</span><span class="op">,</span> <span class="va">sum</span>(<span class="va">log_cost</span>))<span class="op">;</span></span>
 <span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Visualisation is omitted for brevity</span></span></code></pre></div>
-<p><embed src="figures/hvac.png" style="width:90.0%" /> <span
-id="fig:singlezone2" data-label="fig:singlezone2"></span></p>
+<figure id="fig:singlezone2">
+<img src="figures/hvac.png" style="width:90.0%" />
+<figcaption>Single-zone building heating results over a 48-hour simulation.</figcaption>
+</figure>
 </div>
 <div class="examplebox">
 <p><span>Offset-free MPC of a 3-DOF Articulated Robot
@@ -1668,10 +1672,10 @@ class="math inline">\([150,\,120,\,60]\,\mathrm{Nm}\)</span></td>
 </tbody>
 </table>
 </div>
-<div class="center">
-<p><span id="fig:CTMPC_robot_block_diagram"
-data-label="fig:CTMPC_robot_block_diagram"></span></p>
-</div>
+<figure id="fig:CTMPC_robot_block_diagram">
+<img src="figures/tikz_ch08_5.png" style="width:80.0%" />
+<figcaption>Block diagram of the computed-torque based feedback linearisation + MPC scheme.</figcaption>
+</figure>
 <div class="sourceCode" id="cb4" data-language="MATLAB"><pre
 class="sourceCode MATLAB"><code class="sourceCode matlab"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span> <span class="va">close</span> <span class="va">all</span><span class="op">;</span> <span class="va">rng</span>(<span class="fl">1</span>)<span class="op">;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    </span>
@@ -2035,8 +2039,10 @@ class="sourceCode MATLAB"><code class="sourceCode matlab"><span id="cb4-1"><a hr
 <span id="cb4-360"><a href="#cb4-360" aria-hidden="true" tabindex="-1"></a>        <span class="va">ddq</span>  <span class="op">=</span> <span class="va">M</span> <span class="op">\</span> (<span class="va">tau</span> <span class="op">+</span> <span class="va">d</span> <span class="op">-</span> <span class="va">Cdq</span> <span class="op">-</span> <span class="va">G</span>)<span class="op">;</span></span>
 <span id="cb4-361"><a href="#cb4-361" aria-hidden="true" tabindex="-1"></a>        <span class="va">xdot</span> <span class="op">=</span> [<span class="va">dq</span><span class="op">;</span> <span class="va">ddq</span>]<span class="op">;</span></span>
 <span id="cb4-362"><a href="#cb4-362" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span> </span></code></pre></div>
-<p><embed src="figures/Robot.png" style="width:100.0%" /></p>
-<p><span id="fig:robot" data-label="fig:robot"></span></p>
+<figure id="fig:robot">
+<img src="figures/Robot.png" style="width:100.0%" />
+<figcaption>Robot manipulator offset-free MPC results.</figcaption>
+</figure>
 </div>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>

@@ -129,9 +129,10 @@ of length <span class="math inline">\(\ell\)</span>. The pivot is acted
 upon by an external control torque <span
 class="math inline">\(u(t)\)</span> and a viscous friction coefficient
 <span class="math inline">\(b\)</span>.</p>
-<div class="center">
-<p><span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
-</div>
+<figure id="fig:Pendulum">
+<img src="figures/tikz_ch03_1.png" style="width:60.0%" />
+<figcaption>Pendulum system.</figcaption>
+</figure>
 <p><strong>1. Physical Laws</strong><br />
 We apply Newton’s second law for rotational motion: <span
 class="math display">\[\tau_{\text{net}} = I \ddot{\theta}\]</span>
@@ -321,9 +322,10 @@ class="math inline">\(R_2\)</span>, an inductor <span
 class="math inline">\(L\)</span>, and a capacitor <span
 class="math inline">\(C\)</span>. Write state equations in matrix
 form.</p>
-<div class="center">
-<p><span id="fig:RLC01" data-label="fig:RLC01"></span></p>
-</div>
+<figure id="fig:RLC01">
+<img src="figures/tikz_ch03_2.png" style="width:60.0%" />
+<figcaption>An RLC circuit.</figcaption>
+</figure>
 <p>We select the energy variables as state variables: <span
 class="math display">\[x_1 = i_L \quad \text{(inductor current)},
     \qquad
@@ -392,9 +394,10 @@ class="math inline">\(\zeta(t)\)</span> (positive to the right). The
 system parameters are mass <span class="math inline">\(m\)</span>,
 damping coefficient <span class="math inline">\(c\)</span>, and spring
 stiffness <span class="math inline">\(k\)</span>.</p>
-<div class="center">
-<p><span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
-</div>
+<figure id="fig:MDS_system">
+<img src="figures/tikz_ch03_3.png" style="width:60.0%" />
+<figcaption>Mass-damper-spring system.</figcaption>
+</figure>
 <ol>
 <li><p>Write the equation of motion for the system in terms of <span
 class="math inline">\(\zeta(t)\)</span>, <span
@@ -660,10 +663,10 @@ the vertical position. Linearise these dynamics around the hover
 equilibrium (<span class="math inline">\(\theta=0,
 u_1=u_2=mg/2\)</span>) to obtain an LTI state-space model, <span
 class="math inline">\(\dot{{x}} = A{x} + B{u}\)</span>.</p>
-<div class="center">
-<p><span id="fig:duorotor_model"
-data-label="fig:duorotor_model"></span></p>
-</div>
+<figure id="fig:duorotor_model">
+<img src="figures/tikz_ch03_4.png" style="width:60.0%" />
+<figcaption>Planar duorotor model showing states (p&#x2093;, p_y, &#x3B8;) and inputs (u&#x2081;, u&#x2082;).</figcaption>
+</figure>
 <p><strong>1) Define states and inputs:</strong> We select the state
 vector such that the generalized coordinates appear first, followed by
 their velocities: <span class="math display">\[x(t) =

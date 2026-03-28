@@ -1105,6 +1105,7 @@
         if (cache[id]) {
             body.innerHTML = cache[id];
             body.scrollTop = 0;
+            fixFigures(body);
             typesetMath();
             if (window.PyodideRunner) PyodideRunner.initAll(body);
             if (window.KalmanDemo) KalmanDemo.initAll(body);
@@ -1127,6 +1128,7 @@
                 cache[id] = html;
                 body.innerHTML = html;
                 body.scrollTop = 0;
+                fixFigures(body);
                 typesetMath();
                 if (window.PyodideRunner) PyodideRunner.initAll(body);
                 if (window.KalmanDemo) KalmanDemo.initAll(body);
@@ -1146,6 +1148,29 @@
 
         // Close mobile sidebar
         document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function fixFigures(container) {
+        var figures = container.querySelectorAll('figure[id]');
+        var figMap = {};
+        var counter = 0;
+        figures.forEach(function(fig) {
+            counter++;
+            var id = fig.id;
+            var num = counter;
+            figMap[id] = num;
+            var caption = fig.querySelector('figcaption');
+            if (caption && !/^Figure\s/.test(caption.textContent)) {
+                caption.innerHTML = '<strong>Figure ' + num + ':</strong> ' + caption.innerHTML;
+            }
+        });
+        var refs = container.querySelectorAll('a[data-reference]');
+        refs.forEach(function(ref) {
+            var target = ref.getAttribute('data-reference');
+            if (figMap[target]) {
+                ref.textContent = figMap[target];
+            }
+        });
     }
 
     function typesetMath() {
