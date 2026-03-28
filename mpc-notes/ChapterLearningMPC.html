@@ -2108,55 +2108,667 @@ F_{\text{drag}} = C_{r0} + C_{r2}\,v_x^2
 </tbody>
 </table>
 
-<h4>NN-MPC Algorithm</h4>
+<h4>NN-MPC Algorithm Overview</h4>
 
-<p><strong>Iteration 0</strong> uses a pure-pursuit controller at a conservative
-5&thinsp;m/s to complete one safe lap and collect initial trajectory data.</p>
+<p>The algorithm operates in an <strong>iterative learning loop</strong>:
+the car drives a lap, collects data, trains neural networks on that data,
+then uses the learned knowledge to drive the next lap faster. The diagram
+below shows the complete system architecture.</p>
 
-<p><strong>NN Speed Map.</strong> After each lap, a neural network
-<span class="math inline">\(v_{\theta}(s)\)</span> is trained to predict the optimal
-target speed at each track position <span class="math inline">\(s\)</span>.
-The training data is built from a <em>safe set</em> of binned maximum
-achieved speeds, boosted by an iteration-dependent factor and capped by
-curvature-based speed limits:</p>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  DIAGRAM 1: Overall System Architecture / Learning Loop           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<figure style="text-align:center; margin:1.5em 0;">
+<svg viewBox="0 0 820 370" xmlns="http://www.w3.org/2000/svg"
+     style="max-width:780px; width:100%; font-family:'Segoe UI',Arial,sans-serif;">
+  <defs>
+    <marker id="ah1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+    <marker id="ah1b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1976D2"/>
+    </marker>
+    <marker id="ah1g" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#388E3C"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="820" height="370" rx="12" fill="#f8f9fa" stroke="#dee2e6"/>
+
+  <!-- Title -->
+  <text x="410" y="30" text-anchor="middle" font-size="15" font-weight="bold" fill="#212529">NN-MPC Iterative Learning Loop</text>
+
+  <!-- ── Iteration 0 Block ── -->
+  <rect x="30" y="55" width="170" height="80" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5"/>
+  <text x="115" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#1565C0">Iteration 0</text>
+  <text x="115" y="96" text-anchor="middle" font-size="11" fill="#333">Pure Pursuit</text>
+  <text x="115" y="112" text-anchor="middle" font-size="11" fill="#333">at 5 m/s (safe lap)</text>
+  <text x="115" y="128" text-anchor="middle" font-size="10" fill="#777">No learning yet</text>
+
+  <!-- Arrow: Iter 0 → Trajectory Data -->
+  <line x1="200" y1="95" x2="250" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah1)"/>
+
+  <!-- ── Trajectory Data Block ── -->
+  <rect x="255" y="55" width="160" height="80" rx="8" fill="#FFF3E0" stroke="#F57C00" stroke-width="1.5"/>
+  <text x="335" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#E65100">Trajectory Data</text>
+  <text x="335" y="96" text-anchor="middle" font-size="11" fill="#333">Record at each step:</text>
+  <text x="335" y="112" text-anchor="middle" font-size="10" fill="#555">state x, input u,</text>
+  <text x="335" y="126" text-anchor="middle" font-size="10" fill="#555">position s, speed v<tspan baseline-shift="sub" font-size="8">x</tspan></text>
+
+  <!-- Arrow: Trajectory → NN Training -->
+  <line x1="415" y1="95" x2="465" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah1)"/>
+
+  <!-- ── NN Training Block ── -->
+  <rect x="470" y="45" width="170" height="100" rx="8" fill="#E8F5E9" stroke="#388E3C" stroke-width="1.5"/>
+  <text x="555" y="68" text-anchor="middle" font-size="12" font-weight="bold" fill="#2E7D32">NN Training</text>
+
+  <!-- Sub-box: Speed Map -->
+  <rect x="480" y="78" width="150" height="24" rx="4" fill="#C8E6C9" stroke="#4CAF50"/>
+  <text x="555" y="95" text-anchor="middle" font-size="10" fill="#1B5E20">Speed Map v<tspan baseline-shift="sub" font-size="8">&theta;</tspan>(s)</text>
+
+  <!-- Sub-box: Value Function -->
+  <rect x="480" y="108" width="150" height="24" rx="4" fill="#C8E6C9" stroke="#4CAF50"/>
+  <text x="555" y="125" text-anchor="middle" font-size="10" fill="#1B5E20">Value Fn V<tspan baseline-shift="sub" font-size="8">&theta;</tspan>(x)</text>
+
+  <!-- Arrow: NN Training → MPC Controller -->
+  <line x1="640" y1="95" x2="690" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah1)"/>
+
+  <!-- ── MPC Controller Block ── -->
+  <rect x="695" y="55" width="105" height="80" rx="8" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1.5"/>
+  <text x="747" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#6A1B9A">NN-MPC</text>
+  <text x="747" y="96" text-anchor="middle" font-size="11" fill="#333">Controller</text>
+  <text x="747" y="112" text-anchor="middle" font-size="11" fill="#333">Iteration j</text>
+  <text x="747" y="128" text-anchor="middle" font-size="10" fill="#777">(faster lap)</text>
+
+  <!-- ── Big feedback arrow: MPC → back to Trajectory Data ── -->
+  <path d="M 747 135 L 747 165 Q 747 175 737 175 L 345 175 Q 335 175 335 165 L 335 140"
+        stroke="#1976D2" stroke-width="2" fill="none" marker-end="url(#ah1b)"
+        stroke-dasharray="6,3"/>
+  <text x="540" y="190" text-anchor="middle" font-size="10" fill="#1976D2" font-style="italic">
+    New trajectory data feeds back into training
+  </text>
+
+  <!-- ═══════ Lower section: Control Loop Detail ═══════ -->
+  <rect x="30" y="215" width="760" height="140" rx="8" fill="#FAFAFA" stroke="#BDBDBD" stroke-dasharray="4,2"/>
+  <text x="410" y="237" text-anchor="middle" font-size="13" font-weight="bold" fill="#424242">MPC Control Step (every 0.1 s during a lap)</text>
+
+  <!-- Step boxes -->
+  <rect x="45" y="253" width="130" height="48" rx="6" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="110" y="272" text-anchor="middle" font-size="10" font-weight="bold" fill="#283593">1. Query Speed Map</text>
+  <text x="110" y="288" text-anchor="middle" font-size="9" fill="#555">v<tspan baseline-shift="sub" font-size="7">target</tspan> = v<tspan baseline-shift="sub" font-size="7">&theta;</tspan>(s<tspan baseline-shift="sub" font-size="7">now</tspan>)</text>
+
+  <line x1="175" y1="277" x2="200" y2="277" stroke="#555" stroke-width="1.2" marker-end="url(#ah1)"/>
+
+  <rect x="205" y="253" width="140" height="48" rx="6" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="275" y="272" text-anchor="middle" font-size="10" font-weight="bold" fill="#283593">2. Lookahead Braking</text>
+  <text x="275" y="288" text-anchor="middle" font-size="9" fill="#555">Check 0.5, 1.0, 1.5 s ahead</text>
+
+  <line x1="345" y1="277" x2="370" y2="277" stroke="#555" stroke-width="1.2" marker-end="url(#ah1)"/>
+
+  <rect x="375" y="253" width="140" height="48" rx="6" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="445" y="272" text-anchor="middle" font-size="10" font-weight="bold" fill="#283593">3. Value Fn Check</text>
+  <text x="445" y="288" text-anchor="middle" font-size="9" fill="#555">V(x<tspan baseline-shift="sub" font-size="7">fast</tspan>) &lt; V(x<tspan baseline-shift="sub" font-size="7">slow</tspan>) ?</text>
+
+  <line x1="515" y1="277" x2="540" y2="277" stroke="#555" stroke-width="1.2" marker-end="url(#ah1)"/>
+
+  <rect x="545" y="253" width="130" height="48" rx="6" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="610" y="272" text-anchor="middle" font-size="10" font-weight="bold" fill="#283593">4. Pure Pursuit</text>
+  <text x="610" y="288" text-anchor="middle" font-size="9" fill="#555">&delta;, D &rarr; vehicle</text>
+
+  <!-- Output arrow -->
+  <line x1="675" y1="277" x2="705" y2="277" stroke="#388E3C" stroke-width="1.5" marker-end="url(#ah1g)"/>
+  <rect x="710" y="260" width="65" height="34" rx="6" fill="#E8F5E9" stroke="#388E3C"/>
+  <text x="742" y="282" text-anchor="middle" font-size="10" font-weight="bold" fill="#2E7D32">Drive!</text>
+
+  <!-- Caption below steps -->
+  <text x="410" y="325" text-anchor="middle" font-size="10" fill="#666">
+    Steps 1&ndash;3 compute the target speed. Step 4 executes steering and throttle.
+  </text>
+  <text x="410" y="342" text-anchor="middle" font-size="10" fill="#666">
+    After the lap completes, trajectory data is used to retrain both NNs for the next iteration.
+  </text>
+</svg>
+<figcaption>Figure: Overall NN-MPC architecture. Iteration&nbsp;0 collects safe
+data; subsequent iterations use trained NNs to drive faster while
+feeding new data back for retraining.</figcaption>
+</figure>
+
+
+<h4>Step 1: Data Collection &mdash; Iteration 0 (Pure Pursuit)</h4>
+
+<p>The first lap uses a simple <strong>pure-pursuit</strong> controller at a
+conservative 5&thinsp;m/s. The purpose is to complete one full lap safely and
+collect trajectory data: at every simulation step, the state
+<span class="math inline">\(\mathbf{x}_k\)</span>, control input
+<span class="math inline">\(\mathbf{u}_k\)</span>, track position
+<span class="math inline">\(s_k\)</span>, and speed
+<span class="math inline">\(v_{x,k}\)</span> are recorded.</p>
+
+<p>This conservative first lap forms the <strong>initial safe set</strong>
+&mdash; the algorithm knows that these states are reachable and safe,
+providing a baseline for future iterations.</p>
+
+
+<h4>Step 2: NN Speed Map &mdash; Learning <em>How Fast</em> to Go</h4>
+
+<p>After each completed lap, the track is divided into
+<span class="math inline">\(N_{\text{bins}} = 60\)</span> equal segments.
+The <strong>maximum achieved speed</strong> in each bin (across all laps so far)
+forms a <em>safe set of speeds</em> &mdash; the car knows it can at least
+achieve these speeds safely. The training pipeline then constructs target
+speeds that push <em>beyond</em> the proven envelope:</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  DIAGRAM 2: NN Speed Map Training Pipeline                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<figure style="text-align:center; margin:1.5em 0;">
+<svg viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg"
+     style="max-width:780px; width:100%; font-family:'Segoe UI',Arial,sans-serif;">
+  <defs>
+    <marker id="ah2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="820" height="280" rx="12" fill="#f8f9fa" stroke="#dee2e6"/>
+  <text x="410" y="28" text-anchor="middle" font-size="14" font-weight="bold" fill="#212529">
+    NN Speed Map Training Pipeline
+  </text>
+
+  <!-- ── Stage 1: Max Speed per Bin ── -->
+  <rect x="20" y="48" width="145" height="95" rx="6" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5"/>
+  <text x="92" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#1565C0">1. Safe Set</text>
+  <text x="92" y="85" text-anchor="middle" font-size="10" fill="#333">Max speed per bin</text>
+  <text x="92" y="100" text-anchor="middle" font-size="10" fill="#333">across all laps</text>
+
+  <!-- Mini bar chart -->
+  <rect x="35" y="115" width="10" height="15" fill="#64B5F6"/>
+  <rect x="50" y="110" width="10" height="20" fill="#64B5F6"/>
+  <rect x="65" y="118" width="10" height="12" fill="#64B5F6"/>
+  <rect x="80" y="105" width="10" height="25" fill="#64B5F6"/>
+  <rect x="95" y="112" width="10" height="18" fill="#64B5F6"/>
+  <rect x="110" y="108" width="10" height="22" fill="#64B5F6"/>
+  <rect x="125" y="120" width="10" height="10" fill="#64B5F6"/>
+  <line x1="30" y1="130" x2="145" y2="130" stroke="#999" stroke-width="0.5"/>
+
+  <line x1="165" y1="95" x2="195" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+  <!-- ── Stage 2: Boost ── -->
+  <rect x="200" y="48" width="145" height="95" rx="6" fill="#FFF3E0" stroke="#F57C00" stroke-width="1.5"/>
+  <text x="272" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">2. Boost</text>
+  <text x="272" y="85" text-anchor="middle" font-size="10" fill="#333">Multiply by &beta;<tspan baseline-shift="sub" font-size="8">j</tspan></text>
+  <text x="272" y="100" text-anchor="middle" font-size="10" fill="#333">(push beyond proven)</text>
+
+  <!-- Taller bars -->
+  <rect x="215" y="110" width="10" height="20" fill="#FFB74D"/>
+  <rect x="230" y="103" width="10" height="27" fill="#FFB74D"/>
+  <rect x="245" y="112" width="10" height="18" fill="#FFB74D"/>
+  <rect x="260" y="098" width="10" height="32" fill="#FFB74D"/>
+  <rect x="275" y="105" width="10" height="25" fill="#FFB74D"/>
+  <rect x="290" y="100" width="10" height="30" fill="#FFB74D"/>
+  <rect x="305" y="115" width="10" height="15" fill="#FFB74D"/>
+  <line x1="210" y1="130" x2="325" y2="130" stroke="#999" stroke-width="0.5"/>
+  <text x="330" y="113" font-size="14" fill="#F57C00" font-weight="bold">&uarr;</text>
+
+  <line x1="345" y1="95" x2="375" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+  <!-- ── Stage 3: Curvature Cap ── -->
+  <rect x="380" y="48" width="145" height="95" rx="6" fill="#FCE4EC" stroke="#C62828" stroke-width="1.5"/>
+  <text x="452" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#B71C1C">3. Curvature Cap</text>
+  <text x="452" y="85" text-anchor="middle" font-size="10" fill="#333">v &le; &radic;(a<tspan baseline-shift="sub" font-size="8">lat</tspan>/&kappa;)</text>
+  <text x="452" y="100" text-anchor="middle" font-size="10" fill="#333">(physics limit)</text>
+
+  <!-- Bars with cap line -->
+  <rect x="395" y="110" width="10" height="20" fill="#EF9A9A"/>
+  <rect x="410" y="103" width="10" height="27" fill="#EF9A9A"/>
+  <rect x="425" y="115" width="10" height="15" fill="#EF9A9A"/>  <!-- capped corner -->
+  <rect x="440" y="098" width="10" height="32" fill="#EF9A9A"/>
+  <rect x="455" y="105" width="10" height="25" fill="#EF9A9A"/>
+  <rect x="470" y="100" width="10" height="30" fill="#EF9A9A"/>
+  <rect x="485" y="117" width="10" height="13" fill="#EF9A9A"/>  <!-- capped corner -->
+  <line x1="390" y1="130" x2="505" y2="130" stroke="#999" stroke-width="0.5"/>
+  <!-- Cap line -->
+  <line x1="420" y1="115" x2="435" y2="115" stroke="#C62828" stroke-width="2"/>
+  <line x1="480" y1="117" x2="495" y2="117" stroke="#C62828" stroke-width="2"/>
+
+  <line x1="525" y1="95" x2="555" y2="95" stroke="#555" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+  <!-- ── Stage 4: NN Fit ── -->
+  <rect x="560" y="48" width="240" height="95" rx="6" fill="#E8F5E9" stroke="#388E3C" stroke-width="1.5"/>
+  <text x="680" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#2E7D32">4. Train Neural Network</text>
+  <text x="680" y="88" text-anchor="middle" font-size="10" fill="#333">
+    MLPRegressor fits smooth curve
+  </text>
+
+  <!-- NN diagram -->
+  <!-- Input nodes -->
+  <circle cx="590" cy="105" r="5" fill="#A5D6A7" stroke="#388E3C"/>
+  <circle cx="590" cy="120" r="5" fill="#A5D6A7" stroke="#388E3C"/>
+  <circle cx="590" cy="135" r="5" fill="#A5D6A7" stroke="#388E3C"/>
+  <text x="577" y="108" text-anchor="end" font-size="7" fill="#555">s/L</text>
+  <text x="577" y="123" text-anchor="end" font-size="7" fill="#555">&kappa;</text>
+  <text x="577" y="138" text-anchor="end" font-size="7" fill="#555">sin,cos</text>
+
+  <!-- Hidden layer 1 -->
+  <circle cx="640" cy="100" r="4" fill="#66BB6A" stroke="#388E3C"/>
+  <circle cx="640" cy="112" r="4" fill="#66BB6A" stroke="#388E3C"/>
+  <circle cx="640" cy="124" r="4" fill="#66BB6A" stroke="#388E3C"/>
+  <circle cx="640" cy="136" r="4" fill="#66BB6A" stroke="#388E3C"/>
+
+  <!-- Hidden layer 2 -->
+  <circle cx="680" cy="107" r="4" fill="#66BB6A" stroke="#388E3C"/>
+  <circle cx="680" cy="119" r="4" fill="#66BB6A" stroke="#388E3C"/>
+  <circle cx="680" cy="131" r="4" fill="#66BB6A" stroke="#388E3C"/>
+
+  <!-- Output -->
+  <circle cx="720" cy="119" r="6" fill="#2E7D32" stroke="#1B5E20"/>
+  <text x="735" y="123" font-size="8" fill="#1B5E20">v<tspan baseline-shift="sub" font-size="6">&theta;</tspan>(s)</text>
+
+  <!-- Connections (simplified) -->
+  <line x1="595" y1="105" x2="636" y2="100" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="595" y1="105" x2="636" y2="112" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="595" y1="120" x2="636" y2="124" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="595" y1="135" x2="636" y2="136" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="644" y1="100" x2="676" y2="107" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="644" y1="112" x2="676" y2="119" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="644" y1="124" x2="676" y2="119" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="644" y1="136" x2="676" y2="131" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="684" y1="107" x2="714" y2="119" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="684" y1="119" x2="714" y2="119" stroke="#A5D6A7" stroke-width="0.5"/>
+  <line x1="684" y1="131" x2="714" y2="119" stroke="#A5D6A7" stroke-width="0.5"/>
+
+  <!-- Smooth output curve -->
+  <path d="M 750 130 Q 760 115 770 120 Q 780 125 785 110 Q 790 100 795 108"
+        stroke="#2E7D32" stroke-width="1.5" fill="none"/>
+  <text x="775" y="140" text-anchor="middle" font-size="7" fill="#2E7D32">smooth</text>
+
+  <!-- ═══ Lower: Formula ═══ -->
+  <rect x="20" y="160" width="780" height="110" rx="6" fill="#fff" stroke="#E0E0E0"/>
+  <text x="410" y="185" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">
+    Speed Target Formula
+  </text>
+
+  <!-- Left column: Boost -->
+  <text x="60" y="210" font-size="11" fill="#333">
+    <tspan font-weight="bold" fill="#E65100">Boost factor:</tspan>
+  </text>
+  <text x="60" y="230" font-size="12" fill="#333">
+    &beta;<tspan baseline-shift="sub" font-size="9">j</tspan> = min(1 + 0.15 &middot; (j+1), 3.0)
+  </text>
+  <text x="60" y="250" font-size="10" fill="#777">
+    Iter 0: &beta;=1.15 &middot; Iter 3: &beta;=1.60 &middot; Iter 7: &beta;=2.20
+  </text>
+
+  <!-- Right column: Curvature -->
+  <text x="430" y="210" font-size="11" fill="#333">
+    <tspan font-weight="bold" fill="#B71C1C">Curvature speed limit:</tspan>
+  </text>
+  <text x="430" y="230" font-size="12" fill="#333">
+    v<tspan baseline-shift="sub" font-size="9">max</tspan> = &radic;(a<tspan baseline-shift="sub" font-size="9">lat,max</tspan> / &kappa;(s))
+  </text>
+  <text x="430" y="250" font-size="10" fill="#777">
+    Tight corner (&kappa;=0.1): 7.7 m/s &middot; Straight (&kappa;&asymp;0): 20 m/s
+  </text>
+</svg>
+<figcaption>Figure: NN Speed Map training pipeline. Proven speeds are boosted to
+encourage exploration, capped by physics, then a neural network learns the
+smooth target speed profile.</figcaption>
+</figure>
+
+<p>Mathematically, the target speed at track position
+<span class="math inline">\(s\)</span> after iteration
+<span class="math inline">\(j\)</span> is:</p>
 <span class="math display">\[
 v_{\text{target}}^{(j)}(s) = \min\!\Bigl(
-  \max_{i \le j}\bigl\{v_x^{(i)}(s)\bigr\} \cdot \beta_j,\;
-  \sqrt{\frac{a_{\text{lat,max}}}{\kappa(s)}}
+  \underbrace{\max_{i \le j}\bigl\{v_x^{(i)}(s)\bigr\}}_{\text{safe set: max proven speed}}
+  \cdot \underbrace{\beta_j}_{\text{boost}},\;
+  \underbrace{\sqrt{\frac{a_{\text{lat,max}}}{\kappa(s)}}}_{\text{curvature cap}}
 \Bigr), \qquad
 \beta_j = \min\!\bigl(1 + 0.15\,(j+1),\; 3.0\bigr)
 \]</span>
-<p>where <span class="math inline">\(\kappa(s)\)</span> is the local track curvature and
-<span class="math inline">\(a_{\text{lat,max}}\)</span> is the maximum lateral acceleration.
-The NN is an <code>MLPRegressor</code> with features
-<span class="math inline">\([s/L,\;\kappa,\;\sin(2\pi s/L),\;\cos(2\pi s/L)]\)</span>
-that generalises and interpolates between the binned data.</p>
 
-<p><strong>NN Value Function.</strong> A second neural network
-<span class="math inline">\(V_\theta(\mathbf{x})\)</span> is trained on cost-to-go data
-from all completed laps:</p>
+<p>The NN is an <code>MLPRegressor(64,32)</code> with input features
+<span class="math inline">\([s/L,\;\kappa,\;\sin(2\pi s/L),\;\cos(2\pi s/L)]\)</span>.
+The Fourier features (<span class="math inline">\(\sin, \cos\)</span>) help the NN handle
+the periodic (closed-loop) nature of the track, and the curvature input
+<span class="math inline">\(\kappa\)</span> lets it directly learn the relationship between
+corner sharpness and safe speed.</p>
+
+
+<h4>Step 3: NN Value Function &mdash; Learning the Cost-to-Go</h4>
+
+<p>A second neural network
+<span class="math inline">\(V_\theta(\mathbf{x})\)</span> approximates the
+<strong>cost-to-go</strong> (remaining time steps to finish the lap) from any state:</p>
 <span class="math display">\[
 V_\theta(\mathbf{x}) \approx Q^j_k = T_j - k
 \]</span>
-<p>with features
-<span class="math inline">\([X/50,\; Y/50,\; \cos\varphi,\; \sin\varphi,\; v_x/v_{\max}]\)</span>.
-This provides a smooth terminal cost for the MPC.</p>
+<p>where <span class="math inline">\(T_j\)</span> is the total steps in lap
+<span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span> is the
+current step. Training data from <strong>all</strong> completed laps is
+accumulated, so the value function learns from the entire driving history.</p>
 
-<p><strong>MPC Controller.</strong> At each time step, the controller:</p>
+<p>Features:
+<span class="math inline">\([X/50,\; Y/50,\; \cos\varphi,\; \sin\varphi,\; v_x/v_{\max}]\)</span>.
+The position is normalised by 50&thinsp;m to match the track scale.
+Heading is encoded as <span class="math inline">\((\cos\varphi, \sin\varphi)\)</span>
+to avoid the discontinuity at <span class="math inline">\(\pm\pi\)</span>.</p>
+
+<p><strong>How it is used in MPC:</strong> The controller evaluates two hypothetical
+states &mdash; one at the full target speed (<span class="math inline">\(x_{\text{fast}}\)</span>)
+and one at 80% of target (<span class="math inline">\(x_{\text{slow}}\)</span>).
+If <span class="math inline">\(V_\theta(x_{\text{fast}}) < V_\theta(x_{\text{slow}})\)</span>,
+the faster state leads to a quicker lap completion, so the target speed is boosted
+by 5%. This acts as a learned &ldquo;confidence signal&rdquo; that going faster
+here is beneficial.</p>
+
+
+<h4>Step 4: The MPC Controller &mdash; Putting It Together</h4>
+
+<p>At each control step (every 0.1&thinsp;s), the MPC controller computes
+what speed the car should target and how to steer. The four sub-steps are:</p>
+
 <ol>
-<li>Queries the NN speed map for the target speed at the current position</li>
-<li>Looks ahead 0.5&ndash;1.5&thinsp;s along the track for upcoming speed
-reductions (proactive braking)</li>
-<li>Adjusts the target based on the NN value function (states with lower
-predicted cost-to-go are preferred)</li>
-<li>Applies pure-pursuit steering at the computed target speed</li>
+<li><strong>Query NN Speed Map:</strong>
+<span class="math inline">\(v_{\text{target}} = v_\theta(s_{\text{now}})\)</span>
+&mdash; what speed should we be doing at the current track position?</li>
+
+<li><strong>Lookahead Braking:</strong> Check the speed map at positions 0.5, 1.0,
+and 1.5 seconds ahead. If a corner is coming (lower target speed ahead), start
+braking now:
+<span class="math display">\[
+v_{\text{target}} = \min\bigl(v_{\text{target}},\;
+v_\theta(s_{\text{ahead}}) + 1.5 \cdot \Delta t_{\text{look}}\bigr)
+\]</span>
+The term <span class="math inline">\(+1.5 \cdot \Delta t_{\text{look}}\)</span> is a
+deceleration budget: the car can be faster now if the slow section is still
+far away.</li>
+
+<li><strong>Value Function Check:</strong> If
+<span class="math inline">\(V_\theta(x_{\text{fast}}) < V_\theta(x_{\text{slow}})\)</span>,
+boost <span class="math inline">\(v_{\text{target}}\)</span> by 5%.</li>
+
+<li><strong>Pure Pursuit Execution:</strong> Compute steering angle and throttle
+command to track the centreline at the computed target speed (see below).</li>
 </ol>
 
-<p>As iterations progress, the NN speed map learns higher speeds on
-straights while maintaining safe speeds through corners. The safe set
-expands, the boost factor grows, and the lap time decreases &mdash;
-demonstrating that the controller <strong>improves with experience</strong>,
-a hallmark of learning-based MPC.</p>
+
+<h4>Step 5: Keeping the Car on Track</h4>
+
+<p>There are <strong>no explicit wall constraints</strong> in the optimisation.
+Instead, the car is kept within the track boundaries by four complementary
+mechanisms, illustrated below:</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  DIAGRAM 3: Pure Pursuit Geometry                                  -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<figure style="text-align:center; margin:1.5em 0;">
+<svg viewBox="0 0 820 350" xmlns="http://www.w3.org/2000/svg"
+     style="max-width:780px; width:100%; font-family:'Segoe UI',Arial,sans-serif;">
+  <defs>
+    <marker id="ah3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+    <marker id="ah3r" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#C62828"/>
+    </marker>
+    <marker id="ah3b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1565C0"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="820" height="350" rx="12" fill="#f8f9fa" stroke="#dee2e6"/>
+  <text x="410" y="28" text-anchor="middle" font-size="14" font-weight="bold" fill="#212529">
+    How the Car Stays on Track &mdash; Four Safety Mechanisms
+  </text>
+
+  <!-- ═══ Left Panel: Pure Pursuit Geometry ═══ -->
+  <rect x="15" y="42" width="390" height="290" rx="8" fill="#fff" stroke="#E0E0E0"/>
+  <text x="210" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#1565C0">
+    (a) Pure Pursuit Steering
+  </text>
+
+  <!-- Track edges (curved) -->
+  <path d="M 40 260 Q 120 140 280 120 Q 370 115 380 150"
+        stroke="#999" stroke-width="2" fill="none" stroke-dasharray="4,3"/>
+  <path d="M 60 290 Q 140 170 300 150 Q 390 145 400 180"
+        stroke="#999" stroke-width="2" fill="none" stroke-dasharray="4,3"/>
+  <text x="35" y="255" font-size="8" fill="#999">outer edge</text>
+  <text x="55" y="305" font-size="8" fill="#999">inner edge</text>
+
+  <!-- Centreline -->
+  <path d="M 50 275 Q 130 155 290 135 Q 380 130 390 165"
+        stroke="#BDBDBD" stroke-width="1" fill="none"/>
+  <text x="385" y="175" font-size="8" fill="#BDBDBD">centreline</text>
+
+  <!-- Car rectangle -->
+  <g transform="translate(135,220) rotate(-50)">
+    <rect x="-14" y="-7" width="28" height="14" rx="3" fill="#1976D2" stroke="#0D47A1" stroke-width="1"/>
+    <polygon points="14,-4 18,0 14,4" fill="#64B5F6"/>
+    <text x="0" y="3" text-anchor="middle" font-size="7" fill="white" font-weight="bold">car</text>
+  </g>
+
+  <!-- Car position dot -->
+  <circle cx="135" cy="220" r="3" fill="#C62828"/>
+  <text x="110" y="240" font-size="9" fill="#C62828">position</text>
+
+  <!-- Lookahead point on centreline -->
+  <circle cx="260" cy="148" r="5" fill="#388E3C" stroke="#1B5E20"/>
+  <text x="268" y="142" font-size="9" fill="#2E7D32">lookahead point</text>
+
+  <!-- Lookahead line -->
+  <line x1="135" y1="220" x2="255" y2="150" stroke="#1565C0" stroke-width="1.5"
+        stroke-dasharray="5,3" marker-end="url(#ah3b)"/>
+  <text x="175" y="175" font-size="9" fill="#1565C0" transform="rotate(-32,175,175)">
+    lookahead distance
+  </text>
+
+  <!-- Heading angle arc -->
+  <path d="M 158 200 A 30 30 0 0 0 170 210" stroke="#C62828" stroke-width="1" fill="none"/>
+  <text x="172" y="198" font-size="9" fill="#C62828">&delta;</text>
+
+  <!-- Self-correction annotation -->
+  <rect x="35" y="78" width="185" height="52" rx="4" fill="#E3F2FD" stroke="#90CAF9"/>
+  <text x="127" y="95" text-anchor="middle" font-size="10" fill="#1565C0" font-weight="bold">
+    Self-correcting:
+  </text>
+  <text x="127" y="110" text-anchor="middle" font-size="9" fill="#333">
+    If car drifts off-centre,
+  </text>
+  <text x="127" y="123" text-anchor="middle" font-size="9" fill="#333">
+    angle to lookahead &uarr; &rarr; steering &uarr;
+  </text>
+
+  <!-- ═══ Right Panel: Lookahead Braking ═══ -->
+  <rect x="420" y="42" width="385" height="290" rx="8" fill="#fff" stroke="#E0E0E0"/>
+  <text x="612" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">
+    (b) Lookahead Braking
+  </text>
+
+  <!-- Speed profile axes -->
+  <line x1="460" y1="270" x2="770" y2="270" stroke="#999" stroke-width="1"/>
+  <line x1="460" y1="270" x2="460" y2="90" stroke="#999" stroke-width="1"/>
+  <text x="615" y="290" text-anchor="middle" font-size="9" fill="#555">track position s &rarr;</text>
+  <text x="445" y="180" text-anchor="middle" font-size="9" fill="#555" transform="rotate(-90,445,180)">speed &rarr;</text>
+
+  <!-- NN speed profile (smooth curve) -->
+  <path d="M 470 120 L 510 115 Q 540 112 560 115 L 580 118
+           Q 610 140 630 190 Q 640 210 650 200 Q 660 180 680 130
+           L 720 115 L 760 110"
+        stroke="#388E3C" stroke-width="2" fill="none"/>
+  <text x="762" y="105" font-size="8" fill="#388E3C">v<tspan baseline-shift="sub" font-size="6">&theta;</tspan>(s)</text>
+
+  <!-- Current position marker -->
+  <line x1="530" y1="270" x2="530" y2="113" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <circle cx="530" cy="113" r="4" fill="#1976D2"/>
+  <text x="530" y="282" text-anchor="middle" font-size="9" fill="#1976D2" font-weight="bold">now</text>
+
+  <!-- Lookahead arrows -->
+  <line x1="535" y1="260" x2="590" y2="260" stroke="#F57C00" stroke-width="1.2" marker-end="url(#ah3)"/>
+  <text x="562" y="255" text-anchor="middle" font-size="7" fill="#F57C00">0.5s</text>
+
+  <line x1="535" y1="248" x2="625" y2="248" stroke="#F57C00" stroke-width="1.2" marker-end="url(#ah3)"/>
+  <text x="580" y="243" text-anchor="middle" font-size="7" fill="#F57C00">1.0s</text>
+
+  <line x1="535" y1="236" x2="660" y2="236" stroke="#F57C00" stroke-width="1.2" marker-end="url(#ah3)"/>
+  <text x="597" y="231" text-anchor="middle" font-size="7" fill="#F57C00">1.5s</text>
+
+  <!-- Corner zone highlight -->
+  <rect x="605" y="85" width="60" height="185" rx="4" fill="#FFEBEE" opacity="0.4"/>
+  <text x="635" y="97" text-anchor="middle" font-size="9" fill="#C62828" font-weight="bold">corner</text>
+
+  <!-- Braking annotation -->
+  <rect x="440" y="300" width="180" height="26" rx="4" fill="#FFF3E0" stroke="#FFB74D"/>
+  <text x="530" y="318" text-anchor="middle" font-size="9" fill="#E65100">
+    Sees slow corner ahead &rarr; brakes NOW
+  </text>
+
+  <!-- Curvature cap annotation -->
+  <rect x="640" y="300" width="150" height="26" rx="4" fill="#FCE4EC" stroke="#EF9A9A"/>
+  <text x="715" y="318" text-anchor="middle" font-size="9" fill="#B71C1C">
+    v &le; &radic;(a<tspan baseline-shift="sub" font-size="7">lat</tspan>/&kappa;) at corners
+  </text>
+</svg>
+<figcaption>Figure: (a) Pure pursuit naturally steers back to the centreline &mdash;
+the further the car drifts, the stronger the correction.
+(b) Lookahead braking detects upcoming corners and reduces speed proactively.
+</figcaption>
+</figure>
+
+<p>The four mechanisms in detail:</p>
+
+<ol>
+<li><strong>Pure Pursuit Geometry</strong> (steering).
+The controller always aims at a point on the <em>centreline</em> a distance
+<span class="math inline">\(d_{\text{look}} = \max(4\text{m},\; 0.9\,v_x)\)</span>
+ahead. This is inherently <strong>self-correcting</strong>: if the car drifts
+off-centre, the angle to the lookahead point increases, producing a larger
+steering correction that pulls the car back. The steering angle is:
+<span class="math display">\[
+\delta = \arctan\!\Bigl(\frac{2\,L\,\sin\alpha}{d}\Bigr), \qquad
+|\delta| \le \delta_{\max}
+\]</span>
+where <span class="math inline">\(\alpha\)</span> is the angle to the
+lookahead point, <span class="math inline">\(d\)</span> is the distance, and
+<span class="math inline">\(L = l_f + l_r\)</span> is the wheelbase.</li>
+
+<li><strong>Curvature Speed Limits</strong> (physics cap).
+At each track position, the maximum speed is limited by the lateral acceleration
+the tyres can sustain:
+<span class="math display">\[
+v_{\max}(s) = \sqrt{\frac{a_{\text{lat,max}}}{\kappa(s)}}
+\]</span>
+With <span class="math inline">\(a_{\text{lat,max}} = 6\;\text{m/s}^2\)</span>,
+a corner with curvature <span class="math inline">\(\kappa = 0.1\;\text{rad/m}\)</span>
+limits speed to <span class="math inline">\(\sqrt{60} \approx 7.7\;\text{m/s}\)</span>.
+This prevents the NN from requesting speeds that would cause the car to
+slide off the track.</li>
+
+<li><strong>Lookahead Braking</strong> (proactive deceleration).
+At each step, the controller queries the speed map at positions 0.5, 1.0, and
+1.5&thinsp;s ahead. If a tight corner is approaching with a lower target speed,
+braking begins <em>before</em> reaching the corner &mdash; not after. The
+deceleration budget <span class="math inline">\(+1.5 \cdot \Delta t\)</span> allows
+higher speed now if the corner is still far away.</li>
+
+<li><strong>Off-Track Abort</strong> (safety net).
+If the lateral deviation exceeds <span class="math inline">\(3 \times\)</span> the track
+half-width (15&thinsp;m), the lap is aborted. In practice this never triggers
+because mechanisms 1&ndash;3 keep the deviation under ~1.1&thinsp;m (well within
+the 5&thinsp;m half-width).</li>
+</ol>
+
+
+<h4>The Learning Process Visualised</h4>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  DIAGRAM 4: Iteration-by-iteration improvement                    -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<figure style="text-align:center; margin:1.5em 0;">
+<svg viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg"
+     style="max-width:780px; width:100%; font-family:'Segoe UI',Arial,sans-serif;">
+  <defs>
+    <marker id="ah4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="820" height="210" rx="12" fill="#f8f9fa" stroke="#dee2e6"/>
+  <text x="410" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#212529">
+    What the Car Learns Over Iterations
+  </text>
+
+  <!-- Iteration columns -->
+  <!-- Iter 0 -->
+  <rect x="25" y="40" width="120" height="155" rx="6" fill="#E3F2FD" stroke="#90CAF9"/>
+  <text x="85" y="58" text-anchor="middle" font-size="11" font-weight="bold" fill="#1565C0">Iteration 0</text>
+  <text x="85" y="75" text-anchor="middle" font-size="9" fill="#333">Pure pursuit</text>
+  <text x="85" y="90" text-anchor="middle" font-size="9" fill="#333">5 m/s everywhere</text>
+  <!-- Mini track with single trajectory -->
+  <ellipse cx="85" cy="130" rx="35" ry="25" fill="none" stroke="#BDBDBD" stroke-width="1"/>
+  <ellipse cx="85" cy="130" rx="35" ry="25" fill="none" stroke="#1976D2" stroke-width="1.5"/>
+  <text x="85" y="170" text-anchor="middle" font-size="10" font-weight="bold" fill="#1565C0">42.5s</text>
+  <text x="85" y="184" text-anchor="middle" font-size="8" fill="#777">avg 5.0 m/s</text>
+
+  <line x1="145" y1="117" x2="170" y2="117" stroke="#555" stroke-width="1.2" marker-end="url(#ah4)"/>
+
+  <!-- Iter 1-2 -->
+  <rect x="175" y="40" width="120" height="155" rx="6" fill="#E8F5E9" stroke="#A5D6A7"/>
+  <text x="235" y="58" text-anchor="middle" font-size="11" font-weight="bold" fill="#2E7D32">Iterations 1-2</text>
+  <text x="235" y="75" text-anchor="middle" font-size="9" fill="#333">NN learns straights</text>
+  <text x="235" y="90" text-anchor="middle" font-size="9" fill="#333">are safe to speed up</text>
+  <ellipse cx="235" cy="130" rx="35" ry="25" fill="none" stroke="#BDBDBD" stroke-width="1"/>
+  <ellipse cx="235" cy="130" rx="35" ry="25" fill="none" stroke="#66BB6A" stroke-width="1.5"/>
+  <text x="235" y="170" text-anchor="middle" font-size="10" font-weight="bold" fill="#2E7D32">37&ndash;32s</text>
+  <text x="235" y="184" text-anchor="middle" font-size="8" fill="#777">avg 5.6&ndash;6.6 m/s</text>
+
+  <line x1="295" y1="117" x2="320" y2="117" stroke="#555" stroke-width="1.2" marker-end="url(#ah4)"/>
+
+  <!-- Iter 3-5 -->
+  <rect x="325" y="40" width="140" height="155" rx="6" fill="#FFF3E0" stroke="#FFCC80"/>
+  <text x="395" y="58" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">Iterations 3-5</text>
+  <text x="395" y="75" text-anchor="middle" font-size="9" fill="#333">Higher corner speeds,</text>
+  <text x="395" y="90" text-anchor="middle" font-size="9" fill="#333">tighter racing line</text>
+  <ellipse cx="395" cy="130" rx="35" ry="25" fill="none" stroke="#BDBDBD" stroke-width="1"/>
+  <path d="M 370 107 Q 410 100 430 115 Q 440 140 420 155 Q 395 162 370 150 Q 358 135 370 107"
+        fill="none" stroke="#F57C00" stroke-width="1.5"/>
+  <text x="395" y="170" text-anchor="middle" font-size="10" font-weight="bold" fill="#E65100">29&ndash;24s</text>
+  <text x="395" y="184" text-anchor="middle" font-size="8" fill="#777">avg 7.3&ndash;8.7 m/s</text>
+
+  <line x1="465" y1="117" x2="490" y2="117" stroke="#555" stroke-width="1.2" marker-end="url(#ah4)"/>
+
+  <!-- Iter 6-7 -->
+  <rect x="495" y="40" width="140" height="155" rx="6" fill="#FCE4EC" stroke="#EF9A9A"/>
+  <text x="565" y="58" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">Iterations 6-7</text>
+  <text x="565" y="75" text-anchor="middle" font-size="9" fill="#333">Near-optimal speeds,</text>
+  <text x="565" y="90" text-anchor="middle" font-size="9" fill="#333">approaching limit</text>
+  <ellipse cx="565" cy="130" rx="35" ry="25" fill="none" stroke="#BDBDBD" stroke-width="1"/>
+  <path d="M 540 107 Q 580 98 600 113 Q 610 138 590 155 Q 565 164 540 150 Q 528 133 540 107"
+        fill="none" stroke="#EF5350" stroke-width="2"/>
+  <text x="565" y="170" text-anchor="middle" font-size="10" font-weight="bold" fill="#C62828">22&ndash;21s</text>
+  <text x="565" y="184" text-anchor="middle" font-size="8" fill="#777">avg 9.4&ndash;10.1 m/s</text>
+
+  <!-- Result arrow -->
+  <line x1="635" y1="117" x2="660" y2="117" stroke="#555" stroke-width="1.2" marker-end="url(#ah4)"/>
+
+  <!-- Final result box -->
+  <rect x="665" y="55" width="140" height="120" rx="8" fill="#E8F5E9" stroke="#388E3C" stroke-width="2"/>
+  <text x="735" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#2E7D32">Result</text>
+  <text x="735" y="105" text-anchor="middle" font-size="20" font-weight="bold" fill="#1B5E20">51%</text>
+  <text x="735" y="125" text-anchor="middle" font-size="11" fill="#333">improvement</text>
+  <text x="735" y="145" text-anchor="middle" font-size="10" fill="#555">42.5s &rarr; 20.9s</text>
+  <text x="735" y="162" text-anchor="middle" font-size="9" fill="#777">in ~6 seconds</text>
+</svg>
+<figcaption>Figure: The car progressively learns to drive faster. Early iterations
+discover that straights are safe for higher speeds; later iterations push
+corner speeds closer to the physical limit.</figcaption>
+</figure>
+
 
 <h4>Running the Code</h4>
 
