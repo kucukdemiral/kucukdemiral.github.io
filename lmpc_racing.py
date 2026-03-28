@@ -496,9 +496,18 @@ class NNValueFunction:
     Trained on (state, remaining_steps) pairs from completed laps.
     Provides a smooth terminal cost for the MPC.
 
-    Features: [X/50, Y/50, cos(phi), sin(phi), vx/vmax]
+    Features: [X/scale, Y/scale, cos(phi), sin(phi), vx/vmax]
     Output:   predicted remaining steps to finish the lap
+
+    Per the LMPC theory (Eq. 12.5 in the notes), the cost-to-go at a
+    state visited in multiple iterations is the *minimum* across iterations.
+    We enforce this by storing features in a dictionary keyed by a
+    discretised feature hash; when a new trajectory visits a state already
+    in the dictionary with a lower cost-to-go, we update the entry.
     """
+
+    # Discretisation resolution for duplicate detection (per feature dim)
+    _BIN_RES = np.array([0.5, 0.5, 0.05, 0.05, 0.05])
 
     def __init__(self):
         self.model = MLPRegressor(
@@ -507,26 +516,32 @@ class NNValueFunction:
             max_iter=500, warm_start=True, random_state=42,
         )
         self.is_trained = False
-        self.X_data = []
-        self.y_data = []
+        self._data = {}  # key: discretised feature tuple -> (features, min_ctg)
 
     def add_trajectory(self, trajectory):
-        """Add (state, cost-to-go) pairs from a completed lap."""
+        """Add (state, cost-to-go) pairs from a completed lap.
+
+        For states already in the dataset, only the minimum cost-to-go
+        is retained (LMPC Q^j: min across iterations).
+        """
         n = len(trajectory)
         for k, pt in enumerate(trajectory):
-            self.X_data.append(self._features(pt['x']))
-            self.y_data.append(float(n - k))
+            feat = self._features(pt['x'])
+            ctg = float(n - k)
+            key = tuple(np.round(feat / self._BIN_RES).astype(int))
+            if key not in self._data or ctg < self._data[key][1]:
+                self._data[key] = (feat, ctg)
 
     def train(self):
-        """Retrain NN on all accumulated data."""
-        if len(self.X_data) < 50:
+        """Retrain NN on all accumulated data (min cost-to-go per bin)."""
+        if len(self._data) < 50:
             return
-        X = np.array(self.X_data)
-        y = np.array(self.y_data)
+        X = np.array([v[0] for v in self._data.values()])
+        y = np.array([v[1] for v in self._data.values()])
         self.model.fit(X, y)
         self.is_trained = True
         score = self.model.score(X, y)
-        print(f"  Value NN: {len(self.X_data)} samples, R² = {score:.3f}")
+        print(f"  Value NN: {len(self._data)} samples, R² = {score:.3f}")
 
     def predict(self, x):
         """Predict cost-to-go V(x). Returns 0 if not yet trained."""
@@ -536,6 +551,8 @@ class NNValueFunction:
         return float(self.model.predict(feat)[0])
 
     def _features(self, x):
+        # Scale X, Y by 50 m (approximate half-extent of typical tracks).
+        # cos/sin encoding avoids heading discontinuity at ±pi.
         return np.array([
             x[0] / 50.0, x[1] / 50.0,
             np.cos(x[2]), np.sin(x[2]),
