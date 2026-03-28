@@ -39,9 +39,11 @@
     var W_SS = 1.0;
     var KNN_K = 5;
     var TERM_HESS = [0.5, 0.5, 1.0, 0.3, 0.1, 0.1];
-    var Q_LAT = 0.3;
-    var Q_HEAD = 0.8;
-    var TERM_SCALE = 0.05;
+    var Q_LAT = 0.12;
+    var Q_HEAD = 0.10;
+    var Q_VX = 0.5;
+    var TERM_SCALE = 0.01;
+    var SPEED_BOOST = 0.12;
     var PP_SPEED = 5.0;
 
     function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -245,11 +247,49 @@
     function knnGrad(xN, safeSet) {
         var eps = 1e-4, f0 = knnCost(xN, safeSet);
         var grad = new Array(NX);
+        var maxG = 5.0;
         for (var i = 0; i < NX; i++) {
             var xp = xN.slice(); xp[i] += eps;
-            grad[i] = (knnCost(xp, safeSet) - f0) / eps;
+            grad[i] = clamp((knnCost(xp, safeSet) - f0) / eps, -maxG, maxG);
         }
         return grad;
+    }
+
+    /* ═══ Speed Reference from Safe Set ═════════════════════════ */
+    function buildSpeedRef(safeSet, track, iteration) {
+        var nBins = 60;
+        var binSize = track.totalLength / nBins;
+        var ref = new Array(nBins);
+        for (var b = 0; b < nBins; b++) ref[b] = PP_SPEED;
+        for (var i = 0; i < safeSet.length; i++) {
+            var sp = safeSet[i].x;
+            var proj = projectOnTrack(sp[0], sp[1], track);
+            var bin = Math.floor(((proj.s % track.totalLength) + track.totalLength) % track.totalLength / binSize);
+            if (bin >= nBins) bin = nBins - 1;
+            if (sp[3] > ref[bin]) ref[bin] = sp[3];
+        }
+        // Smooth with 5-point moving average
+        var smoothed = new Array(nBins);
+        for (var b = 0; b < nBins; b++) {
+            var sum = 0, cnt = 0;
+            for (var j = -2; j <= 2; j++) {
+                sum += ref[((b + j) % nBins + nBins) % nBins]; cnt++;
+            }
+            smoothed[b] = sum / cnt;
+        }
+        // Apply boost: try to go faster than proven speeds
+        var boost = 1.0 + SPEED_BOOST;
+        for (var b = 0; b < nBins; b++) {
+            smoothed[b] = Math.min(smoothed[b] * boost, VP.vxMax);
+        }
+        return { bins: smoothed, nBins: nBins, binSize: binSize };
+    }
+
+    function getSpeedRef(s, speedRef, track) {
+        s = ((s % track.totalLength) + track.totalLength) % track.totalLength;
+        var bin = Math.floor(s / speedRef.binSize);
+        if (bin >= speedRef.nBins) bin = speedRef.nBins - 1;
+        return speedRef.bins[bin];
     }
 
     /* ═══ Track + Centreline + Heading Cost ═════════════════════ */
@@ -289,7 +329,7 @@
     }
 
     /* ═══ SCvx Solver for LMPC ═════════════════════════════════ */
-    function scvxSolve(x0, usInit, track, safeSet, N) {
+    function scvxSolve(x0, usInit, track, safeSet, speedRef, N) {
         var us = [];
         for (var k = 0; k < N; k++) us.push(usInit[k].slice());
 
@@ -314,6 +354,13 @@
             var trkInfo = [];
             for (var k = 0; k <= N; k++) trkInfo.push(getTrackInfo(xsBar[k], track));
 
+            // Speed reference at each prediction step
+            var vRef = [];
+            for (var k = 0; k <= N; k++) {
+                var projK = projectOnTrack(xsBar[k][0], xsBar[k][1], track);
+                vRef.push(speedRef ? getSpeedRef(projK.s, speedRef, track) : PP_SPEED);
+            }
+
             var usBar = [];
             for (var k = 0; k < N; k++) usBar.push(us[k].slice());
 
@@ -324,6 +371,7 @@
                 if (i === 0) diagP[i] += trkInfo[N].hessXX;
                 if (i === 1) diagP[i] += trkInfo[N].hessYY;
                 if (i === 2) diagP[i] += trkInfo[N].hessPhi;
+                if (i === 3) diagP[i] += Q_VX * 2;
             }
             var prec = new Array(N);
             for (var k = N - 1; k >= 0; k--) {
@@ -339,6 +387,7 @@
                     if (i === 0) newDP[i] += trkInfo[k].hessXX;
                     if (i === 1) newDP[i] += trkInfo[k].hessYY;
                     if (i === 2) newDP[i] += trkInfo[k].hessPhi;
+                    if (i === 3) newDP[i] += Q_VX * 2;
                     for (var j = 0; j < NX; j++) newDP[i] += Ab[k][j][i] * Ab[k][j][i] * diagP[j];
                 }
                 diagP = newDP;
@@ -376,6 +425,7 @@
                         if (i === 0) newLam[i] += trkInfo[k].gradX;
                         if (i === 1) newLam[i] += trkInfo[k].gradY;
                         if (i === 2) newLam[i] += trkInfo[k].gradPhi;
+                        if (i === 3) newLam[i] += Q_VX * 2 * (xs[k][3] - vRef[k]);
                         for (var j = 0; j < NX; j++) newLam[i] += Ab[k][j][i] * lam[j];
                     }
                     lam = newLam;
@@ -423,6 +473,7 @@
                         if (i === 0) newDLam[i] += trkInfo[k].hessXX * dxH[k][i];
                         if (i === 1) newDLam[i] += trkInfo[k].hessYY * dxH[k][i];
                         if (i === 2) newDLam[i] += trkInfo[k].hessPhi * dxH[k][i];
+                        if (i === 3) newDLam[i] += Q_VX * 2 * dxH[k][i];
                         for (var j = 0; j < NX; j++) newDLam[i] += Ab[k][j][i] * dLam[j];
                     }
                     dLam = newDLam;
@@ -842,6 +893,7 @@
             lastU: [0, 0],
             camFx: trackCx, camFy: trackCy,
             camSc: 6, camZoom: 1.0,
+            speedRef: null,
             showSafeSet: true, showPred: true, showPrevLaps: true,
             horizonN: N_DEFAULT,
             speedMult: 2,
@@ -896,7 +948,9 @@
             var xSim = x0.slice();
             var s = sNow;
             for (var k = 0; k < N; k++) {
-                var u = purePursuitControl(xSim, s, track, Math.max(PP_SPEED, x0[3]));
+                var tgtSpd = Math.max(PP_SPEED, x0[3]);
+                if (sim.speedRef) tgtSpd = Math.max(tgtSpd, getSpeedRef(s, sim.speedRef, track));
+                var u = purePursuitControl(xSim, s, track, tgtSpd);
                 us.push(u);
                 xSim = rk4Step(xSim, u, DT_MPC);
                 var proj = projectOnTrack(xSim[0], xSim[1], track);
@@ -925,7 +979,7 @@
                     } else {
                         usInit = generateInitGuess(sim.x, sNow, N);
                     }
-                    var sol = scvxSolve(sim.x, usInit, track, sim.safeSet, N);
+                    var sol = scvxSolve(sim.x, usInit, track, sim.safeSet, sim.speedRef, N);
                     sim.lastU = sol.us[0].slice();
                     sim.usWarm = sol.us;
                     sim.pred = sol.xs;
@@ -1064,6 +1118,12 @@
             running = true;
             lastFrame = 0; accum = 0;
             resetCar();
+            // Build speed reference from safe set for LMPC iterations
+            if (sim.iteration > 0 && sim.safeSet.length > 0) {
+                sim.speedRef = buildSpeedRef(sim.safeSet, track, sim.iteration);
+            } else {
+                sim.speedRef = null;
+            }
             runBtn.disabled = true;
             autoBtn.disabled = true;
             runBtn.textContent = '\u23F8 Running...';
