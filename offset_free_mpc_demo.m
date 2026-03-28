@@ -2,13 +2,13 @@
 %  Companion script for Chapter 8 (Output Feedback & Offset-Free MPC)
 %  of the MPC lecture notes by I. Kucukdemiral.
 %
-%  Requirements: YALMIP (https://yalmip.github.io) + quadprog (Optimization Toolbox)
-%  Install YALMIP in MATLAB Online via Add-Ons > Get Add-Ons > search "YALMIP"
+%  Requirements: Optimization Toolbox (quadprog) — included in MATLAB Online.
+%  No additional toolboxes or Add-Ons needed.
 %
 %  This script demonstrates:
 %    1. Augmented-state observer (Kalman filter with disturbance state)
 %    2. Steady-state target calculator
-%    3. Deviation-form MPC with soft output constraints
+%    3. Deviation-form MPC with soft output constraints (QP via quadprog)
 %    4. Closed-loop simulation with piecewise-constant reference & disturbance
 
 clear; clc; close all; rng(1);
@@ -31,10 +31,10 @@ B_aug = [B; 0];
 C_aug = [C, 0];
 
 % W(3,3) is the single tuning knob for disturbance tracking bandwidth
-W = diag([1e-4, 1e-4, 1e-4]);   % Kalman filter tuning weights
-V = 1e-3;                        % Measurement noise variance
+Wn = diag([1e-4, 1e-4, 1e-4]);  % Kalman filter process noise
+V  = 1e-3;                       % Measurement noise variance
 
-[P_ss, ~, ~] = dare(A_aug', C_aug', W, V);
+[P_ss, ~, ~] = dare(A_aug', C_aug', Wn, V);
 L = P_ss * C_aug' / (C_aug * P_ss * C_aug' + V);
 
 fprintf('Observer gain L = [%.4f; %.4f; %.4f]\n', L);
@@ -49,45 +49,157 @@ if rank(M_target) < (nx + nu)
 end
 fprintf('Target calculator: rank = %d (full rank)\n', rank(M_target));
 
-%% 4. MPC Formulation
-N   = 20;
-q_y = 10;
-R   = 0.1;
-rho = 1e5;
+%% 4. MPC QP Formulation (direct quadprog — no YALMIP needed)
+N   = 20;          % prediction horizon
+q_y = 10;          % output tracking weight
+R   = 0.1;         % input weight
+rho = 1e5;         % soft constraint penalty
 
-Q_state = C' * q_y * C;
-[P_N, ~, ~] = dare(A, B, Q_state, R);
+Q_state = C' * q_y * C;               % nx x nx state weight
+[P_N, ~, ~] = dare(A, B, Q_state, R); % terminal cost from DARE
 
-du    = sdpvar(nu, N,   'full');
-dx    = sdpvar(nx, N+1, 'full');
-slack = sdpvar(ny, N,   'full');
+% Decision variable: z = [du(1); ...; du(N); eps(1); ...; eps(N)]
+%   du(k) in R^nu, eps(k) in R^ny
+nz = N * (nu + ny);
 
-x_hat = sdpvar(nx, 1);
-x_ss  = sdpvar(nx, 1);
-u_ss  = sdpvar(nu, 1);
+% --- Build prediction matrices: dx(k) = Phi(k)*dx0 + Gamma(k)*[du(1);...;du(k-1)]
+% where dx0 = x_hat - x_ss (the initial deviation)
+% We need dx(k) for k = 1,...,N+1 and du for k = 1,...,N
+% dx(1) = dx0,  dx(k+1) = A*dx(k) + B*du(k)
 
-obj  = 0;
-cons = [dx(:,1) == x_hat - x_ss];
+% Propagation: dx(k) = A^(k-1)*dx0 + sum_{j=1}^{k-1} A^(k-1-j)*B*du(j)
+% Build Phi (state from initial condition) and Gamma (state from inputs)
+Phi   = zeros(nx*(N+1), nx);    % maps dx0 -> [dx(1);...;dx(N+1)]
+Gamma = zeros(nx*(N+1), nu*N);  % maps [du(1);...;du(N)] -> [dx(1);...;dx(N+1)]
 
-for k = 1:N
-    cons = [cons, dx(:,k+1) == A*dx(:,k) + B*du(:,k)];
-
-    dy_k = C * dx(:,k);
-    obj  = obj + dy_k'*q_y*dy_k + du(:,k)'*R*du(:,k) + rho*slack(:,k)'*slack(:,k);
-
-    u_abs = du(:,k) + u_ss;
-    y_abs = C * (dx(:,k) + x_ss);
-
-    cons = [cons, u_min <= u_abs <= u_max];
-    cons = [cons, y_min - slack(:,k) <= y_abs <= y_max + slack(:,k)];
-    cons = [cons, slack(:,k) >= 0];
+A_pow = eye(nx);
+for k = 1:N+1
+    rows = (k-1)*nx+1 : k*nx;
+    Phi(rows, :) = A_pow;
+    for j = 1:min(k-1, N)
+        cols = (j-1)*nu+1 : j*nu;
+        Gamma(rows, cols) = A_pow / (A^j) * (A^(j-1)) * B;
+    end
+    if k <= N
+        A_pow = A_pow * A;
+    end
 end
 
-obj = obj + dx(:,N+1)' * P_N * dx(:,N+1);
+% Recompute Gamma more carefully using the standard approach
+Gamma = zeros(nx*(N+1), nu*N);
+for k = 2:N+1    % dx(k) depends on du(1),...,du(k-1)
+    rows = (k-1)*nx+1 : k*nx;
+    for j = 1:k-1
+        cols = (j-1)*nu+1 : j*nu;
+        Gamma(rows, cols) = A^(k-1-j) * B;
+    end
+end
 
-ops = sdpsettings('solver', 'quadprog', 'verbose', 0);
-mpc_controller = optimizer(cons, obj, ops, {x_hat, x_ss, u_ss}, {du(:,1), slack(:,1)});
-fprintf('MPC controller compiled (N = %d, solver = quadprog)\n', N);
+% --- Hessian H and linear term f(dx0) ---
+% Cost = sum_{k=1}^{N} [dx(k)'*Q*dx(k) + du(k)'*R*du(k) + rho*eps(k)'*eps(k)]
+%      + dx(N+1)' * P_N * dx(N+1)
+% With dx depending linearly on dx0 and du, we can write:
+%   Cost = z' * H * z + f' * z + const
+% where z = [du(1);...;du(N); eps(1);...;eps(N)]
+
+% Build block-diagonal weight matrices for states
+Q_blk = blkdiag(kron(eye(N), Q_state), P_N);  % (N+1)*nx x (N+1)*nx
+
+% Hessian contributions from states: Gamma' * Q_blk * Gamma
+% Only du part of z contributes to state cost via Gamma
+H_du_du = Gamma' * Q_blk * Gamma + kron(eye(N), R);  % N*nu x N*nu
+H_eps   = rho * eye(N*ny);                            % N*ny x N*ny
+
+H = blkdiag(H_du_du, H_eps);
+H = (H + H') / 2;  % ensure symmetry
+
+% Linear term: f depends on dx0 (computed at each time step)
+% f_du = 2 * Gamma' * Q_blk * Phi * dx0   (but quadprog uses 0.5*z'*H*z + f'*z)
+% So f_du(dx0) = Gamma' * Q_blk * Phi * dx0  (the factor of 2 is in quadprog)
+
+% We precompute the constant part:
+f_du_matrix = Gamma' * Q_blk * Phi;  % N*nu x nx
+% f_eps is zero (no linear term for slack)
+
+% --- Inequality constraints: Ain * z <= bin(dx0, x_ss, u_ss) ---
+% Constraints:
+%   (a) u_min <= du(k) + u_ss <= u_max   =>  du(k) <= u_max - u_ss
+%                                             -du(k) <= -u_min + u_ss
+%   (b) y_min - eps(k) <= C*dx(k) + C*x_ss <= y_max + eps(k)
+%       => C*dx(k) - eps(k) <= y_max - C*x_ss
+%       => -C*dx(k) - eps(k) <= -y_min + C*x_ss
+%   (c) -eps(k) <= 0
+
+% Extract submatrices for dx(1),...,dx(N) from Phi and Gamma
+% (not dx(N+1) — output constraints apply at prediction steps 1..N)
+Phi_pred   = Phi(1:nx*N, :);        % dx(1)...dx(N) from dx0
+Gamma_pred = Gamma(1:nx*N, :);      % dx(1)...dx(N) from du
+
+% C applied to each predicted state: C_blk * [dx(1);...;dx(N)]
+C_blk = kron(eye(N), C);  % N*ny x N*nx
+
+% C_blk * Gamma_pred maps du -> predicted outputs
+CG = C_blk * Gamma_pred;  % N*ny x N*nu
+CP = C_blk * Phi_pred;    % N*ny x nx
+
+% Slack selector: maps eps part of z to N*ny vector
+I_eps = eye(N*ny);
+
+% Number of inequality constraints:
+%   2*N*nu (input bounds) + 2*N*ny (output bounds) + N*ny (slack >= 0)
+n_ineq = 2*N*nu + 2*N*ny + N*ny;
+
+% Build Ain (w.r.t. z = [du; eps])
+Ain = zeros(n_ineq, nz);
+bin_const = zeros(n_ineq, 1);  % constant part (independent of dx0, x_ss, u_ss)
+
+% We'll also need matrices to compute bin from (dx0, x_ss, u_ss) at runtime:
+% bin = bin_const + Bin_dx0 * dx0 + Bin_xss * x_ss + bin_uss * u_ss
+Bin_dx0 = zeros(n_ineq, nx);
+Bin_xss = zeros(n_ineq, nx);
+Bin_uss = zeros(n_ineq, nu);
+
+row = 0;
+
+% (a) Input upper: du(k) <= u_max - u_ss  for k=1..N
+Ain(row+1:row+N*nu, 1:N*nu) = eye(N*nu);
+bin_const(row+1:row+N*nu) = repmat(u_max, N*nu, 1);
+Bin_uss(row+1:row+N*nu, :) = repmat(-eye(nu), N, 1);
+row = row + N*nu;
+
+% (a) Input lower: -du(k) <= -u_min + u_ss  for k=1..N
+Ain(row+1:row+N*nu, 1:N*nu) = -eye(N*nu);
+bin_const(row+1:row+N*nu) = repmat(-u_min, N*nu, 1);
+Bin_uss(row+1:row+N*nu, :) = repmat(eye(nu), N, 1);
+row = row + N*nu;
+
+% (b) Output upper: CG*du - I*eps <= y_max - CP*dx0 - C_blk_xss
+%     where C_blk_xss = C*x_ss repeated N times
+Ain(row+1:row+N*ny, 1:N*nu)        = CG;
+Ain(row+1:row+N*ny, N*nu+1:end)    = -I_eps;
+bin_const(row+1:row+N*ny)           = repmat(y_max, N*ny, 1);
+Bin_dx0(row+1:row+N*ny, :)          = -CP;
+Bin_xss(row+1:row+N*ny, :)          = repmat(-C, N, 1);
+row = row + N*ny;
+
+% (b) Output lower: -CG*du - I*eps <= -y_min + CP*dx0 + C_blk_xss
+Ain(row+1:row+N*ny, 1:N*nu)        = -CG;
+Ain(row+1:row+N*ny, N*nu+1:end)    = -I_eps;
+bin_const(row+1:row+N*ny)           = repmat(-y_min, N*ny, 1);
+Bin_dx0(row+1:row+N*ny, :)          = CP;
+Bin_xss(row+1:row+N*ny, :)          = repmat(C, N, 1);
+row = row + N*ny;
+
+% (c) Slack non-negativity: -eps(k) <= 0
+Ain(row+1:row+N*ny, N*nu+1:end) = -I_eps;
+bin_const(row+1:row+N*ny) = 0;
+row = row + N*ny;
+
+% quadprog options
+qp_opts = optimoptions('quadprog', 'Display', 'off');
+
+fprintf('MPC QP formulated (N = %d, %d decision vars, %d constraints)\n', ...
+    N, nz, n_ineq);
 
 %% 5. Simulation Setup
 T_sim = 300;
@@ -127,14 +239,23 @@ for t = 1:T_sim
     x_ss_k  = targets(1:nx);
     u_ss_k  = targets(nx+1:end);
 
-    % D. MPC
-    [sol, diagnostics] = mpc_controller{x_hat_k, x_ss_k, u_ss_k};
+    % D. MPC via quadprog
+    dx0 = x_hat_k - x_ss_k;  % initial deviation
 
-    if diagnostics == 0
-        du_opt    = full(sol{1});
-        slack_now = full(sol{2});
+    % Linear cost term
+    f_vec = [f_du_matrix * dx0; zeros(N*ny, 1)];
+
+    % RHS of inequality constraints
+    bin = bin_const + Bin_dx0 * dx0 + Bin_xss * x_ss_k + Bin_uss * u_ss_k;
+
+    % Solve QP: min 0.5*z'*H*z + f'*z  s.t. Ain*z <= bin
+    [z_opt, ~, exitflag] = quadprog(H, f_vec, Ain, bin, [], [], [], [], [], qp_opts);
+
+    if exitflag == 1
+        du_opt    = z_opt(1:nu);          % first input move
+        slack_now = z_opt(N*nu+1:N*nu+ny); % first slack
     else
-        warning('MPC infeasible at t = %d (code %d). Applying u_ss.', t, diagnostics);
+        warning('MPC infeasible at t = %d (exitflag %d). Applying u_ss.', t, exitflag);
         du_opt    = 0;
         slack_now = NaN;
     end
@@ -193,4 +314,5 @@ ylabel('\epsilon'); xlabel('Time step k');
 title('Soft Output Constraint Activity');
 grid on; xlim([1 T_sim]);
 
-sgtitle('Offset-Free MPC with Augmented Disturbance Observer', 'FontSize', 14, 'FontWeight', 'bold');
+sgtitle('Offset-Free MPC with Augmented Disturbance Observer', ...
+    'FontSize', 14, 'FontWeight', 'bold');
