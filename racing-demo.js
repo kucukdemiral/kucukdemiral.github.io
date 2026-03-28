@@ -101,6 +101,76 @@
         return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: total, totalLength: totalLen, curvature: curv };
     }
 
+    /* ═══ Racing Line (minimum-curvature via path shortening) ═══ */
+    function computeRacingLine(track) {
+        var n = track.n;
+        var margin = VP.carW * 0.5 + 0.5;
+        var maxD = TRACK_HW - margin;
+
+        // Lateral offset from centreline along normal
+        var d = new Array(n);
+        for (var i = 0; i < n; i++) d[i] = 0;
+
+        // Iterative path shortening: move each point toward
+        // midpoint of neighbours → minimises curvature
+        for (var iter = 0; iter < 500; iter++) {
+            var dNew = new Array(n);
+            for (var i = 0; i < n; i++) {
+                var im = (i - 1 + n) % n, ip = (i + 1) % n;
+                // Neighbour positions on current racing line
+                var xm = track.px[im] + d[im] * track.nx[im];
+                var ym = track.py[im] + d[im] * track.ny[im];
+                var xp = track.px[ip] + d[ip] * track.nx[ip];
+                var yp = track.py[ip] + d[ip] * track.ny[ip];
+                // Target: midpoint of neighbours
+                var mx = 0.5 * (xm + xp), my = 0.5 * (ym + yp);
+                // Project onto normal at centreline point i
+                var di = (mx - track.px[i]) * track.nx[i] + (my - track.py[i]) * track.ny[i];
+                // Blend with current offset (damping for stability)
+                dNew[i] = clamp(0.5 * d[i] + 0.5 * di, -maxD, maxD);
+            }
+            d = dNew;
+        }
+
+        // Smooth offsets
+        for (var pass = 0; pass < 3; pass++) {
+            var ds = new Array(n);
+            for (var i = 0; i < n; i++) {
+                var sum = 0;
+                for (var j = -2; j <= 2; j++) sum += d[((i + j) % n + n) % n];
+                ds[i] = clamp(sum / 5, -maxD, maxD);
+            }
+            d = ds;
+        }
+
+        // Build racing line positions
+        var rx = new Array(n), ry = new Array(n);
+        for (var i = 0; i < n; i++) {
+            rx[i] = track.px[i] + d[i] * track.nx[i];
+            ry[i] = track.py[i] + d[i] * track.ny[i];
+        }
+
+        // Compute racing line curvature (same method as centreline)
+        var rlTx = new Array(n), rlTy = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var ip = (i + 1) % n;
+            rlTx[i] = rx[ip] - rx[i];
+            rlTy[i] = ry[ip] - ry[i];
+        }
+        var rlCurv = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var im = (i - 1 + n) % n, ip = (i + 1) % n;
+            var dphi = Math.atan2(rlTy[ip], rlTx[ip]) - Math.atan2(rlTy[im], rlTx[im]);
+            dphi = ((dphi + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+            var ds1 = Math.sqrt((rx[i] - rx[im]) * (rx[i] - rx[im]) + (ry[i] - ry[im]) * (ry[i] - ry[im]));
+            var ds2 = Math.sqrt((rx[ip] - rx[i]) * (rx[ip] - rx[i]) + (ry[ip] - ry[i]) * (ry[ip] - ry[i]));
+            var ds = ds1 + ds2;
+            rlCurv[i] = ds > 0 ? Math.abs(dphi / ds) : 0;
+        }
+
+        return { px: rx, py: ry, d: d, curvature: rlCurv, n: n };
+    }
+
     function projectOnTrack(X, Y, track) {
         var n = track.n, bestD2 = Infinity, bestIdx = 0;
         for (var i = 0; i < n; i++) {
@@ -166,12 +236,21 @@
     }
 
     /* ═══ Pure Pursuit Controller ══════════════════════════════ */
-    function purePursuitControl(x, sNow, track, targetSpeed) {
+    function purePursuitControl(x, sNow, track, targetSpeed, racingBlend) {
         var lookahead = Math.max(4.0, x[3] * 0.9);
         var sLook = sNow + lookahead;
         var idxL = findTrackIdxForS(sLook, track);
-        var lp = evalTrackAtIdx(idxL, track);
-        var dx = lp.x - x[0], dy = lp.y - x[1];
+        // Blend centreline and racing line target
+        var tx, ty;
+        if (racingBlend > 0 && track.racingLine) {
+            var rl = track.racingLine;
+            tx = (1 - racingBlend) * track.px[idxL] + racingBlend * rl.px[idxL];
+            ty = (1 - racingBlend) * track.py[idxL] + racingBlend * rl.py[idxL];
+        } else {
+            tx = track.px[idxL];
+            ty = track.py[idxL];
+        }
+        var dx = tx - x[0], dy = ty - x[1];
         var localAngle = Math.atan2(dy, dx) - x[2];
         localAngle = wrapAngle(localAngle);
         var L = VP.lf + VP.lr;
@@ -201,15 +280,21 @@
         }
 
         // Curvature-aware speed limit at each bin
+        // Blend centreline and racing line curvature based on iteration
+        var blend = Math.min(1.0, iteration / 4);
         var curvLimit = new Array(nBins);
         for (var b = 0; b < nBins; b++) {
             var sMid = (b + 0.5) * binSize;
             var cidx = findTrackIdxForS(sMid, track);
-            var maxCurv = 0;
+            var maxCurvCL = 0, maxCurvRL = 0;
             for (var j = -3; j <= 3; j++) {
                 var ci = ((cidx + j * 5) % track.n + track.n) % track.n;
-                if (track.curvature[ci] > maxCurv) maxCurv = track.curvature[ci];
+                if (track.curvature[ci] > maxCurvCL) maxCurvCL = track.curvature[ci];
+                if (track.racingLine && track.racingLine.curvature[ci] > maxCurvRL)
+                    maxCurvRL = track.racingLine.curvature[ci];
             }
+            // Racing line has lower curvature → allows higher speed through corners
+            var maxCurv = track.racingLine ? (1 - blend) * maxCurvCL + blend * maxCurvRL : maxCurvCL;
             curvLimit[b] = maxCurv > 0.01 ? Math.min(VP.vxMax, Math.sqrt(6.0 / maxCurv)) : VP.vxMax;
         }
 
@@ -257,13 +342,13 @@
     }
 
     /* ═══ Build N-step prediction for visualisation only ═══════ */
-    function buildPrediction(x, sNow, track, speedRef, N) {
+    function buildPrediction(x, sNow, track, speedRef, N, racingBlend) {
         var xSim = x.slice();
         var s = sNow;
         var xs = [x.slice()];
         for (var k = 0; k < N; k++) {
             var vTarget = lmpcSpeedTarget(xSim, s, track, speedRef);
-            var u = purePursuitControl(xSim, s, track, vTarget);
+            var u = purePursuitControl(xSim, s, track, vTarget, racingBlend || 0);
             xSim = rk4Step(xSim, u, DT_MPC);
             xSim[3] = clamp(xSim[3], VP.vxMin, VP.vxMax);
             xSim[4] = clamp(xSim[4], -5, 5);
@@ -350,7 +435,7 @@
         ctx.closePath(); ctx.stroke();
 
         // Centreline dashed
-        ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+        ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.8;
         ctx.beginPath();
         for (var i = 0; i <= track.n; i++) {
             var ii = i % track.n;
@@ -358,6 +443,18 @@
             if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+
+        // Racing line (optimal path — green dashed)
+        if (track.racingLine) {
+            ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(76,175,80,0.55)'; ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (var i = 0; i <= track.n; i++) {
+                var ii = i % track.n;
+                var p = w2s(track.racingLine.px[ii], track.racingLine.py[ii], cam);
+                if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+        }
 
         // Start/finish line
         var sf0 = evalTrackAtIdx(0, track);
@@ -441,7 +538,11 @@
         // HUD
         ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '11px monospace';
         var iter = sim.iteration;
-        var mode = iter === 0 ? 'Pure Pursuit' : 'LMPC';
+        var mode = iter === 0 ? 'Pure Pursuit (centreline)' : 'LMPC';
+        if (iter > 0) {
+            var bl = Math.min(1.0, iter / 4);
+            mode += ' (racing ' + (bl * 100).toFixed(0) + '%)';
+        }
         ctx.fillText('Iter ' + iter + ' / ' + mode, 10, 18);
         if (sim.x) {
             ctx.fillText('v: ' + sim.x[3].toFixed(1) + ' m/s (' + (sim.x[3] * 3.6).toFixed(0) + ' km/h)', 10, 33);
@@ -645,6 +746,7 @@
         }
 
         var track = buildTrack(TRACK_WP);
+        track.racingLine = computeRacingLine(track);
 
         // Compute track bounding box for camera
         var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -729,19 +831,21 @@
             if (sim.step % MPC_EVERY === 0) {
                 var N = sim.horizonN;
                 if (sim.iteration === 0) {
-                    sim.lastU = purePursuitControl(sim.x, sNow, track, PP_SPEED);
+                    // Iteration 0: conservative centreline following
+                    sim.lastU = purePursuitControl(sim.x, sNow, track, PP_SPEED, 0);
                     sim.pred = null;
                 } else {
-                    // LMPC: pure pursuit with safe-set-derived speed target
+                    // LMPC: speed from safe set + gradual racing line transition
                     var vTarget = lmpcSpeedTarget(sim.x, sNow, track, sim.speedRef);
-                    sim.lastU = purePursuitControl(sim.x, sNow, track, vTarget);
+                    var blend = Math.min(1.0, sim.iteration / 4);
+                    sim.lastU = purePursuitControl(sim.x, sNow, track, vTarget, blend);
                     // Build prediction for visualisation only
-                    sim.pred = buildPrediction(sim.x, sNow, track, sim.speedRef, N);
+                    sim.pred = buildPrediction(sim.x, sNow, track, sim.speedRef, N, blend);
                     // Diagnostic: log first few control outputs
                     if (sim.step < 10) {
                         console.log('[LMPC] step=' + sim.step + ' s=' + sNow.toFixed(1) +
                             ' vTarget=' + vTarget.toFixed(2) + ' vx=' + sim.x[3].toFixed(2) +
-                            ' D=' + sim.lastU[1].toFixed(3) + ' delta=' + (sim.lastU[0]*180/Math.PI).toFixed(1) + 'deg');
+                            ' D=' + sim.lastU[1].toFixed(3) + ' blend=' + blend.toFixed(2));
                     }
                 }
             }
