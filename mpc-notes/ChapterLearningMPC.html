@@ -2039,6 +2039,20 @@ step, reaching the origin in 4 steps. Right: the cost (number of steps)
 decreases monotonically, converging to the theoretical minimum
 of 4.</figcaption>
 </figure>
+
+<h3>Interactive Demo: Autonomous Racing with LMPC</h3>
+<p>The demo below illustrates LMPC on an autonomous racing problem. A car
+equipped with a dynamic bicycle model (Pacejka tyre forces) learns to
+drive faster lap by lap. <strong>Iteration 0</strong> uses a conservative
+pure-pursuit controller at 5&thinsp;m/s. Each subsequent iteration solves an
+LMPC problem: the safe set <span class="math inline">\(\mathcal{SS}^j\)</span> (union of all previous
+trajectories) provides the terminal constraint, and the cost-to-go
+<span class="math inline">\(Q^j\)</span> from data provides the terminal cost via <span class="math inline">\(K\)</span>-nearest-neighbour
+interpolation. Click <em>Run Lap</em> to execute one iteration, or
+<em>Auto</em> to watch the car improve over five laps. The lap-time bar
+chart on the right demonstrates the non-increasing cost guarantee.</p>
+<div class="racing-demo"></div>
+
 <h2 id="sec:nnmpc">Neural Network Models in MPC</h2>
 <p>A feedforward neural network can approximate any continuous function
 to arbitrary accuracy, given enough neurons. This makes it a natural

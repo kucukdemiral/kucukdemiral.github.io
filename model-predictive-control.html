@@ -1058,6 +1058,7 @@
     <script src="quadrotor-demo.js"></script>
     <script src="mpc-demo.js"></script>
     <script src="robot-demo.js"></script>
+    <script src="racing-demo.js"></script>
     <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -1114,6 +1115,7 @@
             if (window.MPCDemo) MPCDemo.initAll(body);
             if (window.RobotDemo) RobotDemo.initAll(body);
             if (window.QuadrotorDemo) QuadrotorDemo.initAll(body);
+            if (window.RacingDemo) RacingDemo.initAll(body);
             return;
         }
 
@@ -1136,6 +1138,7 @@
                 if (window.MPCDemo) MPCDemo.initAll(body);
                 if (window.RobotDemo) RobotDemo.initAll(body);
                 if (window.QuadrotorDemo) QuadrotorDemo.initAll(body);
+                if (window.RacingDemo) RacingDemo.initAll(body);
             })
             .catch(function() {
                 body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
