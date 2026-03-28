@@ -1126,13 +1126,14 @@ for i in range(1, 40):
 
 # ── Constraint tightening ────────────────────────────────────
 H_Xt, h_Xt = pontryagin_diff(H_X, h_X, H_E, h_E)
-# KE for input tightening
+# Ũ = U ⊖ KE via support function: h_Ut[i] = h_U[i] - max_{e∈E} H_U[i]·K·e
+# Works for any number of inputs (nu ≥ 1)
 V_E = hrep_to_vertices(H_E, h_E)
-V_KE = (K @ V_E.T).T
-ke_max = np.max(np.abs(V_KE))
-H_KE = np.array([[1.0],[-1.0]])
-h_KE = np.array([ke_max, ke_max])
-H_Ut, h_Ut = pontryagin_diff(H_U, h_U, H_KE, h_KE)
+H_Ut = H_U.copy()
+h_Ut = h_U.copy()
+for i in range(len(h_U)):
+    # support of KE in direction H_U[i] = max over vertices of E
+    h_Ut[i] -= np.max((H_U[i] @ K) @ V_E.T)
 
 Xt_empty = np.any(h_Xt < -1e-10)
 Ut_empty = np.any(h_Ut < -1e-10)
