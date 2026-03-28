@@ -16,7 +16,10 @@ System: Double integrator  x+ = Ax + Bu + w
     x = [position, velocity],  u = acceleration,  w ∈ W (bounded)
 
 Requirements:
-    pip install numpy matplotlib control cvxpy mpt4py piqp
+    pip install numpy matplotlib control cvxpy piqp \
+        --find-links https://github.com/PREDICT-EPFL/MPC-Course-EPFL/releases/expanded_assets/mpt4py_wheels \
+        --find-links https://github.com/PREDICT-EPFL/MPC-Course-EPFL/releases/expanded_assets/pycddlib_wheels \
+        mpt4py==0.1.5
 
 Usage:
     python tube_mpc_demo.py
