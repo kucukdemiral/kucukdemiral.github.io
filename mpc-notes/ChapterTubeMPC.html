@@ -1129,7 +1129,6 @@ H_Xt, h_Xt = pontryagin_diff(H_X, h_X, H_E, h_E)
 # KE for input tightening
 V_E = hrep_to_vertices(H_E, h_E)
 V_KE = (K @ V_E.T).T
-hull_KE = ConvexHull(V_KE.reshape(-1,1))  # 1D
 ke_max = np.max(np.abs(V_KE))
 H_KE = np.array([[1.0],[-1.0]])
 h_KE = np.array([ke_max, ke_max])
