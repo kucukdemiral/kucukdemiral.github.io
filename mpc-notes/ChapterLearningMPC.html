@@ -2040,18 +2040,150 @@ decreases monotonically, converging to the theoretical minimum
 of 4.</figcaption>
 </figure>
 
-<h3>Interactive Demo: Autonomous Racing with LMPC</h3>
-<p>The demo below illustrates LMPC on an autonomous racing problem. A car
-equipped with a dynamic bicycle model (Pacejka tyre forces) learns to
-drive faster lap by lap. <strong>Iteration 0</strong> uses a conservative
-pure-pursuit controller at 5&thinsp;m/s. Each subsequent iteration solves an
-LMPC problem: the safe set <span class="math inline">\(\mathcal{SS}^j\)</span> (union of all previous
-trajectories) provides the terminal constraint, and the cost-to-go
-<span class="math inline">\(Q^j\)</span> from data provides the terminal cost via <span class="math inline">\(K\)</span>-nearest-neighbour
-interpolation. Click <em>Run Lap</em> to execute one iteration, or
-<em>Auto</em> to watch the car improve over five laps. The lap-time bar
-chart on the right demonstrates the non-increasing cost guarantee.</p>
-<div class="racing-demo"></div>
+<h3>Worked Example: Autonomous Racing with NN-MPC (Python)</h3>
+
+<p>To see learning-based MPC in action, the companion Python script
+<code>lmpc_racing.py</code> implements an NN-MPC algorithm on a
+time-optimal autonomous racing problem. A vehicle modelled as a
+<strong>dynamic bicycle</strong> with <strong>Pacejka Magic Formula</strong>
+tyre forces learns to race faster lap by lap, using two neural networks:
+an <strong>NN Speed Map</strong> that learns the optimal speed at each track position,
+and an <strong>NN Value Function</strong> that learns the cost-to-go.</p>
+
+<h4>Problem Formulation</h4>
+<p>The state vector has six components:</p>
+<span class="math display">\[
+\mathbf{x} = \begin{bmatrix} X \\ Y \\ \varphi \\ v_x \\ v_y \\ r \end{bmatrix}
+\quad \text{(position, heading, body-frame velocities, yaw rate)}
+\]</span>
+<p>with two control inputs:</p>
+<span class="math display">\[
+\mathbf{u} = \begin{bmatrix} \delta \\ D \end{bmatrix}
+\quad \text{(front steering angle, throttle/brake command)}
+\]</span>
+
+<h4>Dynamic Bicycle Model</h4>
+<p>The continuous-time dynamics are:</p>
+<span class="math display">\[
+\begin{aligned}
+\dot X &= v_x \cos\varphi - v_y \sin\varphi \\
+\dot Y &= v_x \sin\varphi + v_y \cos\varphi \\
+\dot\varphi &= r \\
+\dot v_x &= \frac{1}{m}\bigl[F_{rx} - F_{fy}\sin\delta + m\,v_y\,r - F_{\text{drag}}\bigr] \\
+\dot v_y &= \frac{1}{m}\bigl[F_{ry} + F_{fy}\cos\delta - m\,v_x\,r\bigr] \\
+\dot r &= \frac{1}{I_z}\bigl[F_{fy}\,l_f\cos\delta - F_{ry}\,l_r\bigr]
+\end{aligned}
+\]</span>
+
+<p>where the tyre forces use the <strong>Pacejka Magic Formula</strong>:</p>
+<span class="math display">\[
+\alpha_f = -\arctan\!\frac{v_y + r\,l_f}{v_x} + \delta, \qquad
+\alpha_r = -\arctan\!\frac{v_y - r\,l_r}{v_x}
+\]</span>
+<span class="math display">\[
+F_{fy} = D_f \sin\!\bigl(C_f \arctan(B_f\,\alpha_f)\bigr), \qquad
+F_{ry} = D_r \sin\!\bigl(C_r \arctan(B_r\,\alpha_r)\bigr)
+\]</span>
+<p>The longitudinal driving force and drag are modelled as:</p>
+<span class="math display">\[
+F_{rx} = C_{m1}\,D - C_{m2}\,D\,v_x, \qquad
+F_{\text{drag}} = C_{r0} + C_{r2}\,v_x^2
+\]</span>
+
+<h4>Vehicle Parameters</h4>
+<table class="table" style="max-width:520px;">
+<thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>\(m\)</td><td>800</td><td>kg</td><td>Vehicle mass</td></tr>
+<tr><td>\(I_z\)</td><td>1200</td><td>kg&middot;m&sup2;</td><td>Yaw inertia</td></tr>
+<tr><td>\(l_f\)</td><td>1.2</td><td>m</td><td>CG to front axle</td></tr>
+<tr><td>\(l_r\)</td><td>1.3</td><td>m</td><td>CG to rear axle</td></tr>
+<tr><td>\(B_f, C_f, D_f\)</td><td>10, 1.3, 5000</td><td>&ndash;, &ndash;, N</td><td>Pacejka front tyre</td></tr>
+<tr><td>\(B_r, C_r, D_r\)</td><td>11, 1.3, 7000</td><td>&ndash;, &ndash;, N</td><td>Pacejka rear tyre</td></tr>
+<tr><td>\(C_{m1}, C_{m2}\)</td><td>5000, 100</td><td>N, N&middot;s/m</td><td>Motor model</td></tr>
+<tr><td>\(C_{r0}, C_{r2}\)</td><td>50, 0.3</td><td>N, N&middot;s&sup2;/m&sup2;</td><td>Drag model</td></tr>
+<tr><td>\(\delta_{\max}\)</td><td>0.45</td><td>rad</td><td>Max steering angle</td></tr>
+<tr><td>\(D\)</td><td>[-1, 1]</td><td>&ndash;</td><td>Throttle/brake range</td></tr>
+<tr><td>\(v_x\)</td><td>[0.5, 20]</td><td>m/s</td><td>Speed bounds</td></tr>
+</tbody>
+</table>
+
+<h4>NN-MPC Algorithm</h4>
+
+<p><strong>Iteration 0</strong> uses a pure-pursuit controller at a conservative
+5&thinsp;m/s to complete one safe lap and collect initial trajectory data.</p>
+
+<p><strong>NN Speed Map.</strong> After each lap, a neural network
+<span class="math inline">\(v_{\theta}(s)\)</span> is trained to predict the optimal
+target speed at each track position <span class="math inline">\(s\)</span>.
+The training data is built from a <em>safe set</em> of binned maximum
+achieved speeds, boosted by an iteration-dependent factor and capped by
+curvature-based speed limits:</p>
+<span class="math display">\[
+v_{\text{target}}^{(j)}(s) = \min\!\Bigl(
+  \max_{i \le j}\bigl\{v_x^{(i)}(s)\bigr\} \cdot \beta_j,\;
+  \sqrt{\frac{a_{\text{lat,max}}}{\kappa(s)}}
+\Bigr), \qquad
+\beta_j = \min\!\bigl(1 + 0.15\,(j+1),\; 3.0\bigr)
+\]</span>
+<p>where <span class="math inline">\(\kappa(s)\)</span> is the local track curvature and
+<span class="math inline">\(a_{\text{lat,max}}\)</span> is the maximum lateral acceleration.
+The NN is an <code>MLPRegressor</code> with features
+<span class="math inline">\([s/L,\;\kappa,\;\sin(2\pi s/L),\;\cos(2\pi s/L)]\)</span>
+that generalises and interpolates between the binned data.</p>
+
+<p><strong>NN Value Function.</strong> A second neural network
+<span class="math inline">\(V_\theta(\mathbf{x})\)</span> is trained on cost-to-go data
+from all completed laps:</p>
+<span class="math display">\[
+V_\theta(\mathbf{x}) \approx Q^j_k = T_j - k
+\]</span>
+<p>with features
+<span class="math inline">\([X/50,\; Y/50,\; \cos\varphi,\; \sin\varphi,\; v_x/v_{\max}]\)</span>.
+This provides a smooth terminal cost for the MPC.</p>
+
+<p><strong>MPC Controller.</strong> At each time step, the controller:</p>
+<ol>
+<li>Queries the NN speed map for the target speed at the current position</li>
+<li>Looks ahead 0.5&ndash;1.5&thinsp;s along the track for upcoming speed
+reductions (proactive braking)</li>
+<li>Adjusts the target based on the NN value function (states with lower
+predicted cost-to-go are preferred)</li>
+<li>Applies pure-pursuit steering at the computed target speed</li>
+</ol>
+
+<p>As iterations progress, the NN speed map learns higher speeds on
+straights while maintaining safe speeds through corners. The safe set
+expands, the boost factor grows, and the lap time decreases &mdash;
+demonstrating that the controller <strong>improves with experience</strong>,
+a hallmark of learning-based MPC.</p>
+
+<h4>Running the Code</h4>
+<p>Download <code>lmpc_racing.py</code> (requires <code>numpy</code>,
+<code>scipy</code>, <code>scikit-learn</code>, <code>matplotlib</code>) and run:</p>
+<pre><code>pip install scikit-learn   # if not already installed
+python lmpc_racing.py</code></pre>
+<p>The script produces a four-panel figure showing: (1)&nbsp;track with
+overlaid trajectories from each iteration, (2)&nbsp;lap-time bar chart
+showing the learning curve (typically ~50% improvement), (3)&nbsp;actual speed
+profiles illustrating increasing cornering speeds, and (4)&nbsp;the NN
+speed map evolution showing learned target speeds at each track position.
+Students can modify the <code>USER SETTINGS</code> section at the top of
+the file to experiment with:</p>
+<ul>
+<li><code>TRACK_CHOICE</code> &mdash; <code>"custom"</code>,
+<code>"mpcc_center"</code>, or <code>"mpcc_racing"</code></li>
+<li><code>SPEED_BOOST</code> &mdash; how aggressively the speed increases
+each iteration (default 0.15)</li>
+<li><code>A_LAT_MAX</code> &mdash; curvature speed limit parameter
+(higher = faster corners)</li>
+<li><code>NN_SPEED_LAYERS</code> &mdash; hidden layer sizes of the speed
+map neural network</li>
+<li><code>N_ITERATIONS</code> &mdash; number of learning iterations</li>
+</ul>
+<p>Three tracks are included: a custom 13-waypoint circuit and two
+benchmark tracks from the
+<a href="https://github.com/alexliniger/MPCC">MPCC project</a>.</p>
 
 <h2 id="sec:nnmpc">Neural Network Models in MPC</h2>
 <p>A feedforward neural network can approximate any continuous function
