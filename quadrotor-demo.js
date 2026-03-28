@@ -772,7 +772,7 @@
         }
 
         /* Camera hint (bottom-left) */
-        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = '11px sans-serif';
         ctx.fillText('Drag: orbit | Shift+drag: pan | Scroll: zoom', 10, H-8);
     }
 
