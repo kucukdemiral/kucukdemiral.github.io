@@ -134,9 +134,9 @@ KE = E.affine_map(K)                      # image of E under K
 U_tilde = U - KE                          # Pontryagin difference
 
 print(f"  X̃ has {X_tilde.A.shape[0]} half-planes, "
-      f"non-empty: {not X_tilde.isEmptySet()}")
+      f"non-empty: {not X_tilde.is_empty()}")
 print(f"  Ũ has {U_tilde.A.shape[0]} half-planes, "
-      f"non-empty: {not U_tilde.isEmptySet()}")
+      f"non-empty: {not U_tilde.is_empty()}")
 
 # Verify using support function (alternative method)
 U_tilde_b = U.b.copy()
