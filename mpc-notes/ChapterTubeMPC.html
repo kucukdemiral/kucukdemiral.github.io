@@ -1015,8 +1015,8 @@ print(f"Tightened state set: {X_tight.A.shape[0]} half-planes")
 print(f"Tightened input set: {V.A.shape[0]} half-planes")
 
 # Verify non-emptiness
-print(f"X_tight non-empty: {not X_tight.is_empty()}")
-print(f"V non-empty: {not V.is_empty()}")</code></pre></div>
+print(f"X_tight non-empty: {not X_tight.is_empty}")
+print(f"V non-empty: {not V.is_empty}")</code></pre></div>
 
 <h4>Try It Yourself: Tube MPC Design Pipeline</h4>
 <p>The code below implements the complete Tube MPC offline design — mRPI set, constraint tightening, terminal set — and closed-loop simulation with random disturbances. Because the computation involves iterative LP solves and QP-based MPC, it is too heavy for browser-based execution. Run it in Google Colab or locally instead.</p>
