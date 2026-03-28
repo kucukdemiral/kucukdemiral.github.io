@@ -1019,317 +1019,86 @@ print(f"X_tight non-empty: {not X_tight.isEmptySet()}")
 print(f"V non-empty: {not V.isEmptySet()}")</code></pre></div>
 
 <h4>Try It Yourself: Tube MPC Design Pipeline</h4>
-<p>The code below implements the complete Tube MPC offline design — mRPI set, constraint tightening, terminal set — and runs a closed-loop simulation with random disturbances, all using only NumPy and SciPy (no external toolbox needed). Modify the disturbance bound <code>w_max</code>, the input weight <code>R_wt</code>, or the constraint bounds and click <strong>Run</strong> to see how the tube changes.</p>
+<p>The code below implements the complete Tube MPC offline design — mRPI set, constraint tightening, terminal set — and closed-loop simulation with random disturbances. Because the computation involves iterative LP solves and QP-based MPC, it is too heavy for browser-based execution. Run it in Google Colab or locally instead.</p>
 
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-from scipy.linalg import solve_discrete_are
-from scipy.optimize import linprog
-from scipy.spatial import ConvexHull
-</script>
-<pre><code># ══════════════════════════════════════════════════════════════
-#  Tube MPC — complete pipeline (numpy + scipy only)
-# ══════════════════════════════════════════════════════════════
-# Try changing these!
-w_max = 0.1     # disturbance bound (try 0.05, 0.2, 0.5)
-x_max = 3.0     # state constraint
-u_max = 0.5     # input constraint
-R_wt  = 10.0    # input weight (try 1.0 for aggressive, 50.0 for conservative)
-
-# --- System ---
-A = np.array([[1, 1], [0, 1]])
-B = np.array([[1], [0.5]])
-nx, nu = B.shape
-Q = np.eye(nx)
-R = R_wt * np.eye(nu)
-
-# --- LQR gain via DARE ---
-P = solve_discrete_are(A, B, Q, R)
-K = -np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
-A_cl = A + B @ K
-eigs = np.linalg.eigvals(A_cl)
-print(f"K = {K.flatten()}")
-print(f"Closed-loop eigenvalues: {eigs}  (|λ| = {abs(eigs[0]):.3f})")
-
-# ── Polytope helpers (H-rep: Ax ≤ b) ────────────────────────
-def box_Hrep(bounds):
-    """Create H-rep for a box from list of (lo, hi) per dim."""
-    n = len(bounds)
-    rows = []
-    rhs = []
-    for i, (lo, hi) in enumerate(bounds):
-        row_hi = np.zeros(n); row_hi[i] = 1.0
-        row_lo = np.zeros(n); row_lo[i] = -1.0
-        rows.extend([row_hi, row_lo])
-        rhs.extend([hi, -lo])
-    return np.array(rows), np.array(rhs)
-
-def support(H, h, d):
-    """Support function: max d·x s.t. Hx ≤ h."""
-    res = linprog(-d, A_ub=H, b_ub=h, bounds=(None, None), method='highs')
-    return -res.fun if res.success else np.inf
-
-def pontryagin_diff(H1, h1, H2, h2):
-    """Pontryagin difference: {x | x+y ∈ P1 for all y ∈ P2} = tighten h1 by support of P2."""
-    h_new = h1.copy()
-    for i in range(len(h1)):
-        h_new[i] -= support(H2, h2, H1[i])
-    return H1.copy(), h_new
-
-def hrep_to_vertices(H, h):
-    """Convert H-rep to vertices (2D only) via LP on many directions."""
-    angles = np.linspace(0, 2*np.pi, 120, endpoint=False)
-    verts = []
-    for a in angles:
-        d = np.array([np.cos(a), np.sin(a)])
-        res = linprog(-d, A_ub=H, b_ub=h, bounds=(None, None), method='highs')
-        if res.success:
-            verts.append(res.x)
-    if len(verts) < 3:
-        return np.array([])
-    pts = np.array(verts)
-    hull = ConvexHull(pts)
-    return pts[hull.vertices]
-
-def minkowski_sum_hrep(H1, h1, V2):
-    """Minkowski sum of H-rep polytope with a set of vertices."""
-    # P1 ⊕ P2: tighten each half-plane of P1 by -max(H1_i · v) over v ∈ V2
-    h_new = h1.copy()
-    for i in range(len(h1)):
-        h_new[i] += np.max(H1[i] @ V2.T)
-    return H1.copy(), h_new
-
-def plot_poly(ax, H, h, **kwargs):
-    """Plot a 2D polytope."""
-    v = hrep_to_vertices(H, h)
-    if len(v) == 0:
-        return
-    v_closed = np.vstack([v, v[0]])
-    ax.fill(v_closed[:,0], v_closed[:,1], **kwargs)
-
-# ── Constraint sets ──────────────────────────────────────────
-H_X, h_X = box_Hrep([(-x_max, x_max)]*nx)
-H_U, h_U = box_Hrep([(-u_max, u_max)]*nu)
-H_W, h_W = box_Hrep([(-w_max, w_max)]*nx)
-
-# ── mRPI set: E = W ⊕ A_cl W ⊕ A_cl² W ⊕ ... ──────────────
-V_W = hrep_to_vertices(H_W, h_W)
-H_E, h_E = H_W.copy(), h_W.copy()
-for i in range(1, 40):
-    Ai = np.linalg.matrix_power(A_cl, i)
-    V_AiW = (Ai @ V_W.T).T
-    H_E, h_E = minkowski_sum_hrep(H_E, h_E, V_AiW)
-    if np.linalg.norm(Ai, ord=2) < 1e-3:
-        print(f"mRPI converged at iteration {i}")
-        break
-
-# ── Constraint tightening ────────────────────────────────────
-H_Xt, h_Xt = pontryagin_diff(H_X, h_X, H_E, h_E)
-# Ũ = U ⊖ KE via support function: h_Ut[i] = h_U[i] - max_{e∈E} H_U[i]·K·e
-# Works for any number of inputs (nu ≥ 1)
-V_E = hrep_to_vertices(H_E, h_E)
-H_Ut = H_U.copy()
-h_Ut = h_U.copy()
-for i in range(len(h_U)):
-    # support of KE in direction H_U[i] = max over vertices of E
-    h_Ut[i] -= np.max((H_U[i] @ K) @ V_E.T)
-
-Xt_empty = np.any(h_Xt < -1e-10)
-Ut_empty = np.any(h_Ut < -1e-10)
-print(f"X̃ non-empty: {not Xt_empty},  Ũ non-empty: {not Ut_empty}")
-if Xt_empty or Ut_empty:
-    print("⚠ Tightened constraints are empty! Disturbance too large.")
-    print("  Try reducing w_max or increasing x_max/u_max.")
-
-# ── Terminal set (maximal invariant set) ─────────────────────
-# Intersect X̃ with {x | Kx ∈ Ũ}
-H_KU = np.vstack([H_Ut @ K])
-h_KU = h_Ut.copy()
-H_term = np.vstack([H_Xt, H_KU])
-h_term = np.concatenate([h_Xt, h_KU])
-
-H_Xf, h_Xf = H_term.copy(), h_term.copy()
-for i in range(30):
-    H_new = np.vstack([H_Xf, H_Xf @ A_cl])
-    h_new = np.concatenate([h_Xf, h_Xf])
-    # Remove redundant constraints (keep unique support values)
-    keep = []
-    for j in range(len(h_new)):
-        s = support(H_new, h_new, H_new[j])
-        if s > h_new[j] - 1e-8:
-            keep.append(j)
-    H_new = H_new[keep]
-    h_new = h_new[keep]
-    if H_new.shape[0] == H_Xf.shape[0]:
-        print(f"Terminal set converged at iteration {i+1}")
-        break
-    H_Xf, h_Xf = H_new, h_new
-
-# ── Closed-loop simulation (simple QP via numpy) ────────────
-N_mpc = 10
-N_sim = 40
-n_samples = 15
-
-# Build QP matrices for nominal MPC
-# Decision: [z0, z1, ..., zN, v0, v1, ..., v_{N-1}]
-nz = (N_mpc+1)*nx + N_mpc*nu
-
-# Cost: sum Q*zi + R*vi + Qf*zN
-H_cost = np.zeros((nz, nz))
-for k in range(N_mpc):
-    ix = k*nx
-    iu = (N_mpc+1)*nx + k*nu
-    H_cost[ix:ix+nx, ix:ix+nx] = Q
-    H_cost[iu:iu+nu, iu:iu+nu] = R
-H_cost[N_mpc*nx:(N_mpc+1)*nx, N_mpc*nx:(N_mpc+1)*nx] = P  # terminal cost
-H_cost = (H_cost + H_cost.T) / 2
-
-# Equality constraints: z_{k+1} = A*zk + B*vk
-n_eq = N_mpc * nx
-A_eq = np.zeros((n_eq, nz))
-b_eq = np.zeros(n_eq)
-for k in range(N_mpc):
-    row = k*nx
-    A_eq[row:row+nx, k*nx:(k+1)*nx] = A
-    A_eq[row:row+nx, (k+1)*nx:(k+2)*nx] = -np.eye(nx)
-    A_eq[row:row+nx, (N_mpc+1)*nx+k*nu:(N_mpc+1)*nx+(k+1)*nu] = B
-
-# Solve via KKT system (no inequality handling — simple projection approach)
-from scipy.optimize import minimize as sp_minimize
-
-def solve_nominal_mpc(x_meas):
-    """Solve nominal tube MPC given measured state."""
-    # Warm start: zeros
-    z0 = np.zeros(nz)
-
-    def cost_fn(z):
-        return 0.5 * z @ H_cost @ z
-    def cost_grad(z):
-        return H_cost @ z
-
-    # State constraints on z0..z_{N-1}, input constraints on v, terminal on zN
-    ineq_list = []
-    # x_meas ∈ z0 ⊕ E: H_E (x_meas - z0) ≤ h_E → -H_E z0 ≤ h_E - H_E x_meas
-    for i in range(H_E.shape[0]):
-        def make_init(ii):
-            def c(z):
-                return (h_E[ii] - H_E[ii] @ x_meas) + H_E[ii] @ z[:nx]
-            return c
-        ineq_list.append({'type': 'ineq', 'fun': make_init(i)})
-
-    # Tightened state constraints on z_0..z_{N-1}
-    for k in range(N_mpc):
-        for i in range(H_Xt.shape[0]):
-            def make_sc(kk, ii):
-                def c(z):
-                    return h_Xt[ii] - H_Xt[ii] @ z[kk*nx:(kk+1)*nx]
-                return c
-            ineq_list.append({'type': 'ineq', 'fun': make_sc(k, i)})
-
-    # Tightened input constraints
-    for k in range(N_mpc):
-        for i in range(H_Ut.shape[0]):
-            def make_ic(kk, ii):
-                idx = (N_mpc+1)*nx + kk*nu
-                def c(z):
-                    return h_Ut[ii] - H_Ut[ii] @ z[idx:idx+nu]
-                return c
-            ineq_list.append({'type': 'ineq', 'fun': make_ic(k, i)})
-
-    # Terminal constraint
-    for i in range(H_Xf.shape[0]):
-        def make_tc(ii):
-            def c(z):
-                return h_Xf[ii] - H_Xf[ii] @ z[N_mpc*nx:(N_mpc+1)*nx]
-            return c
-        ineq_list.append({'type': 'ineq', 'fun': make_tc(i)})
-
-    eq_con = {'type': 'eq', 'fun': lambda z: A_eq @ z, 'jac': lambda z: A_eq}
-    res = sp_minimize(cost_fn, z0, jac=cost_grad, method='SLSQP',
-                      constraints=[eq_con] + ineq_list,
-                      options={'maxiter': 200, 'ftol': 1e-10})
-    z0_opt = res.x[:nx]
-    v0_opt = res.x[(N_mpc+1)*nx:(N_mpc+1)*nx+nu]
-    return z0_opt, v0_opt, res.success
-
-# ── Run simulation ───────────────────────────────────────────
-np.random.seed(42)
-x0 = np.array([1.5, 0.5])   # initial state
-x_all = np.zeros((n_samples, N_sim+1, nx))
-u_all = np.zeros((n_samples, N_sim, nu))
-
-print(f"\nSimulating {n_samples} realisations ({N_sim} steps)...")
-for s in range(n_samples):
-    xk = x0.copy()
-    x_all[s, 0] = xk
-    for k in range(N_sim):
-        z0, v0, ok = solve_nominal_mpc(xk)
-        uk = v0 + K @ (xk - z0)        # tube law
-        wk = np.random.uniform(-w_max, w_max, nx)
-        xk = A @ xk + B @ uk + wk
-        x_all[s, k+1] = xk
-        u_all[s, k] = uk
-print("Done!")
-
-x_viol = np.any(np.abs(x_all) > x_max + 0.01)
-u_viol = np.any(np.abs(u_all) > u_max + 0.01)
-print(f"State violations: {'YES!' if x_viol else 'None ✓'}")
-print(f"Input violations: {'YES!' if u_viol else 'None ✓'}")
-
-# ── Plot ─────────────────────────────────────────────────────
-fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-
-# (a) Polytope sets
-ax = axes[0,0]
-plot_poly(ax, H_X, h_X, color='#2ecc71', alpha=0.2, label=r'$\mathcal{X}$')
-plot_poly(ax, H_Xt, h_Xt, color='#f1c40f', alpha=0.35,
-          label=r'$\tilde{\mathcal{X}}$')
-plot_poly(ax, H_E, h_E, color='#e74c3c', alpha=0.5,
-          label=r'$\mathcal{E}$ (mRPI)')
-ax.set_xlabel(r'$x_1$'); ax.set_ylabel(r'$x_2$')
-ax.set_title('Constraint tightening')
-ax.legend(fontsize=8); ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
-
-# (b) Terminal sets
-ax = axes[0,1]
-V_Xf_nom = hrep_to_vertices(H_term, h_term)  # before invariant iteration
-plot_poly(ax, H_term, h_term, color='#2ecc71', alpha=0.25,
-          label=r'$\tilde{\mathcal{X}} \cap K^{-1}\tilde{\mathcal{U}}$')
-plot_poly(ax, H_Xf, h_Xf, color='#3498db', alpha=0.5,
-          label=r'$\tilde{\mathcal{X}}_f$ (terminal)')
-ax.set_xlabel(r'$x_1$'); ax.set_ylabel(r'$x_2$')
-ax.set_title('Terminal invariant set')
-ax.legend(fontsize=8); ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
-
-# (c) Phase portrait
-ax = axes[1,0]
-plot_poly(ax, H_X, h_X, color='#2ecc71', alpha=0.1, label=r'$\mathcal{X}$')
-plot_poly(ax, H_Xt, h_Xt, color='#3498db', alpha=0.15,
-          label=r'$\tilde{\mathcal{X}}$')
-for s in range(n_samples):
-    ax.plot(x_all[s,:,0], x_all[s,:,1], lw=0.7, alpha=0.5)
-ax.plot(x0[0], x0[1], 'wo', ms=5, zorder=5, label=r'$x_0$')
-ax.set_xlabel(r'$x_1$'); ax.set_ylabel(r'$x_2$')
-ax.set_title(f'Phase portrait ({n_samples} realisations)')
-ax.legend(fontsize=8); ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
-
-# (d) Time trajectories
-ax = axes[1,1]
-t = np.arange(N_sim+1)
-for s in range(n_samples):
-    ax.plot(t, x_all[s,:,0], lw=0.6, alpha=0.4, color='#3498db')
-ax.axhline(x_max, color='#e74c3c', ls='--', lw=1.5, label='constraint')
-ax.axhline(-x_max, color='#e74c3c', ls='--', lw=1.5)
-ax.set_xlabel('Time step $k$'); ax.set_ylabel(r'$x_1$')
-ax.set_title('Position trajectories')
-ax.legend(); ax.grid(True, alpha=0.3)
-
-fig.suptitle(f'Tube MPC — w_max={w_max}, R={R_wt}, '
-             f'x_max={x_max}, u_max={u_max}', fontsize=13, y=1.01)
-fig.tight_layout()
-plt.show()</code></pre>
+<div class="notebox">
+<p><span>Run the Tube MPC Demo</span></p>
+<p style="margin-bottom:12px;">
+<a href="https://colab.research.google.com/github/kucukdemiral/kucukdemiral.github.io/blob/main/tube_mpc_demo.ipynb"
+   target="_blank" rel="noopener" style="text-decoration:none;">
+<img src="https://colab.research.google.com/assets/colab-badge.svg"
+     alt="Open In Colab" style="vertical-align:middle;"></a>
+&nbsp; Open in Google Colab &mdash; no installation required. The notebook walks through each step with plots.
+</p>
+<p>Or download <a href="../tube_mpc_demo.py"><code>tube_mpc_demo.py</code></a> and run locally:</p>
+<pre><code>pip install numpy matplotlib control cvxpy mpt4py piqp
+python tube_mpc_demo.py</code></pre>
+<p>Modify the <code>USER SETTINGS</code> section to experiment with: the disturbance bound <code>w_max</code>, the input weight <code>R_weight</code> (controls LQR aggressiveness and tube width), the constraint bounds <code>x_max</code>/<code>u_max</code>, and the MPC horizon <code>N_horizon</code>.</p>
 </div>
+
+<div class="sourceCode" data-language="Python" data-caption="Tube MPC design pipeline (excerpt — full code in Colab notebook above)"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+from mpt4py import Polyhedron
+import cvxpy as cp
+
+# ── System and LQR ──────────────────────────────────────────
+A  = np.array([[1, 1], [0, 1]])
+B  = np.array([[1], [0.5]])
+Q  = np.eye(2);  R = 10*np.eye(1)
+P  = solve_discrete_are(A, B, Q, R)
+K  = -np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)   # u = Kx
+A_cl = A + B @ K
+
+# ── Constraint sets (polytopes) ──────────────────────────────
+X = Polyhedron.from_Hrep(np.vstack((np.eye(2),-np.eye(2))), 3*np.ones(4))
+U = Polyhedron.from_Hrep(np.vstack(([1],[-1])),             0.5*np.ones(2))
+W = Polyhedron.from_Hrep(np.vstack((np.eye(2),-np.eye(2))), 0.1*np.ones(4))
+
+# ── Step 1: mRPI set  E = W ⊕ A_cl W ⊕ A_cl² W ⊕ ··· ──────
+E = W
+for i in range(1, 40):
+    E_new = E + np.linalg.matrix_power(A_cl, i) @ W    # Minkowski sum
+    E_new.minHrep()
+    if np.linalg.norm(np.linalg.matrix_power(A_cl,i), 2) < 1e-3:
+        break
+    E = E_new
+
+# ── Step 2: Tighten constraints ─────────────────────────────
+X_t = X - E                       # Pontryagin difference  X̃ = X ⊖ E
+U_t = U - E.affine_map(K)         # Ũ = U ⊖ KE
+
+# ── Step 3: Terminal set (maximal invariant inside X̃ ∩ K⁻¹Ũ)
+Omega = X_t.intersect(Polyhedron.from_Hrep(U_t.A @ K, U_t.b))
+for _ in range(30):
+    Omega_new = Polyhedron.from_Hrep(
+        np.vstack((Omega.A, Omega.A @ A_cl)),
+        np.concatenate((Omega.b, Omega.b)))
+    Omega_new.minHrep()
+    if Omega_new == Omega: break
+    Omega = Omega_new
+Xf_t = Omega
+
+# ── Step 4: Tube MPC (cvxpy) ────────────────────────────────
+N = 10;  nx, nu = 2, 1
+z = cp.Variable((N+1, nx));  v = cp.Variable((N, nu))
+x0 = cp.Parameter(nx)
+cost = sum(cp.quad_form(z[k],Q) + cp.quad_form(v[k],R) for k in range(N))
+cost += cp.quad_form(z[N], P)
+cons  = [E.A @ (x0 - z[0]) <= E.b,                          # x₀ ∈ z₀ ⊕ E
+         z[1:].T == A @ z[:-1].T + B @ v.T,                 # dynamics
+         X_t.A @ z[:-1].T <= X_t.b.reshape(-1,1),           # tightened states
+         U_t.A @ v.T      <= U_t.b.reshape(-1,1),           # tightened inputs
+         Xf_t.A @ z[N]    <= Xf_t.b]                        # terminal
+prob = cp.Problem(cp.Minimize(cost), cons)
+
+# ── Step 5: Closed-loop with tube law  u = v* + K(x − z*) ──
+xk = np.array([1.5, 0.5])
+for k in range(40):
+    x0.value = xk
+    prob.solve(cp.PIQP)
+    uk = v[0].value + K @ (xk - z[0].value)    # tube law
+    wk = np.random.uniform(-0.1, 0.1, 2)       # random disturbance
+    xk = A @ xk + B @ uk + wk                  # true dynamics</code></pre></div>
 
 <h2 id="sec:tube_visualisation">Visualising the Tube</h2>
 <p>Figure <a href="#fig:tube_concept" data-reference-type="ref"
@@ -1415,23 +1184,6 @@ data-cites="Mayne2000"></span>. The textbooks by Rawlings et al. <span
 class="citation" data-cites="Rawlings2017"></span> and Borrelli et
 al. <span class="citation" data-cites="Borrelli2017"></span> provide
 detailed treatments of both nominal and robust MPC.</p>
-
-<div class="notebox">
-<p><span>Full Pipeline with mpt4py</span></p>
-<p>The interactive demo above uses only NumPy/SciPy and runs in your browser. For a production-quality implementation using proper polytope libraries (<code>mpt4py</code> + <code>cvxpy</code>), a companion script and Colab notebook are available:</p>
-
-<p style="margin-bottom:12px;">
-<a href="https://colab.research.google.com/github/kucukdemiral/kucukdemiral.github.io/blob/main/tube_mpc_demo.ipynb"
-   target="_blank" rel="noopener" style="text-decoration:none;">
-<img src="https://colab.research.google.com/assets/colab-badge.svg"
-     alt="Open In Colab" style="vertical-align:middle;"></a>
-&nbsp; Full Tube MPC pipeline with <code>mpt4py</code> &mdash; includes Minkowski sums, Pontryagin differences, support functions, and proper QP-based MPC.
-</p>
-
-<p>Or download
-<a href="../tube_mpc_demo.py"><code>tube_mpc_demo.py</code></a>
-(requires <code>pip install control cvxpy mpt4py piqp</code>) and run locally.</p>
-</div>
 
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
