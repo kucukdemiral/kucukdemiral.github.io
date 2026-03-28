@@ -1101,6 +1101,31 @@ data-cites="Mayne2000"></span>. The textbooks by Rawlings et al. <span
 class="citation" data-cites="Rawlings2017"></span> and Borrelli et
 al. <span class="citation" data-cites="Borrelli2017"></span> provide
 detailed treatments of both nominal and robust MPC.</p>
+
+<div class="notebox">
+<p><span>Running the Python Demo</span></p>
+<p>A companion Python script implements the complete Tube MPC pipeline from this chapter using <code>mpt4py</code> and <code>cvxpy</code>: LQR gain, mRPI set, constraint tightening, terminal set, and closed-loop simulation with 20 Monte Carlo disturbance realisations.</p>
+
+<p style="margin-bottom:12px;">
+<a href="https://colab.research.google.com/github/kucukdemiral/kucukdemiral.github.io/blob/main/tube_mpc_demo.ipynb"
+   target="_blank" rel="noopener" style="text-decoration:none;">
+<img src="https://colab.research.google.com/assets/colab-badge.svg"
+     alt="Open In Colab" style="vertical-align:middle;"></a>
+&nbsp; Run the demo directly in your browser &mdash; no installation required.
+</p>
+
+<p>Alternatively, download
+<a href="../tube_mpc_demo.py"><code>tube_mpc_demo.py</code></a>
+(requires <code>numpy</code>, <code>matplotlib</code>, <code>control</code>,
+<code>cvxpy</code>, <code>mpt4py</code>, <code>piqp</code>) and run locally:</p>
+<pre><code>pip install control cvxpy mpt4py piqp
+python tube_mpc_demo.py</code></pre>
+<p>Students can modify the <code>USER SETTINGS</code> section to experiment with:
+the disturbance bound <code>w_max</code>, the input weight <code>R_weight</code>
+(which controls LQR aggressiveness and tube width), the constraint bounds, and
+the MPC horizon length.</p>
+</div>
+
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
 <li><p>Consider the scalar system <span class="math inline">\(x_{k+1} =
