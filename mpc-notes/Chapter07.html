@@ -293,9 +293,9 @@ def mpc_cost(u_vec, x_init):
     cost = 0.0
     x = x_init.copy()
     for k in range(N):
-        cost += x @ Q @ x + R * u_vec[k]**2
+        cost += x.T @ Q @ x + R * u_vec[k]**2
         x = A @ x + B.flatten() * u_vec[k]
-    cost += 10 * x @ Q @ x  # terminal cost
+    cost += 10 * x.T @ Q @ x  # terminal cost
     return cost
 
 # Simulate closed-loop
