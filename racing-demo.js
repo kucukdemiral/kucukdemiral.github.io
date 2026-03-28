@@ -30,7 +30,6 @@
     var DT_MPC = 0.1;
     var MPC_EVERY = 2;
     var N_DEFAULT = 15;
-    var TRACK_HW = 5.0;
     var SPEED_BOOST = 0.15;
     var PP_SPEED = 5.0;
 
@@ -98,14 +97,98 @@
             }
         }
 
-        return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: total, totalLength: totalLen, curvature: curv };
+        return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: total, totalLength: totalLen, curvature: curv, hw: 5.0, name: 'Custom' };
+    }
+
+    /* ═══ MPCC Tracks (from alexliniger/gym-racecar, scaled 25×) ══ */
+    var MPCC_CENTER_PTS = [
+        [-28.1,26.9],[-26.0,24.8],[-23.9,22.7],[-21.8,20.6],[-19.7,18.5],[-17.6,16.4],[-15.5,14.3],[-13.4,12.2],
+        [-11.3,10.1],[-9.3,8.0],[-7.2,5.9],[-5.1,3.9],[-3.0,1.8],[-0.9,-0.3],[1.2,-2.4],[3.7,-4.1],
+        [6.6,-4.1],[9.0,-2.4],[10.1,0.3],[9.5,3.1],[7.6,5.4],[5.5,7.5],[3.4,9.6],[1.3,11.7],
+        [-0.8,13.8],[-2.8,15.9],[-3.8,18.7],[-3.4,21.6],[-1.7,24.0],[0.9,25.3],[3.9,25.5],[6.9,25.5],
+        [9.8,25.3],[12.7,24.5],[15.3,23.2],[17.7,21.4],[19.6,19.1],[21.0,16.5],[21.9,13.7],[22.2,10.7],
+        [22.2,7.8],[22.2,4.8],[22.2,1.8],[22.1,-1.1],[21.5,-4.0],[20.3,-6.7],[18.7,-9.2],[16.7,-11.4],
+        [14.3,-13.2],[11.7,-14.6],[8.9,-15.4],[5.9,-15.8],[3.0,-15.5],[0.1,-14.7],[-2.5,-13.4],[-4.8,-11.5],
+        [-7.0,-9.4],[-9.1,-7.3],[-11.2,-5.2],[-13.3,-3.1],[-15.4,-1.1],[-17.5,1.0],[-19.6,3.1],[-21.7,5.2],
+        [-24.2,6.7],[-27.1,6.5],[-29.4,4.8],[-30.3,2.0],[-30.3,-1.0],[-30.3,-3.9],[-30.3,-6.9],[-30.3,-9.9],
+        [-30.3,-12.8],[-30.0,-15.8],[-28.6,-18.3],[-26.2,-20.1],[-23.3,-20.8],[-20.4,-21.0],[-17.9,-22.4],[-16.7,-25.1],
+        [-17.1,-28.0],[-19.1,-30.1],[-22.0,-30.8],[-24.9,-30.8],[-27.8,-31.4],[-29.8,-33.6],[-30.3,-36.4],[-29.1,-39.1],
+        [-26.6,-40.6],[-23.6,-40.8],[-20.7,-40.8],[-17.7,-40.8],[-14.7,-40.8],[-11.8,-40.8],[-8.8,-40.8],[-5.8,-40.8],
+        [-2.9,-40.6],[-0.5,-38.9],[0.4,-36.1],[1.4,-33.4],[3.8,-31.7],[6.7,-31.5],[9.7,-31.5],[12.7,-31.5],
+        [15.6,-31.5],[18.6,-31.0],[21.4,-30.0],[24.0,-28.7],[26.4,-26.9],[28.5,-24.8],[30.2,-22.4],[31.5,-19.7],
+        [32.4,-16.9],[32.9,-14.0],[32.9,-11.0],[32.9,-8.1],[32.9,-5.1],[32.9,-2.1],[32.9,0.8],[32.9,3.8],
+        [32.9,6.8],[32.9,9.8],[32.9,12.7],[32.6,15.7],[31.9,18.6],[30.9,21.3],[29.5,24.0],[27.9,26.5],
+        [26.0,28.7],[23.8,30.7],[21.4,32.4],[18.8,33.9],[16.0,35.0],[13.2,35.7],[10.2,36.1],[7.2,36.2],
+        [4.3,36.2],[1.3,36.2],[-1.7,36.2],[-4.6,36.2],[-7.6,36.2],[-10.6,36.2],[-13.5,36.2],[-16.5,36.2],
+        [-19.5,36.2],[-22.4,36.2],[-25.4,36.2],[-28.2,35.3],[-30.0,33.0],[-30.2,30.1]
+    ];
+    var MPCC_IDEAL_PTS = [
+        [-28.1,26.5],[-27.4,23.9],[-26.1,21.5],[-24.5,19.3],[-22.7,17.2],[-20.7,15.3],[-18.8,13.5],[-16.8,11.6],
+        [-14.8,9.7],[-12.9,7.7],[-11.0,5.8],[-9.1,3.8],[-7.2,1.8],[-5.2,-0.1],[-3.1,-1.7],[-0.6,-2.9],
+        [2.1,-3.4],[4.7,-2.9],[6.9,-1.4],[8.2,1.0],[8.3,3.8],[7.3,6.3],[5.7,8.5],[3.7,10.4],
+        [1.6,12.1],[-0.2,14.1],[-1.4,16.6],[-1.5,19.3],[-0.4,21.8],[1.5,23.7],[4.0,24.8],[6.7,24.9],
+        [9.4,24.2],[11.8,23.0],[14.0,21.4],[15.9,19.4],[17.4,17.2],[18.7,14.7],[19.7,12.2],[20.5,9.6],
+        [21.1,6.9],[21.4,4.2],[21.4,1.5],[20.9,-1.2],[20.0,-3.8],[18.8,-6.2],[17.1,-8.4],[15.2,-10.3],
+        [12.9,-11.8],[10.4,-12.9],[7.8,-13.6],[5.1,-13.7],[2.3,-13.4],[-0.3,-12.6],[-2.7,-11.4],[-5.0,-9.9],
+        [-7.1,-8.1],[-9.0,-6.2],[-10.8,-4.1],[-12.6,-2.1],[-14.5,-0.2],[-16.7,1.5],[-19.1,2.8],[-21.7,3.6],
+        [-24.4,3.9],[-27.1,3.4],[-29.4,2.0],[-31.1,-0.1],[-32.2,-2.7],[-32.7,-5.3],[-32.7,-8.1],[-32.2,-10.7],
+        [-30.9,-13.1],[-29.2,-15.3],[-27.2,-17.1],[-24.9,-18.6],[-22.7,-20.2],[-20.6,-22.0],[-19.4,-24.4],[-19.4,-27.1],
+        [-20.9,-29.4],[-23.0,-31.0],[-25.3,-32.5],[-27.2,-34.4],[-28.1,-37.0],[-27.7,-39.7],[-25.9,-41.7],[-23.5,-43.0],
+        [-20.9,-43.7],[-18.1,-43.8],[-15.4,-43.5],[-12.8,-42.9],[-10.2,-42.0],[-7.7,-40.8],[-5.3,-39.5],[-2.9,-38.2],
+        [-0.6,-36.9],[1.9,-35.6],[4.4,-34.6],[7.0,-33.8],[9.6,-33.0],[12.3,-32.3],[14.8,-31.4],[17.4,-30.3],
+        [19.8,-29.0],[22.0,-27.5],[24.2,-25.8],[26.2,-23.9],[28.0,-21.9],[29.6,-19.7],[31.1,-17.4],[32.4,-15.0],
+        [33.4,-12.5],[34.2,-9.9],[34.8,-7.2],[35.2,-4.5],[35.3,-1.8],[35.3,1.0],[35.0,3.7],[34.6,6.4],
+        [34.0,9.0],[33.2,11.7],[32.2,14.2],[31.1,16.7],[29.8,19.1],[28.3,21.4],[26.7,23.6],[24.9,25.6],
+        [22.9,27.5],[20.8,29.3],[18.6,30.9],[16.2,32.2],[13.7,33.3],[11.2,34.3],[8.5,35.1],[5.9,35.7],
+        [3.2,36.3],[0.5,36.8],[-2.2,37.3],[-4.9,37.6],[-7.6,37.9],[-10.3,38.0],[-13.0,38.1],[-15.8,38.0],
+        [-18.5,37.7],[-21.1,37.1],[-23.6,36.0],[-25.8,34.3],[-27.5,32.2],[-28.4,29.6]
+    ];
+
+    function buildTrackFromPoints(pts, hw, name) {
+        var n = pts.length;
+        var px = new Array(n), py = new Array(n);
+        for (var i = 0; i < n; i++) { px[i] = pts[i][0]; py[i] = pts[i][1]; }
+
+        // Tangents from finite differences
+        var txA = new Array(n), tyA = new Array(n), nxA = new Array(n), nyA = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var ip = (i + 1) % n;
+            var ddx = px[ip] - px[i], ddy = py[ip] - py[i];
+            var len = Math.sqrt(ddx * ddx + ddy * ddy) || 1e-10;
+            txA[i] = ddx / len; tyA[i] = ddy / len;
+            nxA[i] = -tyA[i]; nyA[i] = txA[i];
+        }
+
+        // Arc length
+        var sArr = new Array(n); sArr[0] = 0;
+        for (var i = 1; i < n; i++) {
+            var dx = px[i] - px[i - 1], dy = py[i] - py[i - 1];
+            sArr[i] = sArr[i - 1] + Math.sqrt(dx * dx + dy * dy);
+        }
+        var dx = px[0] - px[n - 1], dy = py[0] - py[n - 1];
+        var totalLen = sArr[n - 1] + Math.sqrt(dx * dx + dy * dy);
+
+        // Curvature
+        var curv = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var ip = (i + 1) % n, im = (i - 1 + n) % n;
+            var ds2 = sArr[ip] - sArr[im];
+            if (ip < im) ds2 = sArr[ip] + totalLen - sArr[im];
+            if (ds2 > 0) {
+                var dphi = Math.atan2(tyA[ip], txA[ip]) - Math.atan2(tyA[im], txA[im]);
+                dphi = ((dphi + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+                curv[i] = Math.abs(dphi / ds2);
+            } else { curv[i] = 0; }
+        }
+
+        return { px: px, py: py, tx: txA, ty: tyA, nx: nxA, ny: nyA, s: sArr, n: n, totalLength: totalLen, curvature: curv, hw: hw, name: name };
     }
 
     /* ═══ Racing Line (minimum-curvature via path shortening) ═══ */
     function computeRacingLine(track) {
         var n = track.n;
         var margin = VP.carW * 0.5 + 0.5;
-        var maxD = TRACK_HW - margin;
+        var maxD = track.hw - margin;
 
         // Lateral offset from centreline along normal
         var d = new Array(n);
@@ -394,7 +477,7 @@
         ctx.beginPath();
         for (var i = 0; i <= track.n; i++) {
             var ii = i % track.n;
-            var p = w2s(track.px[ii] + TRACK_HW * track.nx[ii], track.py[ii] + TRACK_HW * track.ny[ii], cam);
+            var p = w2s(track.px[ii] + track.hw * track.nx[ii], track.py[ii] + track.hw * track.ny[ii], cam);
             if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath();
@@ -403,14 +486,14 @@
         // outer
         for (var i = 0; i <= track.n; i++) {
             var ii = i % track.n;
-            var p = w2s(track.px[ii] + TRACK_HW * track.nx[ii], track.py[ii] + TRACK_HW * track.ny[ii], cam);
+            var p = w2s(track.px[ii] + track.hw * track.nx[ii], track.py[ii] + track.hw * track.ny[ii], cam);
             if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath();
         // inner
         for (var i = track.n; i >= 0; i--) {
             var ii = ((i % track.n) + track.n) % track.n;
-            var p = w2s(track.px[ii] - TRACK_HW * track.nx[ii], track.py[ii] - TRACK_HW * track.ny[ii], cam);
+            var p = w2s(track.px[ii] - track.hw * track.nx[ii], track.py[ii] - track.hw * track.ny[ii], cam);
             if (i === track.n) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath();
@@ -422,14 +505,14 @@
         ctx.beginPath();
         for (var i = 0; i <= track.n; i++) {
             var ii = i % track.n;
-            var p = w2s(track.px[ii] + TRACK_HW * track.nx[ii], track.py[ii] + TRACK_HW * track.ny[ii], cam);
+            var p = w2s(track.px[ii] + track.hw * track.nx[ii], track.py[ii] + track.hw * track.ny[ii], cam);
             if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath(); ctx.stroke();
         ctx.beginPath();
         for (var i = 0; i <= track.n; i++) {
             var ii = i % track.n;
-            var p = w2s(track.px[ii] - TRACK_HW * track.nx[ii], track.py[ii] - TRACK_HW * track.ny[ii], cam);
+            var p = w2s(track.px[ii] - track.hw * track.nx[ii], track.py[ii] - track.hw * track.ny[ii], cam);
             if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
         }
         ctx.closePath(); ctx.stroke();
@@ -458,8 +541,8 @@
 
         // Start/finish line
         var sf0 = evalTrackAtIdx(0, track);
-        var p1 = w2s(sf0.x + TRACK_HW * sf0.nx, sf0.y + TRACK_HW * sf0.ny, cam);
-        var p2 = w2s(sf0.x - TRACK_HW * sf0.nx, sf0.y - TRACK_HW * sf0.ny, cam);
+        var p1 = w2s(sf0.x + track.hw * sf0.nx, sf0.y + track.hw * sf0.ny, cam);
+        var p2 = w2s(sf0.x - track.hw * sf0.nx, sf0.y - track.hw * sf0.ny, cam);
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
         ctx.strokeStyle = '#D32F2F'; ctx.lineWidth = 1.5;
@@ -679,6 +762,7 @@
             '.rc-btn:hover{background:rgba(211,47,47,0.35)}',
             '.rc-btn:disabled{opacity:0.4;cursor:default}',
             '.rc-check{accent-color:#D32F2F;margin-right:2px}',
+            '.rc-select{padding:0.2rem 0.4rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:#1a1a2e;color:#f88;font-size:0.82rem;accent-color:#D32F2F}',
             '.rc-sep{width:1px;height:18px;background:rgba(255,255,255,0.12);margin:0 0.2rem}',
             '.rc-body{display:flex;min-height:400px}',
             '.rc-scene-wrap{flex:1;min-width:0;position:relative}',
@@ -698,6 +782,12 @@
         el.innerHTML =
         '<div class="rc-header">Autonomous Racing — Learning MPC (LMPC)</div>' +
         '<div class="rc-ctrls">' +
+          '<label>Track <select class="rc-select rc-track-sel">' +
+            '<option value="custom">Custom</option>' +
+            '<option value="mpcc_center">MPCC Center</option>' +
+            '<option value="mpcc_ideal">MPCC Racing</option>' +
+          '</select></label>' +
+          '<span class="rc-sep"></span>' +
           '<button class="rc-btn rc-run-btn">\u25B6 Run Lap</button>' +
           '<button class="rc-btn rc-auto-btn">\u23E9 Auto (5 laps)</button>' +
           '<button class="rc-btn rc-reset-btn">\u21BB Reset</button>' +
@@ -715,6 +805,7 @@
         '</div>' +
         '<div class="rc-info">' +
           '<span class="rc-info-iter">Iteration: 0 / Ready</span>' +
+          '<span class="rc-info-track">Track: Custom</span>' +
           '<span class="rc-info-time">Lap: --</span>' +
           '<span class="rc-info-best">Best: --</span>' +
           '<span class="rc-info-ss">SS: 0 pts</span>' +
@@ -732,6 +823,7 @@
         var autoBtn = container.querySelector('.rc-auto-btn');
         var resetBtn = container.querySelector('.rc-reset-btn');
         var infoIter = container.querySelector('.rc-info-iter');
+        var infoTrack = container.querySelector('.rc-info-track');
         var infoTime = container.querySelector('.rc-info-time');
         var infoBest = container.querySelector('.rc-info-best');
         var infoSS = container.querySelector('.rc-info-ss');
@@ -745,20 +837,33 @@
             return c ? c.checked : false;
         }
 
-        var track = buildTrack(TRACK_WP);
-        track.racingLine = computeRacingLine(track);
+        var trackSel = container.querySelector('.rc-track-sel');
 
-        // Compute track bounding box for camera
-        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        for (var i = 0; i < track.n; i++) {
-            if (track.px[i] - TRACK_HW < minX) minX = track.px[i] - TRACK_HW;
-            if (track.px[i] + TRACK_HW > maxX) maxX = track.px[i] + TRACK_HW;
-            if (track.py[i] - TRACK_HW < minY) minY = track.py[i] - TRACK_HW;
-            if (track.py[i] + TRACK_HW > maxY) maxY = track.py[i] + TRACK_HW;
+        function makeTrack(id) {
+            var t;
+            if (id === 'mpcc_center') t = buildTrackFromPoints(MPCC_CENTER_PTS, 4.5, 'MPCC Center');
+            else if (id === 'mpcc_ideal') t = buildTrackFromPoints(MPCC_IDEAL_PTS, 4.5, 'MPCC Racing');
+            else t = buildTrack(TRACK_WP);
+            t.racingLine = computeRacingLine(t);
+            return t;
         }
-        var trackCx = (minX + maxX) / 2, trackCy = (minY + maxY) / 2;
-        var trackW = maxX - minX + 10, trackH = maxY - minY + 10;
 
+        function trackBounds(t) {
+            var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (var i = 0; i < t.n; i++) {
+                if (t.px[i] - t.hw < minX) minX = t.px[i] - t.hw;
+                if (t.px[i] + t.hw > maxX) maxX = t.px[i] + t.hw;
+                if (t.py[i] - t.hw < minY) minY = t.py[i] - t.hw;
+                if (t.py[i] + t.hw > maxY) maxY = t.py[i] + t.hw;
+            }
+            return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2,
+                     w: maxX - minX + 10, h: maxY - minY + 10 };
+        }
+
+        var track = makeTrack('custom');
+        var tBounds = trackBounds(track);
+        var trackCx = tBounds.cx, trackCy = tBounds.cy;
+        var trackW = tBounds.w, trackH = tBounds.h;
         var startPhi = Math.atan2(track.ty[0], track.tx[0]);
 
         var sim = {
@@ -787,6 +892,7 @@
         function updateInfo() {
             var mode = sim.state === 'idle' ? 'Ready' : (sim.iteration === 0 ? 'Pure Pursuit' : 'LMPC');
             infoIter.textContent = 'Iteration: ' + sim.iteration + ' / ' + mode;
+            infoTrack.textContent = 'Track: ' + track.name + ' (' + Math.round(track.totalLength) + 'm)';
             infoTime.textContent = 'Lap: ' + sim.time.toFixed(1) + 's';
             var bestT = Infinity;
             for (var i = 0; i < sim.laps.length; i++) if (sim.laps[i].time < bestT) bestT = sim.laps[i].time;
@@ -822,6 +928,16 @@
             runBtn.textContent = '\u25B6 Run Lap';
             updateInfo();
             render();
+        }
+
+        function switchTrack(id) {
+            track = makeTrack(id);
+            var b = trackBounds(track);
+            trackCx = b.cx; trackCy = b.cy; trackW = b.w; trackH = b.h;
+            startPhi = Math.atan2(track.ty[0], track.tx[0]);
+            sim.track = track;
+            sim.camFx = trackCx; sim.camFy = trackCy;
+            fullReset();
         }
 
         function physicsStep() {
@@ -880,7 +996,7 @@
             }
 
             // Safety: if car is way off track, abort WITHOUT storing data
-            if (Math.abs(projNew.d) > TRACK_HW * 3) {
+            if (Math.abs(projNew.d) > track.hw * 3) {
                 abortLap();
             }
         }
@@ -1025,6 +1141,9 @@
             if (!running) render();
         });
 
+        trackSel.addEventListener('change', function () {
+            switchTrack(trackSel.value);
+        });
         runBtn.addEventListener('click', function () {
             if (sim.state === 'idle') startLap();
         });
