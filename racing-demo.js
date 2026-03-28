@@ -103,22 +103,13 @@
 
     function projectOnTrack(X, Y, track) {
         var n = track.n, bestD2 = Infinity, bestIdx = 0;
-        for (var i = 0; i < n; i += 4) {
+        for (var i = 0; i < n; i++) {
             var dx = X - track.px[i], dy = Y - track.py[i];
             var d2 = dx * dx + dy * dy;
             if (d2 < bestD2) { bestD2 = d2; bestIdx = i; }
         }
-        var start = (bestIdx - 8 + n) % n;
-        bestD2 = Infinity;
-        for (var j = 0; j < 16; j++) {
-            var i = (start + j) % n;
-            var dx = X - track.px[i], dy = Y - track.py[i];
-            var d2 = dx * dx + dy * dy;
-            if (d2 < bestD2) { bestD2 = d2; bestIdx = i; }
-        }
-        var p = track;
-        var signedDist = (X - p.px[bestIdx]) * p.nx[bestIdx] + (Y - p.py[bestIdx]) * p.ny[bestIdx];
-        return { s: p.s[bestIdx], d: signedDist, idx: bestIdx, cx: p.px[bestIdx], cy: p.py[bestIdx], nx: p.nx[bestIdx], ny: p.ny[bestIdx] };
+        var signedDist = (X - track.px[bestIdx]) * track.nx[bestIdx] + (Y - track.py[bestIdx]) * track.ny[bestIdx];
+        return { s: track.s[bestIdx], d: signedDist, idx: bestIdx, cx: track.px[bestIdx], cy: track.py[bestIdx], nx: track.nx[bestIdx], ny: track.ny[bestIdx] };
     }
 
     function evalTrackAtIdx(idx, track) {
@@ -255,40 +246,33 @@
         return speedRef.bins[bin];
     }
 
-    /* ═══ LMPC Controller: Pure Pursuit + Speed Planning ═════════ */
-    function lmpcControl(x, sNow, track, speedRef, N) {
-        // Forward-simulate N steps using pure pursuit with speed reference.
-        // Returns: { u: first control, us: control sequence, xs: predicted trajectory }
+    /* ═══ LMPC: compute speed target from safe set ══════════════ */
+    function lmpcSpeedTarget(x, sNow, track, speedRef) {
+        var vTarget = getSpeedRef(sNow, speedRef, track);
+        // Look ahead for upcoming curvature to brake proactively
+        var sAhead = sNow + Math.max(x[3], 1.0) * 1.5;
+        var vAhead = getSpeedRef(sAhead, speedRef, track);
+        if (vAhead + 1.5 < vTarget) vTarget = vAhead + 1.5;
+        return vTarget;
+    }
+
+    /* ═══ Build N-step prediction for visualisation only ═══════ */
+    function buildPrediction(x, sNow, track, speedRef, N) {
         var xSim = x.slice();
         var s = sNow;
-        var us = [];
         var xs = [x.slice()];
-
         for (var k = 0; k < N; k++) {
-            // Speed target from safe set data
-            var vTarget = getSpeedRef(s, speedRef, track);
-
-            // Look ahead for upcoming curvature to brake proactively
-            var sAhead = s + Math.max(xSim[3], 1.0) * 1.5;
-            var vAhead = getSpeedRef(sAhead, speedRef, track);
-            if (vAhead + 1.5 < vTarget) vTarget = vAhead + 1.5;
-
-            // Pure pursuit steering + speed control
+            var vTarget = lmpcSpeedTarget(xSim, s, track, speedRef);
             var u = purePursuitControl(xSim, s, track, vTarget);
-            us.push(u.slice());
-
-            // Simulate forward
             xSim = rk4Step(xSim, u, DT_MPC);
             xSim[3] = clamp(xSim[3], VP.vxMin, VP.vxMax);
             xSim[4] = clamp(xSim[4], -5, 5);
             xSim[5] = clamp(xSim[5], -3, 3);
-
             var proj = projectOnTrack(xSim[0], xSim[1], track);
             s = proj.s;
             xs.push(xSim.slice());
         }
-
-        return { u: us[0], us: us, xs: xs };
+        return xs;
     }
 
     /* ═══ Canvas helpers ═══════════════════════════════════════ */
@@ -748,10 +732,17 @@
                     sim.lastU = purePursuitControl(sim.x, sNow, track, PP_SPEED);
                     sim.pred = null;
                 } else {
-                    // LMPC: pure pursuit with safe-set speed reference + N-step prediction
-                    var sol = lmpcControl(sim.x, sNow, track, sim.speedRef, N);
-                    sim.lastU = sol.u.slice();
-                    sim.pred = sol.xs;
+                    // LMPC: pure pursuit with safe-set-derived speed target
+                    var vTarget = lmpcSpeedTarget(sim.x, sNow, track, sim.speedRef);
+                    sim.lastU = purePursuitControl(sim.x, sNow, track, vTarget);
+                    // Build prediction for visualisation only
+                    sim.pred = buildPrediction(sim.x, sNow, track, sim.speedRef, N);
+                    // Diagnostic: log first few control outputs
+                    if (sim.step < 10) {
+                        console.log('[LMPC] step=' + sim.step + ' s=' + sNow.toFixed(1) +
+                            ' vTarget=' + vTarget.toFixed(2) + ' vx=' + sim.x[3].toFixed(2) +
+                            ' D=' + sim.lastU[1].toFixed(3) + ' delta=' + (sim.lastU[0]*180/Math.PI).toFixed(1) + 'deg');
+                    }
                 }
             }
 
@@ -870,7 +861,8 @@
             if (frameDt > 0.2) frameDt = 0.2;
             accum += frameDt * sim.speedMult;
             var steps = 0;
-            while (accum >= DT_SIM && steps < 8) {
+            var maxSteps = Math.max(8, Math.ceil(sim.speedMult * 2));
+            while (accum >= DT_SIM && steps < maxSteps) {
                 physicsStep();
                 accum -= DT_SIM;
                 steps++;
@@ -890,6 +882,15 @@
             // Build speed reference from safe set for LMPC iterations
             if (sim.iteration > 0 && sim.safeSet.length > 0) {
                 sim.speedRef = buildSpeedRef(sim.safeSet, track, sim.iteration);
+                var sMin = Infinity, sMax = -Infinity, sSum = 0;
+                for (var b = 0; b < sim.speedRef.nBins; b++) {
+                    if (sim.speedRef.bins[b] < sMin) sMin = sim.speedRef.bins[b];
+                    if (sim.speedRef.bins[b] > sMax) sMax = sim.speedRef.bins[b];
+                    sSum += sim.speedRef.bins[b];
+                }
+                console.log('[LMPC] Iter ' + sim.iteration + ' speed ref: min=' + sMin.toFixed(1) +
+                    ' max=' + sMax.toFixed(1) + ' avg=' + (sSum / sim.speedRef.nBins).toFixed(1) +
+                    ' | SS=' + sim.safeSet.length + ' pts');
             } else {
                 sim.speedRef = null;
             }
