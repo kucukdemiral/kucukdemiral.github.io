@@ -1914,16 +1914,19 @@ class="math inline">\(k\)</span> iterations the error satisfies <span
 class="math display">\[|x_k - x^*| \;\le\;
 \frac{b-a}{2^{k}}.\]</span></p>
 </div>
-<div class="algorithm">
+<div class="algorithm" id="alg:bisection">
+<div class="algorithm-title" style="padding:0.5rem 1.4rem 0; font-weight:700; font-size:0.95rem;">Algorithm 1: Bisection Method</div>
 <div class="algorithmic">
-<p><span class="math inline">\(g\)</span>, <span
-class="math inline">\(a\)</span>, <span
-class="math inline">\(b\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> with <span
-class="math inline">\(g(a)\cdot g(b)&lt;0\)</span> <span
-class="math inline">\(c \gets (a+b)/2\)</span> <span
-class="math inline">\(b \gets c\)</span> <span class="math inline">\(a
-\gets c\)</span> <span class="math inline">\((a+b)/2\)</span></p>
+<p><strong>Require:</strong> \(g\), \(a\), \(b\), tolerance \(\varepsilon > 0\) with \(g(a)\cdot g(b) < 0\)</p>
+<p>1: <strong>while</strong> \((b - a) > \varepsilon\) <strong>do</strong></p>
+<p style="padding-left:2em;">2: &emsp;\(c \gets (a+b)/2\)</p>
+<p style="padding-left:2em;">3: &emsp;<strong>if</strong> \(g(a)\cdot g(c) < 0\) <strong>then</strong></p>
+<p style="padding-left:4em;">4: &emsp;&emsp;\(b \gets c\)</p>
+<p style="padding-left:2em;">5: &emsp;<strong>else</strong></p>
+<p style="padding-left:4em;">6: &emsp;&emsp;\(a \gets c\)</p>
+<p style="padding-left:2em;">7: &emsp;<strong>end if</strong></p>
+<p>8: <strong>end while</strong></p>
+<p>9: <strong>return</strong> \((a+b)/2\)</p>
 </div>
 </div>
 <div class="center">
@@ -2179,17 +2182,16 @@ is sufficiently small and <span class="math inline">\(J\)</span> is
 smooth, the cost decreases monotonically: <span
 class="math inline">\(J(x_{k+1})&lt;J(x_k)\)</span>.</p>
 </div>
-<div class="algorithm">
+<div class="algorithm" id="alg:gradient_descent">
+<div class="algorithm-title" style="padding:0.5rem 1.4rem 0; font-weight:700; font-size:0.95rem;">Algorithm 2: Gradient Descent</div>
 <div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, initial guess <span
-class="math inline">\(x_0\)</span>, step size <span
-class="math inline">\(\alpha&gt;0\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> <span
-class="math inline">\(k \gets 0\)</span> <span
-class="math inline">\(x_{k+1} \gets x_k - \alpha\,\nabla J(x_k)\)</span>
-<span class="math inline">\(k \gets k+1\)</span> <span
-class="math inline">\(x_k\)</span></p>
+<p><strong>Require:</strong> \(J\), \(\nabla J\), initial guess \(x_0\), step size \(\alpha > 0\), tolerance \(\varepsilon > 0\)</p>
+<p>1: \(k \gets 0\)</p>
+<p>2: <strong>while</strong> \(\|\nabla J(x_k)\| > \varepsilon\) <strong>do</strong></p>
+<p style="padding-left:2em;">3: &emsp;\(x_{k+1} \gets x_k - \alpha\,\nabla J(x_k)\)</p>
+<p style="padding-left:2em;">4: &emsp;\(k \gets k + 1\)</p>
+<p>5: <strong>end while</strong></p>
+<p>6: <strong>return</strong> \(x_k\)</p>
 </div>
 </div>
 <div class="center">
@@ -2335,16 +2337,16 @@ a linear model of the decrease; the condition requires the actual
 decrease to be at least as large as a fraction <span
 class="math inline">\(c\)</span> of the predicted decrease.</p>
 </div>
-<div class="algorithm">
+<div class="algorithm" id="alg:armijo">
+<div class="algorithm-title" style="padding:0.5rem 1.4rem 0; font-weight:700; font-size:0.95rem;">Algorithm 3: Armijo Backtracking Line Search</div>
 <div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, current iterate <span
-class="math inline">\(x_k\)</span>, search direction <span
-class="math inline">\(d_k\)</span> <span class="math inline">\(c =
-10^{-4}\)</span>, contraction factor <span class="math inline">\(\beta =
-0.5\)</span> <span class="math inline">\(\alpha \gets 1\)</span> <span
-class="math inline">\(\alpha \gets \beta\,\alpha\)</span> <span
-class="math inline">\(\alpha\)</span></p>
+<p><strong>Require:</strong> \(J\), \(\nabla J\), current iterate \(x_k\), search direction \(d_k\)</p>
+<p><strong>Require:</strong> \(c = 10^{-4}\), contraction factor \(\beta = 0.5\)</p>
+<p>1: \(\alpha \gets 1\)</p>
+<p>2: <strong>while</strong> \(J(x_k + \alpha\, d_k) > J(x_k) + c\,\alpha\,\nabla J(x_k)^\top d_k\) <strong>do</strong></p>
+<p style="padding-left:2em;">3: &emsp;\(\alpha \gets \beta\,\alpha\)</p>
+<p>4: <strong>end while</strong></p>
+<p>5: <strong>return</strong> \(\alpha\)</p>
 </div>
 </div>
 <div class="notebox">
@@ -2375,20 +2377,18 @@ or <span class="math inline">\(\alpha_k=1\)</span> for a full Newton
 step). Near a local minimum with a positive-definite Hessian,
 convergence is <em>quadratic</em>.</p>
 </div>
-<div class="algorithm">
+<div class="algorithm" id="alg:newton_opt">
+<div class="algorithm-title" style="padding:0.5rem 1.4rem 0; font-weight:700; font-size:0.95rem;">Algorithm 4: Newton's Method for Optimisation</div>
 <div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, <span
-class="math inline">\(\nabla^2 J\)</span>, initial guess <span
-class="math inline">\(x_0\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> <span
-class="math inline">\(k \gets 0\)</span> Solve <span
-class="math inline">\(\nabla^2 J(x_k)\, d_k = -\nabla J(x_k)\)</span>
-for <span class="math inline">\(d_k\)</span> <span
-class="math inline">\(\alpha_k \gets \textsc{ArmijoBacktrack}(J, \nabla
-J, x_k, d_k)\)</span> <span class="math inline">\(x_{k+1} \gets x_k +
-\alpha_k\, d_k\)</span> <span class="math inline">\(k \gets k+1\)</span>
-<span class="math inline">\(x_k\)</span></p>
+<p><strong>Require:</strong> \(J\), \(\nabla J\), \(\nabla^2 J\), initial guess \(x_0\), tolerance \(\varepsilon > 0\)</p>
+<p>1: \(k \gets 0\)</p>
+<p>2: <strong>while</strong> \(\|\nabla J(x_k)\| > \varepsilon\) <strong>do</strong></p>
+<p style="padding-left:2em;">3: &emsp;Solve \(\nabla^2 J(x_k)\, d_k = -\nabla J(x_k)\) for \(d_k\)</p>
+<p style="padding-left:2em;">4: &emsp;\(\alpha_k \gets \text{ArmijoBacktrack}(J, \nabla J, x_k, d_k)\)</p>
+<p style="padding-left:2em;">5: &emsp;\(x_{k+1} \gets x_k + \alpha_k\, d_k\)</p>
+<p style="padding-left:2em;">6: &emsp;\(k \gets k + 1\)</p>
+<p>7: <strong>end while</strong></p>
+<p>8: <strong>return</strong> \(x_k\)</p>
 </div>
 </div>
 <div class="center">
