@@ -5,10 +5,10 @@ class="math inline">\(^{(*)}\)</span></h1>
 constraint handling, to <em>State Estimation</em> and <em>Disturbance
 Modelling</em> for offset-free tracking in the presence of noise and
 uncertainty.</p>
-<p>The structure presented here—<strong>MPC + Estimator + Target
-Calculator</strong>—is the standard architecture for linear MPC in
-process control. We omitted several advanced topics; this chapter
-provides pointers for further study.</p>
+<p>The structure presented here—<em>MPC + Estimator + Target
+Calculator</em>—is the standard architecture for linear MPC in process
+control. We omitted several advanced topics; this chapter provides
+pointers for further study.</p>
 <h2 id="rigorous-stability-analysis">Rigorous Stability Analysis</h2>
 <p>In the basic MPC formulation without a terminal set constraint, the
 <em>Terminal Cost</em> (<span class="math inline">\(x_N^\top P
@@ -21,7 +21,7 @@ data-reference="sec:mpc_stability_theory">[sec:mpc_stability_theory]</a>
 provides the rigorous proof when the terminal set <em>is</em>
 included.)</p>
 <p>Rigorous MPC theory relies on Lyapunov analysis. To prove stability,
-one must often include a <strong>Terminal Set Constraint</strong> (<span
+one must often include a <em>Terminal Set Constraint</em> (<span
 class="math inline">\(x_N \in \mathcal{X}_f\)</span>) in the
 optimisation. This forces the state to land in a <em>safe haven</em> (a
 Positive Invariant Set, meaning that once the trajectory enters the

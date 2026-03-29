@@ -24,18 +24,16 @@ accurately is a fundamental prerequisite for MPC design.</p>
 used by the predictive controllers developed in later chapters. We will
 cover:</p>
 <ul>
-<li><p>A very short review of the <strong>Continuous-Time (CT) LTI
-state-space</strong> formulation.</p></li>
-<li><p>Practical methods for deriving models of <strong>electrical and
-mechanical systems</strong> from first principles.</p></li>
-<li><p>The concept of <strong>equilibrium points</strong> and
-<strong>local linearisation</strong> to approximate nonlinear
-dynamics.</p></li>
-<li><p>Techniques for <strong>discretisation</strong>, including the
-analytic solution for linear systems (Zero-Order Hold) and numerical
-integration methods (Forward Euler, Runge-Kutta) for nonlinear
-systems.</p></li>
-<li><p>An analysis of <strong>stability</strong> in the discrete-time
+<li><p>A very short review of the <em>Continuous-Time (CT) LTI
+state-space</em> formulation.</p></li>
+<li><p>Practical methods for deriving models of <em>electrical and
+mechanical systems</em> from first principles.</p></li>
+<li><p>The concept of <em>equilibrium points</em> and <em>local
+linearisation</em> to approximate nonlinear dynamics.</p></li>
+<li><p>Techniques for <em>discretisation</em>, including the analytic
+solution for linear systems (Zero-Order Hold) and numerical integration
+methods (Forward Euler, Runge-Kutta) for nonlinear systems.</p></li>
+<li><p>An analysis of <em>stability</em> in the discrete-time
 domain.</p></li>
 </ul>
 <h2 id="what-is-state-space-and-why-is-it-central-to-mpc">What is
@@ -129,10 +127,9 @@ of length <span class="math inline">\(\ell\)</span>. The pivot is acted
 upon by an external control torque <span
 class="math inline">\(u(t)\)</span> and a viscous friction coefficient
 <span class="math inline">\(b\)</span>.</p>
-<figure id="fig:Pendulum">
-<img src="figures/tikz_ch03_1.png" style="width:60.0%" />
-<figcaption>Pendulum system.</figcaption>
-</figure>
+<div class="center">
+<p><span id="fig:Pendulum" data-label="fig:Pendulum"></span></p>
+</div>
 <p><strong>1. Physical Laws</strong><br />
 We apply Newton’s second law for rotational motion: <span
 class="math display">\[\tau_{\text{net}} = I \ddot{\theta}\]</span>
@@ -271,8 +268,8 @@ states.</p>
 common to extend the state vector with non-physical variables to improve
 control performance. For instance, to ensure the controller eliminates
 steady-state error (offset-free tracking), we often add an
-<strong>integrator state</strong> or a <strong>disturbance
-estimate</strong> to the model.</p>
+<em>integrator state</em> or a <em>disturbance estimate</em> to the
+model.</p>
 <p>These are mathematical constructs rather than physical ones, yet they
 are treated identically within the state-space framework. We will
 explore these techniques in the upcoming chapters.</p>
@@ -322,10 +319,9 @@ class="math inline">\(R_2\)</span>, an inductor <span
 class="math inline">\(L\)</span>, and a capacitor <span
 class="math inline">\(C\)</span>. Write state equations in matrix
 form.</p>
-<figure id="fig:RLC01">
-<img src="figures/tikz_ch03_2.png" style="width:60.0%" />
-<figcaption>An RLC circuit.</figcaption>
-</figure>
+<div class="center">
+<p><span id="fig:RLC01" data-label="fig:RLC01"></span></p>
+</div>
 <p>We select the energy variables as state variables: <span
 class="math display">\[x_1 = i_L \quad \text{(inductor current)},
     \qquad
@@ -394,10 +390,9 @@ class="math inline">\(\zeta(t)\)</span> (positive to the right). The
 system parameters are mass <span class="math inline">\(m\)</span>,
 damping coefficient <span class="math inline">\(c\)</span>, and spring
 stiffness <span class="math inline">\(k\)</span>.</p>
-<figure id="fig:MDS_system">
-<img src="figures/tikz_ch03_3.png" style="width:60.0%" />
-<figcaption>Mass-damper-spring system.</figcaption>
-</figure>
+<div class="center">
+<p><span id="fig:MDS_system" data-label="fig:MDS_system"></span></p>
+</div>
 <ol>
 <li><p>Write the equation of motion for the system in terms of <span
 class="math inline">\(\zeta(t)\)</span>, <span
@@ -663,12 +658,12 @@ the vertical position. Linearise these dynamics around the hover
 equilibrium (<span class="math inline">\(\theta=0,
 u_1=u_2=mg/2\)</span>) to obtain an LTI state-space model, <span
 class="math inline">\(\dot{{x}} = A{x} + B{u}\)</span>.</p>
-<figure id="fig:duorotor_model">
-<img src="figures/tikz_ch03_4.png" style="width:60.0%" />
-<figcaption>Planar duorotor model showing states (p&#x2093;, p_y, &#x3B8;) and inputs (u&#x2081;, u&#x2082;).</figcaption>
-</figure>
+<div class="center">
+<p><span id="fig:duorotor_model"
+data-label="fig:duorotor_model"></span></p>
+</div>
 <p><strong>1) Define states and inputs:</strong> We select the state
-vector such that the generalized coordinates appear first, followed by
+vector such that the generalised coordinates appear first, followed by
 their velocities: <span class="math display">\[x(t) =
     \begin{bmatrix} x_1 &amp; x_2 &amp; x_3 &amp; x_4 &amp; x_5 &amp;
 x_6 \end{bmatrix}^\top
@@ -854,28 +849,28 @@ discrete-time form: <span class="math display">\[\begin{equation}
 \label{eqn:stateEquation}
     {x}_{k+1} = {A}_d {x}_k + {B}_d {u}_k
 \end{equation}\]</span></p>
-<div class="sourceCode" id="lst:matlab_zoh" data-language="Matlab"
-data-caption="MATLAB code to perform ZOH discretization of a forced LTI system."
-data-label="lst:matlab_zoh"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:matlab_zoh-1"><a href="#lst:matlab_zoh-1" aria-hidden="true" tabindex="-1"></a>    <span class="va">A</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">,</span> <span class="fl">1</span><span class="op">;</span> <span class="op">-</span><span class="fl">5</span><span class="op">,</span> <span class="op">-</span><span class="fl">2</span>]<span class="op">;</span> <span class="co">% Example A matrix</span></span>
-<span id="lst:matlab_zoh-2"><a href="#lst:matlab_zoh-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">B</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span>         <span class="co">% Example B matrix</span></span>
-<span id="lst:matlab_zoh-3"><a href="#lst:matlab_zoh-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">h</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>            <span class="co">% Time step</span></span>
-<span id="lst:matlab_zoh-4"><a href="#lst:matlab_zoh-4" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="lst:matlab_zoh-5"><a href="#lst:matlab_zoh-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">n</span> <span class="op">=</span> <span class="va">size</span>(<span class="va">A</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span> <span class="co">% Number of states</span></span>
-<span id="lst:matlab_zoh-6"><a href="#lst:matlab_zoh-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">m</span> <span class="op">=</span> <span class="va">size</span>(<span class="va">B</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> <span class="co">% Number of inputs</span></span>
-<span id="lst:matlab_zoh-7"><a href="#lst:matlab_zoh-7" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="lst:matlab_zoh-8"><a href="#lst:matlab_zoh-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Form the augmented matrix T</span></span>
-<span id="lst:matlab_zoh-9"><a href="#lst:matlab_zoh-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">T</span> <span class="op">=</span> [<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">;</span> </span>
-<span id="lst:matlab_zoh-10"><a href="#lst:matlab_zoh-10" aria-hidden="true" tabindex="-1"></a>          <span class="va">zeros</span>(<span class="va">m</span><span class="op">,</span> <span class="va">n</span>)<span class="op">,</span> <span class="va">zeros</span>(<span class="va">m</span><span class="op">,</span> <span class="va">m</span>)]<span class="op">;</span></span>
-<span id="lst:matlab_zoh-11"><a href="#lst:matlab_zoh-11" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="lst:matlab_zoh-12"><a href="#lst:matlab_zoh-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Compute the matrix exponential of T*h</span></span>
-<span id="lst:matlab_zoh-13"><a href="#lst:matlab_zoh-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">M</span> <span class="op">=</span> <span class="va">expm</span>(<span class="va">T</span> <span class="op">*</span> <span class="va">h</span>)<span class="op">;</span></span>
-<span id="lst:matlab_zoh-14"><a href="#lst:matlab_zoh-14" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="lst:matlab_zoh-15"><a href="#lst:matlab_zoh-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Extract the discrete-time matrices Ad and Bd</span></span>
-<span id="lst:matlab_zoh-16"><a href="#lst:matlab_zoh-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ad</span> <span class="op">=</span> <span class="va">M</span>(<span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">,</span> <span class="fl">1</span><span class="op">:</span><span class="va">n</span>)<span class="op">;</span></span>
-<span id="lst:matlab_zoh-17"><a href="#lst:matlab_zoh-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">Bd</span> <span class="op">=</span> <span class="va">M</span>(<span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">,</span> <span class="va">n</span><span class="op">+</span><span class="fl">1</span><span class="op">:</span><span class="kw">end</span>)<span class="op">;</span></span>
-<span id="lst:matlab_zoh-18"><a href="#lst:matlab_zoh-18" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="lst:matlab_zoh-19"><a href="#lst:matlab_zoh-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Ad = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Ad</span>)<span class="op">;</span></span>
-<span id="lst:matlab_zoh-20"><a href="#lst:matlab_zoh-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Bd = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Bd</span>)<span class="op">;</span></span></code></pre></div>
+<pre id="lst:matlab_zoh" class="matlab" data-language="Matlab"
+data-caption="MATLAB code to perform ZOH discretisation of a forced LTI system."
+data-label="lst:matlab_zoh"><code>    A = [0, 1; -5, -2]; % Example A matrix
+    B = [0; 1];         % Example B matrix
+    h = 0.1;            % Time step
+    
+    n = size(A, 1); % Number of states
+    m = size(B, 2); % Number of inputs
+    
+    % Form the augmented matrix T
+    T = [A, B; 
+          zeros(m, n), zeros(m, m)];
+    
+    % Compute the matrix exponential of T*h
+    M = expm(T * h);
+    
+    % Extract the discrete-time matrices Ad and Bd
+    Ad = M(1:n, 1:n);
+    Bd = M(1:n, n+1:end);
+    
+    disp(&#39;Ad = &#39;); disp(Ad);
+    disp(&#39;Bd = &#39;); disp(Bd);</code></pre>
 <h2 id="numerical-discretisation-of-nonlinear-systems">Numerical
 Discretisation of Nonlinear Systems</h2>
 <p>In the previous sections, we established that Linear Time-Invariant
@@ -901,7 +896,7 @@ of the Taylor series: <span class="math display">\[\begin{equation}
     x_{k+1} = x_k + h \cdot f(x_k, u_k).
 \end{equation}\]</span></p>
 <p>While Euler’s method is algebraically simple and easy to
-differentiate (which is useful for optimization gradients), it suffers
+differentiate (which is useful for optimisation gradients), it suffers
 from significant drawbacks.</p>
 <div class="alertbox">
 <p><span>Warning: Avoid Euler’s Method</span> Forward Euler is a
@@ -938,20 +933,19 @@ method for the same time step.</p>
 <p><span>MATLAB Implementation: RK4 Integrator</span> A robust
 implementation of a single RK4 step in MATLAB for a generic nonlinear
 system:</p>
-<div class="sourceCode" id="cb1" data-language="Matlab"><pre
-class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">x_next</span> <span class="op">=</span> <span class="va">rk4_step</span>(<span class="va">f_dynamics</span><span class="op">,</span> <span class="va">x_curr</span><span class="op">,</span> <span class="va">u_curr</span><span class="op">,</span> <span class="va">h</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>            <span class="co">% f_dynamics: Function handle @(x,u) ...</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="co">% x_curr:     Current state vector [n x 1]</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="co">% u_curr:     Current input vector [m x 1]</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            <span class="co">% h:          Time step (dt)</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">k1</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">k2</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">*</span><span class="va">k1</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">k3</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">*</span><span class="va">k2</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">k4</span> <span class="op">=</span> <span class="va">f_dynamics</span>(<span class="va">x_curr</span> <span class="op">+</span> <span class="va">h</span><span class="op">*</span><span class="va">k3</span><span class="op">,</span> <span class="va">u_curr</span>)<span class="op">;</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">x_next</span> <span class="op">=</span> <span class="va">x_curr</span> <span class="op">+</span> (<span class="va">h</span><span class="op">/</span><span class="fl">6</span>)<span class="op">*</span>(<span class="va">k1</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k2</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k3</span> <span class="op">+</span> <span class="va">k4</span>)<span class="op">;</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span></code></pre></div>
+<pre class="matlab" data-language="Matlab"><code>function x_next = rk4_step(f_dynamics, x_curr, u_curr, h)
+            % f_dynamics: Function handle @(x,u) ...
+            % x_curr:     Current state vector [n x 1]
+            % u_curr:     Current input vector [m x 1]
+            % h:          Time step (dt)
+        
+            k1 = f_dynamics(x_curr, u_curr);
+            k2 = f_dynamics(x_curr + 0.5*h*k1, u_curr);
+            k3 = f_dynamics(x_curr + 0.5*h*k2, u_curr);
+            k4 = f_dynamics(x_curr + h*k3, u_curr);
+        
+            x_next = x_curr + (h/6)*(k1 + 2*k2 + 2*k3 + k4);
+        end</code></pre>
 </div>
 <div class="examplebox">
 <p><span>Comparison of Numerical Integrators: The Harmonic
@@ -993,31 +987,30 @@ Figure <a href="#fig:integrator_comparison" data-reference-type="ref"
 data-reference="fig:integrator_comparison">1.1</a> compares these two
 methods against the exact solution across different sampling times <span
 class="math inline">\(h\)</span>.</p>
-<p>It can be observed that the <strong>Forward Euler</strong> method is
+<p>It can be observed that the <em>Forward Euler</em> method is
 numerically unstable for every selection of sampling time <span
 class="math inline">\(h\)</span>; it introduces artificial energy into
 the system, causing the amplitude to grow unbounded (spiralling out) as
 time progresses. This occurs because the continuous-time eigenvalues are
 purely imaginary (<span class="math inline">\(\pm j\omega\)</span>),
 placing them outside the Forward Euler stability region for any <span
-class="math inline">\(h &gt; 0\)</span>. In contrast, the
-<strong>RK4</strong> method maintains high accuracy and preserves
-stability even at larger time steps.</p>
+class="math inline">\(h &gt; 0\)</span>. In contrast, the <em>RK4</em>
+method maintains high accuracy and preserves stability even at larger
+time steps.</p>
 </div>
 <figure id="fig:integrator_comparison">
-<embed src="figures/RK4_vs_euler.png" style="width:100.0%" />
+<embed src="Figures/RK4_vs_euler.pdf" style="width:100.0%" />
 <figcaption>Comparison of numerical integration accuracy for an undamped
 harmonic oscillator (<span class="math inline">\(\ddot{p} + p =
 0\)</span>) across increasing time steps <span class="math inline">\(h
 \in \{0.05, 0.10, 0.25, 0.50\}\)</span> seconds. For this system (purely
-imaginary eigenvalues), the <strong>Forward Euler</strong> method (red
-dashed) is numerically unstable; it introduces artificial energy into
-the simulation, causing the amplitude to grow unbounded as time
-progresses. This error scales linearly with <span
-class="math inline">\(h\)</span>. In contrast, the <strong>Runge–Kutta 4
-(RK4)</strong> method (blue dash-dot) maintains high fidelity to the
-<strong>Exact</strong> solution (solid gray), preserving stability even
-at the coarsest time step of <span
+imaginary eigenvalues), the <em>Forward Euler</em> method (red dashed)
+is numerically unstable; it introduces artificial energy into the
+simulation, causing the amplitude to grow unbounded as time progresses.
+This error scales linearly with <span class="math inline">\(h\)</span>.
+In contrast, the <em>Runge–Kutta 4 (RK4)</em> method (blue dash-dot)
+maintains high fidelity to the <em>Exact</em> solution (solid gray),
+preserving stability even at the coarsest time step of <span
 class="math inline">\(h=0.50\)</span> s.</figcaption>
 </figure>
 <h2 id="stability-of-discrete-time-systems">Stability of Discrete-Time
@@ -1047,12 +1040,12 @@ in the complex plane: <span class="math display">\[\begin{equation*}
 Interpretation: The Unit Circle</h3>
 <p>Unlike continuous-time systems, where stability is defined by the
 Left Half Plane (LHP), discrete-time stability is determined by the
-<strong>Unit Circle</strong>. The mapping between the two domains is
-governed by the relation <span class="math inline">\(z =
-e^{sh}\)</span>, where <span class="math inline">\(h\)</span> is the
-sampling time. Figure <a href="#fig:unit_circle"
-data-reference-type="ref" data-reference="fig:unit_circle">1.2</a> shows
-an unstable system having 4 eigenvalues.</p>
+<em>Unit Circle</em>. The mapping between the two domains is governed by
+the relation <span class="math inline">\(z = e^{sh}\)</span>, where
+<span class="math inline">\(h\)</span> is the sampling time. Figure <a
+href="#fig:unit_circle" data-reference-type="ref"
+data-reference="fig:unit_circle">1.2</a> shows an unstable system having
+4 eigenvalues.</p>
 <ul>
 <li><p><strong>Stable:</strong> Eigenvalues lie strictly <em>inside</em>
 the unit circle (<span class="math inline">\(|\lambda| &lt; 1\)</span>).
@@ -1066,7 +1059,7 @@ The system may oscillate or remain constant, but does not
 decay.</p></li>
 </ul>
 <figure id="fig:unit_circle" data-latex-placement="h">
-<img src="figures/tikz_ch03_5.png" style="width:45.0%" />
+
 <figcaption>Stability in the Z-plane. For the system to be stable, all
 eigenvalues (poles) must reside within the shaded blue region. Blue
 eigenvalues are stable whereas red ones are unstable. Therefore the
@@ -1075,9 +1068,9 @@ system having these eigenvalues is unstable.</figcaption>
 <h3 id="lyapunov-stability-and-the-stein-equation">Lyapunov Stability
 and the Stein Equation</h3>
 <p>While eigenvalue analysis is useful for linear analysis, a more
-general approach—fundamental to optimal control—is the <strong>Lyapunov
-method</strong>. Instead of looking at roots of a polynomial, we look at
-the system’s "energy".</p>
+general approach—fundamental to optimal control—is the <em>Lyapunov
+method</em>. Instead of looking at roots of a polynomial, we look at the
+system’s "energy".</p>
 <p>For a linear discrete-time system <span class="math inline">\(x_{k+1}
 = A x_k\)</span>, let us define a quadratic energy candidate function:
 <span class="math display">\[\begin{equation}
@@ -1094,9 +1087,8 @@ class="math display">\[\begin{align*}
     &amp;= (A x_k)^\top P (A x_k) - x_k^\top P x_k \\
     &amp;= x_k^\top (A^\top P A - P) x_k
 \end{align*}\]</span> For the energy to decrease strictly, the term in
-the brackets must be negative definite. This leads to the
-<strong>Discrete Lyapunov Equation</strong>, also known as the <em>Stein
-Equation</em>.</p>
+the brackets must be negative definite. This leads to the <em>Discrete
+Lyapunov Equation</em>, also known as the <em>Stein Equation</em>.</p>
 <div class="alertbox">
 <p><span>Lyapunov Stability Theorem</span> The discrete-time linear
 system <span class="math inline">\(x_{k+1} = A x_k\)</span> is
@@ -1122,6 +1114,37 @@ data-cites="Franklin2015"></span>. The reader seeking a deeper treatment
 of continuous-to-discrete conversion methods is referred to these
 texts.</p>
 </div>
+<h2 id="chapter-summary">Chapter Summary</h2>
+<p>This chapter introduced the state-space framework that serves as the
+internal model for MPC. The key topics covered are:</p>
+<ul>
+<li><p><strong>State-Space Representation:</strong> A dynamical system
+is described by state, input, and output matrices <span
+class="math inline">\((A, B, C, D)\)</span>. The continuous-time form
+uses differential equations (<span class="math inline">\(\dot{x} = Ax +
+Bu\)</span>) and the discrete-time form uses difference equations (<span
+class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>).</p></li>
+<li><p><strong>Transfer Function Conversion:</strong> Standard
+techniques (controllable canonical form, observable canonical form)
+convert a transfer function <span class="math inline">\(G(s)\)</span>
+into an equivalent state-space realisation, enabling the use of
+time-domain methods.</p></li>
+<li><p><strong>Linearisation:</strong> Nonlinear systems are
+approximated around an equilibrium point by computing the Jacobian
+matrices. The resulting linear model is valid for small deviations and
+provides the basis for linear MPC design.</p></li>
+<li><p><strong>Discretisation Methods:</strong> Continuous-time models
+are converted to discrete time using zero-order hold (ZOH, exact for LTI
+systems), forward/backward Euler (first-order approximations), or
+Runge–Kutta methods (RK4, higher accuracy). The choice of method and
+sampling period affects model fidelity.</p></li>
+<li><p><strong>Stability Analysis:</strong> A continuous-time system is
+stable if all eigenvalues of <span class="math inline">\(A\)</span> have
+strictly negative real parts; a discrete-time system is stable if all
+eigenvalues lie strictly inside the unit circle. Lyapunov’s method
+provides an energy-based stability criterion without requiring explicit
+eigenvalue computation.</p></li>
+</ul>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
 <li><p><strong>Transfer Function to State-Space Conversion.</strong> A

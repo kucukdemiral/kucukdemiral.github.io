@@ -1,24 +1,62 @@
-<h1 id="chap:simulink_mpc">Simulink Implementation of Model Predictive Control<span class="math inline">\(^{(*)}\)</span></h1>
+<h1 id="chap:simulink_mpc">Simulink Implementation of Model Predictive
+Control<span class="math inline">\(^{(*)}\)</span></h1>
 <h2 id="sec:simulink_general">General Implementation Guidance</h2>
-<p>Simulink is widely used for rapid prototyping and hardware-in-the-loop validation of control systems, and Model Predictive Control (MPC) is no exception. Implementing MPC in Simulink without the dedicated MPC Toolbox requires a careful architectural decision: the optimisation solver must be invoked at every simulation time step from within a Simulink block, yet the solver itself — together with the YALMIP modelling layer — relies on dynamic MATLAB features that are incompatible with Simulink’s default code-generation pipeline. This section establishes a general framework that resolves this tension. The approach is first described in fully general terms; Section <a href="#sec:simulink_building" data-reference-type="ref" data-reference="sec:simulink_building">1.2</a> then applies it step by step to a concrete building temperature control system.</p>
+<p>Simulink is widely used for rapid prototyping and
+hardware-in-the-loop validation of control systems, and Model Predictive
+Control (MPC) is no exception. Implementing MPC in Simulink without the
+dedicated MPC Toolbox requires a careful architectural decision: the
+optimisation solver must be invoked at every simulation time step from
+within a Simulink block, yet the solver itself — together with the
+YALMIP modelling layer — relies on dynamic MATLAB features that are
+incompatible with Simulink’s default code-generation pipeline. This
+section establishes a general framework that resolves this tension. The
+approach is first described in fully general terms; Section <a
+href="#sec:simulink_building" data-reference-type="ref"
+data-reference="sec:simulink_building">1.2</a> then applies it step by
+step to a concrete building temperature control system.</p>
 <h3 id="subsec:no_toolbox">Why the MPC Toolbox Is Not Required</h3>
-<p>The MathWorks MPC Toolbox offers convenient pre-built blocks but abstracts away the optimisation layer entirely. This abstraction becomes a limitation whenever the designer requires any of the following:</p>
+<p>The MathWorks MPC Toolbox offers convenient pre-built blocks but
+abstracts away the optimisation layer entirely. This abstraction becomes
+a limitation whenever the designer requires any of the following:</p>
 <ul>
-<li><p><strong>Economic (non-regulatory) objectives</strong> — for instance, minimising energy cost rather than a quadratic deviation from a setpoint;</p></li>
-<li><p><strong>Augmented observers</strong> — such as Kalman filters that jointly estimate the plant state and an unmeasured disturbance;</p></li>
-<li><p><strong>Time-varying constraints</strong> — comfort bands or operational limits that change according to a schedule;</p></li>
-<li><p><strong>Custom terminal costs or terminal sets</strong> — required for rigorous closed-loop stability guarantees.</p></li>
+<li><p><strong>Economic (non-regulatory) objectives</strong> — for
+instance, minimising energy cost rather than a quadratic deviation from
+a setpoint;</p></li>
+<li><p><strong>Augmented observers</strong> — such as Kalman filters
+that jointly estimate the plant state and an unmeasured
+disturbance;</p></li>
+<li><p><strong>Time-varying constraints</strong> — comfort bands or
+operational limits that change according to a schedule;</p></li>
+<li><p><strong>Custom terminal costs or terminal sets</strong> —
+required for rigorous closed-loop stability guarantees.</p></li>
 </ul>
-<p>Using YALMIP together with <code>quadprog</code> or OSQP provides all of this flexibility whilst keeping solver call-time well within a typical sampling period.</p>
-<h3 id="subsec:extrinsic">The Code-Generation Barrier and How to Overcome It</h3>
-<p>MATLAB Function blocks in Simulink normally compile their contents into C code at simulation start. YALMIP relies on dynamic cell arrays, runtime type inspection, and variable-argument function calls — none of which survive compilation. Attempting to call <code>sdpvar</code>, <code>optimizer</code>, or any YALMIP routine directly inside a compiled block produces an immediate error.</p>
-<p>The standard remedy is the <code>coder.extrinsic</code> declaration. Any function declared as extrinsic is <em>not</em> compiled; instead, it executes inside the full MATLAB interpreter at run time. The simulation still advances correctly — the block simply runs in interpreted mode for the declared functions.</p>
+<p>Using YALMIP together with <code>quadprog</code> or OSQP provides all
+of this flexibility whilst keeping solver call-time well within a
+typical sampling period.</p>
+<h3 id="subsec:extrinsic">The Code-Generation Barrier and How to
+Overcome It</h3>
+<p>MATLAB Function blocks in Simulink normally compile their contents
+into C code at simulation start. YALMIP relies on dynamic cell arrays,
+runtime type inspection, and variable-argument function calls — none of
+which survive compilation. Attempting to call <code>sdpvar</code>,
+<code>optimizer</code>, or any YALMIP routine directly inside a compiled
+block produces an immediate error.</p>
+<p>The standard remedy is the <code>coder.extrinsic</code> declaration.
+Any function declared as extrinsic is <em>not</em> compiled; instead, it
+executes inside the full MATLAB interpreter at run time. The simulation
+still advances correctly — the block simply runs in interpreted mode for
+the declared functions.</p>
 <div class="notebox">
 <p><span>Rules for <code>coder.extrinsic</code></span></p>
 <ol>
-<li><p>The declaration must appear at the <em>top</em> of the MATLAB Function block body, before any use of the function.</p></li>
-<li><p>Every output variable must be <em>pre-allocated</em> to a concrete type and size before the extrinsic call, so that Simulink can infer port dimensions at compile time.</p></li>
-<li><p>All YALMIP-dependent logic should live in a separate <code>.m</code> helper file; the block itself contains only the declaration and a single forwarding call.</p></li>
+<li><p>The declaration must appear at the <em>top</em> of the MATLAB
+Function block body, before any use of the function.</p></li>
+<li><p>Every output variable must be <em>pre-allocated</em> to a
+concrete type and size before the extrinsic call, so that Simulink can
+infer port dimensions at compile time.</p></li>
+<li><p>All YALMIP-dependent logic should live in a separate
+<code>.m</code> helper file; the block itself contains only the
+declaration and a single forwarding call.</p></li>
 </ol>
 <p>The general pattern inside any MATLAB Function block is:</p>
 <pre class="matlab" data-language="Matlab"><code>function y = MyBlock(u)
@@ -27,17 +65,32 @@
             y = my_helper(u);               % forward to helper
         end</code></pre>
 </div>
-<h3 id="subsec:persistent">Managing State Across Time Steps: Persistent Variables</h3>
-<p>A Simulink MATLAB Function block does not retain values in its workspace between consecutive invocations — each call begins with a clean local scope. An MPC controller, however, must preserve several quantities across every time step:</p>
+<h3 id="subsec:persistent">Managing State Across Time Steps: Persistent
+Variables</h3>
+<p>A Simulink MATLAB Function block does not retain values in its
+workspace between consecutive invocations — each call begins with a
+clean local scope. An MPC controller, however, must preserve several
+quantities across every time step:</p>
 <ul>
-<li><p>the observer state estimate <span class="math inline">\(\hat{z}_k\)</span>;</p></li>
-<li><p>the last applied input <span class="math inline">\(u_{k-1}\)</span> (needed for the observer prediction step);</p></li>
+<li><p>the observer state estimate <span
+class="math inline">\(\hat{z}_k\)</span>;</p></li>
+<li><p>the last applied input <span
+class="math inline">\(u_{k-1}\)</span> (needed for the observer
+prediction step);</p></li>
 <li><p>any filtered disturbance estimates;</p></li>
 <li><p>the compiled YALMIP <code>optimizer</code> objects.</p></li>
 </ul>
-<p>MATLAB’s <code>persistent</code> keyword solves this problem. A persistent variable is initialised once on the first function call and retains its value for the lifetime of the function in memory. Within a Simulink simulation, this means the variable persists across every time step from <span class="math inline">\(k=1\)</span> to the end of the run.</p>
+<p>MATLAB’s <code>persistent</code> keyword solves this problem. A
+persistent variable is initialised once on the first function call and
+retains its value for the lifetime of the function in memory. Within a
+Simulink simulation, this means the variable persists across every time
+step from <span class="math inline">\(k=1\)</span> to the end of the
+run.</p>
 <div class="defnbox">
-<p><span>Persistent Variable Pattern for MPC Helper Functions</span> Declare all cross-step quantities with <code>persistent</code> at the top of the helper <code>.m</code> file, then guard initialisation with an <code>isempty</code> check:</p>
+<p><span>Persistent Variable Pattern for MPC Helper Functions</span>
+Declare all cross-step quantities with <code>persistent</code> at the
+top of the helper <code>.m</code> file, then guard initialisation with
+an <code>isempty</code> check:</p>
 <pre class="matlab" data-language="Matlab"><code>function u = my_mpc_step(y_meas, ...)
             persistent opt_obj observer_state u_prev
         
@@ -49,12 +102,27 @@
         
             % ... rest of the control pipeline ...
         end</code></pre>
-<p><strong>Important:</strong> before starting a new simulation run always execute <code>clear </code><em><code>functionname</code></em> in the MATLAB Command Window. This resets all persistent variables to their initial state; failure to do so causes the controller to inherit the terminal conditions of the previous run.</p>
+<p><strong>Important:</strong> before starting a new simulation run
+always execute <code>clear </code><em><code>functionname</code></em> in
+the MATLAB Command Window. This resets all persistent variables to their
+initial state; failure to do so causes the controller to inherit the
+terminal conditions of the previous run.</p>
 </div>
-<h3 id="subsec:build_general">Building YALMIP Optimiser Objects: One-Time Compilation</h3>
-<p>YALMIP’s <code>optimizer</code> function pre-processes the problem structure — symbolic variable registration, sparsity analysis, and conversion to the solver’s native QP format — and returns a compiled function handle. This pre-processing is the expensive step (typically 10–30 s for moderate-sized problems) and must not be repeated at every simulation time step.</p>
-<p>The correct approach is to create a dedicated initialisation function, call it exactly once inside the persistent-variable guard shown above, and store the resulting objects as persistent variables. All subsequent time steps call the compiled objects directly, which typically completes in milliseconds.</p>
-<pre class="matlab" data-language="Matlab" data-caption="Skeleton of a one-time YALMIP initialisation function."><code>function [opt1, opt2] = build_optimizers()
+<h3 id="subsec:build_general">Building YALMIP Optimiser Objects:
+One-Time Compilation</h3>
+<p>YALMIP’s <code>optimizer</code> function pre-processes the problem
+structure — symbolic variable registration, sparsity analysis, and
+conversion to the solver’s native QP format — and returns a compiled
+function handle. This pre-processing is the expensive step (typically
+10–30 s for moderate-sized problems) and must not be repeated at every
+simulation time step.</p>
+<p>The correct approach is to create a dedicated initialisation
+function, call it exactly once inside the persistent-variable guard
+shown above, and store the resulting objects as persistent variables.
+All subsequent time steps call the compiled objects directly, which
+typically completes in milliseconds.</p>
+<pre class="matlab" data-language="Matlab"
+data-caption="Skeleton of a one-time YALMIP initialisation function."><code>function [opt1, opt2] = build_optimizers()
         % Called once. Returns compiled optimizer objects.
     
         % -- Define symbolic decision variables -----------------------
@@ -74,21 +142,59 @@
         % ...
     end</code></pre>
 <h3 id="subsec:architecture">Recommended Architecture</h3>
-<p>The architecture that best reconciles Simulink’s execution model with YALMIP’s requirements separates the design into two layers, as shown in Figure <a href="#fig:architecture" data-reference-type="ref" data-reference="fig:architecture">1.1</a>.</p>
-<p><strong>Layer 1 — the Simulink canvas</strong> contains only standard Simulink blocks and thin MATLAB Function wrapper blocks. Each wrapper declares one helper function as extrinsic, pre-allocates its outputs, and forwards its inputs. Signal routing, the feedback connection, noise injection, and input saturation are all handled by built-in Simulink blocks.</p>
-<p><strong>Layer 2 — the helper <code>.m</code> files</strong> contain all computation: observer updates, YALMIP calls, QP solves, and persistent state. Because they execute in the full MATLAB interpreter they impose no restrictions on the code they contain.</p>
+<p>The architecture that best reconciles Simulink’s execution model with
+YALMIP’s requirements separates the design into two layers, as shown in
+Figure <a href="#fig:architecture" data-reference-type="ref"
+data-reference="fig:architecture">1.1</a>.</p>
+<p><em>Layer 1 — the Simulink canvas</em> contains only standard
+Simulink blocks and thin MATLAB Function wrapper blocks. Each wrapper
+declares one helper function as extrinsic, pre-allocates its outputs,
+and forwards its inputs. Signal routing, the feedback connection, noise
+injection, and input saturation are all handled by built-in Simulink
+blocks.</p>
+<p><em>Layer 2 — the helper <code>.m</code> files</em> contain all
+computation: observer updates, YALMIP calls, QP solves, and persistent
+state. Because they execute in the full MATLAB interpreter they impose
+no restrictions on the code they contain.</p>
 <figure id="fig:architecture" data-latex-placement="htbp">
-<img src="figures/tikz_ch09_1.png" style="width:95.0%" />
-<figcaption>General two-layer architecture for Simulink-based MPC without the MPC Toolbox. Layer 1 (Simulink canvas) contains only thin MATLAB Function wrapper blocks; all optimisation logic is delegated to Layer 2 helper files via <code>coder.extrinsic</code> calls. Persistent variables in the helper files carry state across time steps and store the compiled <code>optimizer</code> objects for the lifetime of the simulation.</figcaption>
+
+<figcaption>General two-layer architecture for Simulink-based MPC
+without the MPC Toolbox. Layer 1 (Simulink canvas) contains only thin
+MATLAB Function wrapper blocks; all optimisation logic is delegated to
+Layer 2 helper files via <code>coder.extrinsic</code> calls. Persistent
+variables in the helper files carry state across time steps and store
+the compiled <code>optimizer</code> objects for the lifetime of the
+simulation.</figcaption>
 </figure>
 <h3 id="subsec:algloop_general">Eliminating the Algebraic Loop</h3>
-<p>In any discrete-time closed-loop Simulink model of the form Plant <span class="math inline">\(\to\)</span> Controller <span class="math inline">\(\to\)</span> Plant, Simulink detects an <em>algebraic loop</em>: computing the plant output <span class="math inline">\(y_k\)</span> requires the current input <span class="math inline">\(u_k\)</span>, which itself requires <span class="math inline">\(y_k\)</span>. The standard remedy is to insert a <strong>Unit Delay</strong> block between the controller output (or the saturation block) and the plant input:</p>
-<p><span class="math display">\[\cdots \to \text{Saturation} \;\xrightarrow{\;u_k\;}\;
+<p>In any discrete-time closed-loop Simulink model of the form
+Plant <span class="math inline">\(\to\)</span> Controller <span
+class="math inline">\(\to\)</span> Plant, Simulink detects an
+<em>algebraic loop</em>: computing the plant output <span
+class="math inline">\(y_k\)</span> requires the current input <span
+class="math inline">\(u_k\)</span>, which itself requires <span
+class="math inline">\(y_k\)</span>. The standard remedy is to insert a
+<em>Unit Delay</em> block between the controller output (or the
+saturation block) and the plant input:</p>
+<p><span class="math display">\[\cdots \to \text{Saturation}
+\;\xrightarrow{\;u_k\;}\;
 \underbrace{\text{Unit Delay}}_{T_s,\;\mathrm{IC}=0}
 \;\xrightarrow{\;u_{k-1}\;}\; \text{Plant} \to \cdots\]</span></p>
-<p>This is not an approximation — in a physically realisable digital controller the input computed at step <span class="math inline">\(k\)</span> cannot reach the actuator until step <span class="math inline">\(k{+}1\)</span>. The observer in the MPC helper file must therefore use <span class="math inline">\(u_{k-1}\)</span> (stored as a persistent variable) rather than <span class="math inline">\(u_k\)</span> in its prediction equation, which is achieved automatically by the pattern shown in Section <a href="#subsec:persistent" data-reference-type="ref" data-reference="subsec:persistent">1.1.3</a>.</p>
+<p>This is not an approximation — in a physically realisable digital
+controller the input computed at step <span
+class="math inline">\(k\)</span> cannot reach the actuator until
+step <span class="math inline">\(k{+}1\)</span>. The observer in the MPC
+helper file must therefore use <span
+class="math inline">\(u_{k-1}\)</span> (stored as a persistent variable)
+rather than <span class="math inline">\(u_k\)</span> in its prediction
+equation, which is achieved automatically by the pattern shown in
+Section <a href="#subsec:persistent" data-reference-type="ref"
+data-reference="subsec:persistent">1.1.3</a>.</p>
 <h3 id="subsec:solvers">Solver Recommendations</h3>
-<p>YALMIP supports a wide range of QP solvers through a common interface. For typical MPC problems — moderate-horizon quadratic programmes with linear constraints — the following two solvers are recommended.</p>
+<p>YALMIP supports a wide range of QP solvers through a common
+interface. For typical MPC problems — moderate-horizon quadratic
+programmes with linear constraints — the following two solvers are
+recommended.</p>
 <div class="center">
 <table>
 <thead>
@@ -100,14 +206,19 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong><code>quadprog</code></strong></td>
-<td style="text-align: left;">Ships with MATLAB Optimisation Toolbox</td>
-<td style="text-align: left;">Reliable, no warm-start across calls; sufficient for <span class="math inline">\(N \leq 30\)</span></td>
+<td
+style="text-align: left;"><strong><code>quadprog</code></strong></td>
+<td style="text-align: left;">Ships with MATLAB Optimisation
+Toolbox</td>
+<td style="text-align: left;">Reliable, no warm-start across calls;
+sufficient for <span class="math inline">\(N \leq 30\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>OSQP</strong></td>
-<td style="text-align: left;">Free, open-source; install via <code>osqp-matlab</code></td>
-<td style="text-align: left;">Supports warm-starting; recommended for long horizons or fast sampling rates</td>
+<td style="text-align: left;">Free, open-source; install via
+<code>osqp-matlab</code></td>
+<td style="text-align: left;">Supports warm-starting; recommended for
+long horizons or fast sampling rates</td>
 </tr>
 </tbody>
 </table>
@@ -120,16 +231,41 @@
 <div class="center">
 <p><code>sdpsettings(’solver’,’osqp’,...)</code>.</p>
 </div>
-<h3 id="subsec:workflow_summary">Summary of the Implementation Workflow</h3>
-<p>Figure <a href="#fig:workflow" data-reference-type="ref" data-reference="fig:workflow">1.2</a> summarises the complete development workflow. The left column shows the <em>offline</em> design steps that are completed once before the Simulink model is built. The right column shows the <em>runtime</em> sequence that executes automatically during simulation.</p>
+<h3 id="subsec:workflow_summary">Summary of the Implementation
+Workflow</h3>
+<p>Figure <a href="#fig:workflow" data-reference-type="ref"
+data-reference="fig:workflow">1.2</a> summarises the complete
+development workflow. The left column shows the <em>offline</em> design
+steps that are completed once before the Simulink model is built. The
+right column shows the <em>runtime</em> sequence that executes
+automatically during simulation.</p>
 <figure id="fig:workflow" data-latex-placement="htbp">
-<img src="figures/tikz_ch09_2.png" style="width:95.0%" />
-<figcaption>Complete Simulink MPC development and execution workflow. The offline design phase (left) produces all <code>.m</code> helper files and the Simulink model. On each new simulation run the persistent variables are cleared manually, after which the runtime sequence (right) executes automatically, compiling YALMIP objects once on the first step and solving the QP at every subsequent step.</figcaption>
+
+<figcaption>Complete Simulink MPC development and execution workflow.
+The offline design phase (left) produces all <code>.m</code> helper
+files and the Simulink model. On each new simulation run the persistent
+variables are cleared manually, after which the runtime sequence (right)
+executes automatically, compiling YALMIP objects once on the first step
+and solving the QP at every subsequent step.</figcaption>
 </figure>
-<h2 id="sec:simulink_building">Case Study: Single-Zone Building Heating</h2>
-<p>We revisit the single-zone office heating problem introduced in the previous chapter. The general framework of Section <a href="#sec:simulink_general" data-reference-type="ref" data-reference="sec:simulink_general">1.1</a> is now applied step by step to the three-state physically derived RC model, combining an augmented Kalman filter — which jointly estimates the three thermal states and an unmeasured occupancy disturbance — with a two-layer economic MPC comprising an economic steady-state target calculator and a deviation-form MPC regulator with electricity-price preview. This example exercises every aspect of the general framework: persistent optimiser objects, a multi-output profile generator, an extrinsic plant block, and a feedback loop broken by a Unit Delay.</p>
+<h2 id="sec:simulink_building">Case Study: Single-Zone Building
+Heating</h2>
+<p>We revisit the single-zone office heating problem introduced in the
+previous chapter. The general framework of Section <a
+href="#sec:simulink_general" data-reference-type="ref"
+data-reference="sec:simulink_general">1.1</a> is now applied step by
+step to the three-state physically derived RC model, combining an
+augmented Kalman filter — which jointly estimates the three thermal
+states and an unmeasured occupancy disturbance — with a two-layer
+economic MPC comprising an economic steady-state target calculator and a
+deviation-form MPC regulator with electricity-price preview. This
+example exercises every aspect of the general framework: persistent
+optimiser objects, a multi-output profile generator, an extrinsic plant
+block, and a feedback loop broken by a Unit Delay.</p>
 <h3 id="subsec:system">System Description</h3>
-<p>The discrete-time model of the single-zone building (sampling period <span class="math inline">\(T_s = 1800\,\mathrm{s}\)</span>, i.e. 30 min) is</p>
+<p>The discrete-time model of the single-zone building (sampling period
+<span class="math inline">\(T_s = 1800\,\mathrm{s}\)</span>,
+i.e. 30 min) is</p>
 <p><span class="math display">\[\begin{equation*}
     x_{k+1} = A x_k + B u_k + E\,T_{\mathrm{amb},k}
     + B_{\mathrm{sol}}\,\varphi_{\mathrm{sol},k}
@@ -137,30 +273,59 @@
     \qquad
     y_k = C x_k + v_k,
 \end{equation*}\]</span></p>
-<p>where <span class="math inline">\(x_k = [T_{\mathrm{air},k},\; T_{w,\mathrm{in},k},\; T_{w,\mathrm{out},k}]^\top
-\in \mathbb{R}^3\)</span> contains indoor air temperature and the two wall-layer temperatures, <span class="math inline">\(u_k \in [0,\,2000]\,\mathrm{W}\)</span> is heater power, <span class="math inline">\(T_{\mathrm{amb},k}\)</span> and <span class="math inline">\(\varphi_{\mathrm{sol},k}\)</span> are the <em>measured</em> outdoor temperature and solar irradiance (known feedforwards), and <span class="math inline">\(d_k\)</span> (<span class="math inline">\({}^\circ\)</span>C/step) is the <em>unmeasured</em> occupancy-driven thermal disturbance. The output</p>
-<p><span class="math display">\[y_k = 0.56\,T_{\mathrm{air},k} + 0.44\,T_{w,\mathrm{in},k}\]</span></p>
-<p>is the operative temperature (ISO 7726), measured with noise standard deviation <span class="math inline">\(\sigma_v = 0.1\,{}^\circ\)</span>C.</p>
-<p>The pre-computed ZOH-discretised matrices are <span class="math display">\[\begin{multline*}
+<p>where <span class="math inline">\(x_k = [T_{\mathrm{air},k},\;
+T_{w,\mathrm{in},k},\; T_{w,\mathrm{out},k}]^\top
+\in \mathbb{R}^3\)</span> contains indoor air temperature and the two
+wall-layer temperatures, <span class="math inline">\(u_k \in
+[0,\,2000]\,\mathrm{W}\)</span> is heater power, <span
+class="math inline">\(T_{\mathrm{amb},k}\)</span> and <span
+class="math inline">\(\varphi_{\mathrm{sol},k}\)</span> are the
+<em>measured</em> outdoor temperature and solar irradiance (known
+feedforwards), and <span class="math inline">\(d_k\)</span> (<span
+class="math inline">\({}^\circ\)</span>C/step) is the
+<em>unmeasured</em> occupancy-driven thermal disturbance. The output</p>
+<p><span class="math display">\[y_k = 0.56\,T_{\mathrm{air},k} +
+0.44\,T_{w,\mathrm{in},k}\]</span></p>
+<p>is the operative temperature (ISO 7726), measured with noise standard
+deviation <span class="math inline">\(\sigma_v =
+0.1\,{}^\circ\)</span>C.</p>
+<p>The pre-computed ZOH-discretised matrices are <span
+class="math display">\[\begin{multline*}
     A = \begin{bmatrix}
         0.8753 &amp; 0.1102 &amp; 0.0004 \\
         0.0275 &amp; 0.9649 &amp; 0.0073 \\
         0.0001 &amp; 0.0049 &amp; 0.9851
     \end{bmatrix}, \quad
-    B = \begin{bmatrix}7.91\times10^{-4}\\1.00\times10^{-4}\\0\end{bmatrix},\quad
+    B =
+\begin{bmatrix}7.91\times10^{-4}\\1.00\times10^{-4}\\0\end{bmatrix},\quad
     E  = \begin{bmatrix}0.01404\\0.00025\\0.00993\end{bmatrix},\\[4pt]
-    B_{\mathrm{sol}} = \begin{bmatrix}9.04\times10^{-6}\\1.43\times10^{-6}\\3.47\times10^{-4}\end{bmatrix}, \quad
+    B_{\mathrm{sol}} =
+\begin{bmatrix}9.04\times10^{-6}\\1.43\times10^{-6}\\3.47\times10^{-4}\end{bmatrix},
+\quad
     B_w = \begin{bmatrix}1.7647\\0.0267\\0\end{bmatrix},\quad
     C  = \begin{bmatrix}0.56 &amp; 0.44 &amp; 0\end{bmatrix}.
 \end{multline*}\]</span></p>
-<p>The control objective is to minimise electricity cost subject to comfort constraints: <span class="math display">\[y_{\min,k} \;\leq\; y_k \;\leq\; y_{\max,k},
+<p>The control objective is to minimise electricity cost subject to
+comfort constraints: <span class="math display">\[y_{\min,k} \;\leq\;
+y_k \;\leq\; y_{\max,k},
 \qquad
-0 \;\leq\; u_k \;\leq\; 2000\,\mathrm{W},\]</span> where the comfort bounds follow a daily occupancy schedule (<span class="math inline">\([20,\,23]\,{}^\circ\)</span>C during occupied hours 07:00–22:00, <span class="math inline">\([15,\,26]\,{}^\circ\)</span>C overnight).</p>
+0 \;\leq\; u_k \;\leq\; 2000\,\mathrm{W},\]</span> where the comfort
+bounds follow a daily occupancy schedule (<span
+class="math inline">\([20,\,23]\,{}^\circ\)</span>C during occupied
+hours 07:00–22:00, <span
+class="math inline">\([15,\,26]\,{}^\circ\)</span>C overnight).</p>
 <h3 id="subsec:filestructure">File Structure</h3>
-<p>Following the general architecture of Section <a href="#subsec:architecture" data-reference-type="ref" data-reference="subsec:architecture">1.1.5</a>, the implementation consists of four helper <code>.m</code> files and one Simulink model file. Table <a href="#tab:files" data-reference-type="ref" data-reference="tab:files">1.1</a> maps each file to the corresponding generic role.</p>
+<p>Following the general architecture of Section <a
+href="#subsec:architecture" data-reference-type="ref"
+data-reference="subsec:architecture">1.1.5</a>, the implementation
+consists of four helper <code>.m</code> files and one Simulink model
+file. Table <a href="#tab:files" data-reference-type="ref"
+data-reference="tab:files">1.1</a> maps each file to the corresponding
+generic role.</p>
 <div id="tab:files">
 <table>
-<caption>Helper files for the single-zone building case study and their correspondence to the general architecture.</caption>
+<caption>Helper files for the single-zone building case study and their
+correspondence to the general architecture.</caption>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>File</strong></th>
@@ -172,36 +337,58 @@
 <tr>
 <td style="text-align: left;">build_mpc_optimizers.m</td>
 <td style="text-align: left;"><code>build_optimizers.m</code></td>
-<td style="text-align: left;">Kalman gain (DARE), economic target <code>optimizer</code>, MPC regulator <code>optimizer</code> with price preview; called once</td>
+<td style="text-align: left;">Kalman gain (DARE), economic target
+<code>optimizer</code>, MPC regulator <code>optimizer</code> with price
+preview; called once</td>
 </tr>
 <tr>
 <td style="text-align: left;">get_profiles.m</td>
 <td style="text-align: left;"><code>disturbance_profiles.m</code></td>
-<td style="text-align: left;">Ambient temperature, solar irradiance, electricity price, current comfort bounds, and <span class="math inline">\(N\)</span>-step future comfort bound vectors</td>
+<td style="text-align: left;">Ambient temperature, solar irradiance,
+electricity price, current comfort bounds, and <span
+class="math inline">\(N\)</span>-step future comfort bound vectors</td>
 </tr>
 <tr>
 <td style="text-align: left;">plant_step.m</td>
 <td style="text-align: left;"><code>plant_model.m</code></td>
-<td style="text-align: left;">One-step advance of the discrete RC building model; persistent true state <code>x_true</code> and true occupancy disturbance</td>
+<td style="text-align: left;">One-step advance of the discrete RC
+building model; persistent true state <code>x_true</code> and true
+occupancy disturbance</td>
 </tr>
 <tr>
 <td style="text-align: left;">mpc_controller_step.m</td>
 <td style="text-align: left;"><code>mpc_step.m</code></td>
-<td style="text-align: left;">Kalman observer, economic target calculation, economic MPC QP solve with price preview; all state persistent</td>
+<td style="text-align: left;">Kalman observer, economic target
+calculation, economic MPC QP solve with price preview; all state
+persistent</td>
 </tr>
 <tr>
 <td style="text-align: left;">EconomicMPC.slx</td>
 <td style="text-align: left;">Simulink model</td>
-<td style="text-align: left;">Wires all wrapper blocks and standard blocks together</td>
+<td style="text-align: left;">Wires all wrapper blocks and standard
+blocks together</td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>All <code>.m</code> files and <code>EconomicMPC.slx</code> must reside in the same folder, or all <code>.m</code> files must be accessible via <code>addpath</code>.</p>
+<p>All <code>.m</code> files and <code>EconomicMPC.slx</code> must
+reside in the same folder, or all <code>.m</code> files must be
+accessible via <code>addpath</code>.</p>
 <h3 id="subsec:build">Step 1 — <code>build_mpc_optimizers.m</code></h3>
-<p>This function fulfils the role of the generic <code>build_optimizers.m</code> described in Section <a href="#subsec:build_general" data-reference-type="ref" data-reference="subsec:build_general">1.1.4</a>. It computes the steady-state Kalman gain via <code>dare</code> and pre-compiles two YALMIP <code>optimizer</code> objects: one for the economic steady-state target and one for the deviation-form MPC regulator with <span class="math inline">\(N\)</span>-step price preview. The compilation step runs exactly once, since the resulting objects are stored as persistent variables in <code>mpc_controller_step.m</code>.</p>
-<pre id="lst:build" class="matlab" data-language="Matlab" data-caption="\texttt{build\_mpc\_optimizers.m} --- one-time initialisation
-        function for the single-zone building controller." data-label="lst:build"><code>function [target_calc, mpc_reg, L] = build_mpc_optimizers()
+<p>This function fulfils the role of the generic
+<code>build_optimizers.m</code> described in Section <a
+href="#subsec:build_general" data-reference-type="ref"
+data-reference="subsec:build_general">1.1.4</a>. It computes the
+steady-state Kalman gain via <code>dare</code> and pre-compiles two
+YALMIP <code>optimizer</code> objects: one for the economic steady-state
+target and one for the deviation-form MPC regulator with <span
+class="math inline">\(N\)</span>-step price preview. The compilation
+step runs exactly once, since the resulting objects are stored as
+persistent variables in <code>mpc_controller_step.m</code>.</p>
+<pre id="lst:build" class="matlab" data-language="Matlab"
+data-caption="\texttt{build\_mpc\_optimizers.m} --- one-time initialisation
+        function for the single-zone building controller."
+data-label="lst:build"><code>function [target_calc, mpc_reg, L] = build_mpc_optimizers()
         % Builds YALMIP optimizer objects and the Kalman gain.
         % Called exactly once via the persistent guard in mpc_controller_step.m.
         fprintf(&#39;Building YALMIP optimizers -- please wait...\n&#39;);
@@ -281,13 +468,32 @@
         fprintf(&#39;Optimizers ready.\n&#39;);
     end</code></pre>
 <div class="notebox">
-<p><span>Horizon and Tuning Parameters</span> The prediction horizon <span class="math inline">\(N = 24\)</span> steps corresponds to 12 hours at <span class="math inline">\(T_s = 30\,\mathrm{min}\)</span>, allowing the controller to anticipate the morning and evening price transitions. The state penalty <span class="math inline">\(Q = \mathrm{diag}(5,2,1)\)</span> weights the air temperature most heavily. The economic weight <span class="math inline">\(\beta = 6\)</span> and the comfort slack penalty <span class="math inline">\(\rho = 10^7\)</span> satisfy the hierarchy <span class="math inline">\(\rho \gg
-    \beta\,p_{\max}\,u_{\max}\,(T_s/3600) = 1680\)</span>, guaranteeing that comfort violations are never preferred over heating. The terminal cost <span class="math inline">\(P_\infty\)</span> is the DARE solution, ensuring asymptotic stability of the unconstrained closed-loop.</p>
+<p><span>Horizon and Tuning Parameters</span> The prediction horizon
+<span class="math inline">\(N = 24\)</span> steps corresponds to
+12 hours at <span class="math inline">\(T_s = 30\,\mathrm{min}\)</span>,
+allowing the controller to anticipate the morning and evening price
+transitions. The state penalty <span class="math inline">\(Q =
+\mathrm{diag}(5,2,1)\)</span> weights the air temperature most heavily.
+The economic weight <span class="math inline">\(\beta = 6\)</span> and
+the comfort slack penalty <span class="math inline">\(\rho =
+10^7\)</span> satisfy the hierarchy <span class="math inline">\(\rho \gg
+    \beta\,p_{\max}\,u_{\max}\,(T_s/3600) = 1680\)</span>, guaranteeing
+that comfort violations are never preferred over heating. The terminal
+cost <span class="math inline">\(P_\infty\)</span> is the DARE solution,
+ensuring asymptotic stability of the unconstrained closed-loop.</p>
 </div>
 <h3 id="subsec:profiles">Step 2 — <code>get_profiles.m</code></h3>
-<p>This function fulfils the role of the generic <code>disturbance_profiles.m</code>. It receives the current simulation time in seconds from the Simulink <em>Clock</em> block and returns all time-varying exogenous signals: ambient temperature, solar irradiance, electricity price, current comfort bounds, and the <span class="math inline">\(N\)</span>-step future comfort bound and price vectors required by the MPC optimiser.</p>
-<pre id="lst:profiles" class="matlab" data-language="Matlab" data-caption="\texttt{get\_profiles.m} --- provides current and forecast
-        exogenous signals for the MPC horizon (48-hour winter scenario)." data-label="lst:profiles"><code>function [T_amb, Solar, Price, Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut] = ...
+<p>This function fulfils the role of the generic
+<code>disturbance_profiles.m</code>. It receives the current simulation
+time in seconds from the Simulink <em>Clock</em> block and returns all
+time-varying exogenous signals: ambient temperature, solar irradiance,
+electricity price, current comfort bounds, and the <span
+class="math inline">\(N\)</span>-step future comfort bound and price
+vectors required by the MPC optimiser.</p>
+<pre id="lst:profiles" class="matlab" data-language="Matlab"
+data-caption="\texttt{get\_profiles.m} --- provides current and forecast
+        exogenous signals for the MPC horizon (48-hour winter scenario)."
+data-label="lst:profiles"><code>function [T_amb, Solar, Price, Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut] = ...
     get_profiles(t)
         % Input:  t in seconds (Simulink Clock output).
         % Outputs: scalars for current step + 1x24 vectors for MPC horizon.
@@ -322,9 +528,18 @@
         end
     end</code></pre>
 <h3 id="subsec:plant">Step 3 — <code>plant_step.m</code></h3>
-<p>This function fulfils the generic <code>plant_model.m</code> role. The true state <span class="math inline">\(x_\mathrm{true}\)</span> is stored as a persistent variable. On each call the function returns the current measured operative temperature <span class="math inline">\(y_\mathrm{true} = C x_\mathrm{true}\)</span> and then advances the state by one step, incorporating the heater input, solar irradiance, ambient temperature, and the true occupancy disturbance (unknown to the controller).</p>
-<pre id="lst:plant" class="matlab" data-language="Matlab" data-caption="\texttt{plant\_step.m} --- discrete 3-state RC building model
-        with persistent true state and true occupancy disturbance." data-label="lst:plant"><code>function y_true = plant_step(u, T_amb, Solar, t)
+<p>This function fulfils the generic <code>plant_model.m</code> role.
+The true state <span class="math inline">\(x_\mathrm{true}\)</span> is
+stored as a persistent variable. On each call the function returns the
+current measured operative temperature <span
+class="math inline">\(y_\mathrm{true} = C x_\mathrm{true}\)</span> and
+then advances the state by one step, incorporating the heater input,
+solar irradiance, ambient temperature, and the true occupancy
+disturbance (unknown to the controller).</p>
+<pre id="lst:plant" class="matlab" data-language="Matlab"
+data-caption="\texttt{plant\_step.m} --- discrete 3-state RC building model
+        with persistent true state and true occupancy disturbance."
+data-label="lst:plant"><code>function y_true = plant_step(u, T_amb, Solar, t)
         % Run  clear plant_step  before each new simulation.
         % t: current time in seconds (used to compute true occupancy).
         persistent x_true
@@ -348,15 +563,32 @@
         y_true = C * x_true;
         x_true = A*x_true + B*u + E*T_amb + Bsol*Solar + Bw*d_occ;
     end</code></pre>
-<h3 id="subsec:controller">Step 4 — <code>mpc_controller_step.m</code></h3>
-<p>This is the main control file, fulfilling the role of the generic <code>mpc_step.m</code>. It implements the persistent-variable pattern described in Section <a href="#subsec:persistent" data-reference-type="ref" data-reference="subsec:persistent">1.1.3</a>: on the first call it invokes <code>build_mpc_optimizers</code> and initialises the augmented Kalman state; on every subsequent call it executes the three-stage pipeline shown in Figure <a href="#fig:control_pipeline" data-reference-type="ref" data-reference="fig:control_pipeline">1.3</a>.</p>
+<h3 id="subsec:controller">Step 4 —
+<code>mpc_controller_step.m</code></h3>
+<p>This is the main control file, fulfilling the role of the generic
+<code>mpc_step.m</code>. It implements the persistent-variable pattern
+described in Section <a href="#subsec:persistent"
+data-reference-type="ref" data-reference="subsec:persistent">1.1.3</a>:
+on the first call it invokes <code>build_mpc_optimizers</code> and
+initialises the augmented Kalman state; on every subsequent call it
+executes the three-stage pipeline shown in Figure <a
+href="#fig:control_pipeline" data-reference-type="ref"
+data-reference="fig:control_pipeline">1.3</a>.</p>
 <figure id="fig:control_pipeline" data-latex-placement="htbp">
-<img src="figures/tikz_ch09_3.png" style="width:95.0%" />
-<figcaption>Three-stage control pipeline executed at every sampling instant inside <code>mpc_controller_step.m</code>. The dashed arrow carries the <span class="math inline">\(N\)</span>-step future comfort bounds <em>and</em> electricity-price sequence directly from the input port to the MPC Regulator, bypassing the observer and target stages. All persistent quantities are retained between calls via MATLAB’s <code>persistent</code> keyword.</figcaption>
+
+<figcaption>Three-stage control pipeline executed at every sampling
+instant inside <code>mpc_controller_step.m</code>. The dashed arrow
+carries the <span class="math inline">\(N\)</span>-step future comfort
+bounds <em>and</em> electricity-price sequence directly from the input
+port to the MPC Regulator, bypassing the observer and target stages. All
+persistent quantities are retained between calls via MATLAB’s
+<code>persistent</code> keyword.</figcaption>
 </figure>
-<pre id="lst:controller" class="matlab" data-language="Matlab" data-caption="\texttt{mpc\_controller\_step.m} --- complete economic
+<pre id="lst:controller" class="matlab" data-language="Matlab"
+data-caption="\texttt{mpc\_controller\_step.m} --- complete economic
         offset-free MPC pipeline following the general pattern of
-        Section~\ref{subsec:persistent}." data-label="lst:controller"><code>function u = mpc_controller_step(y_meas, T_amb, Solar, Price, ...
+        Section~\ref{subsec:persistent}."
+data-label="lst:controller"><code>function u = mpc_controller_step(y_meas, T_amb, Solar, Price, ...
     Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut)
         % Full Economic MPC step: observer -&gt; target -&gt; MPC.
         % Run  clear mpc_controller_step  before each new simulation.
@@ -412,12 +644,22 @@
         u_prev = u;
     end</code></pre>
 <h3 id="subsec:slx">Step 5 — Building the Simulink Model</h3>
-<p>With all four helper files in place, the Simulink model requires only standard block types and three MATLAB Function wrapper blocks. The complete signal flow is shown in Figure <a href="#fig:simulink_flow" data-reference-type="ref" data-reference="fig:simulink_flow">1.4</a>.</p>
+<p>With all four helper files in place, the Simulink model requires only
+standard block types and three MATLAB Function wrapper blocks. The
+complete signal flow is shown in Figure <a href="#fig:simulink_flow"
+data-reference-type="ref"
+data-reference="fig:simulink_flow">1.4</a>.</p>
 <h4 id="solver-configuration">Solver Configuration</h4>
-<p>Open the <em>Configuration Parameters</em> dialogue (<code>Ctrl+E</code>) and apply the settings in Table <a href="#tab:solver" data-reference-type="ref" data-reference="tab:solver">1.2</a>. Selecting the discrete (no continuous states) solver is essential because all dynamics are managed inside the helper files via persistent variables.</p>
+<p>Open the <em>Configuration Parameters</em> dialogue
+(<code>Ctrl+E</code>) and apply the settings in Table <a
+href="#tab:solver" data-reference-type="ref"
+data-reference="tab:solver">1.2</a>. Selecting the discrete (no
+continuous states) solver is essential because all dynamics are managed
+inside the helper files via persistent variables.</p>
 <div id="tab:solver">
 <table>
-<caption>Simulink solver configuration for the single-zone building temperature control model.</caption>
+<caption>Simulink solver configuration for the single-zone building
+temperature control model.</caption>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Parameter</strong></th>
@@ -429,7 +671,8 @@
 <tr>
 <td style="text-align: left;">Stop time</td>
 <td style="text-align: left;"><code>172800</code></td>
-<td style="text-align: left;">48 h <span class="math inline">\(\times\)</span> 3600 s/h</td>
+<td style="text-align: left;">48 h <span
+class="math inline">\(\times\)</span> 3600 s/h</td>
 </tr>
 <tr>
 <td style="text-align: left;">Solver type</td>
@@ -438,22 +681,30 @@
 </tr>
 <tr>
 <td style="text-align: left;">Solver</td>
-<td style="text-align: left;"><code>discrete (no continuous states)</code></td>
+<td
+style="text-align: left;"><code>discrete (no continuous states)</code></td>
 <td style="text-align: left;">States in persistent vars</td>
 </tr>
 <tr>
 <td style="text-align: left;">Fixed-step size</td>
 <td style="text-align: left;"><code>1800</code></td>
-<td style="text-align: left;"><span class="math inline">\(T_s = 30\,\mathrm{min}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(T_s =
+30\,\mathrm{min}\)</span></td>
 </tr>
 </tbody>
 </table>
 </div>
-<h4 id="block-placement-and-wrapper-code">Block Placement and Wrapper Code</h4>
-<p>Table <a href="#tab:blocks" data-reference-type="ref" data-reference="tab:blocks">1.3</a> lists every block in the model. Each of the three MATLAB Function blocks must contain the corresponding wrapper from Listing <a href="#lst:wrapper" data-reference-type="ref" data-reference="lst:wrapper">[lst:wrapper]</a>.</p>
+<h4 id="block-placement-and-wrapper-code">Block Placement and Wrapper
+Code</h4>
+<p>Table <a href="#tab:blocks" data-reference-type="ref"
+data-reference="tab:blocks">1.3</a> lists every block in the model. Each
+of the three MATLAB Function blocks must contain the corresponding
+wrapper from Listing <a href="#lst:wrapper" data-reference-type="ref"
+data-reference="lst:wrapper">[lst:wrapper]</a>.</p>
 <div id="tab:blocks">
 <table>
-<caption>Simulink blocks required for the single-zone building temperature control model.</caption>
+<caption>Simulink blocks required for the single-zone building
+temperature control model.</caption>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Label</strong></th>
@@ -464,56 +715,75 @@
 <tbody>
 <tr>
 <td style="text-align: left;">Clock</td>
-<td style="text-align: left;">Sources <span class="math inline">\(&gt;\)</span> Clock</td>
+<td style="text-align: left;">Sources <span
+class="math inline">\(&gt;\)</span> Clock</td>
 <td style="text-align: left;">Decimation: 1</td>
 </tr>
 <tr>
 <td style="text-align: left;">ProfileGen</td>
-<td style="text-align: left;">User-Defined Functions <span class="math inline">\(&gt;\)</span> MATLAB Function</td>
-<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper" data-reference-type="ref" data-reference="lst:wrapper">[lst:wrapper]</a></td>
+<td style="text-align: left;">User-Defined Functions <span
+class="math inline">\(&gt;\)</span> MATLAB Function</td>
+<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper"
+data-reference-type="ref"
+data-reference="lst:wrapper">[lst:wrapper]</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">Plant</td>
-<td style="text-align: left;">User-Defined Functions <span class="math inline">\(&gt;\)</span> MATLAB Function</td>
-<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper" data-reference-type="ref" data-reference="lst:wrapper">[lst:wrapper]</a></td>
+<td style="text-align: left;">User-Defined Functions <span
+class="math inline">\(&gt;\)</span> MATLAB Function</td>
+<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper"
+data-reference-type="ref"
+data-reference="lst:wrapper">[lst:wrapper]</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">AddNoise</td>
-<td style="text-align: left;">Math Operations <span class="math inline">\(&gt;\)</span> Sum</td>
+<td style="text-align: left;">Math Operations <span
+class="math inline">\(&gt;\)</span> Sum</td>
 <td style="text-align: left;">Signs: <code>++</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">MeasNoise</td>
-<td style="text-align: left;">Sources <span class="math inline">\(&gt;\)</span> Random Number</td>
-<td style="text-align: left;">Mean: 0, Var: 0.01, <span class="math inline">\(T_s\)</span>: 1800</td>
+<td style="text-align: left;">Sources <span
+class="math inline">\(&gt;\)</span> Random Number</td>
+<td style="text-align: left;">Mean: 0, Var: 0.01, <span
+class="math inline">\(T_s\)</span>: 1800</td>
 </tr>
 <tr>
 <td style="text-align: left;">UnitDelay</td>
-<td style="text-align: left;">Discrete <span class="math inline">\(&gt;\)</span> Unit Delay</td>
-<td style="text-align: left;"><span class="math inline">\(T_s\)</span>: 1800, IC: 0</td>
+<td style="text-align: left;">Discrete <span
+class="math inline">\(&gt;\)</span> Unit Delay</td>
+<td style="text-align: left;"><span class="math inline">\(T_s\)</span>:
+1800, IC: 0</td>
 </tr>
 <tr>
 <td style="text-align: left;">Controller</td>
-<td style="text-align: left;">User-Defined Functions <span class="math inline">\(&gt;\)</span> MATLAB Function</td>
-<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper" data-reference-type="ref" data-reference="lst:wrapper">[lst:wrapper]</a></td>
+<td style="text-align: left;">User-Defined Functions <span
+class="math inline">\(&gt;\)</span> MATLAB Function</td>
+<td style="text-align: left;">Wrapper: Listing <a href="#lst:wrapper"
+data-reference-type="ref"
+data-reference="lst:wrapper">[lst:wrapper]</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">Saturation</td>
-<td style="text-align: left;">Discontinuities <span class="math inline">\(&gt;\)</span> Saturation</td>
+<td style="text-align: left;">Discontinuities <span
+class="math inline">\(&gt;\)</span> Saturation</td>
 <td style="text-align: left;">Lower: 0, Upper: 2000</td>
 </tr>
 <tr>
 <td style="text-align: left;">ToWorkspace</td>
-<td style="text-align: left;">Sinks <span class="math inline">\(&gt;\)</span> To Workspace</td>
+<td style="text-align: left;">Sinks <span
+class="math inline">\(&gt;\)</span> To Workspace</td>
 <td style="text-align: left;">One block per logged signal</td>
 </tr>
 </tbody>
 </table>
 </div>
-<pre id="lst:wrapper" class="matlab" data-language="Matlab" data-caption="Wrapper code for the three MATLAB Function blocks.  Each
+<pre id="lst:wrapper" class="matlab" data-language="Matlab"
+data-caption="Wrapper code for the three MATLAB Function blocks.  Each
         wrapper pre-allocates its outputs, declares the helper as
         extrinsic, and forwards its inputs --- following the pattern
-        of Section~\ref{subsec:extrinsic}." data-label="lst:wrapper"><code>    function [T_amb, Solar, Price, Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut] = ...
+        of Section~\ref{subsec:extrinsic}."
+data-label="lst:wrapper"><code>    function [T_amb, Solar, Price, Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut] = ...
     ProfileGen(t)
         coder.extrinsic(&#39;get_profiles&#39;);
         T_amb = 0;  Solar = 0;  Price = 0;  Tmin = 0;  Tmax = 0;
@@ -539,20 +809,40 @@
         Tmin, Tmax, Tmin_fut, Tmax_fut, Price_fut);
     end</code></pre>
 <figure id="fig:simulink_flow" data-latex-placement="htbp">
-<img src="figures/tikz_ch09_4.png" style="width:95.0%" />
-<figcaption>Complete conceptual Simulink signal flow for the single-zone building economic MPC. The Clock output <span class="math inline">\(t\)</span> is passed both to the Profile Generator (for exogenous profiles) and to the Plant block (to compute the true occupancy schedule). The Unit Delay on the feedback path breaks the algebraic loop by supplying <span class="math inline">\(u_{k-1}\)</span> to the plant, consistent with the observer prediction step.</figcaption>
+
+<figcaption>Complete conceptual Simulink signal flow for the single-zone
+building economic MPC. The Clock output <span
+class="math inline">\(t\)</span> is passed both to the Profile Generator
+(for exogenous profiles) and to the Plant block (to compute the true
+occupancy schedule). The Unit Delay on the feedback path breaks the
+algebraic loop by supplying <span class="math inline">\(u_{k-1}\)</span>
+to the plant, consistent with the observer prediction step.</figcaption>
 </figure>
-<h3 id="subsec:running">Step 6 — Running the Simulation and Post-Processing</h3>
+<h3 id="subsec:running">Step 6 — Running the Simulation and
+Post-Processing</h3>
 <h4 id="pre-run-procedure">Pre-Run Procedure</h4>
-<p>Before every simulation run, reset all persistent variables by executing the following in the MATLAB Command Window:</p>
+<p>Before every simulation run, reset all persistent variables by
+executing the following in the MATLAB Command Window:</p>
 <pre class="matlab" data-language="Matlab"><code>clear plant_step mpc_controller_step</code></pre>
-<p>Then press <code>Ctrl+T</code> in Simulink. On the first time step the Command Window displays:</p>
+<p>Then press <code>Ctrl+T</code> in Simulink. On the first time step
+the Command Window displays:</p>
 <pre class="matlab" data-language="Matlab"><code>Building YALMIP optimizers -- please wait...
     Optimizers ready.</code></pre>
-<p>The first step takes approximately 10–30 s; all subsequent steps complete in under 50 ms.</p>
+<p>The first step takes approximately 10–30 s; all subsequent steps
+complete in under 50 ms.</p>
 <h4 id="logging-and-plotting">Logging and Plotting</h4>
-<p>Connect <em>To Workspace</em> blocks to <span class="math inline">\(y_\mathrm{true}\)</span>, <span class="math inline">\(y_\mathrm{meas}\)</span>, <span class="math inline">\(u\)</span>, Price, <span class="math inline">\(\underline{y}\)</span>, and <span class="math inline">\(\bar{y}\)</span>, saving each as a MATLAB array. After the simulation use the script below to produce a four-panel result plot matching the results figure in the single-zone building example (Chapter 8).</p>
-<pre class="matlab" data-language="Matlab" data-caption="Post-simulation plotting
+<p>Connect <em>To Workspace</em> blocks to <span
+class="math inline">\(y_\mathrm{true}\)</span>, <span
+class="math inline">\(y_\mathrm{meas}\)</span>, <span
+class="math inline">\(u\)</span>, Price, <span
+class="math inline">\(\underline{y}\)</span>, and <span
+class="math inline">\(\bar{y}\)</span>, saving each as a MATLAB array.
+After the simulation use the script below to produce a four-panel result
+plot matching Figure <a href="#fig:singlezone2"
+data-reference-type="ref"
+data-reference="fig:singlezone2">[fig:singlezone2]</a>.</p>
+<pre class="matlab" data-language="Matlab"
+data-caption="Post-simulation plotting
         script for the single-zone building case study."><code>Ts   = 1800;
     tout = (0:length(log_y)-1) * Ts / 3600;   % hours
     
@@ -573,7 +863,7 @@
     yyaxis left;  stairs(tout, log_u, &#39;LineWidth&#39;, 1.5);
     ylabel(&#39;Heater power (W)&#39;);
     yyaxis right; stairs(tout, log_price, &#39;--&#39;,&#39;LineWidth&#39;, 1.2);
-    ylabel(&#39;Price (£/kWh)&#39;);
+    ylabel(&#39;Price (\pounds/kWh)&#39;);
     grid on; title(&#39;Heater power and electricity price&#39;);
     
     nexttile;
@@ -587,17 +877,18 @@
     nexttile;
     stairs(tout, cumsum(log_cost), &#39;LineWidth&#39;, 1.5);
     grid on; xlabel(&#39;Time (hours)&#39;);
-    ylabel(&#39;Cumulative cost (£)&#39;);
-    title(sprintf(&#39;Cumulative heating cost  (total: £ %.3f)&#39;, sum(log_cost)));
+    ylabel(&#39;Cumulative cost (\pounds)&#39;);
+    title(sprintf(&#39;Cumulative heating cost  (total: \pounds %.3f)&#39;, sum(log_cost)));
     
     set(findall(gcf,&#39;-property&#39;,&#39;FontSize&#39;),&#39;FontSize&#39;,13);</code></pre>
 <figure id="fig:simulinkbuilding">
-<img src="figures/Simulink_Building.png" style="width:100.0%" />
+<embed src="Figures/Simulink_Building.pdf" style="width:100.0%" />
 <figcaption>HVAC Simulation using SIMULINK.</figcaption>
 </figure>
 <div id="tab:troubleshoot">
 <table>
-<caption>Common issues and remedies for the Simulink single-zone MPC implementation.</caption>
+<caption>Common issues and remedies for the Simulink single-zone MPC
+implementation.</caption>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Symptom</strong></th>
@@ -606,32 +897,55 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>Function not found: get_profiles</code></td>
-<td style="text-align: left;">Helper files are not on the MATLAB path. Run <code>addpath(pwd)</code> or place all <code>.m</code> files alongside <code>EconomicMPC.slx</code>.</td>
+<td
+style="text-align: left;"><code>Function not found: get_profiles</code></td>
+<td style="text-align: left;">Helper files are not on the MATLAB path.
+Run <code>addpath(pwd)</code> or place all <code>.m</code> files
+alongside <code>EconomicMPC.slx</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>Undefined function ’sdpvar’</code></td>
-<td style="text-align: left;">YALMIP is not installed or not on the path. Run <code>yalmiptest</code> before starting Simulink.</td>
+<td
+style="text-align: left;"><code>Undefined function ’sdpvar’</code></td>
+<td style="text-align: left;">YALMIP is not installed or not on the
+path. Run <code>yalmiptest</code> before starting Simulink.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Temperature starts from wrong value on second run</td>
-<td style="text-align: left;">Persistent variables were not cleared. Run <code>clear plant_step mpc_controller_step</code> before pressing <em>Run</em>.</td>
+<td style="text-align: left;">Temperature starts from wrong value on
+second run</td>
+<td style="text-align: left;">Persistent variables were not cleared. Run
+<code>clear plant_step mpc_controller_step</code> before pressing
+<em>Run</em>.</td>
 </tr>
 <tr>
 <td style="text-align: left;">Algebraic loop warning</td>
-<td style="text-align: left;">Unit Delay block (<span class="math inline">\(T_s=1800\)</span>, IC <span class="math inline">\(=0\)</span>) is missing on the Saturation <span class="math inline">\(\to\)</span> Plant path. See Section <a href="#subsec:algloop_general" data-reference-type="ref" data-reference="subsec:algloop_general">1.1.6</a>.</td>
+<td style="text-align: left;">Unit Delay block (<span
+class="math inline">\(T_s=1800\)</span>, IC <span
+class="math inline">\(=0\)</span>) is missing on the Saturation <span
+class="math inline">\(\to\)</span> Plant path. See Section <a
+href="#subsec:algloop_general" data-reference-type="ref"
+data-reference="subsec:algloop_general">1.1.6</a>.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Port dimension mismatch on <code>Tmin_fut</code> or <code>Price_fut</code></td>
-<td style="text-align: left;">Pre-allocation lines <code>Tmin_fut = zeros(1,24)</code> and <code>Price_fut = zeros(1,24)</code> must appear <em>before</em> the extrinsic call in the ProfileGen wrapper.</td>
+<td style="text-align: left;">Port dimension mismatch on
+<code>Tmin_fut</code> or <code>Price_fut</code></td>
+<td style="text-align: left;">Pre-allocation lines
+<code>Tmin_fut = zeros(1,24)</code> and
+<code>Price_fut = zeros(1,24)</code> must appear <em>before</em> the
+extrinsic call in the ProfileGen wrapper.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Controller uses wrong disturbance level at night</td>
-<td style="text-align: left;">Confirm the augmented model includes the correct <span class="math inline">\(B_w\)</span> column and that <code>d_hat</code> (not <code>d_filt</code>) is passed to the target calculator; the single-zone example does not apply exponential smoothing.</td>
+<td style="text-align: left;">Controller uses wrong disturbance level at
+night</td>
+<td style="text-align: left;">Confirm the augmented model includes the
+correct <span class="math inline">\(B_w\)</span> column and that
+<code>d_hat</code> (not <code>d_filt</code>) is passed to the target
+calculator; the single-zone example does not apply exponential
+smoothing.</td>
 </tr>
 <tr>
 <td style="text-align: left;">First step takes over 60 s</td>
-<td style="text-align: left;">Normal on low-end hardware; YALMIP is building QP matrices symbolically. Do not interrupt the simulation.</td>
+<td style="text-align: left;">Normal on low-end hardware; YALMIP is
+building QP matrices symbolically. Do not interrupt the simulation.</td>
 </tr>
 </tbody>
 </table>
@@ -640,45 +954,162 @@
 <div class="summarybox">
 <p><span>Simulink MPC Without the MPC Toolbox — Key Steps</span></p>
 <ol>
-<li><p><strong>Helper files.</strong> Place all YALMIP and solver logic in ordinary <code>.m</code> files on the MATLAB path (Layer 2).</p></li>
-<li><p><strong>Persistent state.</strong> Store the observer state, last applied input, filtered disturbance, and compiled <code>optimizer</code> objects as <code>persistent</code> variables.</p></li>
-<li><p><strong>One-time compilation.</strong> Call <code>build_mpc_optimizers</code> on the first step only, guarded by <code>if isempty(...)</code>.</p></li>
-<li><p><strong>Wrapper blocks.</strong> Each Simulink MATLAB Function block (Layer 1) declares its helper as <code>coder.extrinsic</code>, pre-allocates outputs, and calls the helper.</p></li>
-<li><p><strong>Break the algebraic loop.</strong> Insert a Unit Delay (<span class="math inline">\(T_s = 1800\)</span>, IC <span class="math inline">\(= 0\)</span>) between Saturation and Plant.</p></li>
-<li><p><strong>Reset before each run.</strong> Execute <code>clear plant_step mpc_controller_step</code> before pressing <em>Run</em>.</p></li>
+<li><p><strong>Helper files.</strong> Place all YALMIP and solver logic
+in ordinary <code>.m</code> files on the MATLAB path (Layer 2).</p></li>
+<li><p><strong>Persistent state.</strong> Store the observer state, last
+applied input, filtered disturbance, and compiled <code>optimizer</code>
+objects as <code>persistent</code> variables.</p></li>
+<li><p><strong>One-time compilation.</strong> Call
+<code>build_mpc_optimizers</code> on the first step only, guarded by
+<code>if isempty(...)</code>.</p></li>
+<li><p><strong>Wrapper blocks.</strong> Each Simulink MATLAB Function
+block (Layer 1) declares its helper as <code>coder.extrinsic</code>,
+pre-allocates outputs, and calls the helper.</p></li>
+<li><p><strong>Break the algebraic loop.</strong> Insert a Unit Delay
+(<span class="math inline">\(T_s = 1800\)</span>, IC <span
+class="math inline">\(= 0\)</span>) between Saturation and
+Plant.</p></li>
+<li><p><strong>Reset before each run.</strong> Execute
+<code>clear plant_step mpc_controller_step</code> before pressing
+<em>Run</em>.</p></li>
 </ol>
 </div>
+<h2 class="unnumbered" id="chapter-summary">Chapter Summary</h2>
+<ul>
+<li><p>Simulink integration allows MPC algorithms written in MATLAB to
+run inside block-diagram simulations alongside continuous-time plant
+models.</p></li>
+<li><p>MATLAB Function blocks embed custom MATLAB code in Simulink and
+interface with the solver through input and output ports.</p></li>
+<li><p>The <code>coder.extrinsic</code> directive marks functions
+(e.g. YALMIP calls) that cannot be compiled, forcing Simulink to
+evaluate them in the MATLAB interpreter at each time step.</p></li>
+<li><p>Persistent variables declared inside a MATLAB Function block
+retain their values across simulation steps, enabling stateful
+operations such as observer updates.</p></li>
+<li><p>The YALMIP <code>optimizer</code> object pre-compiles the QP
+structure once and accepts parameter updates at each call, significantly
+reducing per-step overhead in Simulink.</p></li>
+<li><p>A building energy MPC case study demonstrates zone temperature
+regulation under occupancy-driven comfort constraints and time-varying
+electricity pricing.</p></li>
+<li><p>The recommended simulation workflow includes model setup,
+controller block configuration, closed-loop wiring, and post-simulation
+plotting for verification.</p></li>
+</ul>
 <h2 class="unnumbered" id="sec:simulink_mpc_exercises">Exercises</h2>
 <ol>
-<li><p><strong>Persistent variables in Simulink MATLAB Function blocks.</strong> In the single-zone building example, the function <code>mpc_controller_step</code> declares several <code>persistent</code> variables (e.g. the observer state <span class="math inline">\(\hat x\)</span>, the last applied input <span class="math inline">\(u_{k-1}\)</span>, and the compiled <code>optimizer</code> object).</p>
+<li><p><strong>Persistent variables in Simulink MATLAB Function
+blocks.</strong> In the single-zone building example, the function
+<code>mpc_controller_step</code> declares several
+<code>persistent</code> variables (e.g. the observer state <span
+class="math inline">\(\hat x\)</span>, the last applied input <span
+class="math inline">\(u_{k-1}\)</span>, and the compiled
+<code>optimizer</code> object).</p>
 <ol>
-<li><p>Explain why ordinary local variables would fail to preserve state across successive Simulink time steps.</p></li>
-<li><p>What would happen if the compiled <code>optimizer</code> object were <em>not</em> stored as a persistent variable? Discuss the implications for both correctness and computational cost.</p></li>
-<li><p>Describe the role of the <code>if isempty(...)</code> guard that protects the one-time initialisation of persistent variables. Why is this pattern preferred over, for example, using a separate Simulink <em>InitFcn</em> callback?</p></li>
+<li><p>Explain why ordinary local variables would fail to preserve state
+across successive Simulink time steps.</p></li>
+<li><p>What would happen if the compiled <code>optimizer</code> object
+were <em>not</em> stored as a persistent variable? Discuss the
+implications for both correctness and computational cost.</p></li>
+<li><p>Describe the role of the <code>if isempty(...)</code> guard that
+protects the one-time initialisation of persistent variables. Why is
+this pattern preferred over, for example, using a separate Simulink
+<em>InitFcn</em> callback?</p></li>
 </ol></li>
-<li><p><strong>The role of <code>coder.extrinsic</code>.</strong> Simulink MATLAB Function blocks are processed by MATLAB Coder, which requires statically typed, code-generation–compatible functions.</p>
+<li><p><strong>The role of <code>coder.extrinsic</code>.</strong>
+Simulink MATLAB Function blocks are processed by MATLAB Coder, which
+requires statically typed, code-generation–compatible functions.</p>
 <ol>
-<li><p>Explain why YALMIP functions (such as <code>sdpvar</code>, <code>optimize</code>, and <code>optimizer</code>) cannot be compiled by MATLAB Coder.</p></li>
-<li><p>Describe what the <code>coder.extrinsic</code> directive does and how it allows YALMIP-based helper functions to be called from within a Simulink MATLAB Function block.</p></li>
-<li><p>The chapter recommends pre-allocating every output variable with <code>zeros</code> <em>before</em> the call to the extrinsic helper. Explain why this pre-allocation step is necessary and what error would occur without it.</p></li>
+<li><p>Explain why YALMIP functions (such as <code>sdpvar</code>,
+<code>optimize</code>, and <code>optimizer</code>) cannot be compiled by
+MATLAB Coder.</p></li>
+<li><p>Describe what the <code>coder.extrinsic</code> directive does and
+how it allows YALMIP-based helper functions to be called from within a
+Simulink MATLAB Function block.</p></li>
+<li><p>The chapter recommends pre-allocating every output variable with
+<code>zeros</code> <em>before</em> the call to the extrinsic helper.
+Explain why this pre-allocation step is necessary and what error would
+occur without it.</p></li>
 </ol></li>
-<li><p><strong>Adding a rate-of-change constraint to the building controller.</strong> The MPC formulation in Section <a href="#sec:simulink_building" data-reference-type="ref" data-reference="sec:simulink_building">1.2</a> enforces box constraints <span class="math inline">\(0 \le u_k \le 2000\)</span> W on the heater input but does not limit how quickly the input may change between consecutive steps. Suppose you wish to add the constraint <span class="math inline">\(|\Delta u_k| = |u_k - u_{k-1}| \le \Delta u_{\max}\)</span> with <span class="math inline">\(\Delta u_{\max} = 500\)</span> W.</p>
+<li><p><strong>Adding a rate-of-change constraint to the building
+controller.</strong> The MPC formulation in Section <a
+href="#sec:simulink_building" data-reference-type="ref"
+data-reference="sec:simulink_building">1.2</a> enforces box constraints
+<span class="math inline">\(0 \le u_k \le 2000\)</span> W on the heater
+input but does not limit how quickly the input may change between
+consecutive steps. Suppose you wish to add the constraint <span
+class="math inline">\(|\Delta u_k| = |u_k - u_{k-1}| \le \Delta
+u_{\max}\)</span> with <span class="math inline">\(\Delta u_{\max} =
+500\)</span> W.</p>
 <ol>
-<li><p>Describe which file(s) in the two-layer architecture you would need to modify and what YALMIP constraints you would add inside the prediction-horizon loop.</p></li>
-<li><p>Explain why the persistent variable <code>u_prev</code> (the last applied input) must be passed as a <em>parameter</em> to the <code>optimizer</code> object so that the rate constraint can reference the transition from <span class="math inline">\(u_{k-1}\)</span> to the first predicted input <span class="math inline">\(u_0\)</span>.</p></li>
-<li><p>Discuss qualitatively how adding a tight rate-of-change limit would affect the closed-loop temperature response during morning warm-up, when a large step in heating power would otherwise be applied.</p></li>
+<li><p>Describe which file(s) in the two-layer architecture you would
+need to modify and what YALMIP constraints you would add inside the
+prediction-horizon loop.</p></li>
+<li><p>Explain why the persistent variable <code>u_prev</code> (the last
+applied input) must be passed as a <em>parameter</em> to the
+<code>optimizer</code> object so that the rate constraint can reference
+the transition from <span class="math inline">\(u_{k-1}\)</span> to the
+first predicted input <span class="math inline">\(u_0\)</span>.</p></li>
+<li><p>Discuss qualitatively how adding a tight rate-of-change limit
+would affect the closed-loop temperature response during morning
+warm-up, when a large step in heating power would otherwise be
+applied.</p></li>
 </ol></li>
-<li><p><strong>The algebraic-loop problem and the Unit Delay solution.</strong> Section <a href="#sec:simulink_general" data-reference-type="ref" data-reference="sec:simulink_general">1.1</a> explains that a direct connection from the MPC controller output to the plant input, and from the plant output back to the controller, creates an algebraic loop.</p>
+<li><p><strong>The algebraic-loop problem and the Unit Delay
+solution.</strong> Section <a href="#sec:simulink_general"
+data-reference-type="ref" data-reference="sec:simulink_general">1.1</a>
+explains that a direct connection from the MPC controller output to the
+plant input, and from the plant output back to the controller, creates
+an algebraic loop.</p>
 <ol>
-<li><p>Draw a simplified signal-flow diagram showing the loop and explain, in your own words, why Simulink cannot determine a consistent set of signals at a single time step when the loop is present.</p></li>
-<li><p>Explain how inserting a Unit Delay block (with sample time <span class="math inline">\(T_s = 1800\)</span> s and initial condition <span class="math inline">\(u_0 = 0\)</span>) breaks the algebraic loop. What is the physical interpretation of applying the control action one sample period later?</p></li>
-<li><p>In practice, MPC already computes the control move for the <em>current</em> time step. Argue whether the one-step delay introduced by the Unit Delay block materially degrades closed-loop performance for a slowly varying building thermal system with a 30-minute sample time.</p></li>
+<li><p>Draw a simplified signal-flow diagram showing the loop and
+explain, in your own words, why Simulink cannot determine a consistent
+set of signals at a single time step when the loop is present.</p></li>
+<li><p>Explain how inserting a Unit Delay block (with sample time <span
+class="math inline">\(T_s = 1800\)</span> s and initial condition <span
+class="math inline">\(u_0 = 0\)</span>) breaks the algebraic loop. What
+is the physical interpretation of applying the control action one sample
+period later?</p></li>
+<li><p>In practice, MPC already computes the control move for the
+<em>current</em> time step. Argue whether the one-step delay introduced
+by the Unit Delay block materially degrades closed-loop performance for
+a slowly varying building thermal system with a 30-minute sample
+time.</p></li>
 </ol></li>
-<li><p><strong>Designing a Simulink MPC architecture for a DC motor.</strong> Consider a DC motor whose angular velocity <span class="math inline">\(\omega\)</span> is governed by the simplified continuous-time transfer function <span class="math display">\[G(s) = \frac{\omega(s)}{V(s)} = \frac{K}{\tau s + 1},\]</span> where <span class="math inline">\(V\)</span> is the armature voltage, <span class="math inline">\(K = 10\)</span> rad s<span class="math inline">\(^{-1}\)</span> V<span class="math inline">\(^{-1}\)</span>, and <span class="math inline">\(\tau = 0.1\)</span> s. The input is subject to <span class="math inline">\(0 \le V \le 24\)</span> V, and the objective is to track a reference speed <span class="math inline">\(\omega_{\mathrm{ref}}(t)\)</span>.</p>
+<li><p><strong>Designing a Simulink MPC architecture for a DC
+motor.</strong> Consider a DC motor whose angular velocity <span
+class="math inline">\(\omega\)</span> is governed by the simplified
+continuous-time transfer function <span class="math display">\[G(s) =
+\frac{\omega(s)}{V(s)} = \frac{K}{\tau s + 1},\]</span> where <span
+class="math inline">\(V\)</span> is the armature voltage, <span
+class="math inline">\(K = 10\)</span> rad s<span
+class="math inline">\(^{-1}\)</span> V<span
+class="math inline">\(^{-1}\)</span>, and <span
+class="math inline">\(\tau = 0.1\)</span> s. The input is subject to
+<span class="math inline">\(0 \le V \le 24\)</span> V, and the objective
+is to track a reference speed <span
+class="math inline">\(\omega_{\mathrm{ref}}(t)\)</span>.</p>
 <ol>
-<li><p>Discretise the plant with a suitable sample time (justify your choice) and write down the resulting state-space matrices <span class="math inline">\(A_d\)</span>, <span class="math inline">\(B_d\)</span>, <span class="math inline">\(C_d\)</span>, <span class="math inline">\(D_d\)</span>.</p></li>
-<li><p>Sketch a Simulink block diagram following the two-layer architecture from this chapter. Label each block (<em>Reference Generator</em>, <em>MPC Controller</em>, <em>DC Motor Plant</em>, <em>Scope / To Workspace</em>) and indicate where a Unit Delay block should be placed.</p></li>
-<li><p>List the persistent variables you would declare inside the <code>mpc_controller_step</code> function for this system. Identify any differences from the building-heating case study (e.g. is a disturbance observer still needed?).</p></li>
-<li><p>Briefly discuss how the much shorter time constant of the DC motor (<span class="math inline">\(\tau = 0.1\)</span> s) compared with the building (<span class="math inline">\(\tau \approx 10^4\)</span> s) affects the choice of prediction horizon and the computational burden of solving the QP at each step.</p></li>
+<li><p>Discretise the plant with a suitable sample time (justify your
+choice) and write down the resulting state-space matrices <span
+class="math inline">\(A_d\)</span>, <span
+class="math inline">\(B_d\)</span>, <span
+class="math inline">\(C_d\)</span>, <span
+class="math inline">\(D_d\)</span>.</p></li>
+<li><p>Sketch a Simulink block diagram following the two-layer
+architecture from this chapter. Label each block (<em>Reference
+Generator</em>, <em>MPC Controller</em>, <em>DC Motor Plant</em>,
+<em>Scope / To Workspace</em>) and indicate where a Unit Delay block
+should be placed.</p></li>
+<li><p>List the persistent variables you would declare inside the
+<code>mpc_controller_step</code> function for this system. Identify any
+differences from the building-heating case study (e.g. is a disturbance
+observer still needed?).</p></li>
+<li><p>Briefly discuss how the much shorter time constant of the DC
+motor (<span class="math inline">\(\tau = 0.1\)</span> s) compared with
+the building (<span class="math inline">\(\tau \approx 10^4\)</span> s)
+affects the choice of prediction horizon and the computational burden of
+solving the QP at each step.</p></li>
 </ol></li>
 </ol>

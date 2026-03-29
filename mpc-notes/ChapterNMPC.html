@@ -59,8 +59,8 @@ of Chapter <a href="#chap:linear_mpc" data-reference-type="ref"
 data-reference="chap:linear_mpc">[chap:linear_mpc]</a>. For general
 <span class="math inline">\(f\)</span>, the equality constraints <span
 class="math inline">\(x_{k+1} = f(x_k, u_k)\)</span> make the feasible
-set non-convex, and the problem becomes a <strong>nonlinear programme
-(NLP)</strong>.</p>
+set non-convex, and the problem becomes a <em>nonlinear programme
+(NLP)</em>.</p>
 <p>Two consequences follow:</p>
 <ul>
 <li><p><strong>Local minima.</strong> Solvers may converge to a locally
@@ -162,14 +162,13 @@ further here; see <span class="citation"
 data-cites="Rawlings2017"></span> for a detailed treatment.</p>
 <h2 id="sec:nmpc_nlp">NMPC via Nonlinear Programming</h2>
 <h3 id="casadi-and-ipopt">CasADi and IPOPT</h3>
-<p><strong>CasADi</strong> <span class="citation"
+<p><em>CasADi</em> <span class="citation"
 data-cites="Andersson2019"></span> is an open-source framework for
 algorithmic differentiation (AD) and numerical optimisation. It provides
 a symbolic interface for defining nonlinear functions and automatically
 generates the exact Jacobians and Hessians required by NLP solvers.
-CasADi interfaces with <strong>IPOPT</strong> (Interior Point
-OPTimiser), a primal-dual interior-point solver for large-scale
-NLPs.</p>
+CasADi interfaces with <em>IPOPT</em> (Interior Point OPTimiser), a
+primal-dual interior-point solver for large-scale NLPs.</p>
 <p>The workflow in MATLAB is:</p>
 <ol>
 <li><p>Declare symbolic variables via
@@ -236,60 +235,59 @@ u)\)</span>, <span class="math inline">\(k_2 = f(x + \tfrac{h}{2}k_1,
 u)\)</span>, <span class="math inline">\(k_3 = f(x + \tfrac{h}{2}k_2,
 u)\)</span>, <span class="math inline">\(k_4 = f(x + h\,k_3,
 u)\)</span>.</p>
-<div class="sourceCode" id="lst:casadi_pendulum" data-language="Matlab"
+<pre id="lst:casadi_pendulum" class="matlab" data-language="Matlab"
 data-caption="Pendulum swing-up NMPC using CasADi and IPOPT."
-data-label="lst:casadi_pendulum"><pre
-class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:casadi_pendulum-1"><a href="#lst:casadi_pendulum-1" aria-hidden="true" tabindex="-1"></a><span class="va">import</span> <span class="va">casadi</span><span class="op">.*</span></span>
-<span id="lst:casadi_pendulum-2"><a href="#lst:casadi_pendulum-2" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span> <span class="op">=</span> <span class="va">casadi</span>.<span class="va">Opti</span>()<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-3"><a href="#lst:casadi_pendulum-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-4"><a href="#lst:casadi_pendulum-4" aria-hidden="true" tabindex="-1"></a><span class="co">% Parameters</span></span>
-<span id="lst:casadi_pendulum-5"><a href="#lst:casadi_pendulum-5" aria-hidden="true" tabindex="-1"></a><span class="va">g_val</span> <span class="op">=</span> <span class="fl">9.81</span><span class="op">;</span> <span class="va">L</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span> <span class="va">m_val</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-6"><a href="#lst:casadi_pendulum-6" aria-hidden="true" tabindex="-1"></a><span class="va">N</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">dt</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">;</span> <span class="va">tau_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-7"><a href="#lst:casadi_pendulum-7" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">50</span><span class="op">,</span> <span class="fl">0.1</span>])<span class="op">;</span> <span class="va">R_w</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span> <span class="va">P_w</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">1000</span><span class="op">,</span> <span class="fl">10</span>])<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-8"><a href="#lst:casadi_pendulum-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-9"><a href="#lst:casadi_pendulum-9" aria-hidden="true" tabindex="-1"></a><span class="co">% Symbolic variables</span></span>
-<span id="lst:casadi_pendulum-10"><a href="#lst:casadi_pendulum-10" aria-hidden="true" tabindex="-1"></a><span class="va">X</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">variable</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">U</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">variable</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-11"><a href="#lst:casadi_pendulum-11" aria-hidden="true" tabindex="-1"></a><span class="va">x_init</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">parameter</span>(<span class="fl">2</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-12"><a href="#lst:casadi_pendulum-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-13"><a href="#lst:casadi_pendulum-13" aria-hidden="true" tabindex="-1"></a><span class="co">% Continuous dynamics</span></span>
-<span id="lst:casadi_pendulum-14"><a href="#lst:casadi_pendulum-14" aria-hidden="true" tabindex="-1"></a><span class="va">f_cont</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span>) [<span class="va">x</span>(<span class="fl">2</span>)<span class="op">;</span> (<span class="va">g_val</span><span class="op">/</span><span class="va">L</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">x</span>(<span class="fl">1</span>)) <span class="op">+</span> <span class="va">u</span><span class="op">/</span>(<span class="va">m_val</span><span class="op">*</span><span class="va">L</span><span class="op">^</span><span class="fl">2</span>)]<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-15"><a href="#lst:casadi_pendulum-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-16"><a href="#lst:casadi_pendulum-16" aria-hidden="true" tabindex="-1"></a><span class="co">% RK4 integrator</span></span>
-<span id="lst:casadi_pendulum-17"><a href="#lst:casadi_pendulum-17" aria-hidden="true" tabindex="-1"></a><span class="va">rk4</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span>) <span class="va">rk4_step</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span><span class="op">,</span> <span class="va">f_cont</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-18"><a href="#lst:casadi_pendulum-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-19"><a href="#lst:casadi_pendulum-19" aria-hidden="true" tabindex="-1"></a><span class="co">% Constraints and cost</span></span>
-<span id="lst:casadi_pendulum-20"><a href="#lst:casadi_pendulum-20" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">subject_to</span>(<span class="va">X</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x_init</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-21"><a href="#lst:casadi_pendulum-21" aria-hidden="true" tabindex="-1"></a><span class="va">J</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-22"><a href="#lst:casadi_pendulum-22" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
-<span id="lst:casadi_pendulum-23"><a href="#lst:casadi_pendulum-23" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">subject_to</span>(<span class="va">X</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">rk4</span>(<span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">U</span>(<span class="va">k</span>)<span class="op">,</span> <span class="va">dt</span>))<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-24"><a href="#lst:casadi_pendulum-24" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">subject_to</span>(<span class="op">-</span><span class="va">tau_max</span> <span class="op">&lt;=</span> <span class="va">U</span>(<span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">tau_max</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-25"><a href="#lst:casadi_pendulum-25" aria-hidden="true" tabindex="-1"></a>    <span class="va">J</span> <span class="op">=</span> <span class="va">J</span> <span class="op">+</span> <span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">R_w</span><span class="op">*</span><span class="va">U</span>(<span class="va">k</span>)<span class="op">^</span><span class="fl">2</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-26"><a href="#lst:casadi_pendulum-26" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="lst:casadi_pendulum-27"><a href="#lst:casadi_pendulum-27" aria-hidden="true" tabindex="-1"></a><span class="va">J</span> <span class="op">=</span> <span class="va">J</span> <span class="op">+</span> <span class="va">X</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">&#39;*</span><span class="va">P_w</span><span class="op">*</span><span class="va">X</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-28"><a href="#lst:casadi_pendulum-28" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">minimize</span>(<span class="va">J</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-29"><a href="#lst:casadi_pendulum-29" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">solver</span>(<span class="ss">&#39;ipopt&#39;</span><span class="op">,</span> <span class="va">struct</span>(<span class="ss">&#39;expand&#39;</span><span class="op">,</span><span class="va">true</span>)<span class="op">,</span> <span class="op">...</span></span>
-<span id="lst:casadi_pendulum-30"><a href="#lst:casadi_pendulum-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">struct</span>(<span class="ss">&#39;max_iter&#39;</span><span class="op">,</span><span class="fl">2000</span><span class="op">,</span> <span class="ss">&#39;print_level&#39;</span><span class="op">,</span><span class="fl">0</span>))<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-31"><a href="#lst:casadi_pendulum-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-32"><a href="#lst:casadi_pendulum-32" aria-hidden="true" tabindex="-1"></a><span class="co">% Receding-horizon simulation</span></span>
-<span id="lst:casadi_pendulum-33"><a href="#lst:casadi_pendulum-33" aria-hidden="true" tabindex="-1"></a><span class="va">T_sim</span> <span class="op">=</span> <span class="fl">200</span><span class="op">;</span> <span class="va">x_curr</span> <span class="op">=</span> [<span class="va">pi</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-34"><a href="#lst:casadi_pendulum-34" aria-hidden="true" tabindex="-1"></a><span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span> <span class="va">x_hist</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_curr</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-35"><a href="#lst:casadi_pendulum-35" aria-hidden="true" tabindex="-1"></a><span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-36"><a href="#lst:casadi_pendulum-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-37"><a href="#lst:casadi_pendulum-37" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">t</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
-<span id="lst:casadi_pendulum-38"><a href="#lst:casadi_pendulum-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_value</span>(<span class="va">x_init</span><span class="op">,</span> <span class="va">x_curr</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-39"><a href="#lst:casadi_pendulum-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">sol</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">solve</span>()<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-40"><a href="#lst:casadi_pendulum-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_val</span> <span class="op">=</span> <span class="va">full</span>(<span class="va">sol</span>.<span class="va">value</span>(<span class="va">U</span>(<span class="fl">1</span>)))<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-41"><a href="#lst:casadi_pendulum-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_curr</span> <span class="op">=</span> <span class="va">full</span>(<span class="va">rk4</span>(<span class="va">x_curr</span><span class="op">,</span> <span class="va">u_val</span><span class="op">,</span> <span class="va">dt</span>))<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-42"><a href="#lst:casadi_pendulum-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_hist</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_curr</span><span class="op">;</span>  <span class="va">u_hist</span>(<span class="va">t</span>) <span class="op">=</span> <span class="va">u_val</span><span class="op">;</span></span>
-<span id="lst:casadi_pendulum-43"><a href="#lst:casadi_pendulum-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_initial</span>(<span class="va">X</span><span class="op">,</span> <span class="va">sol</span>.<span class="va">value</span>(<span class="va">X</span>))<span class="op">;</span>    <span class="co">% warm-start</span></span>
-<span id="lst:casadi_pendulum-44"><a href="#lst:casadi_pendulum-44" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_initial</span>(<span class="va">U</span><span class="op">,</span> <span class="va">sol</span>.<span class="va">value</span>(<span class="va">U</span>))<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-45"><a href="#lst:casadi_pendulum-45" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="lst:casadi_pendulum-46"><a href="#lst:casadi_pendulum-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:casadi_pendulum-47"><a href="#lst:casadi_pendulum-47" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">xn</span> <span class="op">=</span> <span class="va">rk4_step</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span><span class="op">,</span> <span class="va">f</span>)</span>
-<span id="lst:casadi_pendulum-48"><a href="#lst:casadi_pendulum-48" aria-hidden="true" tabindex="-1"></a>    <span class="va">k1</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span> <span class="va">k2</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">/</span><span class="fl">2</span><span class="op">*</span><span class="va">k1</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-49"><a href="#lst:casadi_pendulum-49" aria-hidden="true" tabindex="-1"></a>    <span class="va">k3</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">/</span><span class="fl">2</span><span class="op">*</span><span class="va">k2</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span> <span class="va">k4</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">*</span><span class="va">k3</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-50"><a href="#lst:casadi_pendulum-50" aria-hidden="true" tabindex="-1"></a>    <span class="va">xn</span> <span class="op">=</span> <span class="va">x</span> <span class="op">+</span> (<span class="va">h</span><span class="op">/</span><span class="fl">6</span>)<span class="op">*</span>(<span class="va">k1</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="va">k2</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="va">k3</span><span class="op">+</span><span class="va">k4</span>)<span class="op">;</span></span>
-<span id="lst:casadi_pendulum-51"><a href="#lst:casadi_pendulum-51" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+data-label="lst:casadi_pendulum"><code>import casadi.*
+opti = casadi.Opti();
+
+% Parameters
+g_val = 9.81; L = 1; m_val = 1;
+N = 40; dt = 0.05; tau_max = 5;
+Q = diag([50, 0.1]); R_w = 0.1; P_w = diag([1000, 10]);
+
+% Symbolic variables
+X = opti.variable(2, N+1);  U = opti.variable(1, N);
+x_init = opti.parameter(2, 1);
+
+% Continuous dynamics
+f_cont = @(x, u) [x(2); (g_val/L)*sin(x(1)) + u/(m_val*L^2)];
+
+% RK4 integrator
+rk4 = @(x, u, h) rk4_step(x, u, h, f_cont);
+
+% Constraints and cost
+opti.subject_to(X(:,1) == x_init);
+J = 0;
+for k = 1:N
+    opti.subject_to(X(:,k+1) == rk4(X(:,k), U(k), dt));
+    opti.subject_to(-tau_max &lt;= U(k) &lt;= tau_max);
+    J = J + X(:,k)&#39;*Q*X(:,k) + R_w*U(k)^2;
+end
+J = J + X(:,N+1)&#39;*P_w*X(:,N+1);
+opti.minimize(J);
+opti.solver(&#39;ipopt&#39;, struct(&#39;expand&#39;,true), ...
+            struct(&#39;max_iter&#39;,2000, &#39;print_level&#39;,0));
+
+% Receding-horizon simulation
+T_sim = 200; x_curr = [pi; 0];
+x_hist = zeros(2, T_sim+1); x_hist(:,1) = x_curr;
+u_hist = zeros(1, T_sim);
+
+for t = 1:T_sim
+    opti.set_value(x_init, x_curr);
+    sol = opti.solve();
+    u_val = full(sol.value(U(1)));
+    x_curr = full(rk4(x_curr, u_val, dt));
+    x_hist(:,t+1) = x_curr;  u_hist(t) = u_val;
+    opti.set_initial(X, sol.value(X));    % warm-start
+    opti.set_initial(U, sol.value(U));
+end
+
+function xn = rk4_step(x, u, h, f)
+    k1 = f(x,u); k2 = f(x+h/2*k1,u);
+    k3 = f(x+h/2*k2,u); k4 = f(x+h*k3,u);
+    xn = x + (h/6)*(k1+2*k2+2*k3+k4);
+end</code></pre>
 <p>Figure <a href="#fig:nmpc_pendulum" data-reference-type="ref"
 data-reference="fig:nmpc_pendulum">1.1</a> shows the result. The
 controller swings the pendulum through the lower equilibrium, building
@@ -299,7 +297,7 @@ energy-pumping phase and decays to zero once the pendulum is balanced.
 This trajectory is impossible for any linear controller designed around
 a single equilibrium.</p>
 <figure id="fig:nmpc_pendulum" data-latex-placement="ht">
-<embed src="figures/fig_nmpc_pendulum_swingup.png"
+<embed src="Figures/fig_nmpc_pendulum_swingup.pdf"
 style="width:85.0%" />
 <figcaption>NMPC pendulum swing-up. Top: angle <span
 class="math inline">\(\theta\)</span> from the upright position (<span
@@ -312,62 +310,10 @@ class="math inline">\(\tau\)</span>, saturating at <span
 class="math inline">\(\pm 5\)</span> N m during the swing
 phase.</figcaption>
 </figure>
-
-<h4>Interactive Demo: Pendulum Swing-Up</h4>
-<p>The animation below demonstrates the energy-based swing-up controller followed by linear stabilisation at the inverted equilibrium. Click <strong>Swing Up</strong> to watch the pendulum pump energy and balance at the top.</p>
-<div class="pendulum-demo"></div>
-
-<h4>Try It Yourself: Pendulum Simulation in Python</h4>
-<p>Modify the controller gains and initial conditions below and click <strong>Run</strong> to simulate the pendulum dynamics in your browser.</p>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-</script>
-<pre><code># Pendulum swing-up simulation
-g, L, Ts = 9.81, 1.0, 0.05
-m = 1.0
-E_up = m * g * L  # energy at upright position
-
-# Simulate
-N_sim = 400
-x = np.zeros((N_sim+1, 2))  # [theta, omega]
-x[0] = [np.pi, 0.0]  # start hanging down
-u_log = np.zeros(N_sim)
-
-for k in range(N_sim):
-    theta, omega = x[k]
-    # Energy-based swing-up
-    E = 0.5 * m * L**2 * omega**2 - m * g * L * np.cos(theta)
-    k_e = 0.5  # energy gain (try changing this!)
-    u = k_e * (E - E_up) * np.sign(omega * np.cos(theta))
-
-    # Near upright: switch to linear controller
-    th_wrapped = (theta + np.pi) % (2*np.pi) - np.pi
-    if abs(th_wrapped) < 0.4:
-        u = -20.0 * th_wrapped - 5.0 * omega
-
-    u = np.clip(u, -5, 5)  # torque limit
-    u_log[k] = u
-
-    # Forward Euler
-    x[k+1, 0] = theta + Ts * omega
-    x[k+1, 1] = omega + Ts * ((g/L)*np.sin(theta) + u)
-
-# Print results
-t = np.arange(N_sim+1) * Ts
-settled = np.where(np.abs((x[:, 0]+np.pi)%(2*np.pi)-np.pi) < 0.1)[0]
-if len(settled) > 0:
-    print(f"Pendulum reached upright at t = {settled[0]*Ts:.2f} s")
-print(f"Final angle: {((x[-1,0]+np.pi)%(2*np.pi)-np.pi)*180/np.pi:.1f} deg")
-print(f"Final omega: {x[-1,1]:.3f} rad/s")
-print(f"Max torque used: {np.max(np.abs(u_log)):.2f} N*m")
-</code></pre>
-</div>
-
 <div class="notebox">
-<p><span>Alternative: fmincon for Students Without CasADi</span> The
-same problem can be solved using MATLAB’s <code>fmincon</code> with
-direct multiple shooting. Pack the decision variables as <span
+<p><span>Alternative: fmincon for Readers Without CasADi</span> The same
+problem can be solved using MATLAB’s <code>fmincon</code> with direct
+multiple shooting. Pack the decision variables as <span
 class="math inline">\(z = [u_0, \dots, u_{N-1}, \theta_1, \omega_1,
 \dots, \theta_N, \omega_N]\)</span>, implement the RK4 dynamics as
 nonlinear equality constraints, and use the
@@ -375,7 +321,7 @@ nonlinear equality constraints, and use the
 provides exact derivatives automatically, whereas <code>fmincon</code>
 relies on finite differences (slower, less accurate). The
 figure-generation script <code>gen_figures_nmpc.m</code> accompanying
-these notes uses <code>fmincon</code> so that no additional toolbox
+this book uses <code>fmincon</code> so that no additional toolbox
 installation is required.</p>
 </div>
 <h2 id="sec:scp">Sequential Convex Programming</h2>
@@ -402,9 +348,9 @@ the robot dynamics around the <em>reference trajectory</em> and solved a
 single QP per MPC step. This works when the actual state stays close to
 the reference. But what if the reference is unavailable, or the
 deviation is large?</p>
-<p><strong>Successive convexification</strong> (SCvx) generalises this
-idea: linearise around the <em>current best trajectory estimate</em>,
-solve the QP, update the estimate, and iterate until convergence. The
+<p><em>Successive convexification</em> (SCvx) generalises this idea:
+linearise around the <em>current best trajectory estimate</em>, solve
+the QP, update the estimate, and iterate until convergence. The
 reference trajectory is replaced by the previous iteration’s
 solution.</p>
 <h3 id="sec:scvx">Successive Convexification (SCvx)</h3>
@@ -418,9 +364,9 @@ class="math display">\[\begin{align*}
 \bar{u}_k}, &amp;
     c_k &amp;= f(\bar{x}_k, \bar{u}_k) - A_k\,\bar{x}_k -
 B_k\,\bar{u}_k.
-\end{align*}\]</span> The <strong>affine approximation</strong> of the
-dynamics is: <span class="math display">\[x_{k+1} \approx A_k\, x_k +
-B_k\, u_k + c_k.\]</span> Two mechanisms ensure convergence:</p>
+\end{align*}\]</span> The <em>affine approximation</em> of the dynamics
+is: <span class="math display">\[x_{k+1} \approx A_k\, x_k + B_k\, u_k +
+c_k.\]</span> Two mechanisms ensure convergence:</p>
 <div class="alertbox">
 <p><span>SCvx Is Not a Controller—It Is an Offline Trajectory
 Optimiser</span> SCvx solves the nonlinear OCP <em>once</em> for a fixed
@@ -548,10 +494,10 @@ original cost plus a penalty on constraint violation), preventing
 divergence. In practice, 5–15 iterations typically suffice.</p>
 </div>
 <h3 id="sec:gusto">GUSTO: Penalised Trust Regions</h3>
-<p><strong>GuSTO</strong> (Guaranteed Sequential Trajectory
-Optimisation) <span class="citation" data-cites="Bonalli2019"></span>
-replaces the hard trust-region constraint with a soft penalty. At
-iteration <span class="math inline">\(i\)</span>, solve: <span
+<p><em>GuSTO</em> (Guaranteed Sequential Trajectory Optimisation) <span
+class="citation" data-cites="Bonalli2019"></span> replaces the hard
+trust-region constraint with a soft penalty. At iteration <span
+class="math inline">\(i\)</span>, solve: <span
 class="math display">\[\min_{x, u, \nu} \;\;
 \sum_{k=0}^{N-1}\bigl[\ell(x_k, u_k) + w_\nu \|\nu_k\|_1\bigr] +
 V_f(x_N) + \frac{\lambda^{(i)}}{2}\sum_{k=0}^{N}\|x_k -
@@ -793,98 +739,97 @@ or, if a quadratic trust-region penalty is used, a QP.</p>
 <h3 id="matlab-implementation">MATLAB Implementation</h3>
 <p>The following code implements SCvx for the rocket landing using
 YALMIP and <code>quadprog</code>.</p>
-<div class="sourceCode" id="lst:scvx_rocket" data-language="Matlab"
+<pre id="lst:scvx_rocket" class="matlab" data-language="Matlab"
 data-caption="SCvx for powered descent guidance (rocket landing)."
-data-label="lst:scvx_rocket"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:scvx_rocket-1"><a href="#lst:scvx_rocket-1" aria-hidden="true" tabindex="-1"></a><span class="va">m</span> <span class="op">=</span> <span class="fl">30</span><span class="op">;</span> <span class="va">g_val</span> <span class="op">=</span> <span class="fl">9.81</span><span class="op">;</span> <span class="va">J_r</span> <span class="op">=</span> <span class="fl">10</span><span class="op">;</span> <span class="va">l_arm</span> <span class="op">=</span> <span class="fl">1.5</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-2"><a href="#lst:scvx_rocket-2" aria-hidden="true" tabindex="-1"></a><span class="va">Ts</span> <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span> <span class="va">N_h</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">nx</span> <span class="op">=</span> <span class="fl">6</span><span class="op">;</span> <span class="va">nu</span> <span class="op">=</span> <span class="fl">2</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-3"><a href="#lst:scvx_rocket-3" aria-hidden="true" tabindex="-1"></a><span class="va">T_min</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">T_max</span> <span class="op">=</span> <span class="fl">400</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-4"><a href="#lst:scvx_rocket-4" aria-hidden="true" tabindex="-1"></a><span class="va">del_max</span> <span class="op">=</span> <span class="fl">0.35</span><span class="op">;</span>  <span class="va">th_max</span> <span class="op">=</span> <span class="fl">0.785</span><span class="op">;</span>  <span class="co">% 20 deg, 45 deg</span></span>
-<span id="lst:scvx_rocket-5"><a href="#lst:scvx_rocket-5" aria-hidden="true" tabindex="-1"></a><span class="va">w_vc</span> <span class="op">=</span> <span class="fl">1e5</span><span class="op">;</span>      <span class="co">% virtual control penalty</span></span>
-<span id="lst:scvx_rocket-6"><a href="#lst:scvx_rocket-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-7"><a href="#lst:scvx_rocket-7" aria-hidden="true" tabindex="-1"></a><span class="va">x0</span> <span class="op">=</span> [<span class="fl">12</span><span class="op">;</span> <span class="fl">50</span><span class="op">;</span> <span class="op">-</span><span class="fl">2</span><span class="op">;</span> <span class="op">-</span><span class="fl">10</span><span class="op">;</span> <span class="fl">0.05</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-8"><a href="#lst:scvx_rocket-8" aria-hidden="true" tabindex="-1"></a><span class="va">xf</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">6</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-9"><a href="#lst:scvx_rocket-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-10"><a href="#lst:scvx_rocket-10" aria-hidden="true" tabindex="-1"></a><span class="co">% Nonlinear dynamics (Forward Euler)</span></span>
-<span id="lst:scvx_rocket-11"><a href="#lst:scvx_rocket-11" aria-hidden="true" tabindex="-1"></a><span class="va">f_nl</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span>) [<span class="va">x</span>(<span class="fl">1</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">3</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-12"><a href="#lst:scvx_rocket-12" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">2</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">4</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-13"><a href="#lst:scvx_rocket-13" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">3</span>) <span class="op">-</span> <span class="va">Ts</span><span class="op">*</span>(<span class="va">u</span>(<span class="fl">1</span>)<span class="op">/</span><span class="va">m</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">x</span>(<span class="fl">5</span>)<span class="op">+</span><span class="va">u</span>(<span class="fl">2</span>))<span class="op">;</span></span>
-<span id="lst:scvx_rocket-14"><a href="#lst:scvx_rocket-14" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">4</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span>((<span class="va">u</span>(<span class="fl">1</span>)<span class="op">/</span><span class="va">m</span>)<span class="op">*</span><span class="va">cos</span>(<span class="va">x</span>(<span class="fl">5</span>)<span class="op">+</span><span class="va">u</span>(<span class="fl">2</span>)) <span class="op">-</span> <span class="va">g_val</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-15"><a href="#lst:scvx_rocket-15" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">5</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">6</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-16"><a href="#lst:scvx_rocket-16" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">6</span>) <span class="op">-</span> <span class="va">Ts</span><span class="op">*</span>(<span class="va">u</span>(<span class="fl">1</span>)<span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">u</span>(<span class="fl">2</span>))]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-17"><a href="#lst:scvx_rocket-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-18"><a href="#lst:scvx_rocket-18" aria-hidden="true" tabindex="-1"></a><span class="co">% Initial guess: linear interpolation + hover thrust</span></span>
-<span id="lst:scvx_rocket-19"><a href="#lst:scvx_rocket-19" aria-hidden="true" tabindex="-1"></a><span class="va">xb</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">ub</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-20"><a href="#lst:scvx_rocket-20" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">N_h</span></span>
-<span id="lst:scvx_rocket-21"><a href="#lst:scvx_rocket-21" aria-hidden="true" tabindex="-1"></a>    <span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span> <span class="op">+</span> (<span class="va">k</span><span class="op">/</span><span class="va">N_h</span>)<span class="op">*</span>(<span class="va">xf</span> <span class="op">-</span> <span class="va">x0</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-22"><a href="#lst:scvx_rocket-22" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="lst:scvx_rocket-23"><a href="#lst:scvx_rocket-23" aria-hidden="true" tabindex="-1"></a><span class="va">ub</span>(<span class="fl">1</span><span class="op">,:</span>) <span class="op">=</span> <span class="va">m</span> <span class="op">*</span> <span class="va">g_val</span><span class="op">;</span>  <span class="co">% hover thrust</span></span>
-<span id="lst:scvx_rocket-24"><a href="#lst:scvx_rocket-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-25"><a href="#lst:scvx_rocket-25" aria-hidden="true" tabindex="-1"></a><span class="co">% SCvx iterations</span></span>
-<span id="lst:scvx_rocket-26"><a href="#lst:scvx_rocket-26" aria-hidden="true" tabindex="-1"></a><span class="va">max_iter</span> <span class="op">=</span> <span class="fl">15</span><span class="op">;</span> <span class="va">Delta</span> <span class="op">=</span> <span class="fl">50</span><span class="op">;</span> <span class="va">tol</span> <span class="op">=</span> <span class="fl">1e-3</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-27"><a href="#lst:scvx_rocket-27" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">iter</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">max_iter</span></span>
-<span id="lst:scvx_rocket-28"><a href="#lst:scvx_rocket-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Compute Jacobians and affine terms at linearisation point</span></span>
-<span id="lst:scvx_rocket-29"><a href="#lst:scvx_rocket-29" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ak</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span> <span class="va">Bk</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-30"><a href="#lst:scvx_rocket-30" aria-hidden="true" tabindex="-1"></a>    <span class="va">ck</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-31"><a href="#lst:scvx_rocket-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N_h</span></span>
-<span id="lst:scvx_rocket-32"><a href="#lst:scvx_rocket-32" aria-hidden="true" tabindex="-1"></a>        [<span class="va">Ak</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">Bk</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">ck</span>(<span class="op">:,</span><span class="va">k</span>)] <span class="op">=</span> <span class="op">...</span></span>
-<span id="lst:scvx_rocket-33"><a href="#lst:scvx_rocket-33" aria-hidden="true" tabindex="-1"></a>            <span class="va">linearise</span>(<span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">ub</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">f_nl</span><span class="op">,</span> <span class="va">Ts</span><span class="op">,</span> <span class="va">m</span><span class="op">,</span> <span class="va">g_val</span><span class="op">,</span> <span class="va">J_r</span><span class="op">,</span> <span class="va">l_arm</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-34"><a href="#lst:scvx_rocket-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
-<span id="lst:scvx_rocket-35"><a href="#lst:scvx_rocket-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-36"><a href="#lst:scvx_rocket-36" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Solve QP subproblem</span></span>
-<span id="lst:scvx_rocket-37"><a href="#lst:scvx_rocket-37" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_var</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">+</span><span class="fl">1</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-38"><a href="#lst:scvx_rocket-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_var</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-39"><a href="#lst:scvx_rocket-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">nu_vc</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-40"><a href="#lst:scvx_rocket-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-41"><a href="#lst:scvx_rocket-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">con</span> <span class="op">=</span> [<span class="va">x_var</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x0</span><span class="op">,</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">N_h</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">xf</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-42"><a href="#lst:scvx_rocket-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">obj</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-43"><a href="#lst:scvx_rocket-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N_h</span></span>
-<span id="lst:scvx_rocket-44"><a href="#lst:scvx_rocket-44" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">Ak</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">*</span><span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">...</span></span>
-<span id="lst:scvx_rocket-45"><a href="#lst:scvx_rocket-45" aria-hidden="true" tabindex="-1"></a>               <span class="op">+</span> <span class="va">Bk</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">*</span><span class="va">u_var</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">ck</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">nu_vc</span>(<span class="op">:,</span><span class="va">k</span>)]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-46"><a href="#lst:scvx_rocket-46" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">T_min</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="fl">1</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">T_max</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-47"><a href="#lst:scvx_rocket-47" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">del_max</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="fl">2</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">del_max</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-48"><a href="#lst:scvx_rocket-48" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">th_max</span> <span class="op">&lt;=</span> <span class="va">x_var</span>(<span class="fl">5</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">th_max</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-49"><a href="#lst:scvx_rocket-49" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">x_var</span>(<span class="fl">2</span><span class="op">,</span><span class="va">k</span>) <span class="op">&gt;=</span> <span class="fl">0</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-50"><a href="#lst:scvx_rocket-50" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Trust region</span></span>
-<span id="lst:scvx_rocket-51"><a href="#lst:scvx_rocket-51" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">Delta</span> <span class="op">&lt;=</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">-</span><span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">Delta</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-52"><a href="#lst:scvx_rocket-52" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">Delta</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">-</span><span class="va">ub</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">Delta</span>]<span class="op">;</span></span>
-<span id="lst:scvx_rocket-53"><a href="#lst:scvx_rocket-53" aria-hidden="true" tabindex="-1"></a>        <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">u_var</span>(<span class="fl">1</span><span class="op">,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">w_vc</span><span class="op">*</span><span class="va">norm</span>(<span class="va">nu_vc</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-54"><a href="#lst:scvx_rocket-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
-<span id="lst:scvx_rocket-55"><a href="#lst:scvx_rocket-55" aria-hidden="true" tabindex="-1"></a>    <span class="va">optimize</span>(<span class="va">con</span><span class="op">,</span> <span class="va">obj</span><span class="op">,</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span><span class="fl">0</span><span class="op">,</span><span class="ss">&#39;solver&#39;</span><span class="op">,</span><span class="ss">&#39;quadprog&#39;</span>))<span class="op">;</span></span>
-<span id="lst:scvx_rocket-56"><a href="#lst:scvx_rocket-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-57"><a href="#lst:scvx_rocket-57" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_new</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">x_var</span>)<span class="op">;</span> <span class="va">u_new</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">u_var</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-58"><a href="#lst:scvx_rocket-58" aria-hidden="true" tabindex="-1"></a>    <span class="va">vc_norm</span> <span class="op">=</span> <span class="va">max</span>(<span class="va">abs</span>(<span class="va">value</span>(<span class="va">nu_vc</span>(<span class="op">:</span>))))<span class="op">;</span></span>
-<span id="lst:scvx_rocket-59"><a href="#lst:scvx_rocket-59" aria-hidden="true" tabindex="-1"></a>    <span class="va">dx</span> <span class="op">=</span> <span class="va">max</span>(<span class="va">abs</span>(<span class="va">x_new</span>(<span class="op">:</span>) <span class="op">-</span> <span class="va">xb</span>(<span class="op">:</span>)))<span class="op">;</span></span>
-<span id="lst:scvx_rocket-60"><a href="#lst:scvx_rocket-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst:scvx_rocket-61"><a href="#lst:scvx_rocket-61" aria-hidden="true" tabindex="-1"></a>    <span class="va">fprintf</span>(<span class="ss">&#39;Iter %2d: dx=%.4e, vc=%.4e\n&#39;</span><span class="op">,</span> <span class="va">iter</span><span class="op">,</span> <span class="va">dx</span><span class="op">,</span> <span class="va">vc_norm</span>)<span class="op">;</span></span>
-<span id="lst:scvx_rocket-62"><a href="#lst:scvx_rocket-62" aria-hidden="true" tabindex="-1"></a>    <span class="va">xb</span> <span class="op">=</span> <span class="va">x_new</span><span class="op">;</span> <span class="va">ub</span> <span class="op">=</span> <span class="va">u_new</span><span class="op">;</span></span>
-<span id="lst:scvx_rocket-63"><a href="#lst:scvx_rocket-63" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="va">dx</span> <span class="op">&lt;</span> <span class="va">tol</span> <span class="op">&amp;&amp;</span> <span class="va">vc_norm</span> <span class="op">&lt;</span> <span class="va">tol</span><span class="op">,</span> <span class="kw">break</span><span class="op">;</span> <span class="kw">end</span></span>
-<span id="lst:scvx_rocket-64"><a href="#lst:scvx_rocket-64" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+data-label="lst:scvx_rocket"><code>m = 30; g_val = 9.81; J_r = 10; l_arm = 1.5;
+Ts = 0.2; N_h = 40; nx = 6; nu = 2;
+T_min = 40; T_max = 400;
+del_max = 0.35;  th_max = 0.785;  % 20 deg, 45 deg
+w_vc = 1e5;      % virtual control penalty
+
+x0 = [12; 50; -2; -10; 0.05; 0];
+xf = zeros(6, 1);
+
+% Nonlinear dynamics (Forward Euler)
+f_nl = @(x, u) [x(1) + Ts*x(3);
+                 x(2) + Ts*x(4);
+                 x(3) - Ts*(u(1)/m)*sin(x(5)+u(2));
+                 x(4) + Ts*((u(1)/m)*cos(x(5)+u(2)) - g_val);
+                 x(5) + Ts*x(6);
+                 x(6) - Ts*(u(1)*l_arm/J_r)*sin(u(2))];
+
+% Initial guess: linear interpolation + hover thrust
+xb = zeros(nx, N_h+1);  ub = zeros(nu, N_h);
+for k = 0:N_h
+    xb(:,k+1) = x0 + (k/N_h)*(xf - x0);
+end
+ub(1,:) = m * g_val;  % hover thrust
+
+% SCvx iterations
+max_iter = 15; Delta = 50; tol = 1e-3;
+for iter = 1:max_iter
+    % Compute Jacobians and affine terms at linearisation point
+    Ak = zeros(nx, nx, N_h); Bk = zeros(nx, nu, N_h);
+    ck = zeros(nx, N_h);
+    for k = 1:N_h
+        [Ak(:,:,k), Bk(:,:,k), ck(:,k)] = ...
+            linearise(xb(:,k), ub(:,k), f_nl, Ts, m, g_val, J_r, l_arm);
+    end
+
+    % Solve QP subproblem
+    x_var = sdpvar(nx, N_h+1, &#39;full&#39;);
+    u_var = sdpvar(nu, N_h, &#39;full&#39;);
+    nu_vc = sdpvar(nx, N_h, &#39;full&#39;);
+
+    con = [x_var(:,1) == x0, x_var(:,N_h+1) == xf];
+    obj = 0;
+    for k = 1:N_h
+        con = [con, x_var(:,k+1) == Ak(:,:,k)*x_var(:,k) ...
+               + Bk(:,:,k)*u_var(:,k) + ck(:,k) + nu_vc(:,k)];
+        con = [con, T_min &lt;= u_var(1,k) &lt;= T_max];
+        con = [con, -del_max &lt;= u_var(2,k) &lt;= del_max];
+        con = [con, -th_max &lt;= x_var(5,k) &lt;= th_max];
+        con = [con, x_var(2,k) &gt;= 0];
+        % Trust region
+        con = [con, -Delta &lt;= x_var(:,k)-xb(:,k) &lt;= Delta];
+        con = [con, -Delta &lt;= u_var(:,k)-ub(:,k) &lt;= Delta];
+        obj = obj + Ts*u_var(1,k) + w_vc*norm(nu_vc(:,k),1);
+    end
+    optimize(con, obj, sdpsettings(&#39;verbose&#39;,0,&#39;solver&#39;,&#39;quadprog&#39;));
+
+    x_new = value(x_var); u_new = value(u_var);
+    vc_norm = max(abs(value(nu_vc(:))));
+    dx = max(abs(x_new(:) - xb(:)));
+
+    fprintf(&#39;Iter %2d: dx=%.4e, vc=%.4e\n&#39;, iter, dx, vc_norm);
+    xb = x_new; ub = u_new;
+    if dx &lt; tol &amp;&amp; vc_norm &lt; tol, break; end
+end</code></pre>
 <p>The <code>linearise</code> helper computes the Jacobians <span
 class="math inline">\(A_k\)</span>, <span
 class="math inline">\(B_k\)</span> and the constant <span
 class="math inline">\(c_k = f(\bar{x}_k, \bar{u}_k) - A_k \bar{x}_k -
 B_k \bar{u}_k\)</span> at each time step using the analytical
 expressions derived above:</p>
-<div class="sourceCode" id="lst:linearise_helper" data-language="Matlab"
+<pre id="lst:linearise_helper" class="matlab" data-language="Matlab"
 data-caption="The \texttt{linearise} helper function for the rocket dynamics."
-data-label="lst:linearise_helper"><pre
-class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:linearise_helper-1"><a href="#lst:linearise_helper-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> [<span class="va">Ak</span><span class="op">,</span> <span class="va">Bk</span><span class="op">,</span> <span class="va">ck</span>] <span class="op">=</span> <span class="va">linearise</span>(<span class="va">xb</span><span class="op">,</span> <span class="va">ub</span><span class="op">,</span> <span class="va">f_nl</span><span class="op">,</span> <span class="va">Ts</span><span class="op">,</span> <span class="va">m</span><span class="op">,</span> <span class="va">g_val</span><span class="op">,</span> <span class="va">J_r</span><span class="op">,</span> <span class="va">l_arm</span>)</span>
-<span id="lst:linearise_helper-2"><a href="#lst:linearise_helper-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">th</span> <span class="op">=</span> <span class="va">xb</span>(<span class="fl">5</span>)<span class="op">;</span> <span class="va">T_b</span> <span class="op">=</span> <span class="va">ub</span>(<span class="fl">1</span>)<span class="op">;</span> <span class="va">del</span> <span class="op">=</span> <span class="va">ub</span>(<span class="fl">2</span>)<span class="op">;</span></span>
-<span id="lst:linearise_helper-3"><a href="#lst:linearise_helper-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">s</span> <span class="op">=</span> <span class="va">sin</span>(<span class="va">th</span> <span class="op">+</span> <span class="va">del</span>)<span class="op">;</span> <span class="va">c</span> <span class="op">=</span> <span class="va">cos</span>(<span class="va">th</span> <span class="op">+</span> <span class="va">del</span>)<span class="op">;</span></span>
-<span id="lst:linearise_helper-4"><a href="#lst:linearise_helper-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ak</span> <span class="op">=</span> [<span class="fl">1</span> <span class="fl">0</span> <span class="va">Ts</span> <span class="fl">0</span>  <span class="fl">0</span> <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-5"><a href="#lst:linearise_helper-5" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">1</span> <span class="fl">0</span>  <span class="va">Ts</span> <span class="fl">0</span> <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-6"><a href="#lst:linearise_helper-6" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">1</span>  <span class="fl">0</span>  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span>  <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-7"><a href="#lst:linearise_helper-7" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">1</span>  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span>  <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-8"><a href="#lst:linearise_helper-8" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">0</span>   <span class="fl">1</span>           <span class="va">Ts</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-9"><a href="#lst:linearise_helper-9" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">0</span>   <span class="fl">0</span>            <span class="fl">1</span>]<span class="op">;</span></span>
-<span id="lst:linearise_helper-10"><a href="#lst:linearise_helper-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">Bk</span> <span class="op">=</span> [<span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-11"><a href="#lst:linearise_helper-11" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-12"><a href="#lst:linearise_helper-12" aria-hidden="true" tabindex="-1"></a>         <span class="op">-</span><span class="va">Ts</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span>        <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-13"><a href="#lst:linearise_helper-13" aria-hidden="true" tabindex="-1"></a>          <span class="va">Ts</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span>        <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-14"><a href="#lst:linearise_helper-14" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-15"><a href="#lst:linearise_helper-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span><span class="op">*</span><span class="va">sin</span>(<span class="va">del</span>)  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span><span class="op">*</span><span class="va">cos</span>(<span class="va">del</span>)]<span class="op">;</span></span>
-<span id="lst:linearise_helper-16"><a href="#lst:linearise_helper-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">ck</span> <span class="op">=</span> <span class="va">f_nl</span>(<span class="va">xb</span><span class="op">,</span> <span class="va">ub</span>) <span class="op">-</span> <span class="va">Ak</span><span class="op">*</span><span class="va">xb</span> <span class="op">-</span> <span class="va">Bk</span><span class="op">*</span><span class="va">ub</span><span class="op">;</span></span>
-<span id="lst:linearise_helper-17"><a href="#lst:linearise_helper-17" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+data-label="lst:linearise_helper"><code>function [Ak, Bk, ck] = linearise(xb, ub, f_nl, Ts, m, g_val, J_r, l_arm)
+    th = xb(5); T_b = ub(1); del = ub(2);
+    s = sin(th + del); c = cos(th + del);
+    Ak = [1 0 Ts 0  0 0;
+          0 1 0  Ts 0 0;
+          0 0 1  0  -Ts*T_b/m*c  0;
+          0 0 0  1  -Ts*T_b/m*s  0;
+          0 0 0  0   1           Ts;
+          0 0 0  0   0            1];
+    Bk = [0              0;
+          0              0;
+         -Ts/m*s        -Ts*T_b/m*c;
+          Ts/m*c        -Ts*T_b/m*s;
+          0              0;
+         -Ts*l_arm/J_r*sin(del)  -Ts*T_b*l_arm/J_r*cos(del)];
+    ck = f_nl(xb, ub) - Ak*xb - Bk*ub;
+end</code></pre>
 <div class="notebox">
 <p><span>Figures Generated with GuSTO Variant</span> The figures in this
 section were generated using the GuSTO variant (soft quadratic proximity
@@ -920,7 +865,7 @@ descent.</p></li>
 decelerating smoothly to zero velocity at the surface.</p></li>
 </ol>
 <figure id="fig:nmpc_rocket_traj" data-latex-placement="ht">
-<embed src="figures/fig_nmpc_rocket_traj.png" style="width:90.0%" />
+<embed src="Figures/fig_nmpc_rocket_traj.pdf" style="width:90.0%" />
 <figcaption>Rocket landing trajectory computed by SCvx. Left: 2D
 trajectory with rocket attitude at selected time steps. The rocket
 corrects horizontal drift, decelerates, and lands vertically at the
@@ -929,7 +874,7 @@ and thrust/gimbal inputs. Dashed lines indicate constraint
 limits.</figcaption>
 </figure>
 <figure id="fig:scvx_convergence" data-latex-placement="ht">
-<embed src="figures/fig_scvx_convergence.png" style="width:70.0%" />
+<embed src="Figures/fig_scvx_convergence.pdf" style="width:70.0%" />
 <figcaption>SCvx convergence: maximum trajectory change <span
 class="math inline">\(\max_k\|x_k^{(i+1)} - x_k^{(i)}\|_\infty\)</span>
 and virtual control magnitude <span
@@ -938,272 +883,6 @@ quantities decrease below the tolerance <span
 class="math inline">\(10^{-3}\)</span> within approximately 10
 iterations.</figcaption>
 </figure>
-
-<h4>Interactive Demo: Rocket Landing with SCvx MPC</h4>
-<p>This demo uses <strong>Successive Convexification (SCvx)</strong> with RK4 dynamics in a receding-horizon MPC loop. At each time step, the nonlinear dynamics are linearised, a bounded QP with trust-region penalty is solved via projected gradient descent, and the first control is applied. Adjust the initial conditions, landing pad position, and MPC weights, then click <strong>Start</strong>. Click the canvas to reposition the rocket; Shift-click to move the landing pad.</p>
-<div class="rocket-demo"></div>
-
-<h4>Try It Yourself: SCvx Rocket Landing in Python</h4>
-<p>This solver uses <strong>Successive Convexification (SCvx)</strong> with <strong>RK4 dynamics</strong> and a receding-horizon MPC loop. At each MPC step the nonlinear dynamics are linearised, a convex QP (with trust-region penalty and actuator bounds) is solved via <strong>preconditioned projected gradient descent</strong> with exact step sizes from Hessian-vector products, and the trajectory is updated. Adjust the initial conditions, cost weights, or horizon and click <strong>Run</strong>.</p>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-
-# ── Rocket parameters ──────────────────────────────────────
-mass, grav, Jrot, Larm = 30.0, 9.81, 10.0, 1.5
-dt = 0.1
-NX, NU = 6, 2
-T_min, T_max, delta_max = 40.0, 400.0, 0.35
-u_hover = np.array([mass * grav, 0.0])
-GROUND_PEN = 5000.0
-
-# ── Continuous dynamics: x=[px,py,vx,vy,θ,ω], u=[T,δ] ────
-def f_cont(x, u):
-    sn = np.sin(x[4] + u[1])
-    cs = np.cos(x[4] + u[1])
-    Tm = u[0] / mass
-    return np.array([x[2], x[3], -Tm*sn, Tm*cs - grav,
-                     x[5], -(u[0]*Larm/Jrot)*np.sin(u[1])])
-
-# ── RK4 integrator ─────────────────────────────────────────
-def rk4(x, u):
-    k1 = f_cont(x, u)
-    k2 = f_cont(x + 0.5*dt*k1, u)
-    k3 = f_cont(x + 0.5*dt*k2, u)
-    k4 = f_cont(x + dt*k3, u)
-    return x + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
-
-# ── Nonlinear forward rollout ──────────────────────────────
-def rollout(x0, us):
-    N = len(us)
-    xs = np.zeros((N+1, NX)); xs[0] = x0
-    for k in range(N):
-        xs[k+1] = rk4(xs[k], us[k])
-    return xs
-
-# ── Numerical Jacobians of the RK4 map ─────────────────────
-def rk4_jac(x, u):
-    eps = 1e-6; f0 = rk4(x, u)
-    A = np.zeros((NX, NX)); B = np.zeros((NX, NU))
-    for j in range(NX):
-        xp = x.copy(); xp[j] += eps
-        A[:, j] = (rk4(xp, u) - f0) / eps
-    for j in range(NU):
-        up = u.copy(); up[j] += eps
-        B[:, j] = (rk4(x, up) - f0) / eps
-    return A, B
-
-# ── Cubic Hermite reference trajectory ─────────────────────
-def gen_ref(x0, xf, N):
-    refs = np.zeros((N+1, NX))
-    Tf = N * dt
-    for k in range(N+1):
-        s = k / N
-        h00 = 2*s**3 - 3*s**2 + 1
-        h10 = s**3 - 2*s**2 + s
-        h01 = -2*s**3 + 3*s**2
-        h11 = s**3 - s**2
-        refs[k, 0] = h00*x0[0] + h10*Tf*x0[2] + h01*xf[0] + h11*Tf*xf[2]
-        refs[k, 1] = h00*x0[1] + h10*Tf*x0[3] + h01*xf[1] + h11*Tf*xf[3]
-        for i in range(2, NX):
-            refs[k, i] = (1-s)*x0[i] + s*xf[i]
-    return refs
-
-# ── QP gradient via adjoint backward pass ──────────────────
-def qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar):
-    N = len(us)
-    xs = np.zeros((N+1, NX)); xs[0] = x0
-    for k in range(N):
-        xs[k+1] = Ab[k] @ xs[k] + Bb[k] @ us[k] + cb[k]
-    lam = Qfd * (xs[N] - refs[N])
-    if xs[N, 1] < 0:
-        lam[1] += GROUND_PEN * xs[N, 1]
-    grad = np.zeros((N, NU))
-    for k in range(N-1, -1, -1):
-        grad[k] = Rd * (us[k] - u_ref) + w_tr * (us[k] - us_bar[k])
-        grad[k] += Bb[k].T @ lam
-        new_lam = Qd * (xs[k] - refs[k])
-        if xs[k, 1] < 0:
-            new_lam[1] += GROUND_PEN * xs[k, 1]
-        lam = new_lam + Ab[k].T @ lam
-    return grad
-
-# ── Hessian-vector product for exact step size ─────────────
-def qp_hvp(d, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar):
-    N = len(d)
-    dx = np.zeros((N+1, NX))
-    for k in range(N):
-        dx[k+1] = Ab[k] @ dx[k] + Bb[k] @ d[k]
-    lam = Qfd * dx[N]
-    if xs_bar[N, 1] < 0:
-        lam[1] += GROUND_PEN * dx[N, 1]
-    Hd = np.zeros((N, NU))
-    for k in range(N-1, -1, -1):
-        Hd[k] = (Rd + w_tr) * d[k] + Bb[k].T @ lam
-        new_lam = Qd * dx[k]
-        if xs_bar[k, 1] < 0:
-            new_lam[1] += GROUND_PEN * dx[k, 1]
-        lam = new_lam + Ab[k].T @ lam
-    return Hd
-
-# ── SCvx solver (preconditioned projected gradient) ────────
-def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr):
-    N = len(us_init)
-    us = us_init.copy()
-    for scp in range(n_scp):
-        # 1. Nonlinear rollout
-        xs_bar = rollout(x0, us)
-        # 2. Linearise: x_{k+1} ≈ A_k x_k + B_k u_k + c_k
-        Ab = np.zeros((N, NX, NX))
-        Bb = np.zeros((N, NX, NU))
-        cb = np.zeros((N, NX))
-        for k in range(N):
-            Ab[k], Bb[k] = rk4_jac(xs_bar[k], us[k])
-            cb[k] = xs_bar[k+1] - Ab[k] @ xs_bar[k] - Bb[k] @ us[k]
-        us_bar = us.copy()
-        # Diagonal preconditioner (backward Hessian approx)
-        diag_p = Qfd.copy()
-        if xs_bar[N, 1] < 0:
-            diag_p[1] += GROUND_PEN
-        prec = np.zeros((N, NU))
-        for k in range(N-1, -1, -1):
-            for a in range(NU):
-                prec[k, a] = Rd[a] + w_tr
-                for i in range(NX):
-                    prec[k, a] += Bb[k, i, a]**2 * diag_p[i]
-                prec[k, a] = max(prec[k, a], 1e-6)
-            new_dp = Qd.copy()
-            if xs_bar[k, 1] < 0:
-                new_dp[1] += GROUND_PEN
-            for i in range(NX):
-                for j in range(NX):
-                    new_dp[i] += Ab[k, j, i]**2 * diag_p[j]
-            diag_p = new_dp
-        # 3. Preconditioned projected gradient descent
-        for qi in range(20):
-            grad = qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd,
-                           u_ref, w_tr, us_bar)
-            for k in range(N):
-                if us[k, 0] <= T_min + 0.01 and grad[k, 0] > 0:
-                    grad[k, 0] = 0
-                if us[k, 0] >= T_max - 0.01 and grad[k, 0] < 0:
-                    grad[k, 0] = 0
-                if us[k, 1] <= -delta_max + 1e-4 and grad[k, 1] > 0:
-                    grad[k, 1] = 0
-                if us[k, 1] >= delta_max - 1e-4 and grad[k, 1] < 0:
-                    grad[k, 1] = 0
-            pdir = grad / prec
-            Hpd = qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar)
-            gd = np.sum(grad * pdir)
-            dHd = np.sum(pdir * Hpd)
-            if gd < 1e-8 or dHd < 1e-12:
-                break
-            alpha = gd / dHd
-            us[:, 0] = np.clip(us[:, 0] - alpha * pdir[:, 0],
-                               T_min, T_max)
-            us[:, 1] = np.clip(us[:, 1] - alpha * pdir[:, 1],
-                               -delta_max, delta_max)
-    xs = rollout(x0, us)
-    return xs, us
-</script>
-<pre><code># ═══ SCvx MPC Rocket Landing ═════════════════════════════
-# Successive Convexification: linearise → QP → update.
-# Modify initial state, weights, or horizon and click Run.
-
-# ── Initial and target states ────────────────────────────
-x0 = np.array([10.0, 50.0, -2.0, -8.0, np.radians(14), 0.0])
-xf = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-# ── MPC parameters ──────────────────────────────────────
-N_hor   = 36       # prediction horizon (3.6 s)
-N_sim   = 100      # max simulation steps
-n_scp   = 3        # SCP iterations per MPC step
-w_tr    = 1.5      # trust-region penalty weight
-
-# ── Cost weights (match JS animation defaults) ──────────
-Qd  = np.array([15, 15, 7.5, 7.5, 50, 10], dtype=float)
-Rd  = np.array([0.0015, 1.5])
-Qf_mult = 200.0   # terminal cost multiplier
-
-# ── MPC loop ─────────────────────────────────────────────
-x_hist, u_hist = [x0.copy()], []
-x_cur = x0.copy()
-us_warm = np.tile(u_hover, (N_hor, 1))
-
-print("Running SCvx MPC...")
-for step in range(N_sim):
-    refs = gen_ref(x_cur, xf, N_hor)
-    Qfd  = Qf_mult * Qd
-
-    xs_plan, us_plan = scvx_solve(
-        x_cur, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr)
-
-    u_apply = us_plan[0]
-    x_cur = rk4(x_cur, u_apply)
-    x_hist.append(x_cur.copy())
-    u_hist.append(u_apply.copy())
-
-    # Warm-start: shift solution by one step
-    us_warm = np.vstack([us_plan[1:], us_plan[-1:]])
-
-    # Landing check: altitude, speed, and tilt
-    speed = np.sqrt(x_cur[2]**2 + x_cur[3]**2)
-    if x_cur[1] <= 0.3 and speed < 1.5 and abs(x_cur[4]) < 0.26:
-        print(f"  Landed at step {step+1}!")
-        break
-
-x_hist = np.array(x_hist)
-u_hist = np.array(u_hist)
-t_x = np.arange(len(x_hist)) * dt
-t_u = np.arange(len(u_hist)) * dt
-
-# ── Plot results ─────────────────────────────────────────
-fig, axes = plt.subplots(2, 2, figsize=(10, 7))
-
-axes[0,0].plot(t_x, x_hist[:,0], label='$p_x$')
-axes[0,0].plot(t_x, x_hist[:,1], label='$p_y$')
-axes[0,0].axhline(0, ls=':', color='gray', alpha=0.5)
-axes[0,0].set_ylabel('Position (m)')
-axes[0,0].legend(); axes[0,0].grid(True)
-axes[0,0].set_title('Position')
-
-axes[0,1].plot(t_x, x_hist[:,2], label='$v_x$')
-axes[0,1].plot(t_x, x_hist[:,3], label='$v_y$')
-axes[0,1].axhline(0, ls=':', color='gray', alpha=0.5)
-axes[0,1].set_ylabel('Velocity (m/s)')
-axes[0,1].legend(); axes[0,1].grid(True)
-axes[0,1].set_title('Velocity')
-
-axes[1,0].stairs(u_hist[:,0], t_u.tolist()+[t_u[-1]+dt],
-                 color='#FF6B35', label='Thrust')
-axes[1,0].axhline(T_min, ls='--', color='gray', label='Bounds')
-axes[1,0].axhline(T_max, ls='--', color='gray')
-axes[1,0].set_ylabel('Thrust (N)')
-axes[1,0].legend(); axes[1,0].grid(True)
-axes[1,0].set_title('Thrust')
-
-axes[1,1].plot(t_x, np.degrees(x_hist[:,4]), color='#4ECDC4')
-axes[1,1].axhline(0, ls=':', color='gray', alpha=0.5)
-axes[1,1].set_ylabel('Angle (deg)')
-axes[1,1].grid(True)
-axes[1,1].set_title('Tilt Angle')
-
-for ax in axes.flat:
-    ax.set_xlabel('Time (s)')
-fig.suptitle('SCvx MPC Rocket Landing (RK4 Dynamics)', fontsize=13)
-fig.tight_layout()
-plt.close(fig)
-
-print(f"\nFinal pos:  ({x_hist[-1,0]:.2f}, {x_hist[-1,1]:.2f}) m")
-print(f"Final vel:  ({x_hist[-1,2]:.2f}, {x_hist[-1,3]:.2f}) m/s")
-print(f"Final tilt: {np.degrees(x_hist[-1,4]):.1f}°")
-print(f"Steps:      {len(u_hist)}")
-print(f"Fuel used:  {np.sum(u_hist[:,0])*dt:.1f} N·s")
-</code></pre>
-</div>
-
 <h2 id="sec:rt_nmpc">Real-Time Nonlinear MPC</h2>
 <p>In a receding-horizon loop, the NLP (or SCP sequence) must be solved
 within one sampling period <span class="math inline">\(T_s\)</span>. For
@@ -1227,7 +906,7 @@ the QP, and apply <span class="math inline">\(u_0^*\)</span>.</p></li>
 milliseconds for structured solvers. Over successive time steps, the
 single-iteration updates accumulate into full NLP convergence, provided
 the system evolves continuously. RTI is the workhorse of real-time NMPC
-and is implemented in the <strong>acados</strong> framework <span
+and is implemented in the <em>acados</em> framework <span
 class="citation" data-cites="Verschueren2022"></span>.</p>
 <div class="notebox">
 <p><span>RTI and Successive Linearisation</span> RTI is closely related
@@ -1255,551 +934,6 @@ class="math display">\[\bar{u}_k^{\text{new}} = u_{k+1}^*, \;\; k = 0,
 \dots, N{-}2, \qquad \bar{u}_{N-1}^{\text{new}} = u_{N-1}^*.\]</span>
 This provides an excellent initial guess for the NLP solver (or SCvx),
 dramatically reducing the number of iterations needed.</p>
-
-<h2 id="sec:robot_tracking">Application: Reference Tracking for a Nonholonomic Robot</h2>
-
-<p>We now apply linearised MPC with warm-starting to a <em>nonholonomic mobile robot</em> (unicycle model). The state is <span class="math inline">\(\mathbf{x} = [x,\, y,\, \theta]^\top\)</span> (position and heading) and the input is <span class="math inline">\(\mathbf{u} = [v,\, \omega]^\top\)</span> (linear and angular velocity). The discrete-time dynamics are:</p>
-
-<p><span class="math display">\[\begin{align*}
-x_{k+1} &= x_k + T_s\, v_k \cos\theta_k, \\
-y_{k+1} &= y_k + T_s\, v_k \sin\theta_k, \\
-\theta_{k+1} &= \theta_k + T_s\, \omega_k.
-\end{align*}\]</span></p>
-
-<p>The <em>nonholonomic constraint</em> — the robot cannot move sideways — is embedded in the model: velocity acts only along the heading direction. This makes the system nonlinear in <span class="math inline">\(\theta\)</span> and underactuated (3 states, 2 inputs).</p>
-
-<p>For <strong>reference tracking</strong>, given a desired trajectory <span class="math inline">\(\mathbf{x}_k^{\text{ref}}\)</span> with corresponding feedforward inputs <span class="math inline">\(\mathbf{u}_k^{\text{ref}}\)</span>, we define error variables <span class="math inline">\(e_k = \mathbf{x}_k - \mathbf{x}_k^{\text{ref}}\)</span> and <span class="math inline">\(\delta u_k = \mathbf{u}_k - \mathbf{u}_k^{\text{ref}}\)</span>. Linearising around the reference gives:</p>
-
-<p><span class="math display">\[e_{k+1} \approx A_k\, e_k + B_k\, \delta u_k,\]</span></p>
-
-<p>where</p>
-
-<p><span class="math display">\[A_k = \begin{bmatrix} 1 & 0 & -T_s v_k^{\text{ref}} \sin\theta_k^{\text{ref}} \\ 0 & 1 & T_s v_k^{\text{ref}} \cos\theta_k^{\text{ref}} \\ 0 & 0 & 1 \end{bmatrix}, \qquad
-B_k = \begin{bmatrix} T_s \cos\theta_k^{\text{ref}} & 0 \\ T_s \sin\theta_k^{\text{ref}} & 0 \\ 0 & T_s \end{bmatrix}.\]</span></p>
-
-<p>The MPC solves a <strong>time-varying QP</strong> at each step (condensed form):</p>
-
-<p><span class="math display">\[\min_{\delta U}\; \frac{1}{2}\,\delta U^\top H\,\delta U + g^\top \delta U \quad \text{s.t.} \quad u_{\min} - u_k^{\text{ref}} \le \delta u_k \le u_{\max} - u_k^{\text{ref}},\]</span></p>
-
-<p>where <span class="math inline">\(H = \Theta^\top \bar{Q}\,\Theta + \bar{R}\)</span> and <span class="math inline">\(g = \Theta^\top \bar{Q}\,\Psi\, e_0\)</span>, with <span class="math inline">\(\Psi\)</span> and <span class="math inline">\(\Theta\)</span> the standard prediction matrices built from the time-varying <span class="math inline">\((A_k, B_k)\)</span> pairs along the horizon.</p>
-
-<div class="notebox">
-<p><span>Connection to RTI</span> This is exactly the Real-Time Iteration scheme from the previous section: one linearisation around the (shifted) reference, one QP solve, apply the first input. The warm-started QP converges rapidly because consecutive problems differ only slightly.</p>
-</div>
-
-<h3>Interactive Demo</h3>
-<p>The simulation below implements this linearised tracking MPC in real time. The robot (white arrow) tracks a reference path (teal dashed). Orange dots show the MPC predicted trajectory over the horizon. Adjust the weights and horizon to observe their effect on tracking performance.</p>
-
-<div class="robot-demo-container" id="robot-demo-1"></div>
-
-<h3>Python Implementation</h3>
-<p>The following Python code implements the same linearised tracking MPC. Edit the parameters and click <strong>Run</strong> to simulate the closed-loop system.</p>
-
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-import matplotlib.pyplot as plt
-
-def unicycle_step(s, u, Ts):
-    return np.array([s[0]+Ts*u[0]*np.cos(s[2]), s[1]+Ts*u[0]*np.sin(s[2]), s[2]+Ts*u[1]])
-
-def unicycle_jac(s, u, Ts):
-    c, si, v = np.cos(s[2]), np.sin(s[2]), u[0]
-    A = np.array([[1,0,-Ts*v*si],[0,1,Ts*v*c],[0,0,1]])
-    B = np.array([[Ts*c,0],[Ts*si,0],[0,Ts]])
-    return A, B
-
-def fig8_ref(t, T=12, sc=3):
-    w = 2*np.pi/T
-    x, y = sc*np.sin(w*t), sc*np.sin(2*w*t)/2
-    dx, dy = sc*w*np.cos(w*t), sc*w*np.cos(2*w*t)
-    sp = max(np.sqrt(dx**2+dy**2), 0.01)
-    th = np.arctan2(dy, dx)
-    ddx, ddy = -sc*w**2*np.sin(w*t), -2*sc*w**2*np.sin(2*w*t)
-    om = (ddx*dy-dx*ddy)/(dx**2+dy**2) if sp > 0.01 else 0
-    return np.array([x,y,th]), np.array([sp, om])
-
-def solve_tracking_mpc(x0, t0, N, Qp, Qt, Rv, Rw, v_max, w_max, Ts):
-    refs = [fig8_ref(t0+k*Ts) for k in range(N+1)]
-    e0 = x0 - refs[0][0]
-    e0[2] = np.arctan2(np.sin(e0[2]), np.cos(e0[2]))
-
-    Phi = np.eye(3)
-    Psi = np.zeros((N*3, 3))
-    Theta = np.zeros((N*3, N*2))
-    for k in range(N):
-        A, B = unicycle_jac(refs[k][0], refs[k][1], Ts)
-        Phi = A @ Phi
-        Psi[k*3:(k+1)*3] = Phi
-        for j in range(k):
-            Theta[k*3:(k+1)*3, j*2:(j+1)*2] = A @ Theta[(k-1)*3:k*3, j*2:(j+1)*2]
-        Theta[k*3:(k+1)*3, k*2:(k+1)*2] = B
-
-    q = np.zeros(N*3)
-    for k in range(N):
-        m = 10 if k == N-1 else 1
-        q[k*3:k*3+2] = Qp*m
-        q[k*3+2] = Qt*m
-    r = np.tile([Rv, Rw], N)
-    Q_bar, R_bar = np.diag(q), np.diag(r)
-
-    H = Theta.T @ Q_bar @ Theta + R_bar
-    g = Theta.T @ Q_bar @ Psi @ e0
-
-    du = np.linalg.solve(H + 1e-8*np.eye(N*2), -g)
-    for k in range(N):
-        du[k*2]   = np.clip(du[k*2],   -v_max-refs[k][1][0], v_max-refs[k][1][0])
-        du[k*2+1] = np.clip(du[k*2+1], -w_max-refs[k][1][1], w_max-refs[k][1][1])
-
-    u0 = np.clip(refs[0][1] + du[:2], [-v_max,-w_max], [v_max,w_max])
-    return u0
-</script>
-<pre><code># ── Editable Parameters ──────────────────────────
-N = 15              # ← Try changing: prediction horizon
-Q_pos = 50.0        # ← Try changing: position tracking weight
-Q_theta = 10.0      # ← Try changing: heading tracking weight
-R_v = 1.0           # ← Try changing: linear velocity penalty
-R_omega = 1.0       # ← Try changing: angular velocity penalty
-v_max = 3.0         # max linear velocity (m/s)
-omega_max = 3.0     # max angular velocity (rad/s)
-Ts = 0.05           # sampling time (s)
-T_sim = 12.0        # simulation duration (s)
-
-# ── Closed-Loop Simulation ───────────────────────
-n_steps = int(T_sim / Ts)
-x = np.array([1.0, -0.5, 0.3])  # offset from reference
-X, U, R_log, E = [x.copy()], [], [], []
-
-for k in range(n_steps):
-    t = k * Ts
-    r_s, _ = fig8_ref(t)
-    R_log.append(r_s)
-    E.append(np.sqrt((x[0]-r_s[0])**2 + (x[1]-r_s[1])**2))
-    u = solve_tracking_mpc(x, t, N, Q_pos, Q_theta, R_v, R_omega, v_max, omega_max, Ts)
-    x = unicycle_step(x, u, Ts)
-    x[2] = np.arctan2(np.sin(x[2]), np.cos(x[2]))
-    X.append(x.copy()); U.append(u.copy())
-
-X = np.array(X); U = np.array(U)
-R_log = np.array(R_log); E = np.array(E)
-tv = np.arange(n_steps) * Ts
-
-# ── Plot Results ─────────────────────────────────
-fig, ax = plt.subplots(2, 2, figsize=(10, 7))
-
-ax[0,0].plot(R_log[:,0], R_log[:,1], '--', color='#4ecdc4', lw=1.5, label='Reference')
-ax[0,0].plot(X[:,0], X[:,1], '-', color='#ff6b6b', lw=2, label='Robot')
-ax[0,0].plot(X[0,0], X[0,1], 'o', color='white', ms=7, label='Start')
-ax[0,0].set_xlabel('x (m)'); ax[0,0].set_ylabel('y (m)')
-ax[0,0].set_title('Trajectory Tracking'); ax[0,0].legend(fontsize=8)
-ax[0,0].set_aspect('equal'); ax[0,0].grid(True, alpha=0.3)
-
-ax[0,1].plot(tv, E, color='#ffd93d', lw=1.5)
-ax[0,1].set_xlabel('Time (s)'); ax[0,1].set_ylabel('Position Error (m)')
-ax[0,1].set_title('Tracking Error'); ax[0,1].grid(True, alpha=0.3)
-
-ax[1,0].step(tv, U[:,0], color='#4ecdc4', lw=1.5, where='post')
-ax[1,0].axhline(v_max, color='#ff6b6b', ls='--', alpha=0.4, label=f'Limits')
-ax[1,0].axhline(-v_max, color='#ff6b6b', ls='--', alpha=0.4)
-ax[1,0].set_xlabel('Time (s)'); ax[1,0].set_ylabel('v (m/s)')
-ax[1,0].set_title('Linear Velocity'); ax[1,0].legend(fontsize=8); ax[1,0].grid(True, alpha=0.3)
-
-ax[1,1].step(tv, U[:,1], color='#ff6b6b', lw=1.5, where='post')
-ax[1,1].axhline(omega_max, color='#4ecdc4', ls='--', alpha=0.4, label=f'Limits')
-ax[1,1].axhline(-omega_max, color='#4ecdc4', ls='--', alpha=0.4)
-ax[1,1].set_xlabel('Time (s)'); ax[1,1].set_ylabel('\u03C9 (rad/s)')
-ax[1,1].set_title('Angular Velocity'); ax[1,1].legend(fontsize=8); ax[1,1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-print(f"Final tracking error: {E[-1]:.4f} m")
-print(f"Mean tracking error:  {np.mean(E):.4f} m")
-print(f"Max |v|: {np.max(np.abs(U[:,0])):.2f} m/s, Max |\u03C9|: {np.max(np.abs(U[:,1])):.2f} rad/s")</code></pre>
-</div>
-
-<h2 id="sec:quadrotor_nmpc">Application: 3D Quadrotor Position Control</h2>
-
-<p>The quadrotor is a canonical nonlinear MPC benchmark: the dynamics couple translational and rotational degrees of freedom through trigonometric terms, the thrust-to-weight ratio imposes hard actuator limits, and the system is underactuated (three inputs controlling six states). We model a simplified quadrotor with state <span class="math inline">\(x = [p_x,\; p_y,\; p_z,\; v_x,\; v_y,\; v_z]^\top\)</span> (position and velocity in three axes) and input <span class="math inline">\(u = [\phi,\; \theta,\; T]^\top\)</span> (roll angle, pitch angle, total thrust). The continuous-time dynamics are:</p>
-
-<div class="displaymath">
-\[
-\dot{v}_x = \frac{T}{m}\cos\phi\,\sin\theta, \qquad
-\dot{v}_y = -\frac{T}{m}\sin\phi, \qquad
-\dot{v}_z = \frac{T}{m}\cos\phi\,\cos\theta - g
-\]
-</div>
-
-<p>with <span class="math inline">\(m = 1\,\text{kg}\)</span>, <span class="math inline">\(g = 9.81\,\text{m/s}^2\)</span>, and sampling period <span class="math inline">\(T_s = 0.1\,\text{s}\)</span>. Integration uses the RK4 scheme from Section <a href="#sec:rk4" data-reference-type="ref" data-reference="sec:rk4">1.2</a>. The input constraints are <span class="math inline">\(|\phi| \le 0.5\,\text{rad}\)</span>, <span class="math inline">\(|\theta| \le 0.5\,\text{rad}\)</span>, and <span class="math inline">\(0 \le T \le 20\,\text{N}\)</span>.</p>
-
-<p>The controller uses <strong>Successive Convexification (SCvx)</strong> in a receding-horizon loop: at each time step, the nonlinear RK4 dynamics are linearised along the current trajectory, yielding a convex QP that is solved via preconditioned projected gradient descent with exact step sizes from Hessian-vector products. The first input is applied, and the process repeats. A cubic Hermite reference trajectory smoothly interpolates from the current state to the target, and a ground penalty discourages <span class="math inline">\(p_z < 0\)</span>.</p>
-
-<p>The demo also features an optional <strong>wind disturbance</strong> (exogenous force applied to the true plant but unknown to the controller) and an <strong>Extended Kalman Filter (EKF)</strong> that jointly estimates the six states and the three disturbance force components. The augmented state is <span class="math inline">\(\hat{x}_a = [p_x, p_y, p_z, v_x, v_y, v_z, d_x, d_y, d_z]^\top\)</span>, where <span class="math inline">\(d_x, d_y, d_z\)</span> are modelled as a random walk. When the EKF is enabled, the MPC controller plans from the estimated state, providing implicit disturbance rejection through the corrected state feedback. The blurred flow animation on the canvas visualises the wind field.</p>
-
-<h4>Interactive Demo: 3D Quadrotor with SCvx MPC</h4>
-<p>The 3D animation below shows the quadrotor tracking a user-specified target position. Adjust the target coordinates, position tracking weight <span class="math inline">\(Q_{\text{pos}}\)</span>, control effort weight <span class="math inline">\(R\)</span>, and prediction horizon <span class="math inline">\(N\)</span>, then click <strong>Start</strong>. Drag to orbit the camera, shift+drag to pan, and scroll to zoom. Enable <strong>Wind</strong> to apply a disturbance force and <strong>EKF</strong> to estimate and feed-forward the disturbance into the MPC prediction model.</p>
-<div class="quadrotor-demo"></div>
-
-<h4>Try It Yourself: Quadrotor SCvx MPC with Wind &amp; EKF in Python</h4>
-<p>This solver implements <strong>Successive Convexification</strong> with <strong>RK4 dynamics</strong> for the 3D quadrotor, including <strong>wind disturbance</strong> and an <strong>Extended Kalman Filter (EKF)</strong> that jointly estimates the states and the unknown disturbance force. The MPC plans using the EKF-estimated state (unaware of the wind), while the true plant experiences the disturbance. Toggle <code>WIND_ON</code> and <code>EKF_ON</code> to compare performance with and without estimation.</p>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-# ── Quadrotor parameters ─────────────────────────────────
-mass, grav = 1.0, 9.81
-dt = 0.1
-NX, NU, NXA, NZ = 6, 3, 9, 6
-phi_max, theta_max = 0.5, 0.5
-T_min, T_max = 0.0, 20.0
-u_hover = np.array([0.0, 0.0, mass * grav])
-GROUND_PEN = 3000.0
-
-# ── Continuous-time dynamics (with optional disturbance) ─
-def f_cont(x, u, dist=None):
-    phi, theta, T = u[0], u[1], u[2]
-    cp, sp = np.cos(phi), np.sin(phi)
-    ct, st = np.cos(theta), np.sin(theta)
-    Tm = T / mass
-    dd = dist / mass if dist is not None else np.zeros(3)
-    return np.array([x[3], x[4], x[5],
-                     Tm * cp * st + dd[0],
-                     -Tm * sp + dd[1],
-                     Tm * cp * ct - grav + dd[2]])
-
-# ── RK4 integrator ──────────────────────────────────────
-def rk4(x, u, dist=None):
-    k1 = f_cont(x, u, dist)
-    k2 = f_cont(x + 0.5*dt*k1, u, dist)
-    k3 = f_cont(x + 0.5*dt*k2, u, dist)
-    k4 = f_cont(x + dt*k3, u, dist)
-    return x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
-
-# ── Numerical Jacobians of the RK4 map ──────────────────
-def rk4_jac(x, u, dist=None):
-    eps = 1e-6
-    f0 = rk4(x, u, dist)
-    A = np.zeros((NX, NX))
-    B = np.zeros((NX, NU))
-    for j in range(NX):
-        xp = x.copy(); xp[j] += eps
-        A[:, j] = (rk4(xp, u, dist) - f0) / eps
-    for j in range(NU):
-        up = u.copy(); up[j] += eps
-        B[:, j] = (rk4(x, up, dist) - f0) / eps
-    return A, B
-
-# ── Nonlinear rollout ───────────────────────────────────
-def rollout(x0, us, dist=None):
-    N = len(us)
-    xs = np.zeros((N+1, NX))
-    xs[0] = x0
-    for k in range(N):
-        xs[k+1] = rk4(xs[k], us[k], dist)
-    return xs
-
-# ── Reference trajectory (cubic Hermite) ────────────────
-def gen_ref(x0, xf, N):
-    Tf = N * dt
-    refs = np.zeros((N+1, NX))
-    for k in range(N+1):
-        s = k / N
-        h00 = 1 - 3*s**2 + 2*s**3
-        h10 = s - 2*s**2 + s**3
-        h01 = 3*s**2 - 2*s**3
-        dh00 = (-6*s + 6*s**2) / Tf
-        dh10 = (1 - 4*s + 3*s**2) / Tf
-        dh01 = (6*s - 6*s**2) / Tf
-        refs[k, 0] = x0[0]*h00 + xf[0]*h01 + x0[3]*Tf*h10
-        refs[k, 1] = x0[1]*h00 + xf[1]*h01 + x0[4]*Tf*h10
-        refs[k, 2] = max(x0[2]*h00 + xf[2]*h01 + x0[5]*Tf*h10, 0.05)
-        refs[k, 3] = x0[0]*dh00 + xf[0]*dh01 + x0[3]*Tf*dh10
-        refs[k, 4] = x0[1]*dh00 + xf[1]*dh01 + x0[4]*Tf*dh10
-        refs[k, 5] = x0[2]*dh00 + xf[2]*dh01 + x0[5]*Tf*dh10
-    return refs
-
-# ── Adjoint gradient of the QP cost ─────────────────────
-def qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar):
-    N = len(us)
-    xs = np.zeros((N+1, NX))
-    xs[0] = x0
-    for k in range(N):
-        xs[k+1] = Ab[k] @ xs[k] + Bb[k] @ us[k] + cb[k]
-    # Terminal costate
-    lam = Qfd * (xs[N] - refs[N])
-    if xs[N, 2] < 0:
-        lam[2] += GROUND_PEN * xs[N, 2]
-    grad = np.zeros((N, NU))
-    for k in range(N-1, -1, -1):
-        grad[k] = Rd * (us[k] - u_ref) + Bb[k].T @ lam + w_tr * (us[k] - us_bar[k])
-        lam = Qd * (xs[k] - refs[k]) + Ab[k].T @ lam
-        if xs[k, 2] < 0:
-            lam[2] += GROUND_PEN * xs[k, 2]
-    return grad
-
-# ── Hessian-vector product ──────────────────────────────
-def qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar):
-    N = len(pdir)
-    hvp = np.zeros((N, NU))
-    # Forward pass: propagate perturbation through linearised dynamics
-    dxs = np.zeros((N+1, NX))
-    for k in range(N):
-        dxs[k+1] = Ab[k] @ dxs[k] + Bb[k] @ pdir[k]
-    dlam = Qfd * dxs[N]
-    if xs_bar[N, 2] < 0:
-        dlam[2] += GROUND_PEN * dxs[N, 2]
-    for k in range(N-1, -1, -1):
-        hvp[k] = (Rd + w_tr) * pdir[k] + Bb[k].T @ dlam
-        dlam = Qd * dxs[k] + Ab[k].T @ dlam
-        if xs_bar[k, 2] < 0:
-            dlam[2] += GROUND_PEN * dxs[k, 2]
-    return hvp
-
-# ── SCvx solver ─────────────────────────────────────────
-def scvx_solve(x0, us_init, refs, Qd, Rd, Qfd, u_ref, n_scp, w_tr, dist_est=None):
-    N = len(us_init)
-    us = us_init.copy()
-    for scp in range(n_scp):
-        xs_bar = rollout(x0, us, dist_est)
-        Ab = np.zeros((N, NX, NX))
-        Bb = np.zeros((N, NX, NU))
-        cb = np.zeros((N, NX))
-        for k in range(N):
-            Ab[k], Bb[k] = rk4_jac(xs_bar[k], us[k], dist_est)
-            cb[k] = xs_bar[k+1] - Ab[k] @ xs_bar[k] - Bb[k] @ us[k]
-        us_bar = us.copy()
-        # Diagonal preconditioner
-        diag_p = Qfd.copy()
-        if xs_bar[N, 2] < 0:
-            diag_p[2] += GROUND_PEN
-        prec = np.zeros((N, NU))
-        for k in range(N-1, -1, -1):
-            for a in range(NU):
-                prec[k, a] = Rd[a] + w_tr + np.sum(Bb[k, :, a]**2 * diag_p)
-                prec[k, a] = max(prec[k, a], 1e-6)
-            new_dp = Qd.copy()
-            if xs_bar[k, 2] < 0:
-                new_dp[2] += GROUND_PEN
-            for i in range(NX):
-                new_dp[i] += np.sum(Ab[k, :, i]**2 * diag_p)
-            diag_p = new_dp
-        # Projected gradient descent
-        for qi in range(20):
-            grad = qp_grad(us, Ab, Bb, cb, x0, refs, Qd, Rd, Qfd, u_ref, w_tr, us_bar)
-            # Zero gradient at active bounds
-            for k in range(N):
-                if us[k,0] <= -phi_max+1e-4 and grad[k,0] > 0: grad[k,0] = 0
-                if us[k,0] >= phi_max-1e-4 and grad[k,0] < 0: grad[k,0] = 0
-                if us[k,1] <= -theta_max+1e-4 and grad[k,1] > 0: grad[k,1] = 0
-                if us[k,1] >= theta_max-1e-4 and grad[k,1] < 0: grad[k,1] = 0
-                if us[k,2] <= T_min+0.01 and grad[k,2] > 0: grad[k,2] = 0
-                if us[k,2] >= T_max-0.01 and grad[k,2] < 0: grad[k,2] = 0
-            pdir = grad / prec
-            Hpd = qp_hvp(pdir, Ab, Bb, Qd, Rd, Qfd, w_tr, xs_bar)
-            gd = np.sum(grad * pdir)
-            dHd = np.sum(pdir * Hpd)
-            if gd < 1e-8 or dHd < 1e-12:
-                break
-            alpha = gd / dHd
-            us[:, 0] = np.clip(us[:, 0] - alpha*pdir[:, 0], -phi_max, phi_max)
-            us[:, 1] = np.clip(us[:, 1] - alpha*pdir[:, 1], -theta_max, theta_max)
-            us[:, 2] = np.clip(us[:, 2] - alpha*pdir[:, 2], T_min, T_max)
-    xs = rollout(x0, us, dist_est)
-    return xs, us
-
-# ── EKF: Augmented Jacobian (9x9) ──────────────────────
-def aug_jacobian(x, u, dist):
-    eps = 1e-6
-    f0 = rk4(x, u, dist)
-    Fa = np.zeros((NXA, NXA))
-    for j in range(NX):
-        xp = x.copy(); xp[j] += eps
-        Fa[:NX, j] = (rk4(xp, u, dist) - f0) / eps
-    d0 = dist if dist is not None else np.zeros(3)
-    for j in range(3):
-        dp = d0.copy(); dp[j] += eps
-        Fa[:NX, NX+j] = (rk4(x, u, dp) - f0) / eps
-    Fa[NX:, NX:] = np.eye(3)
-    return Fa
-
-# ── EKF Predict & Update ───────────────────────────────
-def ekf_predict(xa, Pa, u, Qa):
-    x, dist = xa[:NX], xa[NX:]
-    x_next = rk4(x, u, dist)
-    xa_pred = np.concatenate([x_next, dist])
-    Fa = aug_jacobian(x, u, dist)
-    Pa_pred = Fa @ Pa @ Fa.T + Qa
-    return 0.5*(Pa_pred + Pa_pred.T), xa_pred
-
-def ekf_update(xa_pred, Pa_pred, z, Ra):
-    H = np.zeros((NZ, NXA)); H[:NZ, :NZ] = np.eye(NZ)
-    y = z - xa_pred[:NZ]
-    S = H @ Pa_pred @ H.T + np.diag(Ra)
-    K = Pa_pred @ H.T @ np.linalg.inv(S)
-    xa_upd = xa_pred + K @ y
-    IKH = np.eye(NXA) - K @ H
-    Pa_upd = IKH @ Pa_pred @ IKH.T + K @ np.diag(Ra) @ K.T
-    return 0.5*(Pa_upd + Pa_upd.T), xa_upd
-</script>
-<pre><code># ═══ SCvx MPC 3D Quadrotor with Wind Disturbance &amp; EKF ═══
-# The MPC plans assuming no wind (model mismatch).
-# The EKF estimates both states and disturbance forces.
-# Toggle WIND_ON and EKF_ON to compare performance.
-
-# ── Configuration ───────────────────────────────────────
-WIND_ON  = True     # Enable wind disturbance on true plant
-EKF_ON   = True     # Enable EKF for state + disturbance estimation
-WIND_STR = 2.5      # Wind strength (N)
-WIND_DIR = 45       # Wind direction (degrees)
-
-# ── Initial and target states ────────────────────────────
-x0 = np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0])
-xf = np.array([3.0, 2.0, 2.5, 0.0, 0.0, 0.0])
-
-# ── MPC parameters ──────────────────────────────────────
-N_hor   = 20
-N_sim   = 150
-n_scp   = 3
-w_tr    = 1.5
-
-# ── Cost weights ────────────────────────────────────────
-Qd  = np.array([20, 20, 20, 5, 5, 5], dtype=float)
-Rd  = np.array([0.5, 0.5, 0.002])
-Qf_mult = 150.0
-
-# ── EKF tuning ──────────────────────────────────────────
-Qa = np.diag([1e-4, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 0.15, 0.15, 0.15])
-Ra = np.array([1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2])
-
-# ── Wind disturbance function ───────────────────────────
-def wind_force():
-    if not WIND_ON:
-        return None
-    wd = np.radians(WIND_DIR)
-    turb = 0.25  # turbulence fraction
-    return np.array([
-        WIND_STR * np.cos(wd) + np.random.uniform(-1,1) * WIND_STR * turb,
-        WIND_STR * np.sin(wd) + np.random.uniform(-1,1) * WIND_STR * turb,
-        np.random.uniform(-1,1) * WIND_STR * 0.05
-    ])
-
-# ── Initialise ──────────────────────────────────────────
-x_hist, u_hist = [x0.copy()], []
-d_true_hist, d_est_hist = [], []
-x_cur = x0.copy()
-us_warm = np.tile(u_hover, (N_hor, 1))
-
-# EKF state
-xa = np.concatenate([x0, np.zeros(3)])  # augmented: [state, disturbance]
-Pa = np.diag([0.01]*3 + [0.1]*3 + [1.0]*3)
-
-print("Running SCvx MPC with" +
-      (" wind disturbance" if WIND_ON else " no disturbance") +
-      (" + EKF estimation" if EKF_ON else "") + "...")
-
-for step in range(N_sim):
-    # MPC uses EKF estimate (if enabled), else true state
-    x_for_mpc = xa[:NX].copy() if EKF_ON else x_cur.copy()
-    # Feed estimated disturbance into MPC model for compensation
-    d_est = xa[NX:].copy() if EKF_ON else None
-    refs = gen_ref(x_for_mpc, xf, N_hor)
-    Qfd = Qf_mult * Qd
-
-    xs_plan, us_plan = scvx_solve(
-        x_for_mpc, us_warm, refs, Qd, Rd, Qfd, u_hover, n_scp, w_tr, d_est)
-
-    u_apply = us_plan[0]
-
-    # True plant: apply control + wind disturbance
-    w_dist = wind_force()
-    x_cur = rk4(x_cur, u_apply, w_dist)
-    x_cur[2] = max(x_cur[2], 0.0)
-
-    # EKF predict + update
-    if EKF_ON:
-        Pa, xa = ekf_predict(xa, Pa, u_apply, Qa)
-        meas = x_cur[:NX] + np.random.randn(NZ) * 0.002
-        Pa, xa = ekf_update(xa, Pa, meas, Ra)
-
-    x_hist.append(x_cur.copy())
-    u_hist.append(u_apply.copy())
-    d_true_hist.append(w_dist if w_dist is not None else np.zeros(3))
-    d_est_hist.append(xa[NX:].copy() if EKF_ON else np.zeros(3))
-    us_warm = np.vstack([us_plan[1:], us_plan[-1:]])
-
-    pos_err = np.linalg.norm(x_cur[:3] - xf[:3])
-    vel_err = np.linalg.norm(x_cur[3:6])
-    if pos_err &lt; 0.05 and vel_err &lt; 0.1:
-        print(f"  Converged at step {step+1}!")
-        break
-
-x_hist = np.array(x_hist)
-u_hist = np.array(u_hist)
-d_true = np.array(d_true_hist)
-d_est  = np.array(d_est_hist)
-t_x = np.arange(len(x_hist)) * dt
-t_u = np.arange(len(u_hist)) * dt
-
-# ── Plot results ─────────────────────────────────────────
-fig = plt.figure(figsize=(12, 10))
-
-# 3D trajectory
-ax3d = fig.add_subplot(2, 2, 1, projection='3d')
-ax3d.plot(x_hist[:,0], x_hist[:,1], x_hist[:,2], 'b-', lw=1.5, label='Trajectory')
-ax3d.scatter(*x0[:3], color='green', s=80, zorder=5, label='Start')
-ax3d.scatter(*xf[:3], color='red', s=80, marker='*', zorder=5, label='Target')
-ax3d.set_xlabel('$p_x$ (m)'); ax3d.set_ylabel('$p_y$ (m)'); ax3d.set_zlabel('$p_z$ (m)')
-ax3d.set_title('3D Trajectory'); ax3d.legend(fontsize=8)
-
-# Position vs time
-ax1 = fig.add_subplot(2, 2, 2)
-ax1.plot(t_x, x_hist[:,0], label='$p_x$')
-ax1.plot(t_x, x_hist[:,1], label='$p_y$')
-ax1.plot(t_x, x_hist[:,2], label='$p_z$')
-for i, c in enumerate(['C0','C1','C2']):
-    ax1.axhline(xf[i], ls=':', color=c, alpha=0.4)
-ax1.set_xlabel('Time (s)'); ax1.set_ylabel('Position (m)')
-ax1.set_title('Position'); ax1.legend(fontsize=8); ax1.grid(True, alpha=0.3)
-
-# Control inputs
-ax2 = fig.add_subplot(2, 2, 3)
-ax2.stairs(np.degrees(u_hist[:,0]), t_u.tolist()+[t_u[-1]+dt],
-           color='#2196F3', label='Roll $\\phi$')
-ax2.stairs(np.degrees(u_hist[:,1]), t_u.tolist()+[t_u[-1]+dt],
-           color='#FF6B35', label='Pitch $\\theta$')
-ax2.axhline(np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
-ax2.axhline(-np.degrees(phi_max), ls='--', color='gray', alpha=0.5)
-ax2.set_xlabel('Time (s)'); ax2.set_ylabel('Angle (deg)')
-ax2.set_title('Roll &amp; Pitch'); ax2.legend(fontsize=8); ax2.grid(True, alpha=0.3)
-
-# Disturbance estimation
-ax3 = fig.add_subplot(2, 2, 4)
-if WIND_ON:
-    ax3.plot(t_u, d_true[:,0], 'C1', alpha=0.4, lw=1, label='$d_x$ true')
-    ax3.plot(t_u, d_true[:,1], 'C3', alpha=0.4, lw=1, label='$d_y$ true')
-if EKF_ON:
-    ax3.plot(t_u, d_est[:,0], '#2196F3', lw=1.5, label='$\\hat{d}_x$ EKF')
-    ax3.plot(t_u, d_est[:,1], '#4ECDC4', lw=1.5, label='$\\hat{d}_y$ EKF')
-ax3.axhline(0, ls=':', color='gray', alpha=0.3)
-ax3.set_xlabel('Time (s)'); ax3.set_ylabel('Force (N)')
-ax3.set_title('Disturbance Estimation'); ax3.legend(fontsize=8); ax3.grid(True, alpha=0.3)
-
-title = 'SCvx MPC — 3D Quadrotor'
-if WIND_ON: title += ' + Wind'
-if EKF_ON: title += ' + EKF'
-fig.suptitle(title, fontsize=13)
-fig.tight_layout()
-plt.close(fig)
-
-print(f"\nFinal pos:  ({x_hist[-1,0]:.2f}, {x_hist[-1,1]:.2f}, {x_hist[-1,2]:.2f}) m")
-print(f"Target:     ({xf[0]:.1f}, {xf[1]:.1f}, {xf[2]:.1f}) m")
-print(f"Pos error:  {np.linalg.norm(x_hist[-1,:3] - xf[:3]):.4f} m")
-print(f"Steps:      {len(u_hist)}")
-if EKF_ON:
-    print(f"Final d_est: ({d_est[-1,0]:.2f}, {d_est[-1,1]:.2f}, {d_est[-1,2]:.2f}) N")</code></pre>
-</div>
-
 <h2 id="sec:nmpc_guidelines">Practical Guidelines</h2>
 <div class="summarybox">
 <p><span>Comparison of NMPC Solution Methods</span></p>

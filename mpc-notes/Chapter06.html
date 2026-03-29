@@ -1,189 +1,491 @@
-<h1 id="state-estimation-and-the-kalman-filter">State Estimation and the Kalman Filter</h1>
-<p>In the previous chapter on LQR design, we assumed that the full state vector <span class="math inline">\(x_k\)</span> was available for feedback. In practice, this is rarely the case. We typically have access only to a limited set of noisy measurements <span class="math inline">\(y_k\)</span>. To implement modern control strategies like LQR or MPC, we must therefore reconstruct the internal state of the system from these imperfect observations.</p>
-<p>While the concept of <em>Observability</em> tells us <em>if</em> the state can be reconstructed mathematically, it does not tell us <em>how</em> to do so robustly in the presence of uncertainty. This chapter derives the optimal solution to the state estimation problem: the <strong>Kalman Filter</strong> <span class="citation" data-cites="Kalman1960"></span>.</p>
+<h1 id="chap:kalman">State Estimation and the Kalman Filter</h1>
+<p>In the previous chapter on LQR design, we assumed that the full state
+vector <span class="math inline">\(x_k\)</span> was available for
+feedback. In practice, this is rarely the case. We typically have access
+only to a limited set of noisy measurements <span
+class="math inline">\(y_k\)</span>. To implement modern control
+strategies like LQR or MPC, we must therefore reconstruct the internal
+state of the system from these imperfect observations.</p>
+<p>While the concept of <em>Observability</em> tells us <em>if</em> the
+state can be reconstructed mathematically, it does not tell us
+<em>how</em> to do so robustly in the presence of uncertainty. This
+chapter derives the optimal solution to the state estimation problem:
+the <em>Kalman Filter</em> <span class="citation"
+data-cites="Kalman1960"></span>.</p>
 <p>This chapter is structured as follows:</p>
 <ul>
-<li><p>We begin with a brief review of <em>probability and stochastic systems</em>, defining the mean and covariance matrices necessary to describe uncertainty.</p></li>
-<li><p>We formulate the estimation problem and derive the <em>recursive Kalman Filter algorithm</em>, showing how it optimally balances the system model against sensor data.</p></li>
-<li><p>We explore the mathematical <em>duality between estimation and control</em> (LQR), revealing the deep symmetry in linear systems theory.</p></li>
-<li><p>We discuss the <em>Steady-State Kalman Filter</em> and its relation to the Algebraic Riccati Equation, which simplifies implementation for time-invariant systems.</p></li>
-<li><p>Finally, we provide practical guidelines for <em>tuning</em> the filter—specifically, how to select the noise covariance matrices <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span>—and demonstrate the complete design process with a MATLAB case study.</p></li>
+<li><p>We begin with a brief review of <em>probability and stochastic
+systems</em>, defining the mean and covariance matrices necessary to
+describe uncertainty.</p></li>
+<li><p>We formulate the estimation problem and derive the <em>recursive
+Kalman Filter algorithm</em>, showing how it optimally balances the
+system model against sensor data.</p></li>
+<li><p>We explore the mathematical <em>duality between estimation and
+control</em> (LQR), revealing the deep symmetry in linear systems
+theory.</p></li>
+<li><p>We discuss the <em>Steady-State Kalman Filter</em> and its
+relation to the Algebraic Riccati Equation, which simplifies
+implementation for time-invariant systems.</p></li>
+<li><p>Finally, we provide practical guidelines for <em>tuning</em> the
+filter—specifically, how to select the noise covariance matrices <span
+class="math inline">\(W\)</span> and <span
+class="math inline">\(V\)</span>—and demonstrate the complete design
+process with a MATLAB case study.</p></li>
 </ul>
-<h2 id="background-stochastic-systems-and-probability">Background: Stochastic Systems and Probability</h2>
-<p>In previous chapters, we assumed that our system models were perfect and our sensors provided exact measurements. In reality, engineering systems are subject to uncertainty: actuators have jitter, sensors have noise, and mathematical models are merely approximations of complex physical reality.</p>
-<p>To deal with this, we must transition from <em>deterministic</em> variables to <em>random variables</em>. In this framework, we do not know the exact state <span class="math inline">\(x_k\)</span>; instead, we track the <em>probability</em> of the state being at a certain location. The Kalman Filter is essentially an algorithm that propagates the mean and covariance of these probability distributions over time.</p>
-<p>Before deriving the filter, we briefly review the essential concepts of probability theory required for linear estimation. A detailed review of the probability concepts used in this chapter is provided in Appendix <a href="#app:prob" data-reference-type="ref" data-reference="app:prob">[app:prob]</a>.</p>
-<h3 id="random-variables-and-expectation">Random Variables and Expectation</h3>
-<p>In many practical control scenarios, we cannot know the state of a system with absolute certainty due to sensor noise, model mismatch, or unknown disturbances. Consequently, we model the state not as a deterministic scalar or vector, but as a <strong>random vector</strong> <span class="math inline">\(x \in \mathbb{R}^n\)</span>. This means <span class="math inline">\(x\)</span> does not hold a single fixed value, but is described by a probability distribution function (PDF), denoted as <span class="math inline">\(p(x)\)</span>.</p>
-<p>The most fundamental statistical property of a random variable is the <strong>Mean</strong> (or Expected Value). Intuitively, this represents the “centre of gravity” of the probability distribution, or the average value one would observe if the experiment were repeated an infinite number of times. Mathematically, it is the first moment of the distribution: <span class="math display">\[\begin{equation*}
+<h2 id="background-stochastic-systems-and-probability">Background:
+Stochastic Systems and Probability</h2>
+<p>In previous chapters, we assumed that our system models were perfect
+and our sensors provided exact measurements. In reality, engineering
+systems are subject to uncertainty: actuators have jitter, sensors have
+noise, and mathematical models are merely approximations of complex
+physical reality.</p>
+<p>To deal with this, we must transition from <em>deterministic</em>
+variables to <em>random variables</em>. In this framework, we do not
+know the exact state <span class="math inline">\(x_k\)</span>; instead,
+we track the <em>probability</em> of the state being at a certain
+location. The Kalman Filter is essentially an algorithm that propagates
+the mean and covariance of these probability distributions over
+time.</p>
+<p>Before deriving the filter, we briefly review the essential concepts
+of probability theory required for linear estimation. A detailed review
+of the probability concepts used in this chapter is provided in
+Appendix <a href="#app:prob" data-reference-type="ref"
+data-reference="app:prob">[app:prob]</a>.</p>
+<h3 id="random-variables-and-expectation">Random Variables and
+Expectation</h3>
+<p>In many practical control scenarios, we cannot know the state of a
+system with absolute certainty due to sensor noise, model mismatch, or
+unknown disturbances. Consequently, we model the state not as a
+deterministic scalar or vector, but as a <em>random vector</em> <span
+class="math inline">\(x \in \mathbb{R}^n\)</span>. This means <span
+class="math inline">\(x\)</span> does not hold a single fixed value, but
+is described by a probability distribution function (PDF), denoted as
+<span class="math inline">\(p(x)\)</span>.</p>
+<p>The most fundamental statistical property of a random variable is the
+<em>Mean</em> (or Expected Value). Intuitively, this represents the
+“centre of gravity” of the probability distribution, or the average
+value one would observe if the experiment were repeated an infinite
+number of times. Mathematically, it is the first moment of the
+distribution: <span class="math display">\[\begin{equation*}
     \mu = \mathbb{E}[x] = \int_{-\infty}^{\infty} x \, p(x) \, dx
-\end{equation*}\]</span> Note that for a vector <span class="math inline">\(x\)</span>, this integral is applied element-wise to each component.</p>
-<p>A crucial property of the expectation operator <span class="math inline">\(\mathbb{E}[\cdot]\)</span> is that it is <strong>linear</strong>. If we apply a deterministic linear transformation to a random variable—such as multiplying it by a constant matrix <span class="math inline">\(A\)</span> or shifting it by a constant vector <span class="math inline">\(b\)</span>—the mean transforms in exactly the same manner: <span class="math display">\[\begin{equation*}
+\end{equation*}\]</span> Note that for a vector <span
+class="math inline">\(x\)</span>, this integral is applied element-wise
+to each component.</p>
+<p>A crucial property of the expectation operator <span
+class="math inline">\(\mathbb{E}[\cdot]\)</span> is that it is
+<em>linear</em>. If we apply a deterministic linear transformation to a
+random variable—such as multiplying it by a constant matrix <span
+class="math inline">\(A\)</span> or shifting it by a constant vector
+<span class="math inline">\(b\)</span>—the mean transforms in exactly
+the same manner: <span class="math display">\[\begin{equation*}
     \mathbb{E}[A x + b] = A \mathbb{E}[x] + b
-\end{equation*}\]</span> This property is of extreme importance in linear system theory. It implies that for a linear dynamical system (e.g., <span class="math inline">\(x_{k+1} = A x_k + B u_k\)</span>), the <em>average</em> behaviour of the system can be predicted simply by propagating the mean state through the deterministic system matrices, separating the deterministic dynamics from the stochastic noise.</p>
+\end{equation*}\]</span> This property is of extreme importance in
+linear system theory. It implies that for a linear dynamical system
+(e.g., <span class="math inline">\(x_{k+1} = A x_k + B u_k\)</span>),
+the <em>average</em> behaviour of the system can be predicted simply by
+propagating the mean state through the deterministic system matrices,
+separating the deterministic dynamics from the stochastic noise.</p>
 <h3 id="the-covariance-matrix">The Covariance Matrix</h3>
-<p>While the mean tells us where the state is <em>likely</em> to be, it tells us nothing about how confident we are in that estimate. This uncertainty is quantified by the <strong>Covariance Matrix</strong>, typically denoted as <span class="math inline">\(P\)</span> (or <span class="math inline">\(\Sigma\)</span>).</p>
-<p>For a random vector <span class="math inline">\(x\)</span> with mean <span class="math inline">\(\mu\)</span>, the covariance is defined as the expected value of the squared error: <span class="math display">\[\begin{equation*}
+<p>While the mean tells us where the state is <em>likely</em> to be, it
+tells us nothing about how confident we are in that estimate. This
+uncertainty is quantified by the <em>Covariance Matrix</em>, typically
+denoted as <span class="math inline">\(P\)</span> (or <span
+class="math inline">\(\Sigma\)</span>).</p>
+<p>For a random vector <span class="math inline">\(x\)</span> with mean
+<span class="math inline">\(\mu\)</span>, the covariance is defined as
+the expected value of the squared error: <span
+class="math display">\[\begin{equation*}
     P = \text{Cov}(x) = \mathbb{E}\left[ (x - \mu)(x - \mu)^\top \right]
-\end{equation*}\]</span> If <span class="math inline">\(x\)</span> has dimension <span class="math inline">\(n \times 1\)</span>, then <span class="math inline">\(P\)</span> is an <span class="math inline">\(n \times n\)</span> matrix with specific properties:</p>
+\end{equation*}\]</span> If <span class="math inline">\(x\)</span> has
+dimension <span class="math inline">\(n \times 1\)</span>, then <span
+class="math inline">\(P\)</span> is an <span class="math inline">\(n
+\times n\)</span> matrix with specific properties:</p>
 <ul>
-<li><p><strong>Symmetric:</strong> <span class="math inline">\(P = P^\top\)</span>.</p></li>
-<li><p><strong>Positive Semi-Definite:</strong> <span class="math inline">\(P \succeq 0\)</span>.</p></li>
-<li><p><strong>Diagonal Elements (<span class="math inline">\(P_{ii}\)</span>):</strong> Represent the <em>variance</em> of the <span class="math inline">\(i\)</span>-th state (<span class="math inline">\(\sigma_i^2\)</span>). A large value indicates high uncertainty.</p></li>
-<li><p><strong>Off-Diagonal Elements (<span class="math inline">\(P_{ij}\)</span>):</strong> Represent the <em>covariance</em> between state <span class="math inline">\(i\)</span> and state <span class="math inline">\(j\)</span>.</p></li>
+<li><p><strong>Symmetric:</strong> <span class="math inline">\(P =
+P^\top\)</span>.</p></li>
+<li><p><strong>Positive Semi-Definite:</strong> <span
+class="math inline">\(P \succeq 0\)</span>.</p></li>
+<li><p><strong>Diagonal Elements (<span
+class="math inline">\(P_{ii}\)</span>):</strong> Represent the
+<em>variance</em> of the <span class="math inline">\(i\)</span>-th state
+(<span class="math inline">\(\sigma_i^2\)</span>). A large value
+indicates high uncertainty.</p></li>
+<li><p><strong>Off-Diagonal Elements (<span
+class="math inline">\(P_{ij}\)</span>):</strong> Represent the
+<em>covariance</em> between state <span class="math inline">\(i\)</span>
+and state <span class="math inline">\(j\)</span>.</p></li>
 </ul>
 <h3 id="the-gaussian-distribution">The Gaussian Distribution</h3>
-<p>In linear estimation theory, we predominantly assume that noise and states follow a <strong>Gaussian</strong> (or Normal) distribution (see Appendix <a href="#app:prob" data-reference-type="ref" data-reference="app:prob">[app:prob]</a> for a detailed treatment of probability distributions). A Gaussian random vector is completely defined by its mean <span class="math inline">\(\mu\)</span> and covariance <span class="math inline">\(P\)</span>. We write this as: <span class="math display">\[\begin{equation*}
+<p>In linear estimation theory, we predominantly assume that noise and
+states follow a <em>Gaussian</em> (or Normal) distribution (see
+Appendix <a href="#app:prob" data-reference-type="ref"
+data-reference="app:prob">[app:prob]</a> for a detailed treatment of
+probability distributions). A Gaussian random vector is completely
+defined by its mean <span class="math inline">\(\mu\)</span> and
+covariance <span class="math inline">\(P\)</span>. We write this as:
+<span class="math display">\[\begin{equation*}
     x \sim \mathcal{N}(\mu, P)
-\end{equation*}\]</span> The Gaussian assumption is powerful because linear transformations of Gaussian variables remain Gaussian. This property allows the Kalman Filter to define the state entirely using just two parameters: the estimate vector <span class="math inline">\(\hat{x}\)</span> (the mean) and the error covariance matrix <span class="math inline">\(P\)</span>.</p>
+\end{equation*}\]</span> The Gaussian assumption is powerful because
+linear transformations of Gaussian variables remain Gaussian. This
+property allows the Kalman Filter to define the state entirely using
+just two parameters: the estimate vector <span
+class="math inline">\(\hat{x}\)</span> (the mean) and the error
+covariance matrix <span class="math inline">\(P\)</span>.</p>
 <h3 id="white-noise">White Noise</h3>
-<p>In system modelling, we often represent disturbances as <strong>White Noise</strong>. A discrete-time stochastic process <span class="math inline">\(w_k\)</span> is called white noise if it is uncorrelated in time: <span class="math display">\[\begin{equation*}
+<p>In system modelling, we often represent disturbances as <em>White
+Noise</em>. A discrete-time stochastic process <span
+class="math inline">\(w_k\)</span> is called white noise if it is
+uncorrelated in time: <span class="math display">\[\begin{equation*}
     \begin{aligned}
         \mathbb{E}[w_k] &amp;= 0 \\
-        \mathbb{E}[w_k w_j^\top] &amp;= \begin{cases} W_k &amp; \text{if } k = j \\ 0 &amp; \text{if } k \neq j \end{cases}
+        \mathbb{E}[w_k w_j^\top] &amp;= \begin{cases} W_k &amp; \text{if
+} k = j \\ 0 &amp; \text{if } k \neq j \end{cases}
     \end{aligned}
-\end{equation*}\]</span> Here, <span class="math inline">\(W_k\)</span> is the <strong>Process Noise Covariance</strong>. Similarly, for sensors, we define measurement noise <span class="math inline">\(v_k\)</span> with <strong>Measurement Noise Covariance</strong> <span class="math inline">\(V_k\)</span>.</p>
+\end{equation*}\]</span> Here, <span class="math inline">\(W_k\)</span>
+is the <em>Process Noise Covariance</em>. Similarly, for sensors, we
+define measurement noise <span class="math inline">\(v_k\)</span> with
+<em>Measurement Noise Covariance</em> <span
+class="math inline">\(V_k\)</span>.</p>
 <div class="summarybox">
-<p><span>Key Property: Linear Propagation of Uncertainty</span> The foundation of the Kalman Filter <em>Predict</em> step relies on how Gaussian distributions transform through linear systems.</p>
-<p>Consider a random state vector <span class="math inline">\(x\)</span> with mean <span class="math inline">\(\hat{x}\)</span> and covariance <span class="math inline">\(P\)</span>. If this state evolves through linear dynamics with additive <em>zero-mean</em> noise <span class="math inline">\(w\)</span> (where <span class="math inline">\(w\)</span> has covariance <span class="math inline">\(W\)</span>): <span class="math display">\[x_{new} = A x + w\]</span></p>
+<p><span>Key Property: Linear Propagation of Uncertainty</span> The
+foundation of the Kalman Filter <em>Predict</em> step relies on how
+Gaussian distributions transform through linear systems.</p>
+<p>Consider a random state vector <span class="math inline">\(x\)</span>
+with mean <span class="math inline">\(\hat{x}\)</span> and covariance
+<span class="math inline">\(P\)</span>. If this state evolves through
+linear dynamics with additive <em>zero-mean</em> noise <span
+class="math inline">\(w\)</span> (where <span
+class="math inline">\(w\)</span> has covariance <span
+class="math inline">\(W\)</span>): <span class="math display">\[x_{new}
+= A x + w\]</span></p>
 <p>The statistics of the new state are given by:</p>
 <ul>
-<li><p><strong>New Mean:</strong> <span class="math display">\[\mathbb{E}[x_{new}] = A\hat{x}\]</span></p></li>
-<li><p><strong>New Covariance:</strong> <span class="math display">\[\text{Cov}(x_{new}) = A P A^\top + W\]</span></p></li>
+<li><p><strong>New Mean:</strong> <span
+class="math display">\[\mathbb{E}[x_{new}] = A\hat{x}\]</span></p></li>
+<li><p><strong>New Covariance:</strong> <span
+class="math display">\[\text{Cov}(x_{new}) = A P A^\top +
+W\]</span></p></li>
 </ul>
-<p>The term <span class="math inline">\(A P A^\top\)</span> represents how the system dynamics stretch and rotate the uncertainty ellipse, while <span class="math inline">\(W\)</span> represents the additional uncertainty injected by the process noise.</p>
+<p>The term <span class="math inline">\(A P A^\top\)</span> represents
+how the system dynamics stretch and rotate the uncertainty ellipse,
+while <span class="math inline">\(W\)</span> represents the additional
+uncertainty injected by the process noise.</p>
 </div>
 <h2 id="problem-formulation">Problem Formulation</h2>
-<p>We consider the problem of estimating the internal state of a discrete-time linear system subject to stochastic disturbances. Unlike deterministic control, where the state is assumed known, here we must infer it from noisy data.</p>
+<p>We consider the problem of estimating the internal state of a
+discrete-time linear system subject to stochastic disturbances. Unlike
+deterministic control, where the state is assumed known, here we must
+infer it from noisy data.</p>
 <h3 id="the-stochastic-system-model">The Stochastic System Model</h3>
-<p>The evolution of the system and the observation process are governed by the following linear difference equations: <span class="math display">\[\begin{align*}
+<p>The evolution of the system and the observation process are governed
+by the following linear difference equations: <span
+class="math display">\[\begin{align*}
     x_{k+1} &amp;= A x_k + B u_k + w_k \\
     y_k &amp;= C x_k + v_k
-\end{align*}\]</span> Here, <span class="math inline">\(x_k \in \mathbb{R}^n\)</span> is the state vector, <span class="math inline">\(u_k \in \mathbb{R}^m\)</span> is the known control input, and <span class="math inline">\(y_k \in \mathbb{R}^p\)</span> is the measured output.</p>
+\end{align*}\]</span> Here, <span class="math inline">\(x_k \in
+\mathbb{R}^n\)</span> is the state vector, <span
+class="math inline">\(u_k \in \mathbb{R}^m\)</span> is the known control
+input, and <span class="math inline">\(y_k \in \mathbb{R}^p\)</span> is
+the measured output.</p>
 <h3 id="statistical-assumptions">Statistical Assumptions</h3>
-<p>To derive the optimal filter, we must rigorously define the statistical properties of the noise and the initial conditions. We assume the following:</p>
+<p>To derive the optimal filter, we must rigorously define the
+statistical properties of the noise and the initial conditions. We
+assume the following:</p>
 <ol>
-<li><p><strong>Process Noise (<span class="math inline">\(w_k\)</span>):</strong> Represents model mismatches and external disturbances. It is assumed to be zero-mean, white Gaussian noise with covariance matrix <span class="math inline">\(W\)</span>: <span class="math display">\[w_k \sim \mathcal{N}(0, W), \quad \mathbb{E}[w_k w_j^\top] = W \delta_{kj}\]</span> where <span class="math inline">\(\delta_{kj}\)</span> is the Kronecker delta (1 if <span class="math inline">\(k=j\)</span>, 0 otherwise). This term ensures that the noise is uncorrelated in time (i.e., the disturbance at time <span class="math inline">\(k\)</span> is independent of the disturbance at any other time <span class="math inline">\(j\)</span>).</p></li>
-<li><p><strong>Measurement Noise (<span class="math inline">\(v_k\)</span>):</strong> Represents sensor inaccuracies. It is assumed to be zero-mean, white Gaussian noise with covariance matrix <span class="math inline">\(V\)</span>: <span class="math display">\[v_k \sim \mathcal{N}(0, V), \quad \mathbb{E}[v_k v_j^\top] = V \delta_{kj}\]</span></p></li>
-<li><p><strong>Initial Condition (<span class="math inline">\(x_0\)</span>):</strong> The starting state is not a fixed unknown, but a random variable with a known mean and covariance: <span class="math display">\[x_0 \sim \mathcal{N}(\bar{x}_0, P_0)\]</span></p></li>
-<li><p><strong>Independence:</strong> The process noise <span class="math inline">\(w_k\)</span>, measurement noise <span class="math inline">\(v_k\)</span>, and initial state <span class="math inline">\(x_0\)</span> are mutually uncorrelated.</p></li>
+<li><p><strong>Process Noise (<span
+class="math inline">\(w_k\)</span>):</strong> Represents model
+mismatches and external disturbances. It is assumed to be zero-mean,
+white Gaussian noise with covariance matrix <span
+class="math inline">\(W\)</span>: <span class="math display">\[w_k \sim
+\mathcal{N}(0, W), \quad \mathbb{E}[w_k w_j^\top] = W
+\delta_{kj}\]</span> where <span
+class="math inline">\(\delta_{kj}\)</span> is the Kronecker delta (1 if
+<span class="math inline">\(k=j\)</span>, 0 otherwise). This term
+ensures that the noise is uncorrelated in time (i.e., the disturbance at
+time <span class="math inline">\(k\)</span> is independent of the
+disturbance at any other time <span
+class="math inline">\(j\)</span>).</p></li>
+<li><p><strong>Measurement Noise (<span
+class="math inline">\(v_k\)</span>):</strong> Represents sensor
+inaccuracies. It is assumed to be zero-mean, white Gaussian noise with
+covariance matrix <span class="math inline">\(V\)</span>: <span
+class="math display">\[v_k \sim \mathcal{N}(0, V), \quad \mathbb{E}[v_k
+v_j^\top] = V \delta_{kj}\]</span></p></li>
+<li><p><strong>Initial Condition (<span
+class="math inline">\(x_0\)</span>):</strong> The starting state is not
+a fixed unknown, but a random variable with a known mean and covariance:
+<span class="math display">\[x_0 \sim \mathcal{N}(\bar{x}_0,
+P_0)\]</span></p></li>
+<li><p><strong>Independence:</strong> The process noise <span
+class="math inline">\(w_k\)</span>, measurement noise <span
+class="math inline">\(v_k\)</span>, and initial state <span
+class="math inline">\(x_0\)</span> are mutually uncorrelated.</p></li>
 </ol>
 <h3 id="the-estimation-objective">The Estimation Objective</h3>
-<p>Our goal is to construct an estimate of the state, denoted as <span class="math inline">\(\hat{x}_k\)</span>, using the history of measurements available up to time <span class="math inline">\(k\)</span>.</p>
-<p>We define the <strong>estimation error</strong> as: <span class="math display">\[\begin{equation*}
+<p>Our goal is to construct an estimate of the state, denoted as <span
+class="math inline">\(\hat{x}_k\)</span>, using the history of
+measurements available up to time <span
+class="math inline">\(k\)</span>.</p>
+<p>We define the <em>estimation error</em> as: <span
+class="math display">\[\begin{equation*}
     e_k \triangleq x_k - \hat{x}_k
 \end{equation*}\]</span></p>
-<p>The problem is to find the recursive algorithm that computes <span class="math inline">\(\hat{x}_k\)</span> such that the expected value of the squared error norm (the <strong>Mean Squared Error</strong>) is minimised at every time step: <span class="math display">\[\begin{equation*}
-    \min_{\hat{x}_k} J_k = \mathbb{E} \left[ \| e_k \|^2 \right] = \mathbb{E} \left[ (x_k - \hat{x}_k)^\top (x_k - \hat{x}_k) \right]
+<p>The problem is to find the recursive algorithm that computes <span
+class="math inline">\(\hat{x}_k\)</span> such that the expected value of
+the squared error norm (the <em>Mean Squared Error</em>) is minimised at
+every time step: <span class="math display">\[\begin{equation*}
+    \min_{\hat{x}_k} J_k = \mathbb{E} \left[ \| e_k \|^2 \right] =
+\mathbb{E} \left[ (x_k - \hat{x}_k)^\top (x_k - \hat{x}_k) \right]
 \end{equation*}\]</span></p>
-<p>An estimator that satisfies this condition is known as the <strong>Minimum Variance Unbiased Estimator (MVUE)</strong>. Under the Gaussian assumptions listed above, the Kalman Filter is the unique solution to this problem.</p>
-<h2 id="derivation-of-the-kalman-filter">Derivation of the Kalman Filter</h2>
-<p>To derive the optimal filter, we postulate a recursive linear estimator structure that operates in two distinct phases at each time step: a <strong>Prediction</strong> phase (based on the system model) and a <strong>Correction</strong> phase (based on the new measurement).</p>
+<p>An estimator that satisfies this condition is known as the
+<em>Minimum Variance Unbiased Estimator (MVUE)</em>. Under the Gaussian
+assumptions listed above, the Kalman Filter is the unique solution to
+this problem.</p>
+<h2 id="derivation-of-the-kalman-filter">Derivation of the Kalman
+Filter</h2>
+<p>To derive the optimal filter, we postulate a recursive linear
+estimator structure that operates in two distinct phases at each time
+step: a <em>Prediction</em> phase (based on the system model) and a
+<em>Correction</em> phase (based on the new measurement).</p>
 <h3 id="the-estimator-structure">The Estimator Structure</h3>
-<p>Let <span class="math inline">\(\hat{x}_k^-\)</span> denote the <em>a priori</em> state estimate (the prediction before processing the measurement at time <span class="math inline">\(k\)</span>), and let <span class="math inline">\(\hat{x}_k\)</span> denote the <em>a posteriori</em> estimate (after incorporating the measurement).</p>
-<p>We assume the process noise <span class="math inline">\(w_k\)</span> and measurement noise <span class="math inline">\(v_k\)</span> are zero-mean, white, mutually uncorrelated, and independent of the initial estimation error, with covariances: <span class="math display">\[\mathbb{E}[w_k w_k^\top] = W, \qquad \mathbb{E}[v_k v_k^\top] = V.\]</span></p>
+<p>Let <span class="math inline">\(\hat{x}_k^-\)</span> denote the <em>a
+priori</em> state estimate (the prediction before processing the
+measurement at time <span class="math inline">\(k\)</span>), and let
+<span class="math inline">\(\hat{x}_k\)</span> denote the <em>a
+posteriori</em> estimate (after incorporating the measurement).</p>
+<p>We assume the process noise <span class="math inline">\(w_k\)</span>
+and measurement noise <span class="math inline">\(v_k\)</span> are
+zero-mean, white, mutually uncorrelated, and independent of the initial
+estimation error, with covariances: <span
+class="math display">\[\mathbb{E}[w_k w_k^\top] = W, \qquad
+\mathbb{E}[v_k v_k^\top] = V.\]</span></p>
 <p>The observer dynamics are defined as follows:</p>
 <ol>
-<li><p><strong>Prediction (Time Update):</strong> The previous estimate is propagated forward using the deterministic system dynamics: <span class="math display">\[\begin{equation}
- \label{eq:obs_predict}
+<li><p><strong>Prediction (Time Update):</strong> The previous estimate
+is propagated forward using the deterministic system dynamics: <span
+class="math display">\[\begin{equation}
+\label{eq:obs_predict}
         \hat{x}_k^- = A \hat{x}_{k-1} + B u_{k-1}.
 \end{equation}\]</span></p></li>
-<li><p><strong>Correction (Measurement Update):</strong> The prediction is corrected using the difference between the actual measurement and the predicted measurement. This difference is called the <strong>Innovation</strong> (<span class="math inline">\(\tilde{y}_k\)</span>): <span class="math display">\[\begin{equation}
- \label{eq:obs_correct}
-        \hat{x}_k = \hat{x}_k^- + L_k \underbrace{(y_k - C \hat{x}_k^-)}_{\tilde{y}_k}.
+<li><p><strong>Correction (Measurement Update):</strong> The prediction
+is corrected using the difference between the actual measurement and the
+predicted measurement. This difference is called the <em>Innovation</em>
+(<span class="math inline">\(\tilde{y}_k\)</span>): <span
+class="math display">\[\begin{equation}
+\label{eq:obs_correct}
+        \hat{x}_k = \hat{x}_k^- + L_k \underbrace{(y_k - C
+\hat{x}_k^-)}_{\tilde{y}_k}.
 \end{equation}\]</span></p></li>
 </ol>
-<p>Here, <span class="math inline">\(L_k\)</span> is the <strong>Kalman gain</strong>. Our objective is to determine <span class="math inline">\(L_k\)</span> such that the mean squared estimation error is minimised.</p>
-<h5 id="step-1-prediction-error-statistics">Step 1: Prediction Error Statistics</h5>
-<p>Define the <em>a priori</em> estimation error <span class="math display">\[e_k^- \triangleq x_k - \hat{x}_k^-.\]</span> Substituting the system dynamics <span class="math inline">\(x_k = A x_{k-1} + B u_{k-1} + w_{k-1}\)</span> and the prediction equation <a href="#eq:obs_predict" data-reference-type="eqref" data-reference="eq:obs_predict">[eq:obs_predict]</a> yields: <span class="math display">\[\begin{align*}
-    e_k^- 
+<p>Here, <span class="math inline">\(L_k\)</span> is the <em>Kalman
+gain</em>. Our objective is to determine <span
+class="math inline">\(L_k\)</span> such that the mean squared estimation
+error is minimised.</p>
+<h5 id="step-1-prediction-error-statistics">Step 1: Prediction Error
+Statistics</h5>
+<p>Define the <em>a priori</em> estimation error <span
+class="math display">\[e_k^- \triangleq x_k - \hat{x}_k^-.\]</span>
+Substituting the system dynamics <span class="math inline">\(x_k = A
+x_{k-1} + B u_{k-1} + w_{k-1}\)</span> and the prediction equation <a
+href="#eq:obs_predict" data-reference-type="eqref"
+data-reference="eq:obs_predict">[eq:obs_predict]</a> yields: <span
+class="math display">\[\begin{align*}
+    e_k^-
     &amp;= A(x_{k-1} - \hat{x}_{k-1}) + w_{k-1} \nonumber \\
     &amp;= A e_{k-1} + w_{k-1}.
 \end{align*}\]</span></p>
-<p>The <em>a priori</em> error covariance is defined as <span class="math inline">\(P_k^- \triangleq \mathbb{E}[e_k^- (e_k^-)^\top]\)</span>. By substituting the error dynamics into the definition of the covariance, we obtain: <span class="math display">\[\begin{equation*}
-    P_k^- = \mathbb{E}\left[ (A e_{k-1} + w_{k-1}) (A e_{k-1} + w_{k-1})^\top \right].
-\end{equation*}\]</span> Expanding the quadratic term yields four components: <span class="math display">\[\begin{align*}
-    P_k^- &amp;= \mathbb{E}\left[ A e_{k-1} e_{k-1}^\top A^\top + A e_{k-1} w_{k-1}^\top + w_{k-1} e_{k-1}^\top A^\top + w_{k-1} w_{k-1}^\top \right] \nonumber \\
-    &amp;= A \underbrace{\mathbb{E}[e_{k-1} e_{k-1}^\top]}_{P_{k-1}} A^\top + A \underbrace{\mathbb{E}[e_{k-1} w_{k-1}^\top]}_{0} + \underbrace{\mathbb{E}[w_{k-1} e_{k-1}^\top]}_{0} A^\top + \underbrace{\mathbb{E}[w_{k-1} w_{k-1}^\top]}_{W}.
-\end{align*}\]</span> The cross-terms <span class="math inline">\(\mathbb{E}[e_{k-1} w_{k-1}^\top]\)</span> vanish because the white process noise <span class="math inline">\(w_{k-1}\)</span> is uncorrelated with the error accumulated in previous time steps. Thus, the equation simplifies to: <span class="math display">\[\begin{equation}
- \label{eq:cov_predict}
+<p>The <em>a priori</em> error covariance is defined as <span
+class="math inline">\(P_k^- \triangleq \mathbb{E}[e_k^-
+(e_k^-)^\top]\)</span>. By substituting the error dynamics into the
+definition of the covariance, we obtain: <span
+class="math display">\[\begin{equation*}
+    P_k^- = \mathbb{E}\left[ (A e_{k-1} + w_{k-1}) (A e_{k-1} +
+w_{k-1})^\top \right].
+\end{equation*}\]</span> Expanding the quadratic term yields four
+components: <span class="math display">\[\begin{align*}
+    P_k^- &amp;= \mathbb{E}\left[ A e_{k-1} e_{k-1}^\top A^\top + A
+e_{k-1} w_{k-1}^\top + w_{k-1} e_{k-1}^\top A^\top + w_{k-1}
+w_{k-1}^\top \right] \nonumber \\
+    &amp;= A \underbrace{\mathbb{E}[e_{k-1} e_{k-1}^\top]}_{P_{k-1}}
+A^\top + A \underbrace{\mathbb{E}[e_{k-1} w_{k-1}^\top]}_{0} +
+\underbrace{\mathbb{E}[w_{k-1} e_{k-1}^\top]}_{0} A^\top +
+\underbrace{\mathbb{E}[w_{k-1} w_{k-1}^\top]}_{W}.
+\end{align*}\]</span> The cross-terms <span
+class="math inline">\(\mathbb{E}[e_{k-1} w_{k-1}^\top]\)</span> vanish
+because the white process noise <span
+class="math inline">\(w_{k-1}\)</span> is uncorrelated with the error
+accumulated in previous time steps. Thus, the equation simplifies to:
+<span class="math display">\[\begin{equation*}
     P_k^- = A P_{k-1} A^\top + W.
-\end{equation}\]</span></p>
-<h5 id="step-2-correction-error-statistics">Step 2: Correction Error Statistics</h5>
-<p>The <em>a posteriori</em> estimation error is defined as <span class="math inline">\(e_k \triangleq x_k - \hat{x}_k\)</span>. Substituting the correction equation <a href="#eq:obs_correct" data-reference-type="eqref" data-reference="eq:obs_correct">[eq:obs_correct]</a> and the measurement model <span class="math inline">\(y_k = C x_k + v_k\)</span> gives: <span class="math display">\[\begin{align*}
-    e_k 
+\end{equation*}\]</span></p>
+<h5 id="step-2-correction-error-statistics">Step 2: Correction Error
+Statistics</h5>
+<p>The <em>a posteriori</em> estimation error is defined as <span
+class="math inline">\(e_k \triangleq x_k - \hat{x}_k\)</span>.
+Substituting the correction equation <a href="#eq:obs_correct"
+data-reference-type="eqref"
+data-reference="eq:obs_correct">[eq:obs_correct]</a> and the measurement
+model <span class="math inline">\(y_k = C x_k + v_k\)</span> gives:
+<span class="math display">\[\begin{align*}
+    e_k
     &amp;= (I - L_k C)e_k^- - L_k v_k.
 \end{align*}\]</span></p>
-<p>To derive the covariance update, we substitute the expression for <span class="math inline">\(e_k\)</span> into the definition <span class="math inline">\(P_k = \mathbb{E}[e_k e_k^\top ]\)</span>: <span class="math display">\[\begin{equation*}
-    P_k = \mathbb{E}\left[ \left( (I - L_k C)e_k^- - L_k v_k \right) \left( (I - L_k C)e_k^- - L_k v_k \right)^\top  \right].
-\end{equation*}\]</span> Distributing the transpose operator <span class="math inline">\((X - Y)^\top  = X^\top  - Y^\top\)</span> inside the second bracket gives: <span class="math display">\[\begin{equation*}
-    P_k = \mathbb{E}\left[ \left( (I - L_k C)e_k^- - L_k v_k \right) \left( (e_k^-)^\top (I - L_k C)^\top - v_k^\top  L_k^\top \right) \right].
-\end{equation*}\]</span> Expanding the product yields four terms: <span class="math display">\[\begin{align*}
-    P_k = \mathbb{E}\bigg[ 
-    \underbrace{(I - L_k C) e_k^- (e_k^-)^\top (I - L_k C)^\top}_{\text{Term 1}} 
-    - \underbrace{(I - L_k C) e_k^- v_k^\top L_k^\top}_{\text{Term 2}} 
-    - \underbrace{L_k v_k (e_k^-)^\top (I - L_k C)^\top}_{\text{Term 3}} 
-    + \underbrace{L_k v_k v_k^\top L_k^\top}_{\text{Term 4}} 
+<p>To derive the covariance update, we substitute the expression for
+<span class="math inline">\(e_k\)</span> into the definition <span
+class="math inline">\(P_k = \mathbb{E}[e_k e_k^\top ]\)</span>: <span
+class="math display">\[\begin{equation*}
+    P_k = \mathbb{E}\left[ \left( (I - L_k C)e_k^- - L_k v_k \right)
+\left( (I - L_k C)e_k^- - L_k v_k \right)^\top  \right].
+\end{equation*}\]</span> Distributing the transpose operator <span
+class="math inline">\((X - Y)^\top  = X^\top  - Y^\top\)</span> inside
+the second bracket gives: <span class="math display">\[\begin{equation*}
+    P_k = \mathbb{E}\left[ \left( (I - L_k C)e_k^- - L_k v_k \right)
+\left( (e_k^-)^\top (I - L_k C)^\top - v_k^\top  L_k^\top \right)
+\right].
+\end{equation*}\]</span> Expanding the product yields four terms: <span
+class="math display">\[\begin{align*}
+    P_k = \mathbb{E}\bigg[
+    \underbrace{(I - L_k C) e_k^- (e_k^-)^\top (I - L_k
+C)^\top}_{\text{Term 1}}
+    - \underbrace{(I - L_k C) e_k^- v_k^\top L_k^\top}_{\text{Term 2}}
+    - \underbrace{L_k v_k (e_k^-)^\top (I - L_k C)^\top}_{\text{Term 3}}
+    + \underbrace{L_k v_k v_k^\top L_k^\top}_{\text{Term 4}}
     \bigg].
 \end{align*}\]</span> We now analyse the expectation of each term:</p>
 <ul>
-<li><p><strong>Term 1:</strong> Since <span class="math inline">\(\mathbb{E}[e_k^- (e_k^-)^\top] = P_k^-\)</span>, this becomes <span class="math inline">\((I - L_k C) P_k^- (I - L_k C)^\top\)</span>.</p></li>
-<li><p><strong>Terms 2 &amp; 3:</strong> The measurement noise <span class="math inline">\(v_k\)</span> is uncorrelated with the <em>a priori</em> estimation error <span class="math inline">\(e_k^-\)</span> (which depends only on past history). Therefore, <span class="math inline">\(\mathbb{E}[e_k^- v_k^\top] = 0\)</span>, and these cross-terms vanish.</p></li>
-<li><p><strong>Term 4:</strong> Since <span class="math inline">\(\mathbb{E}[v_k v_k^\top] = V\)</span>, this becomes <span class="math inline">\(L_k V L_k^\top\)</span>.</p></li>
+<li><p><strong>Term 1:</strong> Since <span
+class="math inline">\(\mathbb{E}[e_k^- (e_k^-)^\top] = P_k^-\)</span>,
+this becomes <span class="math inline">\((I - L_k C) P_k^- (I - L_k
+C)^\top\)</span>.</p></li>
+<li><p><strong>Terms 2 &amp; 3:</strong> The measurement noise <span
+class="math inline">\(v_k\)</span> is uncorrelated with the <em>a
+priori</em> estimation error <span class="math inline">\(e_k^-\)</span>
+(which depends only on past history). Therefore, <span
+class="math inline">\(\mathbb{E}[e_k^- v_k^\top] = 0\)</span>, and these
+cross-terms vanish.</p></li>
+<li><p><strong>Term 4:</strong> Since <span
+class="math inline">\(\mathbb{E}[v_k v_k^\top] = V\)</span>, this
+becomes <span class="math inline">\(L_k V L_k^\top\)</span>.</p></li>
 </ul>
-<p>Combining these results yields the <strong>Joseph form</strong> covariance update: <span class="math display">\[\begin{equation}
- \label{eq:cov_update_long}
+<p>Combining these results yields the <em>Joseph form</em> covariance
+update: <span class="math display">\[\begin{equation}
+\label{eq:cov_update_long}
     P_k = (I - L_k C) P_k^- (I - L_k C)^\top + L_k V L_k^\top.
 \end{equation}\]</span></p>
 <p><strong>Step 3: Optimisation of the Gain</strong></p>
-<p>To derive the optimal gain, we define a cost function <span class="math inline">\(J\)</span> based on the total mean squared error of the states. This is equivalent to minimising the trace (sum of diagonal elements) of the <em>a posteriori</em> covariance matrix: <span class="math display">\[\begin{equation*}
+<p>To derive the optimal gain, we define a cost function <span
+class="math inline">\(J\)</span> based on the total mean squared error
+of the states. This is equivalent to minimising the trace (sum of
+diagonal elements) of the <em>a posteriori</em> covariance matrix: <span
+class="math display">\[\begin{equation*}
     J(L_k) = \mathrm{Tr}(P_k)
 \end{equation*}\]</span></p>
-<h5 id="a-expanding-the-covariance-matrix">a) Expanding the Covariance Matrix:</h5>
-<p>First, we substitute the full expression for <span class="math inline">\(P_k\)</span> from Eq. <a href="#eq:cov_update_long" data-reference-type="eqref" data-reference="eq:cov_update_long">[eq:cov_update_long]</a> and expand the terms: <span class="math display">\[\begin{align*}
-    P_k &amp;= (P_k^- - L_k C P_k^-)(I - C^\top  L_k^\top) + L_k V L_k^\top \nonumber \\
-    P_k &amp;= P_k^- - P_k^- C^\top L_k^\top - L_k C P_k^- + L_k C P_k^- C^\top L_k^\top+ L_k V L_k^\top
-\end{align*}\]</span> We can group the quadratic terms involving <span class="math inline">\(L_k\)</span>: <span class="math display">\[\begin{equation}
- \label{eq:Pk_expanded}
-    P_k = P_k^- - P_k^- C^\top L_k^\top - L_k C P_k^- + L_k (C P_k^- C^\top + V) L_k^\top
+<h5 id="a-expanding-the-covariance-matrix">a) Expanding the Covariance
+Matrix:</h5>
+<p>First, we substitute the full expression for <span
+class="math inline">\(P_k\)</span> from Eq. <a
+href="#eq:cov_update_long" data-reference-type="eqref"
+data-reference="eq:cov_update_long">[eq:cov_update_long]</a> and expand
+the terms: <span class="math display">\[\begin{align*}
+    P_k &amp;= (P_k^- - L_k C P_k^-)(I - C^\top  L_k^\top) + L_k V
+L_k^\top \nonumber \\
+    P_k &amp;= P_k^- - P_k^- C^\top L_k^\top - L_k C P_k^- + L_k C P_k^-
+C^\top L_k^\top+ L_k V L_k^\top
+\end{align*}\]</span> We can group the quadratic terms involving <span
+class="math inline">\(L_k\)</span>: <span
+class="math display">\[\begin{equation}
+\label{eq:Pk_expanded}
+    P_k = P_k^- - P_k^- C^\top L_k^\top - L_k C P_k^- + L_k (C P_k^-
+C^\top + V) L_k^\top
 \end{equation}\]</span></p>
 <h5 id="b-matrix-calculus-rules">b) Matrix Calculus Rules:</h5>
-<p>To minimise <span class="math inline">\(J\)</span> with respect to the matrix <span class="math inline">\(L_k\)</span>, we use the following standard matrix derivative identities:</p>
+<p>To minimise <span class="math inline">\(J\)</span> with respect to
+the matrix <span class="math inline">\(L_k\)</span>, we use the
+following standard matrix derivative identities:</p>
 <ul>
-<li><p><span class="math inline">\(\frac{\partial}{\partial X} \mathrm{Tr}(X A) = A^\top\)</span></p></li>
-<li><p><span class="math inline">\(\frac{\partial}{\partial X} \mathrm{Tr}(A X^\top ) = A\)</span></p></li>
-<li><p><span class="math inline">\(\frac{\partial}{\partial X} \mathrm{Tr}(X A X^\top) = 2 X A\)</span> (if <span class="math inline">\(A\)</span> is symmetric)</p></li>
+<li><p><span class="math inline">\(\frac{\partial}{\partial X}
+\mathrm{Tr}(X A) = A^\top\)</span></p></li>
+<li><p><span class="math inline">\(\frac{\partial}{\partial X}
+\mathrm{Tr}(A X^\top ) = A\)</span></p></li>
+<li><p><span class="math inline">\(\frac{\partial}{\partial X}
+\mathrm{Tr}(X A X^\top) = 2 X A\)</span> (if <span
+class="math inline">\(A\)</span> is symmetric)</p></li>
 </ul>
-<p>Note that the trace is invariant under transpose, so <span class="math inline">\(\mathrm{Tr}(P_k^- C^\top  L_k^\top) = \mathrm{Tr}((P_k^- C^\top L_k^\top)^\top) = \mathrm{Tr}(L_k C P_k^-)\)</span>. Thus, the two linear terms in <a href="#eq:Pk_expanded" data-reference-type="eqref" data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a> contribute identically to the derivative.</p>
+<p>Note that the trace is invariant under transpose, so <span
+class="math inline">\(\mathrm{Tr}(P_k^- C^\top  L_k^\top) =
+\mathrm{Tr}((P_k^- C^\top L_k^\top)^\top) = \mathrm{Tr}(L_k C
+P_k^-)\)</span>. Thus, the two linear terms in <a href="#eq:Pk_expanded"
+data-reference-type="eqref"
+data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a> contribute
+identically to the derivative.</p>
 <h5 id="c-taking-the-derivative">c) Taking the Derivative:</h5>
-<p>We differentiate <span class="math inline">\(J = \mathrm{Tr}(P_k)\)</span> with respect to <span class="math inline">\(L_k\)</span> and set the result to zero: <span class="math display">\[\begin{equation*}
-    \frac{\partial J}{\partial L_k} = \underbrace{0}_{\text{Const}} - \underbrace{2 P_k^- C^\top}_{\text{Linear Terms}} + \underbrace{2 L_k (C P_k^- C^\top + V)}_{\text{Quadratic Terms}} = 0
+<p>We differentiate <span class="math inline">\(J =
+\mathrm{Tr}(P_k)\)</span> with respect to <span
+class="math inline">\(L_k\)</span> and set the result to zero: <span
+class="math display">\[\begin{equation*}
+    \frac{\partial J}{\partial L_k} = \underbrace{0}_{\text{Const}} -
+\underbrace{2 P_k^- C^\top}_{\text{Linear Terms}} + \underbrace{2 L_k (C
+P_k^- C^\top + V)}_{\text{Quadratic Terms}} = 0
 \end{equation*}\]</span></p>
-<h5 id="d-solving-for-the-optimal-gain">d) Solving for the Optimal Gain:</h5>
-<p>Rearranging the equation yields: <span class="math display">\[\begin{equation*}
+<h5 id="d-solving-for-the-optimal-gain">d) Solving for the Optimal
+Gain:</h5>
+<p>Rearranging the equation yields: <span
+class="math display">\[\begin{equation*}
     L_k (C P_k^- C^\top + V) = P_k^- C^\top
-\end{equation*}\]</span> The term in the parentheses represents the uncertainty of the measurement prediction. We define this as the <strong>Innovation Covariance</strong>, <span class="math inline">\(S_k\)</span>: <span class="math display">\[\begin{equation*}
+\end{equation*}\]</span> The term in the parentheses represents the
+uncertainty of the measurement prediction. We define this as the
+<em>Innovation Covariance</em>, <span
+class="math inline">\(S_k\)</span>: <span
+class="math display">\[\begin{equation*}
     S_k \triangleq C P_k^- C^\top + V
-\end{equation*}\]</span> Multiplying from the right by <span class="math inline">\(S_k^{-1}\)</span> gives the explicit solution for the optimal Kalman gain: <span class="math display">\[\begin{equation}
- \label{eq:opt_gain}
-    \boxed{ L_k = P_k^- C^\top S_k^{-1} }
+\end{equation*}\]</span> Multiplying from the right by <span
+class="math inline">\(S_k^{-1}\)</span> gives the explicit solution for
+the optimal Kalman gain: <span class="math display">\[\begin{equation}
+\label{eq:opt_gain}
+    { L_k = P_k^- C^\top S_k^{-1} }
 \end{equation}\]</span></p>
-<h5 id="e-simplifying-the-covariance-update">e) Simplifying the Covariance Update:</h5>
-<p>The full update equation <a href="#eq:Pk_expanded" data-reference-type="eqref" data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a> is computationally expensive. We can simplify it by substituting the optimality condition back into the equation. From <a href="#eq:opt_gain" data-reference-type="eqref" data-reference="eq:opt_gain">[eq:opt_gain]</a>, we know that <span class="math inline">\(L_k S_k = P_k^- C^\top\)</span>. Substituting this into the quadratic term of Eq. <a href="#eq:Pk_expanded" data-reference-type="eqref" data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a>: <span class="math display">\[\begin{align*}
-    L_k \underbrace{(C P_k^- C^\top  + V)}_{S_k} L_k^\top  &amp;= (L_k S_k) L_k^\top  \nonumber \\
+<h5 id="e-simplifying-the-covariance-update">e) Simplifying the
+Covariance Update:</h5>
+<p>The full update equation <a href="#eq:Pk_expanded"
+data-reference-type="eqref"
+data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a> is computationally
+expensive. We can simplify it by substituting the optimality condition
+back into the equation. From <a href="#eq:opt_gain"
+data-reference-type="eqref"
+data-reference="eq:opt_gain">[eq:opt_gain]</a>, we know that <span
+class="math inline">\(L_k S_k = P_k^- C^\top\)</span>. Substituting this
+into the quadratic term of Eq. <a href="#eq:Pk_expanded"
+data-reference-type="eqref"
+data-reference="eq:Pk_expanded">[eq:Pk_expanded]</a>: <span
+class="math display">\[\begin{align*}
+    L_k \underbrace{(C P_k^- C^\top  + V)}_{S_k} L_k^\top  &amp;= (L_k
+S_k) L_k^\top  \nonumber \\
     &amp;= (P_k^- C^\top ) L_k^\top
-\end{align*}\]</span> We substitute this back into the expanded covariance equation: <span class="math display">\[\begin{align*}
-    P_k &amp;= P_k^- \cancel{- P_k^- C^\top  L_k^\top } - L_k C P_k^- + \cancel{P_k^- C^\top  L_k^\top } \nonumber \\
+\end{align*}\]</span> We substitute this back into the expanded
+covariance equation: <span class="math display">\[\begin{align*}
+    P_k &amp;= P_k^- \cancel{- P_k^- C^\top  L_k^\top } - L_k C P_k^- +
+\cancel{P_k^- C^\top  L_k^\top } \nonumber \\
      &amp;= P_k^- - L_k C P_k^-
-\end{align*}\]</span> Factoring out <span class="math inline">\(P_k^-\)</span> from the right yields the canonical covariance update equation: <span class="math display">\[\begin{equation*}
-    \boxed{ P_k = (I - L_k C) P_k^- }
-\end{equation*}\]</span> <em>Note:</em> While this simple form is mathematically correct for the optimal gain, numerical implementations often use the longer <em>Joseph form</em> (Eq. <a href="#eq:cov_update_long" data-reference-type="ref" data-reference="eq:cov_update_long">[eq:cov_update_long]</a>) because it guarantees the resulting matrix remains symmetric and positive definite even in the presence of floating-point rounding errors.</p>
+\end{align*}\]</span> Factoring out <span
+class="math inline">\(P_k^-\)</span> from the right yields the canonical
+covariance update equation: <span
+class="math display">\[\begin{equation*}
+    { P_k = (I - L_k C) P_k^- }
+\end{equation*}\]</span> <em>Note:</em> While this simple form is
+mathematically correct for the optimal gain, numerical implementations
+often use the longer <em>Joseph form</em> (Eq. <a
+href="#eq:cov_update_long" data-reference-type="ref"
+data-reference="eq:cov_update_long">[eq:cov_update_long]</a>) because it
+guarantees the resulting matrix remains symmetric and positive definite
+even in the presence of floating-point rounding errors.</p>
 <div class="summarybox">
-<p><span>The Discrete-Time Kalman Filter Algorithm</span> <strong>Predict:</strong> <span class="math display">\[\begin{align*}
+<p><span>The Discrete-Time Kalman Filter Algorithm</span>
+<strong>Predict:</strong> <span class="math display">\[\begin{align*}
         \hat{x}_k^- &amp;= A \hat{x}_{k-1} + B u_{k-1} \\
         P_k^- &amp;= A P_{k-1} A^\top  + W
 \end{align*}\]</span></p>
-<p><strong>Compute Gain:</strong> <span class="math display">\[\begin{align*}
+<p><strong>Compute Gain:</strong> <span
+class="math display">\[\begin{align*}
         S_k &amp;= C P_k^- C^\top  + V \\
         L_k &amp;= P_k^- C^\top  S_k^{-1}
 \end{align*}\]</span></p>
@@ -192,120 +494,249 @@
         P_k &amp;= (I - L_k C) P_k^-
 \end{align*}\]</span></p>
 </div>
-<h2 id="the-steady-state-kalman-filter">The Steady-State Kalman Filter</h2>
-<p>In the recursive derivation above, the estimation error covariance <span class="math inline">\(P_k\)</span> and the Kalman gain <span class="math inline">\(L_k\)</span> are re-calculated at every time step. This is computationally expensive.</p>
-<p>However, for <strong>Linear Time-Invariant (LTI)</strong> systems—where <span class="math inline">\(A, B, C, W, V\)</span> are constant—the covariance matrix <span class="math inline">\(P_k^-\)</span> converges to a constant steady-state matrix <span class="math inline">\(P_{\infty}\)</span> as <span class="math inline">\(k \to \infty\)</span>, provided certain structural properties are met.</p>
+<h2 id="the-steady-state-kalman-filter">The Steady-State Kalman
+Filter</h2>
+<p>In the recursive derivation above, the estimation error covariance
+<span class="math inline">\(P_k\)</span> and the Kalman gain <span
+class="math inline">\(L_k\)</span> are re-calculated at every time step.
+This is computationally expensive.</p>
+<p>However, for <em>Linear Time-Invariant (LTI)</em> systems—where <span
+class="math inline">\(A, B, C, W, V\)</span> are constant—the covariance
+matrix <span class="math inline">\(P_k^-\)</span> converges to a
+constant steady-state matrix <span
+class="math inline">\(P_{\infty}\)</span> as <span
+class="math inline">\(k \to \infty\)</span>, provided certain structural
+properties are met.</p>
 <h3 id="sec:kalman_convergence">Convergence Conditions</h3>
-<p>Convergence is guaranteed if the system satisfies two conditions related to observability and controllability:</p>
+<p>Convergence is guaranteed if the system satisfies two conditions
+related to observability and controllability:</p>
 <ol>
-<li><p>The pair <span class="math inline">\((A, C)\)</span> must be <strong>Detectable</strong>. This ensures that any unstable mode in the system is visible at the output <span class="math inline">\(y\)</span>, allowing the filter to correct it.</p></li>
-<li><p>The pair <span class="math inline">\((A, W^{1/2})\)</span> must be <strong>Stabilisable</strong>. Here, <span class="math inline">\(W^{1/2}\)</span> is the matrix square root of the process noise covariance (<span class="math inline">\(W = W^{1/2}(W^{1/2})^\top\)</span>). Intuitively, this condition requires that the process noise "excites" all unstable modes of the system. If an unstable mode is not excited by noise and cannot be seen by sensors, its estimation error variance will grow unbounded.</p></li>
+<li><p>The pair <span class="math inline">\((A, C)\)</span> must be
+<em>Detectable</em>. This ensures that any unstable mode in the system
+is visible at the output <span class="math inline">\(y\)</span>,
+allowing the filter to correct it.</p></li>
+<li><p>The pair <span class="math inline">\((A, W^{1/2})\)</span> must
+be <em>Stabilisable</em>. Here, <span
+class="math inline">\(W^{1/2}\)</span> is the matrix square root of the
+process noise covariance (<span class="math inline">\(W =
+W^{1/2}(W^{1/2})^\top\)</span>). Intuitively, this condition requires
+that the process noise "excites" all unstable modes of the system. If an
+unstable mode is not excited by noise and cannot be seen by sensors, its
+estimation error variance will grow unbounded.</p></li>
 </ol>
-<h3 id="the-discrete-algebraic-riccati-equation-dare">The Discrete Algebraic Riccati Equation (DARE)</h3>
-<p>When these conditions are met, the <em>a priori</em> covariance <span class="math inline">\(P_{\infty}\)</span> satisfies the <strong>Discrete Algebraic Riccati Equation</strong>: <span class="math display">\[\begin{equation*}
-    P_\infty = A P_\infty A^\top + W 
+<h3 id="the-discrete-algebraic-riccati-equation-dare">The Discrete
+Algebraic Riccati Equation (DARE)</h3>
+<p>When these conditions are met, the <em>a priori</em> covariance <span
+class="math inline">\(P_{\infty}\)</span> satisfies the <em>Discrete
+Algebraic Riccati Equation</em>: <span
+class="math display">\[\begin{equation*}
+    P_\infty = A P_\infty A^\top + W
     - A P_\infty C^\top (C P_\infty C^\top + V)^{-1} C P_\infty A^\top.
-\end{equation*}\]</span> Consequently, the Kalman gain also converges to a constant matrix: <span class="math display">\[\begin{equation*}
+\end{equation*}\]</span> Consequently, the Kalman gain also converges to
+a constant matrix: <span class="math display">\[\begin{equation*}
     L_\infty = P_\infty C^\top (C P_\infty C^\top + V)^{-1}.
 \end{equation*}\]</span></p>
-<h3 id="the-constant-gain-implementation">The Constant Gain Implementation</h3>
-<p>Using the steady-state gain <span class="math inline">\(L_\infty\)</span> simplifies the algorithm significantly. We no longer need to update covariance matrices online. The filter reduces to a standard linear state-space system.</p>
+<h3 id="the-constant-gain-implementation">The Constant Gain
+Implementation</h3>
+<p>Using the steady-state gain <span
+class="math inline">\(L_\infty\)</span> simplifies the algorithm
+significantly. We no longer need to update covariance matrices online.
+The filter reduces to a standard linear state-space system.</p>
 <p>We can implement this in two ways:</p>
-<h5 id="the-two-step-form-standard">1. The Two-Step Form (Standard):</h5>
-<p>This preserves the predict-correct structure but uses a fixed gain. <span class="math display">\[\begin{align*}
-    \textbf{Correct:} \quad \hat{x}_k &amp;= \hat{x}_k^- + L_\infty (y_k - C \hat{x}_k^-) \\
+<h5 id="the-two-step-form-standard">1. The Two-Step Form
+(Standard):</h5>
+<p>This preserves the predict-correct structure but uses a fixed gain.
+<span class="math display">\[\begin{align*}
+    \textbf{Correct:} \quad \hat{x}_k &amp;= \hat{x}_k^- + L_\infty (y_k
+- C \hat{x}_k^-) \\
     \textbf{Predict:} \quad \hat{x}_{k+1}^- &amp;= A \hat{x}_k + B u_k
 \end{align*}\]</span></p>
-<h5 id="the-one-step-form-luenberger">2. The One-Step Form (Luenberger):</h5>
-<p>We can substitute the correction step into the prediction step to create a single update equation: <span class="math display">\[\begin{equation*}
-    \hat{x}_{k+1}^- = A \hat{x}_k^- + B u_k + \underbrace{A L_\infty}_{L_{pred}} (y_k - C \hat{x}_k^-)
+<h5 id="the-one-step-form-luenberger">2. The One-Step Form
+(Luenberger):</h5>
+<p>We can substitute the correction step into the prediction step to
+create a single update equation: <span
+class="math display">\[\begin{equation*}
+    \hat{x}_{k+1}^- = A \hat{x}_k^- + B u_k + \underbrace{A
+L_\infty}_{L_{pred}} (y_k - C \hat{x}_k^-)
 \end{equation*}\]</span></p>
 <div class="notebox">
-<p><span>Implementation Warning</span> Note the term <span class="math inline">\(A L_\infty\)</span> in the one-step form. This is because standard Kalman gains correct the <em>current</em> estimate, while the one-step form updates the <em>prediction</em> for the next step directly. When implementing this on a microcontroller, ensure you apply the gain at the correct point in the loop.</p>
+<p><span>Implementation Warning</span> Note the term <span
+class="math inline">\(A L_\infty\)</span> in the one-step form. This is
+because standard Kalman gains correct the <em>current</em> estimate,
+while the one-step form updates the <em>prediction</em> for the next
+step directly. When implementing this on a microcontroller, ensure you
+apply the gain at the correct point in the loop.</p>
 </div>
-<h2 id="duality-between-estimation-and-control">Duality between Estimation and Control</h2>
-<p>A remarkable result in linear systems theory is the mathematical symmetry, or <strong>duality</strong>, between the optimal control problem (LQR) and the optimal estimation problem (Kalman Filter).</p>
-<p>In the LQR problem, we propagate a cost matrix <span class="math inline">\(P\)</span> <em>backwards</em> in time (from the future horizon to the present) to minimise a weighted sum of states and inputs. In the Kalman Filter, we propagate an error covariance matrix <span class="math inline">\(P\)</span> <em>forwards</em> in time (from the initial condition to the present) to minimise the mean squared estimation error.</p>
-<p>Despite the difference in the direction of time, the recursive equations governing these two matrices are identical under a specific substitution of variables. This means that the <strong>same numerical algorithms</strong> (such as the Riccati solver) used to design a controller can be used to design an observer.</p>
+<h2 id="duality-between-estimation-and-control">Duality between
+Estimation and Control</h2>
+<p>A remarkable result in linear systems theory is the mathematical
+symmetry, or <em>duality</em>, between the optimal control problem (LQR)
+and the optimal estimation problem (Kalman Filter).</p>
+<p>In the LQR problem, we propagate a cost matrix <span
+class="math inline">\(P\)</span> <em>backwards</em> in time (from the
+future horizon to the present) to minimise a weighted sum of states and
+inputs. In the Kalman Filter, we propagate an error covariance matrix
+<span class="math inline">\(P\)</span> <em>forwards</em> in time (from
+the initial condition to the present) to minimise the mean squared
+estimation error.</p>
+<p>Despite the difference in the direction of time, the recursive
+equations governing these two matrices are identical under a specific
+substitution of variables. This means that the <em>same numerical
+algorithms</em> (such as the Riccati solver) used to design a controller
+can be used to design an observer.</p>
 <div id="tab:duality">
 <table>
-<caption>The Duality Mappings. To solve for the Kalman Gain using an LQR solver, substitute the LQR parameters (left) with the corresponding KF parameters (right).</caption>
+<caption>The Duality Mappings. To solve for the Kalman Gain using an LQR
+solver, substitute the LQR parameters (left) with the corresponding KF
+parameters (right).</caption>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Property</strong></th>
 <th style="text-align: center;"><strong>LQR (Control)</strong></th>
-<th style="text-align: center;"><strong>Kalman Filter (Estimation)</strong></th>
+<th style="text-align: center;"><strong>Kalman Filter
+(Estimation)</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>Direction</strong></td>
-<td style="text-align: center;">Backward (<span class="math inline">\(t \leftarrow T\)</span>)</td>
-<td style="text-align: center;">Forward (<span class="math inline">\(0 \to t\)</span>)</td>
+<td style="text-align: center;">Backward (<span class="math inline">\(t
+\leftarrow T\)</span>)</td>
+<td style="text-align: center;">Forward (<span class="math inline">\(0
+\to t\)</span>)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Dynamics</strong></td>
-<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(A^\top\)</span></td>
+<td style="text-align: center;"><span
+class="math inline">\(A\)</span></td>
+<td style="text-align: center;"><span
+class="math inline">\(A^\top\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Actuation/Sensing</strong></td>
-<td style="text-align: center;"><span class="math inline">\(B\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(C^\top\)</span></td>
+<td style="text-align: center;"><span
+class="math inline">\(B\)</span></td>
+<td style="text-align: center;"><span
+class="math inline">\(C^\top\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>State Penalty / Noise</strong></td>
-<td style="text-align: center;"><span class="math inline">\(Q\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(W\)</span> (Process Noise)</td>
+<td style="text-align: left;"><strong>State Penalty /
+Noise</strong></td>
+<td style="text-align: center;"><span
+class="math inline">\(Q\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(W\)</span>
+(Process Noise)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Input Penalty / Noise</strong></td>
-<td style="text-align: center;"><span class="math inline">\(R\)</span></td>
-<td style="text-align: center;"><span class="math inline">\(V\)</span> (Measurement Noise)</td>
+<td style="text-align: left;"><strong>Input Penalty /
+Noise</strong></td>
+<td style="text-align: center;"><span
+class="math inline">\(R\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(V\)</span>
+(Measurement Noise)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Resulting Gain</strong></td>
-<td style="text-align: center;"><span class="math inline">\(K\)</span> (Feedback)</td>
-<td style="text-align: center;"><span class="math inline">\(L^\top\)</span> (Observer)</td>
+<td style="text-align: center;"><span class="math inline">\(K\)</span>
+(Feedback)</td>
+<td style="text-align: center;"><span
+class="math inline">\(L^\top\)</span> (Observer)</td>
 </tr>
 </tbody>
 </table>
 </div>
-<h3 id="implications-for-implementation">Implications for Implementation</h3>
-<p>This duality allows us to compute the steady-state Kalman gain <span class="math inline">\(L_{\infty}\)</span> using standard LQR commands in software like MATLAB.</p>
+<h3 id="implications-for-implementation">Implications for
+Implementation</h3>
+<p>This duality allows us to compute the steady-state Kalman gain <span
+class="math inline">\(L_{\infty}\)</span> using standard LQR commands in
+software like MATLAB.</p>
 <p>Recall that the MATLAB command for LQR is:</p>
 <pre><code>    [K, P, E] = dlqr(A, B, Q, R);</code></pre>
-<p>By applying the substitutions from Table <a href="#tab:duality" data-reference-type="ref" data-reference="tab:duality">1.1</a>, we can compute the optimal estimator gain using the <code>dare</code> solver to obtain the steady-state error covariance <span class="math inline">\(P_\infty\)</span>, and then form the gain directly:</p>
+<p>By applying the substitutions from Table <a href="#tab:duality"
+data-reference-type="ref" data-reference="tab:duality">1.1</a>, we can
+compute the optimal estimator gain using the <code>dare</code> solver to
+obtain the steady-state error covariance <span
+class="math inline">\(P_\infty\)</span>, and then form the gain
+directly:</p>
 <pre><code>    % Solve the dual DARE for the steady-state error covariance
     [P_inf, ~, ~] = dare(A&#39;, C&#39;, W, V);
 
     % Compute the steady-state Kalman gain: L = P*C&#39;*(C*P*C&#39;+V)^{-1}
     L = P_inf * C&#39; / (C * P_inf * C&#39; + V);</code></pre>
-<p>This indicates that if the pair <span class="math inline">\((A, C)\)</span> is detectable and <span class="math inline">\((A, W^{1/2})\)</span> is stabilisable (see Section <a href="#sec:kalman_convergence" data-reference-type="ref" data-reference="sec:kalman_convergence">1.4.1</a>), the Kalman filter estimates will converge, just as an LQR controller stabilises a controllable system. Observability and controllability are sufficient but stronger conditions.</p>
-<h2 id="practical-tuning-selecting-w-and-v">Practical Tuning: Selecting <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span></h2>
-<p>While the system matrices (<span class="math inline">\(A, B, C\)</span>) obey physical laws, the noise covariance matrices often serve as tuning parameters that dictate the filter’s <strong>behaviour</strong>.</p>
-<h3 id="measurement-noise-v">Measurement Noise (<span class="math inline">\(V\)</span>)</h3>
-<p>This matrix represents sensor precision and is straightforward to determine. It is typically diagonal (assuming uncorrelated sensors) and obtained via:</p>
+<p>This indicates that if the pair <span class="math inline">\((A,
+C)\)</span> is detectable and <span class="math inline">\((A,
+W^{1/2})\)</span> is stabilisable (see Section <a
+href="#sec:kalman_convergence" data-reference-type="ref"
+data-reference="sec:kalman_convergence">1.4.1</a>), the Kalman filter
+estimates will converge, just as an LQR controller stabilises a
+controllable system. Observability and controllability are sufficient
+but stronger conditions.</p>
+<h2 id="practical-tuning-selecting-w-and-v">Practical Tuning: Selecting
+<span class="math inline">\(W\)</span> and <span
+class="math inline">\(V\)</span></h2>
+<p>While the system matrices (<span class="math inline">\(A, B,
+C\)</span>) obey physical laws, the noise covariance matrices often
+serve as tuning parameters that dictate the filter’s
+<em>behaviour</em>.</p>
+<h3 id="measurement-noise-v">Measurement Noise (<span
+class="math inline">\(V\)</span>)</h3>
+<p>This matrix represents sensor precision and is straightforward to
+determine. It is typically diagonal (assuming uncorrelated sensors) and
+obtained via:</p>
 <ul>
-<li><p><strong>Datasheets:</strong> Using the manufacturer’s specified noise variance (<span class="math inline">\(\sigma^2\)</span>).</p></li>
-<li><p><strong>Experimentation:</strong> Logging data from a stationary sensor and computing the statistical variance of the signal.</p></li>
+<li><p><strong>Datasheets:</strong> Using the manufacturer’s specified
+noise variance (<span class="math inline">\(\sigma^2\)</span>).</p></li>
+<li><p><strong>Experimentation:</strong> Logging data from a stationary
+sensor and computing the statistical variance of the signal.</p></li>
 </ul>
-<h3 id="process-noise-w">Process Noise (<span class="math inline">\(W\)</span>) </h3>
-<p>The matrix <span class="math inline">\(W\)</span> is more abstract. It lumps together physical disturbances (e.g., wind gusts) and <strong>modelling errors</strong> (e.g., linearisation inaccuracies). Since these are difficult to quantify, <span class="math inline">\(W\)</span> is treated as a tuning handle to adjust the trade-off between the model and the measurements:</p>
+<h3 id="process-noise-w">Process Noise (<span
+class="math inline">\(W\)</span>) </h3>
+<p>The matrix <span class="math inline">\(W\)</span> is more abstract.
+It lumps together physical disturbances (e.g., wind gusts) and
+<em>modelling errors</em> (e.g., linearisation inaccuracies). Since
+these are difficult to quantify, <span class="math inline">\(W\)</span>
+is treated as a tuning handle to adjust the trade-off between the model
+and the measurements:</p>
 <ul>
-<li><p><strong>High <span class="math inline">\(W\)</span> (Trust the Sensor):</strong> The filter assumes the model is poor. The Kalman gain <span class="math inline">\(L\)</span> increases. Result: Fast transient response, but the estimate will be noisy.</p></li>
-<li><p><strong>Low <span class="math inline">\(W\)</span> (Trust the Model):</strong> The filter assumes the model is accurate. The Kalman gain <span class="math inline">\(L\)</span> decreases. Result: Smooth estimates (noise rejection), but the filter will lag during sudden changes.</p></li>
+<li><p><strong>High <span class="math inline">\(W\)</span> (Trust the
+Sensor):</strong> The filter assumes the model is poor. The Kalman gain
+<span class="math inline">\(L\)</span> increases. Result: Fast transient
+response, but the estimate will be noisy.</p></li>
+<li><p><strong>Low <span class="math inline">\(W\)</span> (Trust the
+Model):</strong> The filter assumes the model is accurate. The Kalman
+gain <span class="math inline">\(L\)</span> decreases. Result: Smooth
+estimates (noise rejection), but the filter will lag during sudden
+changes.</p></li>
 </ul>
-<p><strong>Practical Rule:</strong> Fix <span class="math inline">\(V\)</span> based on physical sensor data, then tune <span class="math inline">\(W\)</span> until the desired balance between smoothness and responsiveness is achieved.</p>
+<p><strong>Practical Rule:</strong> Fix <span
+class="math inline">\(V\)</span> based on physical sensor data, then
+tune <span class="math inline">\(W\)</span> until the desired balance
+between smoothness and responsiveness is achieved.</p>
 <div class="examplebox">
-<p><span>MATLAB: Kalman Filter Implementation (LQG Control)</span> <strong>The Problem:</strong> Consider the double integrator system (representing a simple mass). Our objective is to stabilise the system using full-state feedback (<span class="math inline">\(u_k = -K x_k\)</span>). However, we face a practical constraint: we can only measure the <strong>position</strong>, and that measurement is corrupted by noise. We cannot measure the velocity directly.</p>
-<p><strong>The Solution:</strong> We design a <strong>Linear Quadratic Gaussian (LQG)</strong> controller. This consists of two parts:</p>
+<p><span>MATLAB: Kalman Filter Implementation (LQG Control)</span>
+<strong>The Problem:</strong> Consider the double integrator system
+(representing a simple mass). Our objective is to stabilise the system
+using full-state feedback (<span class="math inline">\(u_k = -K
+x_k\)</span>). However, we face a practical constraint: we can only
+measure the <em>position</em>, and that measurement is corrupted by
+noise. We cannot measure the velocity directly.</p>
+<p><strong>The Solution:</strong> We design a <em>Linear Quadratic
+Gaussian (LQG)</em> controller. This consists of two parts:</p>
 <ol>
-<li><p>An <strong>LQR Controller</strong> (<span class="math inline">\(K\)</span>) designed for the ideal system to regulate state to zero.</p></li>
-<li><p>A <strong>Steady-State Kalman Filter</strong> (<span class="math inline">\(L\)</span>) to reconstruct the velocity from the noisy position data.</p></li>
+<li><p>An <strong>LQR Controller</strong> (<span
+class="math inline">\(K\)</span>) designed for the ideal system to
+regulate state to zero.</p></li>
+<li><p>A <strong>Steady-State Kalman Filter</strong> (<span
+class="math inline">\(L\)</span>) to reconstruct the velocity from the
+noisy position data.</p></li>
 </ol>
-<p><strong>The Code:</strong> The script below computes the optimal gains using the duality principle (<span class="math inline">\(A \to A^\top\)</span>, <span class="math inline">\(B \to C^\top\)</span>) and simulates the closed-loop system.</p>
-<pre id="lst:kalman_code" class="matlab" data-language="Matlab" data-caption="Closed-loop simulation of LQR control using Kalman Filter estimates." data-label="lst:kalman_code"><code>clear; clc; close all;
+<p><strong>The Code:</strong> The script below computes the optimal
+gains using the duality principle (<span class="math inline">\(A \to
+A^\top\)</span>, <span class="math inline">\(B \to C^\top\)</span>) and
+simulates the closed-loop system.</p>
+<pre id="lst:kalman_code" class="matlab" data-language="Matlab"
+data-caption="Closed-loop simulation of LQR control using Kalman Filter estimates."
+data-label="lst:kalman_code"><code>clear; clc; close all;
         
         dt = 0.1;
         A = [1, dt; 0, 1];          % States: [Position; Velocity]
@@ -371,68 +802,239 @@
                 x_true = x_true_next;
                 x_est  = x_est_next;
         end</code></pre>
-<p><strong>Result:</strong> Simulation results (Figure <a href="#fig:kalman_results" data-reference-type="ref" data-reference="fig:kalman_results">1.1</a>) confirm the filter’s performance. Even though the velocity is never measured directly, the Kalman Filter converges to the true velocity within a few seconds, allowing the LQR controller to stabilise the system effectively.</p>
+<p><strong>Result:</strong> Simulation results (Figure <a
+href="#fig:kalman_results" data-reference-type="ref"
+data-reference="fig:kalman_results">1.1</a>) confirm the filter’s
+performance. Even though the velocity is never measured directly, the
+Kalman Filter converges to the true velocity within a few seconds,
+allowing the LQR controller to stabilise the system effectively.</p>
 </div>
 <figure id="fig:kalman_results" data-latex-placement="h">
-<img src="figures/Kalman_Performance.png" style="width:90.0%" />
-<figcaption>Simulation results for the LQG control example. <strong>(a)</strong> Measured State: The Kalman Filter estimate (red) effectively filters the noisy position measurements (blue) to track the true trajectory (black). <strong>(b)</strong> Unmeasured State: Although velocity is not measured directly, the filter successfully reconstructs it using the system model and position data. Note the convergence of the estimate (blue) to the truth (black) after the initial transient. <strong>(c)</strong> Statistical Consistency: The velocity estimation error (blue) remains bounded within the <span class="math inline">\(\pm 3\sigma\)</span> confidence intervals (red dashed lines) derived from the steady-state covariance <span class="math inline">\(P_\infty\)</span>. The large error at <span class="math inline">\(t &lt; 4\)</span>s is due to the incorrect initial guess (<span class="math inline">\(x_{est}=0\)</span> vs <span class="math inline">\(x_{true}=0.5\)</span>), which the filter quickly corrects.</figcaption>
+<embed src="Figures/Kalman_Performance.pdf" style="width:90.0%" />
+<figcaption>Simulation results for the LQG control example.
+<strong>(a)</strong> Measured State: The Kalman Filter estimate (red)
+effectively filters the noisy position measurements (blue) to track the
+true trajectory (black). <strong>(b)</strong> Unmeasured State: Although
+velocity is not measured directly, the filter successfully reconstructs
+it using the system model and position data. Note the convergence of the
+estimate (blue) to the truth (black) after the initial transient.
+<strong>(c)</strong> Statistical Consistency: The velocity estimation
+error (blue) remains bounded within the <span class="math inline">\(\pm
+3\sigma\)</span> confidence intervals (red dashed lines) derived from
+the steady-state covariance <span
+class="math inline">\(P_\infty\)</span>. The large error at <span
+class="math inline">\(t &lt; 4\)</span>s is due to the incorrect initial
+guess (<span class="math inline">\(x_{est}=0\)</span> vs <span
+class="math inline">\(x_{true}=0.5\)</span>), which the filter quickly
+corrects.</figcaption>
 </figure>
-<h2 id="interactive-scalar-kf">Interactive Demo: Scalar Kalman Filter Step-by-Step</h2>
-<p>Use the interactive demo below to step through the Kalman filter recursion for a <strong>scalar</strong> random walk system.
-Adjust the noise covariances <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> with the sliders,
-then click <strong>Step</strong> to advance one time step. Watch how each phase of the algorithm
-(Measurement &rarr; Predict &rarr; Gain &rarr; Correct) is highlighted in sequence and the plot updates with the true state, noisy measurements, and Kalman filter estimate.</p>
-<div class="kalman-demo"></div>
+<h2 class="unnumbered" id="chapter-summary">Chapter Summary</h2>
+<ul>
+<li><p>The state estimation problem seeks to reconstruct unmeasured or
+noisy states from available output measurements and a known system
+model.</p></li>
+<li><p>The Kalman filter operates in two recursive steps: a
+<em>prediction</em> step that propagates the state and covariance
+forward, and an <em>update</em> step that corrects them using new
+measurements.</p></li>
+<li><p>The Kalman gain is derived by minimising the trace of the
+posterior error covariance, yielding an optimal linear estimator for
+Gaussian noise.</p></li>
+<li><p>Covariance propagation equations track the uncertainty of the
+state estimate through both the prediction and update phases.</p></li>
+<li><p>The steady-state Kalman filter replaces the time-varying gain
+with a constant gain obtained by solving the discrete algebraic Riccati
+equation, reducing online computation.</p></li>
+<li><p>A formal duality exists between the Kalman filter and the LQR
+problem: the estimator Riccati equation mirrors the controller Riccati
+equation with transposed system matrices and swapped noise/cost
+weighting.</p></li>
+<li><p>The Linear-Quadratic-Gaussian (LQG) controller combines LQR state
+feedback with a Kalman filter via the separation principle, enabling
+optimal output-feedback control.</p></li>
+<li><p>Tuning the Kalman filter involves adjusting the process noise
+covariance <span class="math inline">\(Q\)</span> and measurement noise
+covariance <span class="math inline">\(R\)</span> to balance
+responsiveness against sensitivity to noise.</p></li>
+</ul>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
-<li><p><strong>Scalar Kalman Filter by Hand.</strong> Consider a scalar system with <span class="math inline">\(A = 1\)</span>, <span class="math inline">\(B = 0\)</span>, <span class="math inline">\(C = 1\)</span>, process noise covariance <span class="math inline">\(W = 0.5\)</span>, and measurement noise covariance <span class="math inline">\(V = 2\)</span>. The initial conditions are <span class="math inline">\(\hat{x}_0 = 0\)</span> and <span class="math inline">\(P_0 = 1\)</span>.</p>
-<p>You receive the following measurements: <span class="math inline">\(y_1 = 1.2\)</span>, <span class="math inline">\(y_2 = 0.9\)</span>, <span class="math inline">\(y_3 = 1.5\)</span>.</p>
-<p>For each time step <span class="math inline">\(k = 1, 2, 3\)</span>, carry out the full Kalman filter recursion by hand:</p>
+<li><p><strong>Scalar Kalman Filter by Hand.</strong> Consider a scalar
+system with <span class="math inline">\(A = 1\)</span>, <span
+class="math inline">\(B = 0\)</span>, <span class="math inline">\(C =
+1\)</span>, process noise covariance <span class="math inline">\(W =
+0.5\)</span>, and measurement noise covariance <span
+class="math inline">\(V = 2\)</span>. The initial conditions are <span
+class="math inline">\(\hat{x}_0 = 0\)</span> and <span
+class="math inline">\(P_0 = 1\)</span>.</p>
+<p>You receive the following measurements: <span
+class="math inline">\(y_1 = 1.2\)</span>, <span
+class="math inline">\(y_2 = 0.9\)</span>, <span
+class="math inline">\(y_3 = 1.5\)</span>.</p>
+<p>For each time step <span class="math inline">\(k = 1, 2, 3\)</span>,
+carry out the full Kalman filter recursion by hand:</p>
 <ol>
-<li><p>Compute the predicted estimate <span class="math inline">\(\hat{x}_k^-\)</span> and predicted error variance <span class="math inline">\(P_k^-\)</span>.</p></li>
-<li><p>Compute the innovation covariance <span class="math inline">\(S_k = C P_k^- C + V\)</span> and the Kalman gain <span class="math inline">\(L_k = P_k^- C S_k^{-1}\)</span>.</p></li>
-<li><p>Compute the corrected estimate <span class="math inline">\(\hat{x}_k = \hat{x}_k^- + L_k(y_k - C\hat{x}_k^-)\)</span> and the updated error variance <span class="math inline">\(P_k = (1 - L_k C) P_k^-\)</span>.</p></li>
+<li><p>Compute the predicted estimate <span
+class="math inline">\(\hat{x}_k^-\)</span> and predicted error variance
+<span class="math inline">\(P_k^-\)</span>.</p></li>
+<li><p>Compute the innovation covariance <span class="math inline">\(S_k
+= C P_{k}^{-} C^\top + V\)</span> and the Kalman gain <span
+class="math inline">\(L_k = P_{k}^{-} C^\top S_k^{-1}\)</span>.</p></li>
+<li><p>Compute the corrected estimate <span
+class="math inline">\(\hat{x}_k = \hat{x}_k^- + L_k(y_k -
+C\hat{x}_k^-)\)</span> and the updated error variance <span
+class="math inline">\(P_k = (1 - L_k C) P_k^-\)</span>.</p></li>
 </ol>
-<p>Comment on how the Kalman gain and error variance evolve over the three steps.</p></li>
-<li><p><strong>Effect of <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> on the Kalman Gain.</strong> Consider the same scalar system as in Exercise 1 (<span class="math inline">\(A = 1\)</span>, <span class="math inline">\(C = 1\)</span>), but now treat the noise covariances as parameters.</p>
+<p>Comment on how the Kalman gain and error variance evolve over the
+three steps.</p></li>
+<li><p><strong>Effect of <span class="math inline">\(W\)</span> and
+<span class="math inline">\(V\)</span> on the Kalman Gain.</strong>
+Consider the same scalar system as in Exercise 1 (<span
+class="math inline">\(A = 1\)</span>, <span class="math inline">\(C =
+1\)</span>), but now treat the noise covariances as parameters.</p>
 <ol>
-<li><p>For the steady-state case, show that the scalar Kalman gain satisfies <span class="math display">\[L_\infty = \frac{P_\infty}{P_\infty + V},\]</span> where <span class="math inline">\(P_\infty\)</span> is the steady-state predicted error variance.</p></li>
+<li><p>For the steady-state case, show that the scalar Kalman gain
+satisfies <span class="math display">\[L_\infty =
+\frac{P_\infty}{P_\infty + V},\]</span> where <span
+class="math inline">\(P_\infty\)</span> is the steady-state predicted
+error variance.</p></li>
 <li><p>Analyse the two limiting cases:</p>
 <ul>
-<li><p><span class="math inline">\(W \gg V\)</span> (process noise dominates): What happens to <span class="math inline">\(L_\infty\)</span>? What does this mean physically?</p></li>
-<li><p><span class="math inline">\(W \ll V\)</span> (measurement noise dominates): What happens to <span class="math inline">\(L_\infty\)</span>? What does this mean physically?</p></li>
+<li><p><span class="math inline">\(W \gg V\)</span> (process noise
+dominates): What happens to <span
+class="math inline">\(L_\infty\)</span>? What does this mean
+physically?</p></li>
+<li><p><span class="math inline">\(W \ll V\)</span> (measurement noise
+dominates): What happens to <span
+class="math inline">\(L_\infty\)</span>? What does this mean
+physically?</p></li>
 </ul></li>
-<li><p>Fix <span class="math inline">\(V = 1\)</span> and compute the steady-state Kalman gain for <span class="math inline">\(W \in \{0.01,\, 0.1,\, 1,\, 10\}\)</span>. Discuss how the filter transitions from “trusting the model” to “trusting the sensor” as <span class="math inline">\(W\)</span> increases.</p></li>
+<li><p>Fix <span class="math inline">\(V = 1\)</span> and compute the
+steady-state Kalman gain for <span class="math inline">\(W \in \{0.01,\,
+0.1,\, 1,\, 10\}\)</span>. Discuss how the filter transitions from
+“trusting the model” to “trusting the sensor” as <span
+class="math inline">\(W\)</span> increases.</p></li>
 </ol></li>
-<li><p><strong>Steady-State Kalman Gain via the DARE.</strong> Consider the double integrator system from the MATLAB example in this chapter: <span class="math display">\[A = \begin{bmatrix} 1 &amp; \Delta t \\ 0 &amp; 1 \end{bmatrix}, \quad
-B = \begin{bmatrix} \tfrac{1}{2}\Delta t^2 \\ \Delta t \end{bmatrix}, \quad
-C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix},\]</span> with <span class="math inline">\(\Delta t = 0.1\)</span>, <span class="math inline">\(W = 10^{-4} I_2\)</span>, and <span class="math inline">\(V = 10^{-2}\)</span>.</p>
+<li><p><strong>Steady-State Kalman Gain via the DARE.</strong> Consider
+the double integrator system from the MATLAB example in this chapter:
+<span class="math display">\[A = \begin{bmatrix} 1 &amp; \Delta t \\ 0
+&amp; 1 \end{bmatrix}, \quad
+B = \begin{bmatrix} \tfrac{1}{2}\Delta t^2 \\ \Delta t \end{bmatrix},
+\quad
+C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix},\]</span> with <span
+class="math inline">\(\Delta t = 0.1\)</span>, <span
+class="math inline">\(W = 10^{-4} I_2\)</span>, and <span
+class="math inline">\(V = 10^{-2}\)</span>.</p>
 <ol>
-<li><p>Write out the Discrete Algebraic Riccati Equation (DARE) that determines the steady-state predicted error covariance <span class="math inline">\(P_\infty\)</span>.</p></li>
-<li><p>Using the duality between estimation and control (Table <a href="#tab:duality" data-reference-type="ref" data-reference="tab:duality">1.1</a>), explain how to compute <span class="math inline">\(P_\infty\)</span> and <span class="math inline">\(L_\infty\)</span> using a standard LQR solver by substituting <span class="math inline">\(A \to A^\top\)</span>, <span class="math inline">\(B \to C^\top\)</span>, <span class="math inline">\(Q \to W\)</span>, <span class="math inline">\(R \to V\)</span>.</p></li>
-<li><p>Verify numerically (e.g. in MATLAB using <code>dare(A’, C’, W, V)</code>) that the steady-state gain <span class="math inline">\(L_\infty\)</span> is consistent with the values used in the chapter’s simulation.</p></li>
+<li><p>Write out the Discrete Algebraic Riccati Equation (DARE) that
+determines the steady-state predicted error covariance <span
+class="math inline">\(P_\infty\)</span>.</p></li>
+<li><p>Using the duality between estimation and control (Table <a
+href="#tab:duality" data-reference-type="ref"
+data-reference="tab:duality">1.1</a>), explain how to compute <span
+class="math inline">\(P_\infty\)</span> and <span
+class="math inline">\(L_\infty\)</span> using a standard LQR solver by
+substituting <span class="math inline">\(A \to A^\top\)</span>, <span
+class="math inline">\(B \to C^\top\)</span>, <span
+class="math inline">\(Q \to W\)</span>, <span class="math inline">\(R
+\to V\)</span>.</p></li>
+<li><p>Verify numerically (e.g. in MATLAB using
+<code>dare(A’, C’, W, V)</code>) that the steady-state gain <span
+class="math inline">\(L_\infty\)</span> is consistent with the values
+used in the chapter’s simulation.</p></li>
 </ol></li>
-<li><p><strong>Augmented State Estimation: Constant Disturbance.</strong> Consider a scalar plant <span class="math display">\[x_{k+1} = a\, x_k + b\, u_k + d_k + w_k, \qquad y_k = c\, x_k + v_k,\]</span> where <span class="math inline">\(d_k\)</span> is an unknown but <em>constant</em> disturbance (<span class="math inline">\(d_{k+1} = d_k\)</span>). The noise <span class="math inline">\(w_k\)</span> and <span class="math inline">\(v_k\)</span> have covariances <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span>, respectively.</p>
+<li><p><strong>Augmented State Estimation: Constant
+Disturbance.</strong> Consider a scalar plant <span
+class="math display">\[x_{k+1} = a\, x_k + b\, u_k + d_k + w_k, \qquad
+y_k = c\, x_k + v_k,\]</span> where <span
+class="math inline">\(d_k\)</span> is an unknown but <em>constant</em>
+disturbance (<span class="math inline">\(d_{k+1} = d_k\)</span>). The
+noise <span class="math inline">\(w_k\)</span> and <span
+class="math inline">\(v_k\)</span> have covariances <span
+class="math inline">\(W\)</span> and <span
+class="math inline">\(V\)</span>, respectively.</p>
 <ol>
-<li><p>Define the augmented state vector <span class="math inline">\(\bar{x}_k = \begin{bmatrix} x_k \\ d_k \end{bmatrix}\)</span> and derive the augmented system matrices <span class="math inline">\(\bar{A}\)</span>, <span class="math inline">\(\bar{B}\)</span>, and <span class="math inline">\(\bar{C}\)</span> such that <span class="math display">\[\bar{x}_{k+1} = \bar{A}\,\bar{x}_k + \bar{B}\,u_k + \bar{w}_k, \qquad y_k = \bar{C}\,\bar{x}_k + v_k.\]</span> State the augmented process noise covariance <span class="math inline">\(\bar{W}\)</span>, assuming that the disturbance drift has a small variance <span class="math inline">\(W_d\)</span>.</p></li>
-<li><p>Discuss what conditions on the pair <span class="math inline">\((\bar{A}, \bar{C})\)</span> are needed for the augmented Kalman filter to converge (i.e. detectability of the augmented system).</p></li>
-<li><p>For <span class="math inline">\(a = 0.9\)</span>, <span class="math inline">\(b = 1\)</span>, <span class="math inline">\(c = 1\)</span>, <span class="math inline">\(W = 0.01\)</span>, <span class="math inline">\(V = 0.1\)</span>, and <span class="math inline">\(W_d = 10^{-4}\)</span>, set up the DARE for the augmented system and explain how the resulting steady-state gain <span class="math inline">\(\bar{L}_\infty\)</span> simultaneously estimates <span class="math inline">\(x_k\)</span> and <span class="math inline">\(d_k\)</span>.</p></li>
+<li><p>Define the augmented state vector <span
+class="math inline">\(\bar{x}_k = \begin{bmatrix} x_k \\ d_k
+\end{bmatrix}\)</span> and derive the augmented system matrices <span
+class="math inline">\(\bar{A}\)</span>, <span
+class="math inline">\(\bar{B}\)</span>, and <span
+class="math inline">\(\bar{C}\)</span> such that <span
+class="math display">\[\bar{x}_{k+1} = \bar{A}\,\bar{x}_k + \bar{B}\,u_k
++ \bar{w}_k, \qquad y_k = \bar{C}\,\bar{x}_k + v_k.\]</span> State the
+augmented process noise covariance <span
+class="math inline">\(\bar{W}\)</span>, assuming that the disturbance
+drift has a small variance <span
+class="math inline">\(W_d\)</span>.</p></li>
+<li><p>Discuss what conditions on the pair <span
+class="math inline">\((\bar{A}, \bar{C})\)</span> are needed for the
+augmented Kalman filter to converge (i.e. detectability of the augmented
+system).</p></li>
+<li><p>For <span class="math inline">\(a = 0.9\)</span>, <span
+class="math inline">\(b = 1\)</span>, <span class="math inline">\(c =
+1\)</span>, <span class="math inline">\(W = 0.01\)</span>, <span
+class="math inline">\(V = 0.1\)</span>, and <span
+class="math inline">\(W_d = 10^{-4}\)</span>, set up the DARE for the
+augmented system and explain how the resulting steady-state gain <span
+class="math inline">\(\bar{L}_\infty\)</span> simultaneously estimates
+<span class="math inline">\(x_k\)</span> and <span
+class="math inline">\(d_k\)</span>.</p></li>
 </ol></li>
-<li><p><strong>Comparing Prediction and Update Steps.</strong> Consider a system with <span class="math display">\[A = \begin{bmatrix} 0.8 &amp; 0.1 \\ 0 &amp; 0.95 \end{bmatrix}, \quad
+<li><p><strong>Comparing Prediction and Update Steps.</strong> Consider
+a system with <span class="math display">\[A = \begin{bmatrix} 0.8 &amp;
+0.1 \\ 0 &amp; 0.95 \end{bmatrix}, \quad
 C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}, \quad
 W = \begin{bmatrix} 0.1 &amp; 0 \\ 0 &amp; 0.05 \end{bmatrix}, \quad
-V = 0.5.\]</span> At time step <span class="math inline">\(k\)</span>, suppose the corrected estimate and covariance are <span class="math display">\[\hat{x}_{k-1} = \begin{bmatrix} 2.0 \\ 1.0 \end{bmatrix}, \qquad
-P_{k-1} = \begin{bmatrix} 0.3 &amp; 0.05 \\ 0.05 &amp; 0.2 \end{bmatrix}.\]</span></p>
+V = 0.5.\]</span> At time step <span class="math inline">\(k\)</span>,
+suppose the corrected estimate and covariance are <span
+class="math display">\[\hat{x}_{k-1} = \begin{bmatrix} 2.0 \\ 1.0
+\end{bmatrix}, \qquad
+P_{k-1} = \begin{bmatrix} 0.3 &amp; 0.05 \\ 0.05 &amp; 0.2
+\end{bmatrix}.\]</span></p>
 <ol>
-<li><p>Compute the predicted estimate <span class="math inline">\(\hat{x}_k^- = A\hat{x}_{k-1}\)</span> (assuming <span class="math inline">\(u_{k-1} = 0\)</span>) and the predicted covariance <span class="math inline">\(P_k^- = A P_{k-1} A^\top + W\)</span>.</p></li>
-<li><p>Compare <span class="math inline">\(\mathrm{Tr}(P_{k-1})\)</span> with <span class="math inline">\(\mathrm{Tr}(P_k^-)\)</span>. Explain why the trace increases during prediction.</p></li>
-<li><p>Suppose the measurement at time <span class="math inline">\(k\)</span> is <span class="math inline">\(y_k = 1.85\)</span>. Compute the innovation <span class="math inline">\(\tilde{y}_k = y_k - C\hat{x}_k^-\)</span>, the innovation covariance <span class="math inline">\(S_k\)</span>, the Kalman gain <span class="math inline">\(L_k\)</span>, the corrected estimate <span class="math inline">\(\hat{x}_k\)</span>, and the corrected covariance <span class="math inline">\(P_k = (I - L_k C) P_k^-\)</span>.</p></li>
-<li><p>Compare <span class="math inline">\(\mathrm{Tr}(P_k^-)\)</span> with <span class="math inline">\(\mathrm{Tr}(P_k)\)</span>. Explain why the trace decreases during the correction step.</p></li>
+<li><p>Compute the predicted estimate <span
+class="math inline">\(\hat{x}_k^- = A\hat{x}_{k-1}\)</span> (assuming
+<span class="math inline">\(u_{k-1} = 0\)</span>) and the predicted
+covariance <span class="math inline">\(P_k^- = A P_{k-1} A^\top +
+W\)</span>.</p></li>
+<li><p>Compare <span class="math inline">\(\mathrm{Tr}(P_{k-1})\)</span>
+with <span class="math inline">\(\mathrm{Tr}(P_k^-)\)</span>. Explain
+why the trace increases during prediction.</p></li>
+<li><p>Suppose the measurement at time <span
+class="math inline">\(k\)</span> is <span class="math inline">\(y_k =
+1.85\)</span>. Compute the innovation <span
+class="math inline">\(\tilde{y}_k = y_k - C\hat{x}_k^-\)</span>, the
+innovation covariance <span class="math inline">\(S_k\)</span>, the
+Kalman gain <span class="math inline">\(L_k\)</span>, the corrected
+estimate <span class="math inline">\(\hat{x}_k\)</span>, and the
+corrected covariance <span class="math inline">\(P_k = (I - L_k C)
+P_k^-\)</span>.</p></li>
+<li><p>Compare <span class="math inline">\(\mathrm{Tr}(P_k^-)\)</span>
+with <span class="math inline">\(\mathrm{Tr}(P_k)\)</span>. Explain why
+the trace decreases during the correction step.</p></li>
 </ol></li>
-<li><p><strong>Observability and Filter Convergence.</strong> Consider a two-state system with <span class="math display">\[A = \begin{bmatrix} 1 &amp; 1 \\ 0 &amp; 1 \end{bmatrix}, \quad C_1 = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}, \quad C_2 = \begin{bmatrix} 0 &amp; 0 \end{bmatrix}.\]</span></p>
+<li><p><strong>Observability and Filter Convergence.</strong> Consider a
+two-state system with <span class="math display">\[A = \begin{bmatrix} 1
+&amp; 1 \\ 0 &amp; 1 \end{bmatrix}, \quad C_1 = \begin{bmatrix} 1 &amp;
+0 \end{bmatrix}, \quad C_2 = \begin{bmatrix} 0 &amp; 0
+\end{bmatrix}.\]</span></p>
 <ol>
-<li><p>Compute the observability matrix <span class="math inline">\(\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix}\)</span> for both <span class="math inline">\(C_1\)</span> and <span class="math inline">\(C_2\)</span>. Which system is observable?</p></li>
-<li><p>For the observable case (<span class="math inline">\(C_1\)</span>), explain why the Kalman filter covariance <span class="math inline">\(P_k\)</span> is guaranteed to converge to a finite steady-state value <span class="math inline">\(P_\infty\)</span> (assuming <span class="math inline">\(W &gt; 0\)</span>).</p></li>
-<li><p>For the unobservable case (<span class="math inline">\(C_2\)</span>), explain why <span class="math inline">\(P_k\)</span> grows without bound regardless of the choice of <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span>. What does this imply about the practical feasibility of state estimation?</p></li>
+<li><p>Compute the observability matrix <span
+class="math inline">\(\mathcal{O} = \begin{bmatrix} C \\ CA
+\end{bmatrix}\)</span> for both <span class="math inline">\(C_1\)</span>
+and <span class="math inline">\(C_2\)</span>. Which system is
+observable?</p></li>
+<li><p>For the observable case (<span
+class="math inline">\(C_1\)</span>), explain why the Kalman filter
+covariance <span class="math inline">\(P_k\)</span> is guaranteed to
+converge to a finite steady-state value <span
+class="math inline">\(P_\infty\)</span> (assuming <span
+class="math inline">\(W &gt; 0\)</span>).</p></li>
+<li><p>For the unobservable case (<span
+class="math inline">\(C_2\)</span>), explain why <span
+class="math inline">\(P_k\)</span> grows without bound regardless of the
+choice of <span class="math inline">\(W\)</span> and <span
+class="math inline">\(V\)</span>. What does this imply about the
+practical feasibility of state estimation?</p></li>
 </ol></li>
 </ol>

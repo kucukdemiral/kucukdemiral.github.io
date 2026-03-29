@@ -1,27 +1,53 @@
 <h1 id="app:linalg">Linear Algebra: A Self-Study Reference</h1>
-<p>This appendix provides a concise but complete review of the linear algebra concepts used throughout these lecture notes. Each topic is presented with a formal definition, worked examples by hand, and the corresponding MATLAB commands so that you can verify every result interactively. No prior knowledge beyond basic school-level algebra is assumed.</p>
-<p>All MATLAB code in this appendix can be typed directly into the MATLAB Command Window or saved as a script. Matrices are entered row by row, with semicolons separating rows and commas (or spaces) separating elements within a row.</p>
+<p>This appendix provides a concise but complete review of the linear
+algebra concepts used throughout this book. Each topic is presented with
+a formal definition, worked examples by hand, and the corresponding
+MATLAB commands so that you can verify every result interactively. No
+prior knowledge beyond basic school-level algebra is assumed.</p>
+<p>All MATLAB code in this appendix can be typed directly into the
+MATLAB Command Window or saved as a script. Matrices are entered row by
+row, with semicolons separating rows and commas (or spaces) separating
+elements within a row.</p>
 <h2 id="sec:app_basics">Scalars, Vectors, and Matrices</h2>
 <div class="defnbox">
-<p><span>Scalar</span> A <strong>scalar</strong> is a single real (or complex) number, denoted by a lower-case italic letter, e.g. <span class="math inline">\(a = 3.7\)</span>.</p>
+<p><span>Scalar</span> A <em>scalar</em> is a single real (or complex)
+number, denoted by a lower-case italic letter, e.g. <span
+class="math inline">\(a = 3.7\)</span>.</p>
 </div>
 <div class="defnbox">
-<p><span>Vector</span> A <strong>column vector</strong> of size <span class="math inline">\(n\)</span> is an ordered list of <span class="math inline">\(n\)</span> scalars arranged vertically: <span class="math display">\[{x} =
+<p><span>Vector</span> A <em>column vector</em> of size <span
+class="math inline">\(n\)</span> is an ordered list of <span
+class="math inline">\(n\)</span> scalars arranged vertically: <span
+class="math display">\[{x} =
     \begin{bmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix}
-    \in \mathbb{R}^n.\]</span> A <span>row vector</span> is the transpose of a column vector: <span class="math inline">\({x}^\top = [x_1,\; x_2,\; \ldots,\; x_n]\)</span>. Unless stated otherwise, <em>vector</em> means column vector in these notes.</p>
+    \in \mathbb{R}^n.\]</span> A <span>row vector</span> is the
+transpose of a column vector: <span class="math inline">\({x}^\top =
+[x_1,\; x_2,\; \ldots,\; x_n]\)</span>. Unless stated otherwise,
+<em>vector</em> means column vector in this book.</p>
 </div>
 <div class="defnbox">
-<p><span>Matrix</span> An <span class="math inline">\(m \times n\)</span> <strong>matrix</strong> has <span class="math inline">\(m\)</span> rows and <span class="math inline">\(n\)</span> columns: <span class="math display">\[A =
+<p><span>Matrix</span> An <span class="math inline">\(m \times
+n\)</span> <em>matrix</em> has <span class="math inline">\(m\)</span>
+rows and <span class="math inline">\(n\)</span> columns: <span
+class="math display">\[A =
     \begin{bmatrix}
         a_{11} &amp; a_{12} &amp; \cdots &amp; a_{1n} \\
         a_{21} &amp; a_{22} &amp; \cdots &amp; a_{2n} \\
         \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
         a_{m1} &amp; a_{m2} &amp; \cdots &amp; a_{mn}
     \end{bmatrix}
-    \in \mathbb{R}^{m \times n}.\]</span> The element in row <span class="math inline">\(i\)</span> and column <span class="math inline">\(j\)</span> is written <span class="math inline">\(a_{ij}\)</span> or <span class="math inline">\([A]_{ij}\)</span>. A <strong>square matrix</strong> has <span class="math inline">\(m = n\)</span>.</p>
+    \in \mathbb{R}^{m \times n}.\]</span> The element in row <span
+class="math inline">\(i\)</span> and column <span
+class="math inline">\(j\)</span> is written <span
+class="math inline">\(a_{ij}\)</span> or <span
+class="math inline">\([A]_{ij}\)</span>. A <em>square matrix</em> has
+<span class="math inline">\(m = n\)</span>.</p>
 </div>
 <div class="notebox">
-<p><span>MATLAB notation</span> MATLAB uses <code>(i,j)</code> indexing for elements, starting from 1: <code>A(i,j)</code> returns <span class="math inline">\(a_{ij}\)</span>. Size is queried with <code>size(A)</code>, which returns <code>[m n]</code>.</p>
+<p><span>MATLAB notation</span> MATLAB uses <code>(i,j)</code> indexing
+for elements, starting from 1: <code>A(i,j)</code> returns <span
+class="math inline">\(a_{ij}\)</span>. Size is queried with
+<code>size(A)</code>, which returns <code>[m n]</code>.</p>
 </div>
 <div class="examplebox">
 <p><span>Entering matrices and vectors in MATLAB</span></p>
@@ -40,44 +66,50 @@
         
         % Query dimensions
         [m, n] = size(A)      % m=3, n=3</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code># Python: arrays with NumPy
-x = np.array([[2], [-1], [4]])    # 3x1 column vector
-print("Column vector x:", x.flatten())
-
-y = np.array([[5, 0, -3]])        # 1x3 row vector
-print("Row vector y:", y.flatten())
-
-A = np.array([[1, 2, 3],
-              [4, 5, 6],
-              [7, 8, 9]])
-print("\nMatrix A:"); print(A)
-
-# Access element (0-indexed: row 1, col 2 = MATLAB row 2, col 3)
-print(f"\nA[1,2] = {A[1,2]}")    # 6
-print(f"Shape:   {A.shape}")</code></pre>
-</div>
-<p>Running the code above sets <code>a23 = 6</code> and confirms <span class="math inline">\(A\)</span> is <span class="math inline">\(3\times 3\)</span>. Vectors are simply matrices where one dimension equals 1.</p>
+<p>Running the code above sets <code>a23 = 6</code> and confirms <span
+class="math inline">\(A\)</span> is <span class="math inline">\(3\times
+3\)</span>. Vectors are simply matrices where one dimension equals
+1.</p>
 </div>
 <h2 id="sec:app_special">Special Matrices</h2>
-<p>Several matrix types appear repeatedly in MPC formulations and are worth knowing by name.</p>
+<p>Several matrix types appear repeatedly in MPC formulations and are
+worth knowing by name.</p>
 <div class="defnbox">
 <p><span>Important Special Matrices</span></p>
 <ul>
-<li><p><strong>Zero matrix</strong> <span class="math inline">\(0_{m\times n}\)</span>: all entries are zero.</p></li>
-<li><p><strong>Identity matrix</strong> <span class="math inline">\(I_n\)</span>: square, ones on the main diagonal, zeros elsewhere; <span class="math inline">\([I_n]_{ij} = 1\)</span> if <span class="math inline">\(i=j\)</span>, else <span class="math inline">\(0\)</span>.</p></li>
-<li><p><strong>Diagonal matrix</strong>: square, all off-diagonal entries are zero; written <span class="math inline">\(\mathrm{diag}(d_1, d_2, \ldots, d_n)\)</span>.</p></li>
-<li><p><strong>Symmetric matrix</strong>: square, <span class="math inline">\(A = A^\top\)</span>, i.e. <span class="math inline">\(a_{ij} = a_{ji}\)</span> for all <span class="math inline">\(i,j\)</span>.</p></li>
-<li><p><strong>Positive definite matrix</strong>: symmetric <span class="math inline">\(A\)</span> such that <span class="math inline">\({x}^\top A {x} &gt; 0\)</span> for all <span class="math inline">\({x} \neq 0\)</span>. Written <span class="math inline">\(A \succ 0\)</span>.</p></li>
-<li><p><strong>Positive semi-definite matrix</strong>: symmetric <span class="math inline">\(A\)</span> such that <span class="math inline">\({x}^\top A {x} \geq 0\)</span>. Written <span class="math inline">\(A \succeq 0\)</span>.</p></li>
+<li><p><strong>Zero matrix</strong> <span
+class="math inline">\(0_{m\times n}\)</span>: all entries are
+zero.</p></li>
+<li><p><strong>Identity matrix</strong> <span
+class="math inline">\(I_n\)</span>: square, ones on the main diagonal,
+zeros elsewhere; <span class="math inline">\([I_n]_{ij} = 1\)</span> if
+<span class="math inline">\(i=j\)</span>, else <span
+class="math inline">\(0\)</span>.</p></li>
+<li><p><strong>Diagonal matrix</strong>: square, all off-diagonal
+entries are zero; written <span class="math inline">\(\mathrm{diag}(d_1,
+d_2, \ldots, d_n)\)</span>.</p></li>
+<li><p><strong>Symmetric matrix</strong>: square, <span
+class="math inline">\(A = A^\top\)</span>, i.e. <span
+class="math inline">\(a_{ij} = a_{ji}\)</span> for all <span
+class="math inline">\(i,j\)</span>.</p></li>
+<li><p><strong>Positive definite matrix</strong>: symmetric <span
+class="math inline">\(A\)</span> such that <span
+class="math inline">\({x}^\top A {x} &gt; 0\)</span> for all <span
+class="math inline">\({x} \neq 0\)</span>. Written <span
+class="math inline">\(A \succ 0\)</span>.</p></li>
+<li><p><strong>Positive semi-definite matrix</strong>: symmetric <span
+class="math inline">\(A\)</span> such that <span
+class="math inline">\({x}^\top A {x} \geq 0\)</span>. Written <span
+class="math inline">\(A \succeq 0\)</span>.</p></li>
 </ul>
 </div>
 <div class="notebox">
-<p><span>Why positive definiteness matters in MPC</span> The cost matrices <span class="math inline">\(Q\)</span> and <span class="math inline">\(R\)</span> in the MPC objective must satisfy <span class="math inline">\(Q \succeq 0\)</span> and <span class="math inline">\(R \succ 0\)</span> for the optimisation problem to be well-posed (bounded below with a unique minimiser).</p>
+<p><span>Why positive definiteness matters in MPC</span> The cost
+matrices <span class="math inline">\(Q\)</span> and <span
+class="math inline">\(R\)</span> in the MPC objective must satisfy <span
+class="math inline">\(Q \succeq 0\)</span> and <span
+class="math inline">\(R \succ 0\)</span> for the optimisation problem to
+be well-posed (bounded below with a unique minimiser).</p>
 </div>
 <div class="examplebox">
 <p><span>Special matrices in MATLAB</span></p>
@@ -92,47 +124,45 @@ print(f"Shape:   {A.shape}")</code></pre>
         
         % Check positive definiteness via eigenvalues
         ev = eig(A)             % all positive =&gt; A is positive definite</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>n = 4
-Z = np.zeros((n, n))        # zero matrix
-I = np.eye(n)                # identity matrix
-D = np.diag([1, 2, 3, 4])   # diagonal matrix
-print("Zero:"); print(Z)
-print("\nIdentity:"); print(I)
-print("\nDiagonal:"); print(D)
-
-# Symmetry and positive definiteness
-A = np.array([[4, 2], [2, 3]])
-print(f"\nA symmetric? {np.allclose(A, A.T)}")
-ev = np.linalg.eigvals(A)
-print(f"Eigenvalues: {ev}  =>  PD? {bool(np.all(ev > 0))}")</code></pre>
-</div>
-<p><code>eig(A)</code> returns <code>[1.4384; 5.5616]</code>, both positive, confirming <span class="math inline">\(A \succ 0\)</span>.</p>
+<p><code>eig(A)</code> returns <code>[1.4384; 5.5616]</code>, both
+positive, confirming <span class="math inline">\(A \succ 0\)</span>.</p>
 </div>
 <h2 id="sec:app_addsubtract">Matrix Addition and Subtraction</h2>
 <div class="defnbox">
-<p><span>Addition and Subtraction</span> Two matrices <span class="math inline">\(A, B \in \mathbb{R}^{m \times n}\)</span> of the <em>same size</em> are added (or subtracted) element by element: <span class="math display">\[[A \pm B]_{ij} = a_{ij} \pm b_{ij}.\]</span> Addition with matrices of different sizes is <strong>not defined</strong>.</p>
+<p><span>Addition and Subtraction</span> Two matrices <span
+class="math inline">\(A, B \in \mathbb{R}^{m \times n}\)</span> of the
+<em>same size</em> are added (or subtracted) element by element: <span
+class="math display">\[[A \pm B]_{ij} = a_{ij} \pm b_{ij}.\]</span>
+Addition with matrices of different sizes is <em>not defined</em>.</p>
 </div>
 <p><strong>Properties of matrix addition:</strong></p>
 <ul>
-<li><p>Commutativity: <span class="math inline">\(A + B = B + A\)</span></p></li>
-<li><p>Associativity: <span class="math inline">\((A + B) + C = A + (B + C)\)</span></p></li>
-<li><p>Identity element: <span class="math inline">\(A + 0 = A\)</span></p></li>
-<li><p>Distributivity over scalars: <span class="math inline">\(\alpha(A+B) = \alpha A + \alpha B\)</span></p></li>
+<li><p>Commutativity: <span class="math inline">\(A + B = B +
+A\)</span></p></li>
+<li><p>Associativity: <span class="math inline">\((A + B) + C = A + (B +
+C)\)</span></p></li>
+<li><p>Identity element: <span class="math inline">\(A + 0 =
+A\)</span></p></li>
+<li><p>Distributivity over scalars: <span
+class="math inline">\(\alpha(A+B) = \alpha A + \alpha
+B\)</span></p></li>
 </ul>
 <div class="examplebox">
-<p><span>Matrix addition and subtraction by hand and in MATLAB</span> Let <span class="math display">\[A = \begin{bmatrix} 1 &amp; 3 \\ -2 &amp; 4 \end{bmatrix},
+<p><span>Matrix addition and subtraction by hand and in MATLAB</span>
+Let <span class="math display">\[A = \begin{bmatrix} 1 &amp; 3 \\ -2
+&amp; 4 \end{bmatrix},
     \qquad
-    B = \begin{bmatrix} 5 &amp; -1 \\ 0 &amp; 2 \end{bmatrix}.\]</span> Compute <span class="math inline">\(A + B\)</span>, <span class="math inline">\(A - B\)</span>, and <span class="math inline">\(3A\)</span>.</p>
+    B = \begin{bmatrix} 5 &amp; -1 \\ 0 &amp; 2 \end{bmatrix}.\]</span>
+Compute <span class="math inline">\(A + B\)</span>, <span
+class="math inline">\(A - B\)</span>, and <span
+class="math inline">\(3A\)</span>.</p>
 <p><span class="math display">\[A + B =
     \begin{bmatrix} 1+5 &amp; 3-1 \\ -2+0 &amp; 4+2 \end{bmatrix}
-    = \begin{bmatrix} 6 &amp; 2 \\ -2 &amp; 6 \end{bmatrix},\]</span> <span class="math display">\[A - B =
+    = \begin{bmatrix} 6 &amp; 2 \\ -2 &amp; 6 \end{bmatrix},\]</span>
+<span class="math display">\[A - B =
     \begin{bmatrix} 1-5 &amp; 3+1 \\ -2-0 &amp; 4-2 \end{bmatrix}
-    = \begin{bmatrix} -4 &amp; 4 \\ -2 &amp; 2 \end{bmatrix},\]</span> <span class="math display">\[3A =
+    = \begin{bmatrix} -4 &amp; 4 \\ -2 &amp; 2 \end{bmatrix},\]</span>
+<span class="math display">\[3A =
     \begin{bmatrix} 3 &amp; 9 \\ -6 &amp; 12 \end{bmatrix}.\]</span></p>
 <pre class="matlab" data-language="Matlab"><code>A = [1, 3; -2, 4];
         B = [5, -1; 0, 2];
@@ -140,30 +170,25 @@ print(f"Eigenvalues: {ev}  =>  PD? {bool(np.all(ev > 0))}")</code></pre>
         ApB = A + B     % [6  2; -2  6]
         AmB = A - B     % [-4  4; -2  2]
         threeA = 3*A    % [3  9; -6  12]</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[1, 3], [-2, 4]])
-B = np.array([[5, -1], [0, 2]])
-
-print("A + B ="); print(A + B)
-print("\nA - B ="); print(A - B)
-print("\n3*A ="); print(3 * A)</code></pre>
-</div>
 </div>
 <h2 id="sec:app_transpose">Matrix Transpose</h2>
 <div class="defnbox">
-<p><span>Transpose</span> The <strong>transpose</strong> of <span class="math inline">\(A \in \mathbb{R}^{m \times n}\)</span> is the matrix <span class="math inline">\(A^\top \in \mathbb{R}^{n \times m}\)</span> obtained by swapping rows and columns: <span class="math inline">\([A^\top]_{ij} = a_{ji}\)</span>.</p>
+<p><span>Transpose</span> The <em>transpose</em> of <span
+class="math inline">\(A \in \mathbb{R}^{m \times n}\)</span> is the
+matrix <span class="math inline">\(A^\top \in \mathbb{R}^{n \times
+m}\)</span> obtained by swapping rows and columns: <span
+class="math inline">\([A^\top]_{ij} = a_{ji}\)</span>.</p>
 </div>
-<p><strong>Useful transpose identities:</strong> <span class="math display">\[\begin{align}
-    (A^\top)^\top &amp;= A \label{eq:t1}\\
-    (A + B)^\top  &amp;= A^\top + B^\top \label{eq:t2}\\
+<p><strong>Useful transpose identities:</strong> <span
+class="math display">\[\begin{align}
+    (A^\top)^\top &amp;= A \nonumber\\
+    (A + B)^\top  &amp;= A^\top + B^\top \nonumber\\
     (AB)^\top     &amp;= B^\top A^\top \label{eq:t3}\\
-    (\alpha A)^\top &amp;= \alpha A^\top \label{eq:t4}
+    (\alpha A)^\top &amp;= \alpha A^\top \nonumber
 \end{align}\]</span></p>
-<p>Identity <a href="#eq:t3" data-reference-type="eqref" data-reference="eq:t3">[eq:t3]</a> is the most frequently used and most easily forgotten: note the <em>reversed</em> order.</p>
+<p>Identity <a href="#eq:t3" data-reference-type="eqref"
+data-reference="eq:t3">[eq:t3]</a> is the most frequently used and most
+easily forgotten: note the <em>reversed</em> order.</p>
 <div class="examplebox">
 <p><span>Transpose in MATLAB</span></p>
 <pre class="matlab" data-language="Matlab"><code>A  = [1, 2, 3; 4, 5, 6];   % 2x3 matrix
@@ -174,131 +199,161 @@ print("\n3*A ="); print(3 * A)</code></pre>
         lhs = (A*B)&#39;
         rhs = B&#39; * A&#39;
         isequal(lhs, rhs)           % returns 1 (true)</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[1, 2, 3], [4, 5, 6]])   # 2x3
-print("A ="); print(A)
-print("\nA^T ="); print(A.T)              # 3x2
-
-# Verify (AB)^T = B^T A^T
-B = np.array([[1, 0], [-1, 2], [3, 1]])
-lhs = (A @ B).T
-rhs = B.T @ A.T
-print(f"\n(AB)^T == B^T A^T ?  {np.allclose(lhs, rhs)}")</code></pre>
-</div>
-<p><code>At</code> is the <span class="math inline">\(3\times2\)</span> matrix with rows <code>[1 4]</code>, <code>[2 5]</code>, <code>[3 6]</code>. MATLAB confirms the identity.</p>
-<p><strong>Warning:</strong> in MATLAB, <code>A’</code> computes the <em>conjugate</em> (Hermitian) transpose. For real matrices this makes no difference. For complex matrices use <code>A.’</code> (dot-transpose) if you want the non-conjugate transpose.</p>
+<p><code>At</code> is the <span class="math inline">\(3\times2\)</span>
+matrix with rows <code>[1 4]</code>, <code>[2 5]</code>,
+<code>[3 6]</code>. MATLAB confirms the identity.</p>
+<p><strong>Warning:</strong> in MATLAB, <code>A’</code> computes the
+<em>conjugate</em> (Hermitian) transpose. For real matrices this makes
+no difference. For complex matrices use <code>A.’</code> (dot-transpose)
+if you want the non-conjugate transpose.</p>
 </div>
 <h2 id="sec:app_matmat">Matrix–Matrix Multiplication</h2>
 <div class="defnbox">
-<p><span>Matrix Multiplication</span> If <span class="math inline">\(A \in \mathbb{R}^{m \times p}\)</span> and <span class="math inline">\(B \in \mathbb{R}^{p \times n}\)</span> (the inner dimensions must match), their product <span class="math inline">\(C = AB \in \mathbb{R}^{m \times n}\)</span> is defined by <span class="math display">\[c_{ij} = \sum_{k=1}^{p} a_{ik}\, b_{kj},
-    \qquad i = 1,\ldots,m,\quad j = 1,\ldots,n.\]</span> In words: the <span class="math inline">\((i,j)\)</span> entry of <span class="math inline">\(C\)</span> is the <em>dot product</em> of the <span class="math inline">\(i\)</span>-th row of <span class="math inline">\(A\)</span> with the <span class="math inline">\(j\)</span>-th column of <span class="math inline">\(B\)</span>.</p>
+<p><span>Matrix Multiplication</span> If <span class="math inline">\(A
+\in \mathbb{R}^{m \times p}\)</span> and <span class="math inline">\(B
+\in \mathbb{R}^{p \times n}\)</span> (the inner dimensions must match),
+their product <span class="math inline">\(C = AB \in \mathbb{R}^{m
+\times n}\)</span> is defined by <span class="math display">\[c_{ij} =
+\sum_{k=1}^{p} a_{ik}\, b_{kj},
+    \qquad i = 1,\ldots,m,\quad j = 1,\ldots,n.\]</span> In words: the
+<span class="math inline">\((i,j)\)</span> entry of <span
+class="math inline">\(C\)</span> is the <em>dot product</em> of the
+<span class="math inline">\(i\)</span>-th row of <span
+class="math inline">\(A\)</span> with the <span
+class="math inline">\(j\)</span>-th column of <span
+class="math inline">\(B\)</span>.</p>
 </div>
 <div class="alertbox">
-<p><span>Matrix multiplication is NOT commutative</span> In general <span class="math inline">\(AB \neq BA\)</span>. The product <span class="math inline">\(BA\)</span> may not even be defined if <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are not square. Always check dimension compatibility before multiplying: an <span class="math inline">\(m\times p\)</span> matrix times a <span class="math inline">\(p \times n\)</span> matrix gives an <span class="math inline">\(m \times n\)</span> result.</p>
+<p><span>Matrix multiplication is NOT commutative</span> In general
+<span class="math inline">\(AB \neq BA\)</span>. The product <span
+class="math inline">\(BA\)</span> may not even be defined if <span
+class="math inline">\(A\)</span> and <span
+class="math inline">\(B\)</span> are not square. Always check dimension
+compatibility before multiplying: an <span class="math inline">\(m\times
+p\)</span> matrix times a <span class="math inline">\(p \times
+n\)</span> matrix gives an <span class="math inline">\(m \times
+n\)</span> result.</p>
 </div>
 <p><strong>Properties:</strong></p>
 <ul>
-<li><p>Associativity: <span class="math inline">\((AB)C = A(BC)\)</span></p></li>
-<li><p>Distributivity: <span class="math inline">\(A(B+C) = AB + AC\)</span></p></li>
-<li><p>Identity: <span class="math inline">\(AI = IA = A\)</span></p></li>
-<li><p>Scalar: <span class="math inline">\((\alpha A)B = A(\alpha B) = \alpha(AB)\)</span></p></li>
+<li><p>Associativity: <span class="math inline">\((AB)C =
+A(BC)\)</span></p></li>
+<li><p>Distributivity: <span class="math inline">\(A(B+C) = AB +
+AC\)</span></p></li>
+<li><p>Identity: <span class="math inline">\(AI = IA =
+A\)</span></p></li>
+<li><p>Scalar: <span class="math inline">\((\alpha A)B = A(\alpha B) =
+\alpha(AB)\)</span></p></li>
 </ul>
 <div class="examplebox">
-<p><span>Matrix–matrix multiplication by hand and in MATLAB</span> Let <span class="math display">\[A = \begin{bmatrix} 1 &amp; 2 \\ 3 &amp; 4 \end{bmatrix},
+<p><span>Matrix–matrix multiplication by hand and in MATLAB</span> Let
+<span class="math display">\[A = \begin{bmatrix} 1 &amp; 2 \\ 3 &amp; 4
+\end{bmatrix},
     \qquad
-    B = \begin{bmatrix} 5 &amp; 6 \\ 7 &amp; 8 \end{bmatrix}.\]</span> Compute <span class="math inline">\(AB\)</span> and <span class="math inline">\(BA\)</span> and confirm they differ.</p>
+    B = \begin{bmatrix} 5 &amp; 6 \\ 7 &amp; 8 \end{bmatrix}.\]</span>
+Compute <span class="math inline">\(AB\)</span> and <span
+class="math inline">\(BA\)</span> and confirm they differ.</p>
 <p><span class="math display">\[AB =
     \begin{bmatrix}
         1\cdot5 + 2\cdot7 &amp; 1\cdot6 + 2\cdot8 \\
         3\cdot5 + 4\cdot7 &amp; 3\cdot6 + 4\cdot8
     \end{bmatrix}
     =
-    \begin{bmatrix} 19 &amp; 22 \\ 43 &amp; 50 \end{bmatrix},\]</span> <span class="math display">\[BA =
+    \begin{bmatrix} 19 &amp; 22 \\ 43 &amp; 50 \end{bmatrix},\]</span>
+<span class="math display">\[BA =
     \begin{bmatrix}
         5\cdot1 + 6\cdot3 &amp; 5\cdot2 + 6\cdot4 \\
         7\cdot1 + 8\cdot3 &amp; 7\cdot2 + 8\cdot4
     \end{bmatrix}
     =
-    \begin{bmatrix} 23 &amp; 34 \\ 31 &amp; 46 \end{bmatrix}.\]</span> Clearly <span class="math inline">\(AB \neq BA\)</span>.</p>
+    \begin{bmatrix} 23 &amp; 34 \\ 31 &amp; 46 \end{bmatrix}.\]</span>
+Clearly <span class="math inline">\(AB \neq BA\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>A  = [1, 2; 3, 4];
         B  = [5, 6; 7, 8];
         
         AB = A * B          % [19 22; 43 50]
         BA = B * A          % [23 34; 31 46]
         isequal(AB, BA)     % returns 0 (false) -- not commutative</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[1, 2], [3, 4]])
-B = np.array([[5, 6], [7, 8]])
-
-print("A @ B ="); print(A @ B)    # [19 22; 43 50]
-print("\nB @ A ="); print(B @ A)  # [23 34; 31 46]
-print(f"\nAB == BA?  {np.allclose(A @ B, B @ A)}")</code></pre>
-</div>
 </div>
 <div class="examplebox">
-<p><span>Non-square matrix multiplication</span> <span class="math display">\[A = \begin{bmatrix} 1 &amp; 0 &amp; -1 \\ 2 &amp; 3 &amp; 1 \end{bmatrix} \in
+<p><span>Non-square matrix multiplication</span> <span
+class="math display">\[A = \begin{bmatrix} 1 &amp; 0 &amp; -1 \\ 2 &amp;
+3 &amp; 1 \end{bmatrix} \in
     \mathbb{R}^{2\times 3}, \qquad
-    B = \begin{bmatrix} 2 \\ -1 \\ 4 \end{bmatrix} \in \mathbb{R}^{3\times 1}.\]</span> Compute <span class="math inline">\(AB\)</span> (which exists) and state why <span class="math inline">\(BA\)</span> does not exist.</p>
-<p><span class="math inline">\(A\)</span> is <span class="math inline">\(2\times 3\)</span> and <span class="math inline">\(B\)</span> is <span class="math inline">\(3\times 1\)</span>: inner dimensions both equal 3, so <span class="math inline">\(AB \in \mathbb{R}^{2\times 1}\)</span>: <span class="math display">\[AB =
+    B = \begin{bmatrix} 2 \\ -1 \\ 4 \end{bmatrix} \in
+\mathbb{R}^{3\times 1}.\]</span> Compute <span
+class="math inline">\(AB\)</span> (which exists) and state why <span
+class="math inline">\(BA\)</span> does not exist.</p>
+<p><span class="math inline">\(A\)</span> is <span
+class="math inline">\(2\times 3\)</span> and <span
+class="math inline">\(B\)</span> is <span class="math inline">\(3\times
+1\)</span>: inner dimensions both equal 3, so <span
+class="math inline">\(AB \in \mathbb{R}^{2\times 1}\)</span>: <span
+class="math display">\[AB =
     \begin{bmatrix}
         1\cdot2 + 0\cdot(-1) + (-1)\cdot4 \\
         2\cdot2 + 3\cdot(-1) + 1\cdot4
     \end{bmatrix}
     =
-    \begin{bmatrix} -2 \\ 5 \end{bmatrix}.\]</span> <span class="math inline">\(BA\)</span> would require <span class="math inline">\(B\)</span> (<span class="math inline">\(3\times1\)</span>) times <span class="math inline">\(A\)</span> (<span class="math inline">\(2\times3\)</span>): inner dimensions are <span class="math inline">\(1 \neq 2\)</span>, so <span class="math inline">\(BA\)</span> is <strong>undefined</strong>.</p>
+    \begin{bmatrix} -2 \\ 5 \end{bmatrix}.\]</span> <span
+class="math inline">\(BA\)</span> would require <span
+class="math inline">\(B\)</span> (<span
+class="math inline">\(3\times1\)</span>) times <span
+class="math inline">\(A\)</span> (<span
+class="math inline">\(2\times3\)</span>): inner dimensions are <span
+class="math inline">\(1 \neq 2\)</span>, so <span
+class="math inline">\(BA\)</span> is <em>undefined</em>.</p>
 <pre class="matlab" data-language="Matlab"><code>A = [1, 0, -1; 2, 3, 1];
         B = [2; -1; 4];
         AB = A * B          % [-2; 5]
         BA = B * A          % Error: inner matrix dimensions must agree</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[1, 0, -1], [2, 3, 1]])  # 2x3
-B = np.array([[2], [-1], [4]])           # 3x1
-
-print(f"A shape: {A.shape},  B shape: {B.shape}")
-print(f"A @ B = {(A @ B).flatten()}")     # [-2, 5]
-
-# B @ A would fail: (3x1) @ (2x3)
-try:
-    B @ A
-except ValueError as e:
-    print(f"B @ A => Error: {e}")</code></pre>
-</div>
 </div>
 <h2 id="sec:app_matvec">Matrix–Vector Multiplication</h2>
-<p>Matrix–vector multiplication is a special case of matrix–matrix multiplication where <span class="math inline">\(n=1\)</span>, but it has a particularly important geometric interpretation: <span class="math inline">\(A{x}\)</span> transforms the vector <span class="math inline">\({x}\)</span> into a new vector in a (possibly different) space.</p>
+<p>Matrix–vector multiplication is a special case of matrix–matrix
+multiplication where <span class="math inline">\(n=1\)</span>, but it
+has a particularly important geometric interpretation: <span
+class="math inline">\(A{x}\)</span> transforms the vector <span
+class="math inline">\({x}\)</span> into a new vector in a (possibly
+different) space.</p>
 <div class="defnbox">
-<p><span>Matrix–Vector Product</span> For <span class="math inline">\(A \in \mathbb{R}^{m\times n}\)</span> and <span class="math inline">\({x} \in \mathbb{R}^n\)</span>: <span class="math display">\[{y} = A{x}, \qquad
-    y_i = \sum_{j=1}^{n} a_{ij}\, x_j, \quad i = 1,\ldots,m.\]</span> Equivalently, <span class="math inline">\(A{x}\)</span> is a <span>linear combination</span> of the columns of <span class="math inline">\(A\)</span> with coefficients given by the entries of <span class="math inline">\({x}\)</span>: <span class="math display">\[A{x} = x_1 {a}_1 + x_2 {a}_2 + \cdots
-    + x_n {a}_n,\]</span> where <span class="math inline">\({a}_j\)</span> denotes the <span class="math inline">\(j\)</span>-th column of <span class="math inline">\(A\)</span>.</p>
+<p><span>Matrix–Vector Product</span> For <span class="math inline">\(A
+\in \mathbb{R}^{m\times n}\)</span> and <span class="math inline">\({x}
+\in \mathbb{R}^n\)</span>: <span class="math display">\[{y} = A{x},
+\qquad
+    y_i = \sum_{j=1}^{n} a_{ij}\, x_j, \quad i = 1,\ldots,m.\]</span>
+Equivalently, <span class="math inline">\(A{x}\)</span> is a
+<span>linear combination</span> of the columns of <span
+class="math inline">\(A\)</span> with coefficients given by the entries
+of <span class="math inline">\({x}\)</span>: <span
+class="math display">\[A{x} = x_1 {a}_1 + x_2 {a}_2 + \cdots
+    + x_n {a}_n,\]</span> where <span
+class="math inline">\({a}_j\)</span> denotes the <span
+class="math inline">\(j\)</span>-th column of <span
+class="math inline">\(A\)</span>.</p>
 </div>
-<p>In state-space control the plant update <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span> is nothing more than two matrix–vector products added together.</p>
+<p>In state-space control the plant update <span
+class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span> is nothing more
+than two matrix–vector products added together.</p>
 <div class="examplebox">
-<p><span>Matrix–vector multiplication by hand and in MATLAB</span> Given the state-space matrices <span class="math display">\[A = \begin{bmatrix} 0.9 &amp; 0.1 \\ 0 &amp; 0.8 \end{bmatrix},
+<p><span>Matrix–vector multiplication by hand and in MATLAB</span> Given
+the state-space matrices <span class="math display">\[A =
+\begin{bmatrix} 0.9 &amp; 0.1 \\ 0 &amp; 0.8 \end{bmatrix},
     \quad
     B = \begin{bmatrix} 0.1 \\ 0.5 \end{bmatrix},
     \quad
     x_k = \begin{bmatrix} 2 \\ -1 \end{bmatrix},
     \quad
-    u_k = 3,\]</span> compute the next state <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>.</p>
+    u_k = 3,\]</span> compute the next state <span
+class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>.</p>
 <p><span class="math display">\[Ax_k =
     \begin{bmatrix} 0.9\cdot2 + 0.1\cdot(-1) \\ 0\cdot2 + 0.8\cdot(-1)
     \end{bmatrix}
     = \begin{bmatrix} 1.7 \\ -0.8 \end{bmatrix},
     \qquad
     Bu_k =
-    \begin{bmatrix} 0.3 \\ 1.5 \end{bmatrix},\]</span> <span class="math display">\[x_{k+1} = \begin{bmatrix} 1.7 \\ -0.8 \end{bmatrix}
+    \begin{bmatrix} 0.3 \\ 1.5 \end{bmatrix},\]</span> <span
+class="math display">\[x_{k+1} = \begin{bmatrix} 1.7 \\ -0.8
+\end{bmatrix}
     + \begin{bmatrix} 0.3 \\ 1.5 \end{bmatrix}
     = \begin{bmatrix} 2.0 \\ 0.7 \end{bmatrix}.\]</span></p>
 <pre class="matlab" data-language="Matlab"><code>A  = [0.9, 0.1; 0, 0.8];
@@ -307,92 +362,82 @@ except ValueError as e:
         uk = 3;
         
         xk1 = A*xk + B*uk    % [2.0; 0.7]</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A  = np.array([[0.9, 0.1], [0, 0.8]])
-B  = np.array([[0.1], [0.5]])
-xk = np.array([[2], [-1]])
-uk = 3
-
-xk1 = A @ xk + B * uk
-print("x_{k+1} = A*x_k + B*u_k =", xk1.flatten())</code></pre>
-</div>
 </div>
 <h2 id="sec:app_inverse">The Inverse of a Matrix</h2>
 <div class="defnbox">
-<p><span>Matrix Inverse</span> A square matrix <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> is <strong>invertible</strong> (or <strong>non-singular</strong>) if there exists a matrix <span class="math inline">\(A^{-1} \in \mathbb{R}^{n\times n}\)</span> such that <span class="math display">\[A A^{-1} = A^{-1} A = I_n.\]</span> If no such matrix exists, <span class="math inline">\(A\)</span> is called <strong>singular</strong>.</p>
+<p><span>Matrix Inverse</span> A square matrix <span
+class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> is
+<em>invertible</em> (or <em>non-singular</em>) if there exists a matrix
+<span class="math inline">\(A^{-1} \in \mathbb{R}^{n\times n}\)</span>
+such that <span class="math display">\[A A^{-1} = A^{-1} A =
+I_n.\]</span> If no such matrix exists, <span
+class="math inline">\(A\)</span> is called <em>singular</em>.</p>
 </div>
 <div class="defnbox">
-<p><span>Conditions for Invertibility</span> A square matrix <span class="math inline">\(A\)</span> is invertible if and only if any one of the following equivalent conditions holds:</p>
+<p><span>Conditions for Invertibility</span> A square matrix <span
+class="math inline">\(A\)</span> is invertible if and only if any one of
+the following equivalent conditions holds:</p>
 <ul>
-<li><p><span class="math inline">\(\det(A) \neq 0\)</span> (see Section <a href="#sec:app_det" data-reference-type="ref" data-reference="sec:app_det">1.8</a>);</p></li>
-<li><p>all eigenvalues of <span class="math inline">\(A\)</span> are non-zero (see Section <a href="#sec:app_eig" data-reference-type="ref" data-reference="sec:app_eig">1.10</a>);</p></li>
-<li><p>the columns (or rows) of <span class="math inline">\(A\)</span> are linearly independent;</p></li>
-<li><p>the equation <span class="math inline">\(A{x} = 0\)</span> has only the trivial solution <span class="math inline">\({x} = 0\)</span>.</p></li>
+<li><p><span class="math inline">\(\det(A) \neq 0\)</span> (see
+Section <a href="#sec:app_det" data-reference-type="ref"
+data-reference="sec:app_det">1.8</a>);</p></li>
+<li><p>all eigenvalues of <span class="math inline">\(A\)</span> are
+non-zero (see Section <a href="#sec:app_eig" data-reference-type="ref"
+data-reference="sec:app_eig">1.10</a>);</p></li>
+<li><p>the columns (or rows) of <span class="math inline">\(A\)</span>
+are linearly independent;</p></li>
+<li><p>the equation <span class="math inline">\(A{x} = 0\)</span> has
+only the trivial solution <span class="math inline">\({x} =
+0\)</span>.</p></li>
 </ul>
 </div>
-<p><strong>Useful inverse identities:</strong> <span class="math display">\[\begin{align}
+<p><strong>Useful inverse identities:</strong> <span
+class="math display">\[\begin{align}
     (A^{-1})^{-1} &amp;= A \\
     (AB)^{-1}     &amp;= B^{-1} A^{-1} \quad \text{(reversed order)} \\
     (A^\top)^{-1} &amp;= (A^{-1})^\top \\
     (\alpha A)^{-1} &amp;= \tfrac{1}{\alpha} A^{-1}
 \end{align}\]</span></p>
-<p><strong>Inverse of a <span class="math inline">\(2\times2\)</span> matrix</strong> by hand: <span class="math display">\[A = \begin{bmatrix} a &amp; b \\ c &amp; d \end{bmatrix}
+<p><strong>Inverse of a <span class="math inline">\(2\times2\)</span>
+matrix</strong> by hand: <span class="math display">\[A =
+\begin{bmatrix} a &amp; b \\ c &amp; d \end{bmatrix}
 \implies
 A^{-1} = \frac{1}{ad - bc}
 \begin{bmatrix} d &amp; -b \\ -c &amp; a \end{bmatrix}.\]</span></p>
 <div class="examplebox">
-<p><span>Computing the inverse by hand and in MATLAB</span> Let <span class="math display">\[A = \begin{bmatrix} 3 &amp; 1 \\ 5 &amp; 2 \end{bmatrix}.\]</span> Find <span class="math inline">\(A^{-1}\)</span> and verify <span class="math inline">\(AA^{-1} = I\)</span>.</p>
-<p><span class="math inline">\(\det(A) = 3\cdot2 - 1\cdot5 = 1\)</span>, so <span class="math display">\[A^{-1} = \frac{1}{1}
+<p><span>Computing the inverse by hand and in MATLAB</span> Let <span
+class="math display">\[A = \begin{bmatrix} 3 &amp; 1 \\ 5 &amp; 2
+\end{bmatrix}.\]</span> Find <span class="math inline">\(A^{-1}\)</span>
+and verify <span class="math inline">\(AA^{-1} = I\)</span>.</p>
+<p><span class="math inline">\(\det(A) = 3\cdot2 - 1\cdot5 = 1\)</span>,
+so <span class="math display">\[A^{-1} = \frac{1}{1}
     \begin{bmatrix} 2 &amp; -1 \\ -5 &amp; 3 \end{bmatrix}
-    = \begin{bmatrix} 2 &amp; -1 \\ -5 &amp; 3 \end{bmatrix}.\]</span> Verification: <span class="math display">\[AA^{-1} =
+    = \begin{bmatrix} 2 &amp; -1 \\ -5 &amp; 3 \end{bmatrix}.\]</span>
+Verification: <span class="math display">\[AA^{-1} =
     \begin{bmatrix} 3 &amp; 1 \\ 5 &amp; 2 \end{bmatrix}
     \begin{bmatrix} 2 &amp; -1 \\ -5 &amp; 3 \end{bmatrix}
     =
     \begin{bmatrix} 6-5 &amp; -3+3 \\ 10-10 &amp; -5+6 \end{bmatrix}
-    = \begin{bmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{bmatrix} = I. \checkmark\]</span></p>
+    = \begin{bmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{bmatrix} = I.
+\checkmark\]</span></p>
 <pre class="matlab" data-language="Matlab"><code>A    = [3, 1; 5, 2];
         Ainv = inv(A)           % [2 -1; -5 3]
         
         % Verify
         A * Ainv                % should give eye(2)
         norm(A*Ainv - eye(2))   % numerical error, should be ~1e-15</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A    = np.array([[3, 1], [5, 2]])
-Ainv = np.linalg.inv(A)
-print("inv(A) ="); print(Ainv)
-
-# Verify
-print("\nA @ inv(A) ="); print(A @ Ainv)
-print(f"Error: {np.linalg.norm(A @ Ainv - np.eye(2)):.2e}")</code></pre>
-</div>
 </div>
 <div class="alertbox">
-<p><span>Avoid <code>inv(A)</code> in numerical computations</span> Although <code>inv(A)</code> is convenient for checking results, numerically it is almost always better to use the backslash operator <code>A\b</code> to solve <span class="math inline">\(Ax = b\)</span> directly, without forming <span class="math inline">\(A^{-1}\)</span> explicitly. The backslash operator uses LU factorisation, which is faster and more numerically stable than computing the full inverse.</p>
+<p><span>Avoid <code>inv(A)</code> in numerical computations</span>
+Although <code>inv(A)</code> is convenient for checking results,
+numerically it is almost always better to use the backslash operator
+<code>A\b</code> to solve <span class="math inline">\(Ax = b\)</span>
+directly, without forming <span class="math inline">\(A^{-1}\)</span>
+explicitly. The backslash operator uses LU factorisation, which is
+faster and more numerically stable than computing the full inverse.</p>
 <pre class="matlab" data-language="Matlab"><code>        b = [1; 2];
         x_inv = inv(A) * b    % slow and less accurate
         x_bs  = A \ b         % fast, numerically recommended</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[3, 1], [5, 2]])
-b = np.array([[1], [2]])
-
-x_inv   = np.linalg.inv(A) @ b    # via inverse (slow)
-x_solve = np.linalg.solve(A, b)   # via solve   (preferred)
-
-print(f"Via inv(A)*b : {x_inv.flatten()}")
-print(f"Via solve    : {x_solve.flatten()}")</code></pre>
-</div>
 </div>
 <div class="examplebox">
 <p><span>Detecting a singular matrix</span></p>
@@ -403,28 +448,26 @@ print(f"Via solve    : {x_solve.flatten()}")</code></pre>
         cond(A_sing)                % returns Inf
         
         inv(A_sing)                 % MATLAB warns: matrix is singular</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A_sing = np.array([[1, 2], [2, 4]])   # row 2 = 2*row 1
-
-print(f"det(A)  = {np.linalg.det(A_sing):.4f}")
-print(f"rank(A) = {np.linalg.matrix_rank(A_sing)}")
-print(f"cond(A) = {np.linalg.cond(A_sing):.1f}")
-
-try:
-    print(f"\ninv(A) =\n{np.linalg.inv(A_sing)}")
-except np.linalg.LinAlgError as e:
-    print(f"\ninv(A) failed: {e}")</code></pre>
-</div>
-<p>The determinant is zero and the rank is 1 (not 2), confirming singularity. MATLAB returns a matrix of <code>Inf</code> values from <code>inv</code> and issues a warning. The condition number <code>cond(A)</code> measures how close a matrix is to being singular; values much larger than <span class="math inline">\(10^6\)</span> indicate near-singularity.</p>
+<p>The determinant is zero and the rank is 1 (not 2), confirming
+singularity. MATLAB returns a matrix of <code>Inf</code> values from
+<code>inv</code> and issues a warning. The condition number
+<code>cond(A)</code> measures how close a matrix is to being singular;
+values much larger than <span class="math inline">\(10^6\)</span>
+indicate near-singularity.</p>
 </div>
 <h2 id="sec:app_det">The Determinant</h2>
 <div class="defnbox">
-<p><span>Determinant</span> The <strong>determinant</strong> <span class="math inline">\(\det(A)\)</span> (also written <span class="math inline">\(|A|\)</span>) is a scalar function of a square matrix that encodes fundamental properties such as invertibility, volume scaling, and orientation.</p>
-<p>For a <span class="math inline">\(2\times2\)</span> matrix: <span class="math display">\[\det\!\begin{bmatrix} a &amp; b \\ c &amp; d \end{bmatrix} = ad - bc.\]</span> For a <span class="math inline">\(3\times3\)</span> matrix (cofactor expansion along the first row): <span class="math display">\[\det\!\begin{bmatrix} a_{11} &amp; a_{12} &amp; a_{13} \\
+<p><span>Determinant</span> The <em>determinant</em> <span
+class="math inline">\(\det(A)\)</span> (also written <span
+class="math inline">\(|A|\)</span>) is a scalar function of a square
+matrix that encodes fundamental properties such as invertibility, volume
+scaling, and orientation.</p>
+<p>For a <span class="math inline">\(2\times2\)</span> matrix: <span
+class="math display">\[\det\!\begin{bmatrix} a &amp; b \\ c &amp; d
+\end{bmatrix} = ad - bc.\]</span> For a <span
+class="math inline">\(3\times3\)</span> matrix (cofactor expansion along
+the first row): <span class="math display">\[\det\!\begin{bmatrix}
+a_{11} &amp; a_{12} &amp; a_{13} \\
         a_{21} &amp; a_{22} &amp; a_{23} \\
         a_{31} &amp; a_{32} &amp; a_{33} \end{bmatrix}
     = a_{11}(a_{22}a_{33} - a_{23}a_{32})
@@ -434,41 +477,56 @@ except np.linalg.LinAlgError as e:
 <p><strong>Key properties:</strong></p>
 <ul>
 <li><p><span class="math inline">\(\det(I) = 1\)</span></p></li>
-<li><p><span class="math inline">\(\det(AB) = \det(A)\det(B)\)</span></p></li>
-<li><p><span class="math inline">\(\det(A^\top) = \det(A)\)</span></p></li>
-<li><p><span class="math inline">\(\det(A^{-1}) = 1/\det(A)\)</span></p></li>
-<li><p><span class="math inline">\(\det(\alpha A) = \alpha^n \det(A)\)</span> for <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span></p></li>
-<li><p><span class="math inline">\(\det(A) = 0\)</span> if and only if <span class="math inline">\(A\)</span> is singular</p></li>
+<li><p><span class="math inline">\(\det(AB) =
+\det(A)\det(B)\)</span></p></li>
+<li><p><span class="math inline">\(\det(A^\top) =
+\det(A)\)</span></p></li>
+<li><p><span class="math inline">\(\det(A^{-1}) =
+1/\det(A)\)</span></p></li>
+<li><p><span class="math inline">\(\det(\alpha A) = \alpha^n
+\det(A)\)</span> for <span class="math inline">\(A \in
+\mathbb{R}^{n\times n}\)</span></p></li>
+<li><p><span class="math inline">\(\det(A) = 0\)</span> if and only if
+<span class="math inline">\(A\)</span> is singular</p></li>
 </ul>
 <div class="examplebox">
-<p><span>Determinant by hand and in MATLAB</span> Compute <span class="math inline">\(\det(A)\)</span> for <span class="math display">\[A = \begin{bmatrix} 2 &amp; -1 &amp; 0 \\ 1 &amp; 3 &amp; -2 \\ 0 &amp; 1 &amp; 4 \end{bmatrix}.\]</span></p>
-<p>Expanding along the first row: <span class="math display">\[\det(A) = 2\bigl(3\cdot4 - (-2)\cdot1\bigr)
+<p><span>Determinant by hand and in MATLAB</span> Compute <span
+class="math inline">\(\det(A)\)</span> for <span
+class="math display">\[A = \begin{bmatrix} 2 &amp; -1 &amp; 0 \\ 1 &amp;
+3 &amp; -2 \\ 0 &amp; 1 &amp; 4 \end{bmatrix}.\]</span></p>
+<p>Expanding along the first row: <span class="math display">\[\det(A) =
+2\bigl(3\cdot4 - (-2)\cdot1\bigr)
     - (-1)\bigl(1\cdot4 - (-2)\cdot0\bigr)
     + 0\bigl(\cdots\bigr)
     = 2(14) + 1(4) = 32.\]</span></p>
 <pre class="matlab" data-language="Matlab"><code>A    = [2, -1, 0; 1, 3, -2; 0, 1, 4];
         d    = det(A)           % returns 32</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[2, -1, 0], [1, 3, -2], [0, 1, 4]])
-print(f"det(A) = {np.linalg.det(A):.0f}")</code></pre>
-</div>
 </div>
 <h2 id="sec:app_trace">The Trace</h2>
 <div class="defnbox">
-<p><span>Trace</span> The <strong>trace</strong> of a square matrix <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> is the sum of its diagonal elements: <span class="math display">\[\mathrm{tr}(A) = \sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}.\]</span></p>
+<p><span>Trace</span> The <em>trace</em> of a square matrix <span
+class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> is the sum
+of its diagonal elements: <span class="math display">\[\mathrm{tr}(A) =
+\sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}.\]</span></p>
 </div>
 <p><strong>Key properties:</strong></p>
 <ul>
-<li><p>Linearity: <span class="math inline">\(\mathrm{tr}(\alpha A + \beta B) = \alpha\,\mathrm{tr}(A) + \beta\,\mathrm{tr}(B)\)</span></p></li>
-<li><p>Cyclic permutation: <span class="math inline">\(\mathrm{tr}(ABC) = \mathrm{tr}(CAB) = \mathrm{tr}(BCA)\)</span></p></li>
-<li><p>Transpose invariance: <span class="math inline">\(\mathrm{tr}(A) = \mathrm{tr}(A^\top)\)</span></p></li>
-<li><p>Equal to sum of eigenvalues: <span class="math inline">\(\mathrm{tr}(A) = \sum_{i=1}^n \lambda_i\)</span></p></li>
+<li><p>Linearity: <span class="math inline">\(\mathrm{tr}(\alpha A +
+\beta B) = \alpha\,\mathrm{tr}(A) +
+\beta\,\mathrm{tr}(B)\)</span></p></li>
+<li><p>Cyclic permutation: <span class="math inline">\(\mathrm{tr}(ABC)
+= \mathrm{tr}(CAB) = \mathrm{tr}(BCA)\)</span></p></li>
+<li><p>Transpose invariance: <span class="math inline">\(\mathrm{tr}(A)
+= \mathrm{tr}(A^\top)\)</span></p></li>
+<li><p>Equal to sum of eigenvalues: <span
+class="math inline">\(\mathrm{tr}(A) = \sum_{i=1}^n
+\lambda_i\)</span></p></li>
 </ul>
-<p>The trace appears in control theory when expressing quadratic cost functions compactly. The MPC stage cost <span class="math inline">\({x}^\top Q {x}\)</span> can be written as <span class="math inline">\(\mathrm{tr}(Q{x}{x}^\top)\)</span>, which is useful in stochastic and robust formulations.</p>
+<p>The trace appears in control theory when expressing quadratic cost
+functions compactly. The MPC stage cost <span
+class="math inline">\({x}^\top Q {x}\)</span> can be written as <span
+class="math inline">\(\mathrm{tr}(Q{x}{x}^\top)\)</span>, which is
+useful in stochastic and robust formulations.</p>
 <div class="examplebox">
 <p><span>Trace in MATLAB</span></p>
 <pre class="matlab" data-language="Matlab"><code>A = [1, 2, 3;
@@ -484,60 +542,83 @@ print(f"det(A) = {np.linalg.det(A):.0f}")</code></pre>
         % Cyclic property: tr(ABC) = tr(CAB)
         B = rand(3);  C = rand(3);
         abs(trace(A*B*C) - trace(C*A*B))   % ~1e-14, effectively zero</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-print(f"trace(A) = {np.trace(A)}")
-
-# trace = sum of eigenvalues
-lam = np.linalg.eigvals(A)
-print(f"sum(eigenvalues) = {np.sum(lam).real:.4f}")
-
-# Cyclic property: tr(ABC) = tr(CAB)
-np.random.seed(0)
-B = np.random.rand(3, 3);  C = np.random.rand(3, 3)
-diff = abs(np.trace(A @ B @ C) - np.trace(C @ A @ B))
-print(f"\n|tr(ABC) - tr(CAB)| = {diff:.2e}")</code></pre>
-</div>
-<p><code>trace(A) = 15 = 1+5+9</code>. The sum of eigenvalues agrees (numerically), confirming the identity.</p>
+<p><code>trace(A) = 15 = 1+5+9</code>. The sum of eigenvalues agrees
+(numerically), confirming the identity.</p>
 </div>
 <h2 id="sec:app_eig">Eigenvalues and Eigenvectors</h2>
-<p>Eigenvalues and eigenvectors are central to understanding the dynamic behaviour of linear systems. In discrete-time state-space control, the eigenvalues of the system matrix <span class="math inline">\(A\)</span> determine stability: the closed-loop system <span class="math inline">\(x_{k+1} = A_\mathrm{cl} x_k\)</span> is stable if and only if all eigenvalues of <span class="math inline">\(A_\mathrm{cl}\)</span> lie strictly inside the unit circle.</p>
+<p>Eigenvalues and eigenvectors are central to understanding the dynamic
+behaviour of linear systems. In discrete-time state-space control, the
+eigenvalues of the system matrix <span class="math inline">\(A\)</span>
+determine stability: the closed-loop system <span
+class="math inline">\(x_{k+1} = A_\mathrm{cl} x_k\)</span> is stable if
+and only if all eigenvalues of <span
+class="math inline">\(A_\mathrm{cl}\)</span> lie strictly inside the
+unit circle.</p>
 <div class="defnbox">
-<p><span>Eigenvalue and Eigenvector</span> Let <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span>. A scalar <span class="math inline">\(\lambda \in \mathbb{C}\)</span> is an <strong>eigenvalue</strong> of <span class="math inline">\(A\)</span> if there exists a non-zero vector <span class="math inline">\({v} \in \mathbb{C}^n\)</span> such that <span class="math display">\[A{v} = \lambda {v}.\]</span> The vector <span class="math inline">\(v\)</span> is the corresponding <strong>eigenvector</strong>. Geometrically, <span class="math inline">\(A\)</span> does not rotate <span class="math inline">\({v}\)</span>; it only scales it by <span class="math inline">\(\lambda\)</span>.</p>
+<p><span>Eigenvalue and Eigenvector</span> Let <span
+class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span>. A scalar
+<span class="math inline">\(\lambda \in \mathbb{C}\)</span> is an
+<em>eigenvalue</em> of <span class="math inline">\(A\)</span> if there
+exists a non-zero vector <span class="math inline">\({v} \in
+\mathbb{C}^n\)</span> such that <span class="math display">\[A{v} =
+\lambda {v}.\]</span> The vector <span class="math inline">\(v\)</span>
+is the corresponding <em>eigenvector</em>. Geometrically, <span
+class="math inline">\(A\)</span> does not rotate <span
+class="math inline">\({v}\)</span>; it only scales it by <span
+class="math inline">\(\lambda\)</span>.</p>
 </div>
-<p><strong>Finding eigenvalues — the characteristic equation:</strong></p>
-<p>Rearranging <span class="math inline">\(A{v} = \lambda{v}\)</span> gives <span class="math inline">\((A - \lambda I){v} = {0}\)</span>. For a non-trivial solution <span class="math inline">\({v} \neq {0}\)</span>, the matrix <span class="math inline">\((A-\lambda I)\)</span> must be singular: <span class="math display">\[\det(A - \lambda I) = 0.\]</span> This is the <strong>characteristic equation</strong>, a degree-<span class="math inline">\(n\)</span> polynomial in <span class="math inline">\(\lambda\)</span> whose <span class="math inline">\(n\)</span> roots (counting multiplicity, possibly complex) are the eigenvalues.</p>
+<p><strong>Finding eigenvalues — the characteristic
+equation:</strong></p>
+<p>Rearranging <span class="math inline">\(A{v} = \lambda{v}\)</span>
+gives <span class="math inline">\((A - \lambda I){v} = {0}\)</span>. For
+a non-trivial solution <span class="math inline">\({v} \neq
+{0}\)</span>, the matrix <span class="math inline">\((A-\lambda
+I)\)</span> must be singular: <span class="math display">\[\det(A -
+\lambda I) = 0.\]</span> This is the <em>characteristic equation</em>, a
+degree-<span class="math inline">\(n\)</span> polynomial in <span
+class="math inline">\(\lambda\)</span> whose <span
+class="math inline">\(n\)</span> roots (counting multiplicity, possibly
+complex) are the eigenvalues.</p>
 <div class="examplebox">
-<p><span>Eigenvalues by hand for a <span class="math inline">\(2\times2\)</span> matrix</span> Find the eigenvalues of <span class="math display">\[A = \begin{bmatrix} 3 &amp; 1 \\ 1 &amp; 3 \end{bmatrix}.\]</span></p>
+<p><span>Eigenvalues by hand for a <span
+class="math inline">\(2\times2\)</span> matrix</span> Find the
+eigenvalues of <span class="math display">\[A = \begin{bmatrix} 3 &amp;
+1 \\ 1 &amp; 3 \end{bmatrix}.\]</span></p>
 <p><span class="math display">\[\det(A - \lambda I)
-    = \det\begin{bmatrix} 3-\lambda &amp; 1 \\ 1 &amp; 3-\lambda \end{bmatrix}
-    = (3-\lambda)^2 - 1 = 0.\]</span> <span class="math display">\[(3-\lambda)^2 = 1
+    = \det\begin{bmatrix} 3-\lambda &amp; 1 \\ 1 &amp; 3-\lambda
+\end{bmatrix}
+    = (3-\lambda)^2 - 1 = 0.\]</span> <span
+class="math display">\[(3-\lambda)^2 = 1
     \implies 3 - \lambda = \pm 1
-    \implies \lambda_1 = 4, \quad \lambda_2 = 2.\]</span> Both eigenvalues are real and positive. For a discrete-time system matrix, we would check <span class="math inline">\(|\lambda_i| &lt; 1\)</span>; here both are <span class="math inline">\(&gt; 1\)</span>, so this <span class="math inline">\(A\)</span> would represent an unstable open-loop plant.</p>
+    \implies \lambda_1 = 4, \quad \lambda_2 = 2.\]</span> Both
+eigenvalues are real and positive. For a discrete-time system matrix, we
+would check <span class="math inline">\(|\lambda_i| &lt; 1\)</span>;
+here both are <span class="math inline">\(&gt; 1\)</span>, so this <span
+class="math inline">\(A\)</span> would represent an unstable open-loop
+plant.</p>
 <pre class="matlab" data-language="Matlab"><code>A      = [3, 1; 1, 3];
         lambda = eig(A)         % [2; 4]</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A   = np.array([[3, 1], [1, 3]])
-lam = np.linalg.eigvals(A)
-print(f"Eigenvalues of A: {lam}")</code></pre>
-</div>
 </div>
 <div class="examplebox">
-<p><span>Eigenvectors and the full eigendecomposition</span> Using the same matrix <span class="math inline">\(A = \begin{bmatrix} 3 &amp; 1 \\ 1 &amp; 3 \end{bmatrix}\)</span>, find the eigenvectors corresponding to <span class="math inline">\(\lambda_1 = 4\)</span> and <span class="math inline">\(\lambda_2 = 2\)</span>.</p>
-<p><strong>For <span class="math inline">\(\lambda_1 = 4\)</span>:</strong> <span class="math display">\[(A - 4I)v = \begin{bmatrix} -1 &amp; 1 \\ 1 &amp; -1 \end{bmatrix}
+<p><span>Eigenvectors and the full eigendecomposition</span> Using the
+same matrix <span class="math inline">\(A = \begin{bmatrix} 3 &amp; 1 \\
+1 &amp; 3 \end{bmatrix}\)</span>, find the eigenvectors corresponding to
+<span class="math inline">\(\lambda_1 = 4\)</span> and <span
+class="math inline">\(\lambda_2 = 2\)</span>.</p>
+<p><strong>For <span class="math inline">\(\lambda_1 =
+4\)</span>:</strong> <span class="math display">\[(A - 4I)v =
+\begin{bmatrix} -1 &amp; 1 \\ 1 &amp; -1 \end{bmatrix}
     \begin{bmatrix} v_1 \\ v_2 \end{bmatrix} = 0
-    \implies -v_1 + v_2 = 0 \implies v_1 = v_2.\]</span> Choosing <span class="math inline">\(v_1 = 1\)</span>: <span class="math inline">\(v_1 = \tfrac{1}{\sqrt{2}}[1,\;1]^\top\)</span> (normalised).</p>
-<p><strong>For <span class="math inline">\(\lambda_2 = 2\)</span>:</strong> <span class="math display">\[(A - 2I)v = \begin{bmatrix} 1 &amp; 1 \\ 1 &amp; 1 \end{bmatrix}
+    \implies -v_1 + v_2 = 0 \implies v_1 = v_2.\]</span> Choosing <span
+class="math inline">\(v_1 = 1\)</span>: <span class="math inline">\(v_1
+= \tfrac{1}{\sqrt{2}}[1,\;1]^\top\)</span> (normalised).</p>
+<p><strong>For <span class="math inline">\(\lambda_2 =
+2\)</span>:</strong> <span class="math display">\[(A - 2I)v =
+\begin{bmatrix} 1 &amp; 1 \\ 1 &amp; 1 \end{bmatrix}
     v = 0
-    \implies v_1 + v_2 = 0 \implies v_2 = -v_1.\]</span> Choosing <span class="math inline">\(v_1 = 1\)</span>: <span class="math inline">\(v_2 = \tfrac{1}{\sqrt{2}}[1,\;-1]^\top\)</span>.</p>
+    \implies v_1 + v_2 = 0 \implies v_2 = -v_1.\]</span> Choosing <span
+class="math inline">\(v_1 = 1\)</span>: <span class="math inline">\(v_2
+= \tfrac{1}{\sqrt{2}}[1,\;-1]^\top\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>A = [3, 1; 1, 3];
         
         % eig returns V (eigenvector matrix) and D (diagonal eigenvalue matrix)
@@ -552,37 +633,31 @@ print(f"Eigenvalues of A: {lam}")</code></pre>
         
         % The eigendecomposition: A = V * D * inv(V)
         norm(A - V*D*inv(V))    % ~1e-15, effectively zero</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[3, 1], [1, 3]])
-lam, V = np.linalg.eig(A)
-print("Eigenvalues:", lam)
-print("Eigenvectors (columns):"); print(V)
-
-# Verify A*v = lambda*v
-v1, l1 = V[:, 0], lam[0]
-print(f"\n||A*v1 - lam1*v1|| = {np.linalg.norm(A @ v1 - l1 * v1):.2e}")
-
-# Verify A = V * D * V^{-1}
-D = np.diag(lam)
-err = np.linalg.norm(A - V @ D @ np.linalg.inv(V))
-print(f"||A - V*D*inv(V)|| = {err:.2e}")</code></pre>
-</div>
 </div>
 <div class="defnbox">
-<p><span>Eigenvalue Properties for Stability Analysis</span> For a discrete-time system <span class="math inline">\(x_{k+1} = A x_k\)</span>:</p>
+<p><span>Eigenvalue Properties for Stability Analysis</span> For a
+discrete-time system <span class="math inline">\(x_{k+1} = A
+x_k\)</span>:</p>
 <ul>
-<li><p><strong>Asymptotically stable:</strong> all eigenvalues satisfy <span class="math inline">\(|\lambda_i| &lt; 1\)</span> (strictly inside the unit circle).</p></li>
-<li><p><strong>Marginally stable:</strong> all <span class="math inline">\(|\lambda_i| \leq 1\)</span> and those on the unit circle have distinct eigenvectors.</p></li>
-<li><p><strong>Unstable:</strong> at least one eigenvalue satisfies <span class="math inline">\(|\lambda_i| &gt; 1\)</span>.</p></li>
+<li><p><strong>Asymptotically stable:</strong> all eigenvalues satisfy
+<span class="math inline">\(|\lambda_i| &lt; 1\)</span> (strictly inside
+the unit circle).</p></li>
+<li><p><strong>Marginally stable:</strong> all <span
+class="math inline">\(|\lambda_i| \leq 1\)</span> and those on the unit
+circle have distinct eigenvectors.</p></li>
+<li><p><strong>Unstable:</strong> at least one eigenvalue satisfies
+<span class="math inline">\(|\lambda_i| &gt; 1\)</span>.</p></li>
 </ul>
-<p>For a continuous-time system <span class="math inline">\(\dot{x} = Ax\)</span>, replace the unit circle with the left half-plane: stable iff <span class="math inline">\(\mathrm{Re}(\lambda_i) &lt; 0\)</span>.</p>
+<p>For a continuous-time system <span class="math inline">\(\dot{x} =
+Ax\)</span>, replace the unit circle with the left half-plane: stable
+iff <span class="math inline">\(\mathrm{Re}(\lambda_i) &lt;
+0\)</span>.</p>
 </div>
 <div class="examplebox">
-<p><span>Stability check via eigenvalues in MATLAB</span> Check whether the following discrete-time system matrix is stable: <span class="math display">\[A = \begin{bmatrix} 0.98 &amp; 0.01 \\ 0.02 &amp; 0.97 \end{bmatrix}.\]</span></p>
+<p><span>Stability check via eigenvalues in MATLAB</span> Check whether
+the following discrete-time system matrix is stable: <span
+class="math display">\[A = \begin{bmatrix} 0.98 &amp; 0.01 \\ 0.02 &amp;
+0.97 \end{bmatrix}.\]</span></p>
 <pre class="matlab" data-language="Matlab"><code>A      = [0.98, 0.01; 0.02, 0.97];
         lambda = eig(A)             % [0.96; 0.99]
         abs_lambda = abs(lambda)    % [0.96; 0.99]
@@ -596,23 +671,21 @@ print(f"||A - V*D*inv(V)|| = {err:.2e}")</code></pre>
         axis equal; grid on;
         xlabel(&#39;Real&#39;); ylabel(&#39;Imaginary&#39;);
         title(&#39;Eigenvalues of A&#39;);</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A   = np.array([[0.98, 0.01], [0.02, 0.97]])
-lam = np.linalg.eigvals(A)
-print(f"Eigenvalues:  {lam}")
-print(f"|lambda|:     {np.abs(lam)}")
-print(f"All |lam| < 1 (stable)?  {bool(np.all(np.abs(lam) < 1))}")</code></pre>
+<p>Both eigenvalues have magnitude less than 1, so the system is
+asymptotically stable. The plot shows both poles inside the unit
+circle.</p>
 </div>
-<p>Both eigenvalues have magnitude less than 1, so the system is asymptotically stable. The plot shows both poles inside the unit circle.</p>
-</div>
-<h2 id="sec:app_together">Putting It All Together: A State-Space Example</h2>
-<p>This section demonstrates how all the operations above arise together in a single state-space simulation, mirroring the structure of the MPC plant model used throughout these notes.</p>
+<h2 id="sec:app_together">Putting It All Together: A State-Space
+Example</h2>
+<p>This section demonstrates how all the operations above arise together
+in a single state-space simulation, mirroring the structure of the MPC
+plant model used throughout this book.</p>
 <div class="examplebox">
-<p><span>Two-state discrete system: simulation and analysis</span> Consider the discrete-time system <span class="math display">\[x_{k+1} = A x_k + B u_k, \qquad y_k = C x_k,\]</span> with <span class="math display">\[A = \begin{bmatrix} 0.9 &amp; 0.1 \\ 0.0 &amp; 0.8 \end{bmatrix},
+<p><span>Two-state discrete system: simulation and analysis</span>
+Consider the discrete-time system <span class="math display">\[x_{k+1} =
+A x_k + B u_k, \qquad y_k = C x_k,\]</span> with <span
+class="math display">\[A = \begin{bmatrix} 0.9 &amp; 0.1 \\ 0.0 &amp;
+0.8 \end{bmatrix},
     \quad
     B = \begin{bmatrix} 0.1 \\ 0.3 \end{bmatrix},
     \quad
@@ -623,8 +696,11 @@ print(f"All |lam| < 1 (stable)?  {bool(np.all(np.abs(lam) < 1))}")</code></pre>
 <p>Carry out the following tasks in MATLAB:</p>
 <ol>
 <li><p>Confirm the system is stable.</p></li>
-<li><p>Compute <span class="math inline">\(\mathrm{tr}(A)\)</span> and <span class="math inline">\(\det(A)\)</span> and relate them to the eigenvalues.</p></li>
-<li><p>Simulate 20 steps and plot the output <span class="math inline">\(y_k\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(\mathrm{tr}(A)\)</span> and
+<span class="math inline">\(\det(A)\)</span> and relate them to the
+eigenvalues.</p></li>
+<li><p>Simulate 20 steps and plot the output <span
+class="math inline">\(y_k\)</span>.</p></li>
 </ol>
 <pre class="matlab" data-language="Matlab"><code>A  = [0.9, 0.1; 0.0, 0.8];
         B  = [0.1; 0.3];
@@ -656,37 +732,15 @@ print(f"All |lam| < 1 (stable)?  {bool(np.all(np.abs(lam) < 1))}")</code></pre>
         xlabel(&#39;Time step k&#39;); ylabel(&#39;y_k&#39;);
         title(&#39;Output y_k (free response, u=0)&#39;);
         grid on;</code></pre>
-<div class="pyodide-runner">
-<script type="pyodide-setup">
-import numpy as np
-np.set_printoptions(precision=4, suppress=True)
-</script>
-<pre><code>A = np.array([[0.9, 0.1], [0.0, 0.8]])
-B = np.array([[0.1], [0.3]])
-C = np.array([[1, 0]])
-x = np.array([[5.0], [2.0]])
-N = 20
-
-# 1. Stability
-lam = np.linalg.eigvals(A)
-print("Eigenvalues:", lam, " |lam|:", np.abs(lam))
-print(f"Stable? {bool(np.all(np.abs(lam) < 1))}")
-
-# 2. Trace/det identities
-print(f"\ntrace(A)={np.trace(A):.2f}  sum(lam)={np.sum(lam).real:.2f}")
-print(f"det(A)  ={np.linalg.det(A):.4f}  prod(lam)={np.prod(lam).real:.4f}")
-
-# 3. Simulate free response (u=0)
-y_log = np.zeros(N)
-for k in range(N):
-    y_log[k] = (C @ x).item()
-    x = A @ x
-print(f"\nFree response y_k:")
-for k in range(min(N, 10)):
-    print(f"  k={k:2d}: y = {y_log[k]:.4f}")
-print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
-</div>
-<p>The output decays to zero, consistent with the stable eigenvalues <span class="math inline">\(\lambda_1 \approx 0.9\)</span> and <span class="math inline">\(\lambda_2 = 0.8\)</span>. Notice that <span class="math inline">\(\mathrm{tr}(A) = \sum \lambda_i = 1.7\)</span> and <span class="math inline">\(\det(A) = \prod \lambda_i = 0.72\)</span>, confirming the identities from Sections <a href="#sec:app_trace" data-reference-type="ref" data-reference="sec:app_trace">1.9</a> and <a href="#sec:app_det" data-reference-type="ref" data-reference="sec:app_det">1.8</a>.</p>
+<p>The output decays to zero, consistent with the stable eigenvalues
+<span class="math inline">\(\lambda_1 \approx 0.9\)</span> and <span
+class="math inline">\(\lambda_2 = 0.8\)</span>. Notice that <span
+class="math inline">\(\mathrm{tr}(A) = \sum \lambda_i = 1.7\)</span> and
+<span class="math inline">\(\det(A) = \prod \lambda_i = 0.72\)</span>,
+confirming the identities from Sections <a href="#sec:app_trace"
+data-reference-type="ref" data-reference="sec:app_trace">1.9</a> and <a
+href="#sec:app_det" data-reference-type="ref"
+data-reference="sec:app_det">1.8</a>.</p>
 </div>
 <h2 id="sec:app_matlab_ref">Quick Reference: MATLAB Commands</h2>
 <div class="center">
@@ -722,21 +776,25 @@ print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
 <tr>
 <td style="text-align: left;">A’</td>
 <td style="text-align: left;">Transpose (conjugate)</td>
-<td style="text-align: left;">Use <code>A.’</code> for real transpose</td>
+<td style="text-align: left;">Use <code>A.’</code> for real
+transpose</td>
 </tr>
 <tr>
 <td style="text-align: left;">A ^ n</td>
 <td style="text-align: left;">Matrix power</td>
-<td style="text-align: left;"><span class="math inline">\(A^n\)</span>, square <span class="math inline">\(A\)</span> only</td>
+<td style="text-align: left;"><span class="math inline">\(A^n\)</span>,
+square <span class="math inline">\(A\)</span> only</td>
 </tr>
 <tr>
 <td style="text-align: left;">inv(A)</td>
 <td style="text-align: left;">Matrix inverse</td>
-<td style="text-align: left;">Avoid for solving <span class="math inline">\(Ax=b\)</span></td>
+<td style="text-align: left;">Avoid for solving <span
+class="math inline">\(Ax=b\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">A \ b</td>
-<td style="text-align: left;">Solve <span class="math inline">\(Ax = b\)</span></td>
+<td style="text-align: left;">Solve <span class="math inline">\(Ax =
+b\)</span></td>
 <td style="text-align: left;">Preferred over <code>inv(A)*b</code></td>
 </tr>
 <tr>
@@ -752,12 +810,15 @@ print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
 <tr>
 <td style="text-align: left;">eig(A)</td>
 <td style="text-align: left;">Eigenvalues</td>
-<td style="text-align: left;">Column vector <span class="math inline">\(\lambda\)</span></td>
+<td style="text-align: left;">Column vector <span
+class="math inline">\(\lambda\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><span>[</span>V,D<span>]</span> = eig(A)</td>
+<td style="text-align: left;"><span>[</span>V,D<span>]</span> =
+eig(A)</td>
 <td style="text-align: left;">Eigenvectors + values</td>
-<td style="text-align: left;">Columns of <code>V</code>, diag of <code>D</code></td>
+<td style="text-align: left;">Columns of <code>V</code>, diag of
+<code>D</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">rank(A)</td>
@@ -767,12 +828,14 @@ print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
 <tr>
 <td style="text-align: left;">cond(A)</td>
 <td style="text-align: left;">Condition number</td>
-<td style="text-align: left;">Large value <span class="math inline">\(\Rightarrow\)</span> near-singular</td>
+<td style="text-align: left;">Large value <span
+class="math inline">\(\Rightarrow\)</span> near-singular</td>
 </tr>
 <tr>
 <td style="text-align: left;">norm(A)</td>
 <td style="text-align: left;">2-norm (default)</td>
-<td style="text-align: left;"><code>norm(A,1)</code>, <code>norm(A,’fro’)</code> also available</td>
+<td style="text-align: left;"><code>norm(A,1)</code>,
+<code>norm(A,’fro’)</code> also available</td>
 </tr>
 <tr>
 <td style="text-align: left;">size(A)</td>
@@ -792,17 +855,21 @@ print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
 <tr>
 <td style="text-align: left;">eye(n)</td>
 <td style="text-align: left;">Identity matrix</td>
-<td style="text-align: left;"><span class="math inline">\(I_n\)</span></td>
+<td style="text-align: left;"><span
+class="math inline">\(I_n\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">diag(v)</td>
 <td style="text-align: left;">Diagonal matrix</td>
-<td style="text-align: left;"><code>diag(A)</code> extracts diagonal of <span class="math inline">\(A\)</span></td>
+<td style="text-align: left;"><code>diag(A)</code> extracts diagonal of
+<span class="math inline">\(A\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">linspace(a,b,n)</td>
 <td style="text-align: left;">Equally spaced vector</td>
-<td style="text-align: left;"><span class="math inline">\(n\)</span> points from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(n\)</span>
+points from <span class="math inline">\(a\)</span> to <span
+class="math inline">\(b\)</span></td>
 </tr>
 </tbody>
 </table>
@@ -810,12 +877,30 @@ print(f"  ...  k={N-1}: y = {y_log[-1]:.6f}")</code></pre>
 <div class="summarybox">
 <p><span>Linear Algebra Summary for MPC</span></p>
 <ol>
-<li><p><strong>Dimensions matter:</strong> always check that inner dimensions are compatible before multiplying; <span class="math inline">\(A_{m\times p} \cdot
-        B_{p\times n}\)</span> gives <span class="math inline">\(C_{m\times n}\)</span>.</p></li>
-<li><p><strong>Multiplication is not commutative:</strong> <span class="math inline">\(AB \neq BA\)</span> in general; the reversed-order rule <span class="math inline">\((AB)^\top = B^\top A^\top\)</span> and <span class="math inline">\((AB)^{-1} = B^{-1}A^{-1}\)</span> are essential.</p></li>
-<li><p><strong>Invertibility:</strong> <span class="math inline">\(A^{-1}\)</span> exists iff <span class="math inline">\(\det(A)\neq 0\)</span> iff all eigenvalues are non-zero. Use <code>A\ b</code> rather than <code>inv(A)*b</code>.</p></li>
-<li><p><strong>Stability:</strong> for discrete-time systems, check <span class="math inline">\(|\lambda_i| &lt; 1\)</span> for all eigenvalues of the closed-loop matrix.</p></li>
-<li><p><strong>Trace and determinant</strong> equal the sum and product of eigenvalues respectively, providing a fast sanity check.</p></li>
-<li><p><strong>Positive definiteness</strong> of cost matrices <span class="math inline">\(Q \succeq 0\)</span>, <span class="math inline">\(R \succ 0\)</span> is required for the MPC QP to be convex and bounded below; verify with <code>eig(Q)</code> and <code>eig(R)</code>.</p></li>
+<li><p><strong>Dimensions matter:</strong> always check that inner
+dimensions are compatible before multiplying; <span
+class="math inline">\(A_{m\times p} \cdot
+        B_{p\times n}\)</span> gives <span
+class="math inline">\(C_{m\times n}\)</span>.</p></li>
+<li><p><strong>Multiplication is not commutative:</strong> <span
+class="math inline">\(AB \neq BA\)</span> in general; the reversed-order
+rule <span class="math inline">\((AB)^\top = B^\top A^\top\)</span> and
+<span class="math inline">\((AB)^{-1} = B^{-1}A^{-1}\)</span> are
+essential.</p></li>
+<li><p><strong>Invertibility:</strong> <span
+class="math inline">\(A^{-1}\)</span> exists iff <span
+class="math inline">\(\det(A)\neq 0\)</span> iff all eigenvalues are
+non-zero. Use <code>A\ b</code> rather than
+<code>inv(A)*b</code>.</p></li>
+<li><p><strong>Stability:</strong> for discrete-time systems, check
+<span class="math inline">\(|\lambda_i| &lt; 1\)</span> for all
+eigenvalues of the closed-loop matrix.</p></li>
+<li><p><strong>Trace and determinant</strong> equal the sum and product
+of eigenvalues respectively, providing a fast sanity check.</p></li>
+<li><p><strong>Positive definiteness</strong> of cost matrices <span
+class="math inline">\(Q \succeq 0\)</span>, <span
+class="math inline">\(R \succ 0\)</span> is required for the MPC QP to
+be convex and bounded below; verify with <code>eig(Q)</code> and
+<code>eig(R)</code>.</p></li>
 </ol>
 </div>
