@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Predictive Control - Dr. Ibrahim Beklan Kucukdemiral</title>
+    <title>Model Predictive Control: From Foundations to Advanced Topics - Ibrahim Kucukdemiral</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -964,12 +964,23 @@
         </nav>
     </header>
 
+    <!-- Book notice banner -->
+    <div style="background:#1a3a5c;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.85rem;">
+        This content is now published as an open-access book &mdash;
+        <a href="https://kucukdemiral.github.io/MPC_LectureNotesProject/" target="_blank"
+           style="color:#7ec8f0;font-weight:600;">View the book site</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://github.com/kucukdemiral/MPC_LectureNotesProject/raw/main/Main.pdf" target="_blank"
+           style="color:#7ec8f0;font-weight:600;">Download PDF</a>
+    </div>
+
     <div class="mpc-layout">
         <!-- Sidebar TOC -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h3>MPC Lecture Notes</h3>
-                <a href="mpc-notes/MPC_Lecture_Notes.pdf" target="_blank" class="dl-link">Download PDF</a>
+                <h3>Model Predictive Control</h3>
+                <div style="font-size:0.7rem;color:var(--text-light);margin-bottom:0.4rem;">From Foundations to Advanced Topics</div>
+                <a href="https://github.com/kucukdemiral/MPC_LectureNotesProject/raw/main/Main.pdf" target="_blank" class="dl-link">Download PDF</a>
             </div>
 
             <div class="toc-item active" data-ch="foreword" onclick="loadChapter('foreword')">
@@ -1047,7 +1058,13 @@
     <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
 
     <footer>
-        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Ibrahim Kucukdemiral, Glasgow, Scotland, UK.
+        Licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>.
+        &nbsp;&middot;&nbsp;
+        <a href="https://kucukdemiral.github.io/MPC_LectureNotesProject/" target="_blank">Book site</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://github.com/kucukdemiral/MPC_LectureNotesProject" target="_blank">GitHub</a>
+        </p>
     </footer>
 
     <script src="pyodide-runner.js"></script>
