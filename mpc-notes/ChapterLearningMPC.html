@@ -351,7 +351,7 @@ class="math inline">\(\pm 2\sigma\)</span> confidence band (shaded blue)
 widens in regions where data is sparse—precisely where prediction
 uncertainty is greatest.</p>
 <figure id="fig:gp_regression" data-latex-placement="ht">
-<embed src="figures/fig_gp_regression.png" style="width:85.0%" />
+<img src="figures/fig_gp_regression.png" style="width:85.0%" />
 <figcaption>Gaussian Process regression on noisy observations of <span
 class="math inline">\(f(x) = \sin(x)\)</span>. The GP mean interpolates
 the training data, and the 95% confidence band widens away from data
@@ -464,7 +464,7 @@ the GP learns the unknown cubic drag <span class="math inline">\(g(x) =
 -0.2\,x^3\)</span> from 20 residual data points. The confidence band is
 narrow where data is concentrated and widens at the extremes.</p>
 <figure id="fig:gp_residual" data-latex-placement="ht">
-<embed src="figures/fig_gp_residual.png" style="width:85.0%" />
+<img src="figures/fig_gp_residual.png" style="width:85.0%" />
 <figcaption>GP residual learning for the unknown cubic drag <span
 class="math inline">\(g(x) = -0.2\,x^3\)</span>. The GP mean (blue)
 closely matches the true residual (red dashed) in the data-rich region
@@ -711,7 +711,7 @@ controller (which ignores the cubic drag), GP-MPC achieves faster
 regulation and avoids the oscillatory behaviour caused by model
 mismatch.</p>
 <figure id="fig:gpmpc_simulation" data-latex-placement="ht">
-<embed src="figures/fig_gpmpc_simulation.png" style="width:88.0%" />
+<img src="figures/fig_gpmpc_simulation.png" style="width:88.0%" />
 <figcaption>GP-MPC closed-loop simulation for the scalar system with
 unknown cubic drag. Top: state trajectory. The GP-MPC controller (blue)
 drives the state to the origin smoothly, while the nominal controller
@@ -957,7 +957,7 @@ the quadratic nonlinearity accurately, while the linearisation about the
 origin (grey dotted) diverges significantly for <span
 class="math inline">\(|x| &gt; 1\)</span>.</p>
 <figure id="fig:edmd_prediction" data-latex-placement="ht">
-<embed src="figures/fig_edmd_prediction.png" style="width:82.0%" />
+<img src="figures/fig_edmd_prediction.png" style="width:82.0%" />
 <figcaption>EDMD one-step prediction comparison for the scalar system
 <span class="math inline">\(x_{k+1} = 0.9\,x_k + 0.1\,x_k^2\)</span>
 (with <span class="math inline">\(u = 0\)</span>). The Koopman model
@@ -1153,7 +1153,7 @@ the cubic stiffness will pull the state back. Over the full trajectory,
 Koopman MPC achieves approximately 11% lower cost and settles roughly 10
 steps faster.</p>
 <figure id="fig:koopman_mpc" data-latex-placement="ht">
-<embed src="figures/fig_koopman_mpc.png" style="width:88.0%" />
+<img src="figures/fig_koopman_mpc.png" style="width:88.0%" />
 <figcaption>Koopman MPC vs linearised MPC for the Duffing oscillator
 (<span class="math inline">\(\beta = 3\)</span>, RK4, <span
 class="math inline">\(T_s = 0.2\)</span>). Top: position <span
@@ -1612,7 +1612,7 @@ more oscillatory control action due to the finite data and
 regularisation, but successfully stabilises the system using only
 input–output data.</p>
 <figure id="fig:deepc_simulation" data-latex-placement="ht">
-<embed src="figures/fig_deepc_simulation.png" style="width:88.0%" />
+<img src="figures/fig_deepc_simulation.png" style="width:88.0%" />
 <figcaption>DeePC vs model-based MPC for the constrained double
 integrator. Top: output <span class="math inline">\(y_k = x_1\)</span>
 regulated from <span class="math inline">\(y_0 = 4\)</span> to the
@@ -1717,7 +1717,7 @@ class="math inline">\(\lambda_g\)</span>, <span
 class="math inline">\(\lambda_\sigma\)</span>) when working with noisy
 data.</p>
 <figure id="fig:deepc_noise" data-latex-placement="ht">
-<embed src="figures/fig_deepc_noise.png" style="width:85.0%" />
+<img src="figures/fig_deepc_noise.png" style="width:85.0%" />
 <figcaption>DeePC noise sensitivity study for the double integrator.
 Four noise levels are compared: <span class="math inline">\(\sigma =
 0\)</span> (noise-free, blue), <span class="math inline">\(\sigma =
@@ -2027,7 +2027,7 @@ converges to the optimal 4-step trajectory (<span
 class="math inline">\(u = -0.5\)</span> at every step). The cost (right)
 decreases monotonically.</p>
 <figure id="fig:lmpc_iterations" data-latex-placement="ht">
-<embed src="figures/fig_lmpc_iterations.png" style="width:92.0%" />
+<img src="figures/fig_lmpc_iterations.png" style="width:92.0%" />
 <figcaption>LMPC for the scalar minimum-time problem (<span
 class="math inline">\(x_{k+1} = x_k + u_k\)</span>, <span
 class="math inline">\(|u_k| \le 0.5\)</span>, <span
@@ -2907,7 +2907,7 @@ prediction. The NN (blue dashed) captures the nonlinear dynamics well
 within the training range, though unlike the GP it provides no
 confidence measure.</p>
 <figure id="fig:nn_prediction" data-latex-placement="ht">
-<embed src="figures/fig_nn_prediction.png" style="width:82.0%" />
+<img src="figures/fig_nn_prediction.png" style="width:82.0%" />
 <figcaption>Neural network one-step prediction for the scalar system
 <span class="math inline">\(x_{k+1} = x_k + u_k - 0.2\,x_k^3\)</span>
 (with <span class="math inline">\(u = 0\)</span>). A single-hidden-layer
