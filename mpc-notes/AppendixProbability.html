@@ -261,7 +261,7 @@ print("PMF values:", {int(k): round(float(v), 4) for k, v in zip(x, pmf)})</code
 </div>
 </div>
 <figure id="fig:app_pmf_discrete" data-latex-placement="htbp">
-<embed src="Figures/fig_app_pmf_discrete.pdf" style="width:65.0%" />
+<img src="figures/fig_app_pmf_discrete.png" style="width:65.0%" />
 <figcaption>PMF of the quantised sensor. Each of the five possible
 readings has equal probability <span
 class="math inline">\(1/5\)</span>.</figcaption>
@@ -404,7 +404,7 @@ for k in [1, 2, 3]:
 </div>
 </div>
 <figure id="fig:app_gauss_hist" data-latex-placement="htbp">
-<embed src="Figures/fig_app_gauss_hist.pdf" style="width:72.0%" />
+<img src="figures/fig_app_gauss_hist.png" style="width:72.0%" />
 <figcaption>Histogram of 10 000 simulated sensor measurements overlaid
 with the true Gaussian PDF <span
 class="math inline">\(\mathcal{N}(20,\,0.25)\)</span>. Dashed lines mark
@@ -644,7 +644,7 @@ print(f"\nCov(x,y2):\n{np.cov(x, y2)}")</code></pre>
 </div>
 </div>
 <figure id="fig:app_covariance_scatter" data-latex-placement="htbp">
-<embed src="Figures/fig_app_covariance_scatter.pdf"
+<img src="figures/fig_app_covariance_scatter.png"
 style="width:85.0%" />
 <figcaption>Scatter plots illustrating correlation. Left: <span
 class="math inline">\(y_1 = 2x + \text{noise}\)</span> shows strong
@@ -780,7 +780,7 @@ print(f"\nSample covariance:\n{np.cov(samples.T)}")</code></pre>
 </div>
 </div>
 <figure id="fig:app_mvnrnd_samples" data-latex-placement="htbp">
-<embed src="Figures/fig_app_mvnrnd_samples.pdf" style="width:65.0%" />
+<img src="figures/fig_app_mvnrnd_samples.png" style="width:65.0%" />
 <figcaption>2 000 samples from a bivariate Gaussian with <span
 class="math inline">\(\boldsymbol{\mu} = [1,\,-2]^\top\)</span> and
 correlated covariance. Red ellipses show the <span
@@ -991,7 +991,7 @@ print(f"Steady-state variance: {P_ss:.6f}")</code></pre>
 </div>
 </div>
 <figure id="fig:app_uncertainty_prop" data-latex-placement="htbp">
-<embed src="Figures/fig_app_uncertainty_prop.pdf" style="width:75.0%" />
+<img src="figures/fig_app_uncertainty_prop.png" style="width:75.0%" />
 <figcaption>Propagation of a Gaussian state distribution through <span
 class="math inline">\(x_{k+1} = 0.9\,x_k + w_k\)</span>. Top: the mean
 decays towards zero with a <span class="math inline">\(\pm
@@ -1124,7 +1124,7 @@ print(f"White noise — mean: {np.mean(w):.4f}, var: {np.var(w):.4f} (expect {Q}
 </div>
 </div>
 <figure id="fig:app_white_noise_rw" data-latex-placement="htbp">
-<embed src="Figures/fig_app_white_noise_rw.pdf" style="width:82.0%" />
+<img src="figures/fig_app_white_noise_rw.png" style="width:82.0%" />
 <figcaption>Top: a white noise sequence <span class="math inline">\(w_k
 \sim \mathcal{N}(0, 0.5)\)</span>. Middle: its autocorrelation function,
 confirming zero correlation at all non-zero lags. Bottom: the random
@@ -1223,7 +1223,7 @@ plt.close(fig)</code></pre>
 </div>
 </div>
 <figure id="fig:app_clt_demo" data-latex-placement="htbp">
-<embed src="Figures/fig_app_clt_demo.pdf" style="width:82.0%" />
+<img src="figures/fig_app_clt_demo.png" style="width:82.0%" />
 <figcaption>Central Limit Theorem in action. The standardised sample
 mean of <span class="math inline">\(N\)</span> uniform random variables
 (blue histogram) converges to the standard Gaussian (red curve) as <span
@@ -1317,7 +1317,7 @@ print(f"  Exact (CDF):         {p_exact:.4f}")</code></pre>
 </div>
 </div>
 <figure id="fig:app_monte_carlo" data-latex-placement="htbp">
-<embed src="Figures/fig_app_monte_carlo.pdf" style="width:72.0%" />
+<img src="figures/fig_app_monte_carlo.png" style="width:72.0%" />
 <figcaption>Monte Carlo evaluation of the chance constraint <span
 class="math inline">\(P(x \geq 21) \geq 0.95\)</span>. The shaded red
 region to the left of <span class="math inline">\(x_{\min} = 21\)</span>
@@ -1459,7 +1459,7 @@ print(f"Final gain K = {K:.4f},  Final P = {P:.4f}")</code></pre>
 </div>
 </div>
 <figure id="fig:app_kalman_1d" data-latex-placement="htbp">
-<embed src="Figures/fig_app_kalman_1d.pdf" style="width:82.0%" />
+<img src="figures/fig_app_kalman_1d.png" style="width:82.0%" />
 <figcaption>1-D Kalman filter tracking a random walk. Top: the Kalman
 estimate (red) tracks the true state (black) far more closely than the
 noisy measurements (blue dots); the shaded band shows <span
