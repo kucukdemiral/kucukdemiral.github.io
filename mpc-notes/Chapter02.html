@@ -2036,6 +2036,27 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a hr
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Root: %.6f\n&#39;</span><span class="op">,</span> (<span class="va">a</span><span class="op">+</span><span class="va">b</span>)<span class="op">/</span><span class="fl">2</span>)<span class="op">;</span></span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code># Bisection Method — Try it live!
+g = lambda x: 3*x**2 - 6*x + 2
+a, b, tol = 0, 0.5, 1e-6
+k = 0
+while (b - a) > tol:
+    c = (a + b) / 2
+    if g(a) * g(c) < 0:
+        b = c
+    else:
+        a = c
+    k += 1
+root = (a + b) / 2
+print(f"Root: {root:.6f}")
+print(f"Converged in {k} iterations")
+print(f"Verification: g({root:.6f}) = {g(root):.2e}")</code></pre>
+</div>
+
 <h3 id="newtonraphson-method">Newton–Raphson Method</h3>
 <div class="defnbox">
 <p><span>Newton–Raphson Iteration</span> We seek <span
@@ -2441,6 +2462,29 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a hr
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">x</span> <span class="op">=</span> <span class="va">x</span> <span class="op">+</span> <span class="va">alpha</span> <span class="op">*</span> <span class="va">d</span><span class="op">;</span></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">fprintf</span>(<span class="ss">&#39;k=%d: x=[%.4f, %.4f], J=%.6f\n&#39;</span><span class="op">,</span> <span class="va">k</span><span class="op">,</span> <span class="va">x</span>(<span class="fl">1</span>)<span class="op">,</span> <span class="va">x</span>(<span class="fl">2</span>)<span class="op">,</span> <span class="va">J</span>(<span class="va">x</span>))<span class="op">;</span></span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code># Newton's Method with Armijo Backtracking — Try it live!
+x = np.array([4.0, 3.0])
+tol = 1e-8
+H = np.array([[10, 0], [0, 2]])  # Hessian
+J = lambda z: 5*z[0]**2 + z[1]**2
+
+for k in range(1, 51):
+    g = np.array([10*x[0], 2*x[1]])  # gradient
+    if np.linalg.norm(g) < tol:
+        break
+    d = np.linalg.solve(H, -g)  # Newton direction
+    alpha = 1.0  # Armijo backtracking
+    while J(x + alpha*d) > J(x) + 1e-4*alpha*g.dot(d):
+        alpha *= 0.5
+    x = x + alpha * d
+    print(f"k={k}: x=[{x[0]:.4f}, {x[1]:.4f}], J={J(x):.6f}")
+print(f"\nOptimal: x* = [{x[0]:.6f}, {x[1]:.6f}]")</code></pre>
+</div>
+
 <h3 id="constrained-optimisation-lagrange-multipliers">Constrained
 Optimisation: Lagrange Multipliers</h3>
 <p>The unconstrained methods we have studied so far find minima by
@@ -2738,6 +2782,30 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a hr
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">% Note: quadprog minimises (1/2)x&#39;Hx + f&#39;x.  Our cost expands as</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">% J = x1^2 - 8*x1 + 16 + x2^2 - 6*x2 + 9 = x&#39;*I*x + [-8,-6]*x + 25,</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">% so H = 2I, f = [-8;-6], and we add 25 to recover the true cost.</span></span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.optimize import minimize
+</script>
+<pre><code># KKT Example — Solve with scipy — Try it live!
+# min (x1-4)^2 + (x2-3)^2  s.t. x1+x2<=5, x1>=0, x2>=0
+J = lambda x: (x[0]-4)**2 + (x[1]-3)**2
+
+constraints = [{'type': 'ineq', 'fun': lambda x: 5 - x[0] - x[1]}]
+bounds = [(0, None), (0, None)]
+result = minimize(J, [0, 0], method='SLSQP',
+                  bounds=bounds, constraints=constraints)
+
+print(f"x*   = [{result.x[0]:.4f}, {result.x[1]:.4f}]")
+print(f"J*   = {result.fun:.4f}")
+print(f"Converged: {result.success}")
+
+# Verify KKT: gradient at optimum
+g = np.array([2*(result.x[0]-4), 2*(result.x[1]-3)])
+print(f"Gradient at x*: [{g[0]:.4f}, {g[1]:.4f}]")
+print(f"g1(x*) = x1+x2-5 = {result.x[0]+result.x[1]-5:.4f}")</code></pre>
+</div>
+
 <h3 id="how-solvers-work-interior-point-and-active-set-methods">How
 Solvers Work: Interior-Point and Active-Set Methods</h3>
 <p>The KKT conditions tell us <em>what</em> the optimal solution looks
@@ -3120,6 +3188,26 @@ tune algorithmic parameters (tolerances, barrier parameters), and choose
 the right solver for each application.</p></li>
 </ul>
 </div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.optimize import minimize
+</script>
+<pre><code># Interior-Point Example — Try it live!
+# min x1^2 + x2^2  s.t. x1+x2 >= 1, x1>=0, x2>=0
+J = lambda x: x[0]**2 + x[1]**2
+
+constraints = [{'type': 'ineq', 'fun': lambda x: x[0] + x[1] - 1}]
+bounds = [(0, None), (0, None)]
+result = minimize(J, [1, 1], method='SLSQP',
+                  bounds=bounds, constraints=constraints)
+
+print(f"Optimal: x* = [{result.x[0]:.4f}, {result.x[1]:.4f}]")
+print(f"J*      = {result.fun:.4f}")
+print(f"x1+x2   = {result.x[0]+result.x[1]:.4f} (should be >= 1)")
+print(f"\nAnalytical solution: x* = [0.5, 0.5], J* = 0.5")</code></pre>
+</div>
+
 <h2 id="chapter-summary">Chapter Summary</h2>
 <p>This chapter provided the mathematical optimisation foundations
 required for MPC. The key topics covered are:</p>
