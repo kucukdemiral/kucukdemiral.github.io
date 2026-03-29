@@ -857,6 +857,13 @@ covariance <span class="math inline">\(Q\)</span> and measurement noise
 covariance <span class="math inline">\(R\)</span> to balance
 responsiveness against sensitivity to noise.</p></li>
 </ul>
+<h2 id="interactive-scalar-kf">Interactive Demo: Scalar Kalman Filter Step-by-Step</h2>
+<p>Use the interactive demo below to step through the Kalman filter recursion for a <strong>scalar</strong> random walk system.
+Adjust the noise covariances <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> with the sliders,
+then click <strong>Step</strong> to advance one time step. Watch how each phase of the algorithm
+(Measurement &rarr; Predict &rarr; Gain &rarr; Correct) is highlighted in sequence and the plot updates with the true state, noisy measurements, and Kalman filter estimate.</p>
+<div class="kalman-demo"></div>
+
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
 <li><p><strong>Scalar Kalman Filter by Hand.</strong> Consider a scalar

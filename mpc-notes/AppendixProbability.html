@@ -88,6 +88,20 @@ per week.</p>
 n_days   = 5;
 p_none   = (1 - p_fail)^n_days    % 0.9039
 p_atleast1 = 1 - p_none           % 0.0961</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>p_fail = 0.02
+n_days = 5
+p_none = (1 - p_fail)**n_days
+p_atleast1 = 1 - p_none
+
+print(f"P(no failure in {n_days} days) = {p_none:.4f}")
+print(f"P(at least 1 failure)          = {p_atleast1:.4f}")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_conditional">Conditional Probability and
 Independence</h2>
@@ -136,6 +150,22 @@ P_Oc  = 1 - P_O;
 
 P_T   = P_T_O*P_O + P_T_Oc*P_Oc;     % 0.6450
 P_O_T = P_T_O * P_O / P_T             % 0.9767</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>P_O    = 0.7       # P(obstacle present)
+P_T_O  = 0.9       # true positive rate
+P_T_Oc = 0.05      # false alarm rate
+
+P_T   = P_T_O * P_O + P_T_Oc * (1 - P_O)
+P_O_T = P_T_O * P_O / P_T
+
+print(f"P(trigger)              = {P_T:.4f}")
+print(f"P(obstacle | trigger)   = {P_O_T:.4f}")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_bayes">Bayes’ Theorem</h2>
 <div class="defnbox">
@@ -202,6 +232,33 @@ xlabel(&#39;Sensor reading x&#39;);
 ylabel(&#39;P(X = x)&#39;);
 title(&#39;PMF of quantised sensor&#39;);
 ylim([0, 0.4]); grid on;</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+x = np.arange(-2, 3)    # ← Try changing range
+pmf = np.ones(5) / 5
+
+fig, ax = plt.subplots(figsize=(6, 3))
+markerline, stemlines, baseline = ax.stem(x, pmf)
+plt.setp(stemlines, color='#5B9BD5', linewidth=2)
+plt.setp(markerline, color='#5B9BD5', markersize=8)
+plt.setp(baseline, color='#555')
+ax.set_xlabel('Sensor reading x')
+ax.set_ylabel('P(X = x)')
+ax.set_title('PMF of quantised sensor')
+ax.set_ylim([0, 0.4])
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.close(fig)
+
+print("PMF values:", {int(k): round(float(v), 4) for k, v in zip(x, pmf)})</code></pre>
+</div>
 </div>
 <figure id="fig:app_pmf_discrete" data-latex-placement="htbp">
 <embed src="Figures/fig_app_pmf_discrete.pdf" style="width:65.0%" />
@@ -308,6 +365,43 @@ legend(&#39;Histogram&#39;,&#39;True PDF&#39;); grid on;</code></pre>
 <p>Running the code confirms all three percentages to within 1% of their
 theoretical values. <code>normpdf(x,mu,sigma)</code> evaluates the
 Gaussian PDF; <code>normcdf</code> evaluates the CDF.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+from scipy.stats import norm as normal_dist
+
+mu, sigma = 20, 0.5     # ← Try changing these
+N = 10000
+np.random.seed(42)
+meas = mu + sigma * np.random.randn(N)
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.hist(meas, bins=60, density=True, alpha=0.7, color='#5B9BD5', edgecolor='none', label='Histogram')
+x_range = np.linspace(mu - 4*sigma, mu + 4*sigma, 300)
+ax.plot(x_range, normal_dist.pdf(x_range, mu, sigma), color='#E74C3C', lw=2, label='True PDF')
+
+# Sigma bands
+for k, (col, alp) in enumerate([(('#FFD700', 0.15)), ('#FFA500', 0.10), ('#FF6347', 0.06)], 1):
+    ax.axvspan(mu - k*sigma, mu + k*sigma, alpha=alp, color=col, label=f'±{k}σ')
+
+ax.set_xlabel('Measurement (°C)')
+ax.set_ylabel('Probability density')
+ax.set_title(f'Gaussian Sensor Noise: μ={mu}, σ={sigma}')
+ax.legend(fontsize=8, loc='upper right')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.close(fig)
+
+# Print 68-95-99.7 verification
+for k in [1, 2, 3]:
+    frac = np.mean(np.abs(meas - mu) <= k*sigma)
+    print(f"Within {k}σ: {frac:.4f} (theory: {normal_dist.cdf(k) - normal_dist.cdf(-k):.4f})")</code></pre>
+</div>
 </div>
 <figure id="fig:app_gauss_hist" data-latex-placement="htbp">
 <embed src="Figures/fig_app_gauss_hist.pdf" style="width:72.0%" />
@@ -441,6 +535,29 @@ prob2 = 2*normcdf(z) - 1                             % 0.9545
 v = sigma * randn(1, 1e6);
 fprintf(&#39;Sample mean:     %.4f\n&#39;, mean(v))    % ~0
 fprintf(&#39;Sample variance: %.4f\n&#39;, var(v))     % ~0.25</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>R = 0.25
+sigma = np.sqrt(R)
+
+prob = normal_dist.cdf(1, 0, sigma) - normal_dist.cdf(-1, 0, sigma)
+print(f"P(|error| <= 1 deg) = {prob:.4f}")
+
+z = 1 / sigma
+prob2 = 2 * normal_dist.cdf(z) - 1
+print(f"Via z-score (z={z:.1f}): {prob2:.4f}")
+
+# Monte Carlo
+v = sigma * np.random.randn(1_000_000)
+print(f"\nMonte Carlo (N=10^6):")
+print(f"  Sample mean:     {np.mean(v):.4f}")
+print(f"  Sample variance: {np.var(v):.4f}  (true: {R})")</code></pre>
+</div>
 </div>
 <h2 id="sec:app_covariance">Covariance and Correlation</h2>
 <div class="defnbox">
@@ -490,6 +607,41 @@ subplot(1,2,1); scatter(x, y1, 5, &#39;.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_1&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho1));
 subplot(1,2,2); scatter(x, y2, 5, &#39;r.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_2&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho2));</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+np.random.seed(0)
+N = 1000                    # ← Try changing
+x  = np.random.randn(N)
+y1 = 2*x + 0.5*np.random.randn(N)   # correlated
+y2 = np.random.randn(N)              # independent
+
+rho1 = np.corrcoef(x, y1)[0, 1]
+rho2 = np.corrcoef(x, y2)[0, 1]
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
+ax1.scatter(x, y1, s=5, alpha=0.5, color='#5B9BD5')
+ax1.set_xlabel('x'); ax1.set_ylabel('y₁')
+ax1.set_title(f'ρ = {rho1:.3f}')
+ax1.grid(True, alpha=0.3)
+
+ax2.scatter(x, y2, s=5, alpha=0.5, color='#E74C3C')
+ax2.set_xlabel('x'); ax2.set_ylabel('y₂')
+ax2.set_title(f'ρ = {rho2:.3f}')
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.close(fig)
+
+print(f"Cov(x,y1):\n{np.cov(x, y1)}")
+print(f"\nCov(x,y2):\n{np.cov(x, y2)}")</code></pre>
+</div>
 </div>
 <figure id="fig:app_covariance_scatter" data-latex-placement="htbp">
 <embed src="Figures/fig_app_covariance_scatter.pdf"
@@ -586,6 +738,46 @@ legend(&#39;Samples&#39;,&#39;Mean&#39;); grid on; axis equal;
 % Verify sample statistics
 fprintf(&#39;Sample mean:  [%.3f, %.3f]\n&#39;, mean(samples));
 disp(&#39;Sample covariance:&#39;); disp(cov(samples))</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+mu = np.array([1, -2])                    # ← Try changing
+Sigma = np.array([[2, 0.8], [0.8, 1]])    # ← Try changing
+
+np.random.seed(1)
+samples = np.random.multivariate_normal(mu, Sigma, 2000)
+
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.scatter(samples[:, 0], samples[:, 1], s=4, alpha=0.4, color='#5B9BD5', label='Samples')
+ax.plot(mu[0], mu[1], 'r+', markersize=15, markeredgewidth=2, label='Mean')
+
+# Confidence ellipses (1σ, 2σ, 3σ)
+eigvals, eigvecs = np.linalg.eigh(Sigma)
+angle = np.degrees(np.arctan2(eigvecs[1, 1], eigvecs[0, 1]))
+for k, alpha in [(1, 0.5), (2, 0.3), (3, 0.15)]:
+    w, h = 2 * k * np.sqrt(eigvals)
+    ell = plt.matplotlib.patches.Ellipse(mu, w, h, angle=angle,
+          fill=False, edgecolor='#2ECC71', linewidth=1.5, alpha=alpha, linestyle='--')
+    ax.add_patch(ell)
+
+ax.set_xlabel('x₁'); ax.set_ylabel('x₂')
+ax.set_title(f'Samples from N(μ, Σ)')
+ax.legend(fontsize=9)
+ax.set_aspect('equal')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.close(fig)
+
+print(f"Sample mean:  {np.mean(samples, axis=0)}")
+print(f"True mean:    {mu}")
+print(f"\nSample covariance:\n{np.cov(samples.T)}")</code></pre>
+</div>
 </div>
 <figure id="fig:app_mvnrnd_samples" data-latex-placement="htbp">
 <embed src="Figures/fig_app_mvnrnd_samples.pdf" style="width:65.0%" />
@@ -754,6 +946,49 @@ plot(0:N, P_log, &#39;r-o&#39;, &#39;LineWidth&#39;, 1.5);
 yline(Q/(1-a^2), &#39;k--&#39;, &#39;Steady state&#39;, &#39;LineWidth&#39;, 1);
 ylabel(&#39;\sigma^2_k&#39;); xlabel(&#39;Step k&#39;);
 title(&#39;Propagated variance&#39;); grid on;</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+a, Q = 0.9, 0.01     # ← Try changing a and Q
+mu_0, P_0 = 5.0, 1.0
+N = 10
+
+mu_log, P_log = [mu_0], [P_0]
+mu, P = mu_0, P_0
+for k in range(N):
+    mu = a * mu
+    P = a**2 * P + Q
+    mu_log.append(mu)
+    P_log.append(P)
+
+P_ss = Q / (1 - a**2)
+ks = np.arange(N + 1)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
+ax1.plot(ks, mu_log, 'o-', color='#5B9BD5', lw=1.5, markersize=5)
+ax1.set_ylabel('μₖ')
+ax1.set_title('Propagated mean')
+ax1.grid(True, alpha=0.3)
+
+ax2.plot(ks, P_log, 'o-', color='#E74C3C', lw=1.5, markersize=5)
+ax2.axhline(P_ss, color='#FFD700', ls='--', lw=1.5, label=f'Steady state = {P_ss:.4f}')
+ax2.set_xlabel('Step k')
+ax2.set_ylabel('σ²ₖ')
+ax2.set_title('Propagated variance')
+ax2.legend(fontsize=9)
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.close(fig)
+
+print(f"Steady-state variance: {P_ss:.6f}")</code></pre>
+</div>
 </div>
 <figure id="fig:app_uncertainty_prop" data-latex-placement="htbp">
 <embed src="Figures/fig_app_uncertainty_prop.pdf" style="width:75.0%" />
@@ -838,6 +1073,55 @@ title(&#39;Random walk (cumulative sum of white noise)&#39;); grid on;</code></p
 correlation at all non-zero lags (within statistical fluctuation). The
 random walk drifts unpredictably because its variance grows as <span
 class="math inline">\(k \cdot Q\)</span>.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+N, Q = 200, 0.5          # ← Try changing
+np.random.seed(7)
+w = np.sqrt(Q) * np.random.randn(N)
+
+# Autocorrelation
+max_lag = 20
+acf = [1.0]
+for lag in range(1, max_lag + 1):
+    acf.append(np.corrcoef(w[:-lag], w[lag:])[0, 1])
+
+# Random walk
+x = np.cumsum(w)
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(7, 7))
+
+ax1.plot(w, color='#5B9BD5', lw=0.8)
+ax1.set_xlabel('k'); ax1.set_ylabel('wₖ')
+ax1.set_title('White noise sequence')
+ax1.grid(True, alpha=0.3)
+
+markerline, stemlines, baseline = ax2.stem(range(max_lag + 1), acf)
+plt.setp(stemlines, color='#5B9BD5', linewidth=1.5)
+plt.setp(markerline, color='#5B9BD5', markersize=5)
+plt.setp(baseline, color='#555')
+ax2.axhline(1.96/np.sqrt(N), color='#E74C3C', ls='--', alpha=0.5)
+ax2.axhline(-1.96/np.sqrt(N), color='#E74C3C', ls='--', alpha=0.5)
+ax2.set_xlabel('Lag'); ax2.set_ylabel('ACF')
+ax2.set_title('Autocorrelation of white noise')
+ax2.grid(True, alpha=0.3)
+
+ax3.plot(x, color='#E74C3C', lw=1)
+ax3.set_xlabel('k'); ax3.set_ylabel('xₖ')
+ax3.set_title('Random walk (cumulative sum)')
+ax3.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.close(fig)
+
+print(f"White noise — mean: {np.mean(w):.4f}, var: {np.var(w):.4f} (expect {Q})")</code></pre>
+</div>
 </div>
 <figure id="fig:app_white_noise_rw" data-latex-placement="htbp">
 <embed src="Figures/fig_app_white_noise_rw.pdf" style="width:82.0%" />
@@ -904,6 +1188,39 @@ sgtitle(&#39;Central Limit Theorem: convergence to Gaussian&#39;);</code></pre>
 already resembles a bell curve. By <span
 class="math inline">\(N=1000\)</span> the agreement with the standard
 Gaussian (red curve) is almost perfect.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+from scipy.stats import norm as normal_dist
+
+n_trials = 5000
+np.random.seed(42)
+z_range = np.linspace(-4, 4, 200)
+
+fig, axes = plt.subplots(2, 2, figsize=(8, 6))
+for idx, ax in enumerate(axes.flat):
+    N_val = 10**(idx + 1)
+    raw = np.random.rand(n_trials, N_val)
+    xbar = np.mean(raw, axis=1)
+    sig_u = 1 / np.sqrt(12 * N_val)
+    z = (xbar - 0.5) / sig_u
+
+    ax.hist(z, bins=40, density=True, alpha=0.7, color='#5B9BD5', edgecolor='none')
+    ax.plot(z_range, normal_dist.pdf(z_range), color='#E74C3C', lw=2)
+    ax.set_title(f'N = {N_val}')
+    ax.set_xlabel('z'); ax.set_ylabel('PDF')
+    ax.set_xlim([-4, 4])
+    ax.grid(True, alpha=0.3)
+
+fig.suptitle('Central Limit Theorem: convergence to Gaussian', color='#D4E0ED', fontsize=12)
+plt.tight_layout()
+plt.close(fig)</code></pre>
+</div>
 </div>
 <figure id="fig:app_clt_demo" data-latex-placement="htbp">
 <embed src="Figures/fig_app_clt_demo.pdf" style="width:82.0%" />
@@ -960,6 +1277,44 @@ fprintf(&#39;Exact:       %.4f\n&#39;, p_exact);</code></pre>
 0.9938\)</span>, i.e. the comfort constraint is satisfied 99.4% of the
 time. In stochastic MPC this would be expressed as the chance constraint
 <span class="math inline">\(P(x_1 \geq 21) \geq 0.95\)</span>.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+from scipy.stats import norm as normal_dist
+
+mu_x, var_x = 21.5, 0.04     # ← Try changing
+N = 100000
+np.random.seed(3)
+x_samples = mu_x + np.sqrt(var_x) * np.random.randn(N)
+
+constraint = 21.0             # ← Try changing
+p_mc = np.mean(x_samples >= constraint)
+p_exact = 1 - normal_dist.cdf(constraint, mu_x, np.sqrt(var_x))
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.hist(x_samples, bins=80, density=True, alpha=0.7, color='#5B9BD5', edgecolor='none')
+xr = np.linspace(mu_x - 4*np.sqrt(var_x), mu_x + 4*np.sqrt(var_x), 300)
+ax.plot(xr, normal_dist.pdf(xr, mu_x, np.sqrt(var_x)), color='#2ECC71', lw=2)
+ax.axvline(constraint, color='#E74C3C', lw=2, ls='--', label=f'Constraint x ≥ {constraint}')
+ax.fill_between(xr[xr < constraint], normal_dist.pdf(xr[xr < constraint], mu_x, np.sqrt(var_x)),
+                alpha=0.3, color='#E74C3C', label=f'Violation: {1-p_mc:.4f}')
+ax.set_xlabel('Temperature (°C)')
+ax.set_ylabel('Probability density')
+ax.set_title(f'Monte Carlo Chance Constraint: P(x ≥ {constraint}) = {p_mc:.4f}')
+ax.legend(fontsize=9)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.close(fig)
+
+print(f"P(x >= {constraint}):")
+print(f"  Monte Carlo (N={N}): {p_mc:.4f}")
+print(f"  Exact (CDF):         {p_exact:.4f}")</code></pre>
+</div>
 </div>
 <figure id="fig:app_monte_carlo" data-latex-placement="htbp">
 <embed src="Figures/fig_app_monte_carlo.pdf" style="width:72.0%" />
@@ -1045,6 +1400,63 @@ title(&#39;1-D Kalman Filter&#39;); grid on;</code></pre>
 <p>The Kalman estimate (red) tracks the true state (black) much more
 closely than the raw noisy measurements (blue dots), demonstrating the
 filter’s noise-rejection capability.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.stats import norm as normal_dist
+np.set_printoptions(precision=4, suppress=True)
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+A, C, Q, R = 1, 1, 0.1, 2    # ← Try changing Q and R
+N = 60
+np.random.seed(5)
+
+# True state and measurements
+w = np.sqrt(Q) * np.random.randn(N); w[0] = 0
+x_true = 10 + np.cumsum(w)
+y_meas = x_true + np.sqrt(R) * np.random.randn(N)
+
+# Kalman filter
+x_hat = np.zeros(N)
+P_log = np.zeros(N)
+P, x_est = 10.0, 10.0
+
+for k in range(N):
+    x_pred = A * x_est
+    P_pred = A**2 * P + Q
+    K = P_pred * C / (C**2 * P_pred + R)
+    x_est = x_pred + K * (y_meas[k] - C * x_pred)
+    P = (1 - K * C) * P_pred
+    x_hat[k] = x_est
+    P_log[k] = P
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), gridspec_kw={'height_ratios': [3, 1]})
+
+ax1.plot(x_true, color='#D4E0ED', lw=1.5, label='True state')
+ax1.scatter(range(N), y_meas, s=12, color='#5B9BD5', alpha=0.5, label='Measurements', zorder=3)
+ax1.plot(x_hat, color='#E74C3C', lw=2, label='Kalman estimate')
+ax1.fill_between(range(N), x_hat - 2*np.sqrt(P_log), x_hat + 2*np.sqrt(P_log),
+                 alpha=0.15, color='#E74C3C', label='±2σ band')
+ax1.set_ylabel('Position')
+ax1.set_title(f'1-D Kalman Filter (Q={Q}, R={R})')
+ax1.legend(fontsize=8, loc='upper right')
+ax1.grid(True, alpha=0.3)
+
+ax2.plot(P_log, color='#2ECC71', lw=1.5)
+ax2.set_xlabel('Time step k')
+ax2.set_ylabel('P_k')
+ax2.set_title('Error variance')
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.close(fig)
+
+err = x_true - x_hat
+print(f"RMSE = {np.sqrt(np.mean(err**2)):.4f}")
+print(f"Final gain K = {K:.4f},  Final P = {P:.4f}")</code></pre>
+</div>
 </div>
 <figure id="fig:app_kalman_1d" data-latex-placement="htbp">
 <embed src="Figures/fig_app_kalman_1d.pdf" style="width:82.0%" />

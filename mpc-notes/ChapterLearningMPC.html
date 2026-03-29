@@ -364,6 +364,53 @@ class="math inline">\(\sigma_f = 1\)</span>, <span
 class="math inline">\(\ell = 1\)</span>), the GP captures the sinusoidal
 shape while honestly reporting its confidence.</figcaption>
 </figure>
+
+<h4>Try It Yourself: GP Regression in Python</h4>
+<p>The code below implements GP regression from scratch using only NumPy. Modify the training data, kernel parameters, or noise level and click <strong>Run</strong>.</p>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code># Gaussian Process regression from scratch
+np.random.seed(42)
+
+# Training data: noisy observations of sin(x)
+X_train = np.sort(np.random.uniform(-5, 5, 15))
+y_train = np.sin(X_train) + 0.1 * np.random.randn(len(X_train))
+
+# Kernel parameters (try changing these!)
+sigma_f = 1.0   # signal variance
+ell = 1.0       # length scale
+sigma_n = 0.1   # noise standard deviation
+
+# Squared exponential kernel
+def kernel(x1, x2):
+    return sigma_f**2 * np.exp(-0.5 * (x1[:, None] - x2[None, :])**2 / ell**2)
+
+# GP prediction
+K = kernel(X_train, X_train) + sigma_n**2 * np.eye(len(X_train))
+K_inv = np.linalg.solve(K, np.eye(len(X_train)))
+
+X_test = np.linspace(-6, 6, 100)
+k_star = kernel(X_train, X_test)
+
+# Mean and variance predictions
+mu = k_star.T @ K_inv @ y_train
+var = sigma_f**2 - np.diag(k_star.T @ K_inv @ k_star)
+std = np.sqrt(np.maximum(var, 0))
+
+# Print summary
+print("GP Regression Results:")
+print(f"  Training points: {len(X_train)}")
+print(f"  Kernel: SE(sigma_f={sigma_f}, ell={ell})")
+print(f"  Max std (uncertainty): {np.max(std):.3f}")
+print(f"  Min std (near data):   {np.min(std):.3f}")
+print(f"  RMSE vs true sin(x):   {np.sqrt(np.mean((mu - np.sin(X_test))**2)):.4f}")
+print(f"\nAt x=0.0: mu={mu[50]:.3f}, +/-2*sigma=[{mu[50]-2*std[50]:.3f}, {mu[50]+2*std[50]:.3f}]")
+print(f"At x=5.5: mu={mu[96]:.3f}, +/-2*sigma=[{mu[96]-2*std[96]:.3f}, {mu[96]+2*std[96]:.3f}] (extrapolation)")
+</code></pre>
+</div>
+
 <h3 id="sec:gp_dynamics">Learning Unknown Dynamics with GPs</h3>
 <p>Returning to the residual model <a href="#eq:residual_model"
 data-reference-type="eqref"
@@ -1584,6 +1631,66 @@ slightly more aggressive control switching due to finite-data effects
 and regularisation, while the model-based controller produces a smoother
 response.</figcaption>
 </figure>
+<h4>Try It Yourself: DeePC in Python</h4>
+<p>The code below implements DeePC for a scalar integrator using Hankel matrices. Modify the data length, regularisation, or noise and click <strong>Run</strong>.</p>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code># DeePC for a scalar integrator: y(k+1) = y(k) + u(k)
+np.random.seed(0)
+n = 1    # system order
+T = 50   # data length
+Tini = 1 # past horizon (>= n)
+N = 5    # prediction horizon
+lam_g = 1.0    # g regularisation (try 0.01, 1, 100)
+lam_s = 100.0  # slack regularisation
+
+# Collect data with PE input
+u_d = np.random.randn(T) * 0.5
+y_d = np.zeros(T)
+for k in range(T-1):
+    y_d[k+1] = y_d[k] + u_d[k]
+
+# Build Hankel matrices
+L = Tini + N
+cols = T - L + 1
+Hu = np.zeros((L, cols))
+Hy = np.zeros((L, cols))
+for j in range(cols):
+    Hu[:, j] = u_d[j:j+L]
+    Hy[:, j] = y_d[j:j+L]
+
+Up, Uf = Hu[:Tini, :], Hu[Tini:, :]
+Yp, Yf = Hy[:Tini, :], Hy[Tini:, :]
+
+print(f"Hankel matrix: {L} x {cols}, rank = {np.linalg.matrix_rank(np.vstack([Hu, Hy]))}")
+
+# DeePC receding-horizon simulation
+Q, R = 1.0, 0.1
+y_ref = 0.0
+y_curr = 3.0
+N_sim = 15
+y_log, u_log = [y_curr], []
+
+for step in range(N_sim):
+    u_ini = np.array([u_log[-1]]) if u_log else np.array([0.0])
+    y_ini = np.array([y_curr])
+    H_eq = np.vstack([Up, Yp])
+    b_eq = np.concatenate([u_ini, y_ini])
+    A_ls = np.vstack([np.sqrt(Q)*Yf, np.sqrt(R)*Uf, np.sqrt(lam_g)*np.eye(cols), np.sqrt(lam_s)*H_eq])
+    b_ls = np.concatenate([np.sqrt(Q)*np.full(N, y_ref), np.zeros(N), np.zeros(cols), np.sqrt(lam_s)*b_eq])
+    g_opt = np.linalg.lstsq(A_ls, b_ls, rcond=None)[0]
+    u_apply = np.clip((Uf @ g_opt)[0], -1, 1)
+    u_log.append(u_apply)
+    y_curr = y_curr + u_apply
+    y_log.append(y_curr)
+
+print(f"DeePC: y0={y_log[0]:.1f} -> final={y_log[-1]:.4f}")
+print(f"Steps to |y|<0.1: {next((i for i,y in enumerate(y_log) if abs(y)<0.1), 'N/A')}")
+</code></pre>
+</div>
+
 <p>Figure <a href="#fig:deepc_architecture" data-reference-type="ref"
 data-reference="fig:deepc_architecture">1.9</a> illustrates the DeePC
 control loop. The key distinction from model-based MPC is that no system

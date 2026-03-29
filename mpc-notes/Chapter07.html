@@ -265,6 +265,60 @@ class="math inline">\(x_0\)</span>. This is why the
 class="math inline">\(x_0\)</span> as a parameter.</p></li>
 </ol>
 </div>
+<h4>Interactive Demo: MPC Receding Horizon</h4>
+<p>The animation below visualises the receding horizon principle. At each step, the controller plans an optimal trajectory over the full horizon (shown in orange), but only applies the <strong>first input</strong>. Click <strong>Step</strong> to advance one MPC step, or <strong>Auto Play</strong> to watch the full sequence. Notice how the predicted trajectory (orange) is discarded and re-planned at each step.</p>
+<div class="mpc-demo"></div>
+
+<h4>Try It Yourself: MPC Simulation in Python</h4>
+<p>The code below implements a simple MPC controller for the double integrator. Modify the weights, horizon, or constraints and click <strong>Run</strong>.</p>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.optimize import minimize
+</script>
+<pre><code># MPC for double integrator: x1(k+1) = x1(k) + Ts*x2(k), x2(k+1) = x2(k) + Ts*u(k)
+Ts, N = 0.5, 10
+Q = np.diag([1.0, 0.1])
+R = 0.01
+u_max = 1.0
+x_max = 5.0
+x0 = np.array([4.0, 0.0])
+
+A = np.array([[1, Ts], [0, 1]])
+B = np.array([[0], [Ts]])
+
+def mpc_cost(u_vec, x_init):
+    cost = 0.0
+    x = x_init.copy()
+    for k in range(N):
+        cost += x.T @ Q @ x + R * u_vec[k]**2
+        x = A @ x + B.flatten() * u_vec[k]
+    cost += 10 * x.T @ Q @ x  # terminal cost
+    return cost
+
+# Simulate closed-loop
+N_sim = 20
+x_log = np.zeros((N_sim+1, 2))
+u_log = np.zeros(N_sim)
+x_log[0] = x0
+
+for k in range(N_sim):
+    u_guess = np.zeros(N)
+    bounds = [(-u_max, u_max)] * N
+    res = minimize(mpc_cost, u_guess, args=(x_log[k],), bounds=bounds, method='SLSQP')
+    u_log[k] = res.x[0]  # apply only the first input!
+    x_log[k+1] = A @ x_log[k] + B.flatten() * u_log[k]
+
+t = np.arange(N_sim+1) * Ts
+print("MPC Closed-Loop Results:")
+print(f"  x1: {x0[0]:.1f} -> {x_log[-1,0]:.4f}")
+print(f"  x2: {x0[1]:.1f} -> {x_log[-1,1]:.4f}")
+print(f"  Max |u|: {np.max(np.abs(u_log)):.3f} (limit: {u_max})")
+print(f"  Max |x1|: {np.max(np.abs(x_log[:,0])):.3f} (limit: {x_max})")
+print(f"  Settled (|x1|<0.01) at t = {np.where(np.abs(x_log[:,0])<0.01)[0][0]*Ts:.1f} s" if np.any(np.abs(x_log[:,0])<0.01) else "  Not settled")
+</code></pre>
+</div>
+
 <h3 id="efficient-implementation-via-yalmip">Efficient Implementation
 via YALMIP</h3>
 <p>To implement MPC, we utilise <em>YALMIP</em> <span class="citation"
