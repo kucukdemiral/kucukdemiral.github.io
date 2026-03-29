@@ -23,8 +23,8 @@ different lens.</p>
 <p>In this chapter, we adopt a numerical optimisation perspective.
 Instead of solving the control problem recursively (time-step by
 time-step), we will formulate the entire trajectory optimisation as a
-single, large static task—specifically, a <em>Quadratic Programme
-(QP)</em>.</p>
+single, large static task—specifically, a <strong>Quadratic Programme
+(QP)</strong>.</p>
 <p>By "stacking" the predicted states and inputs into large vectors, we
 transform the dynamic control problem into a standard linear algebra
 problem. The required linear algebra background is reviewed in
@@ -75,15 +75,15 @@ global minimum and is numerically stable), we impose strict requirements
 on the weighting matrices:</p>
 <ul>
 <li><p>The state weighting matrices (<span class="math inline">\(Q_k,
-Q_N\)</span>) must be <em>Positive Semi-Definite</em> (<span
+Q_N\)</span>) must be <strong>Positive Semi-Definite</strong> (<span
 class="math inline">\(Q \succeq 0\)</span>). This ensures the cost
 function is convex (bowl-shaped), punishing deviations from the
 origin.</p></li>
 <li><p>The control weighting matrices (<span
-class="math inline">\(R_k\)</span>) must be <em>Positive Definite</em>
-(<span class="math inline">\(R \succ 0\)</span>). This ensures strict
-convexity with respect to the input, preventing the solver from
-requesting infinite control energy.</p></li>
+class="math inline">\(R_k\)</span>) must be <strong>Positive
+Definite</strong> (<span class="math inline">\(R \succ 0\)</span>). This
+ensures strict convexity with respect to the input, preventing the
+solver from requesting infinite control energy.</p></li>
 </ul>
 <h3 id="sparse-quadratic-programming-formulation">Sparse Quadratic
 Programming Formulation</h3>
@@ -101,8 +101,8 @@ treated as optimisation variables.</p>
 (<span class="math inline">\(\zeta\)</span>)</h4>
 <p>We stack the control inputs and the resulting states chronologically.
 Note that the initial state <span class="math inline">\(x_0\)</span> is
-<em>not</em> a decision variable (it is a measured constant), so the
-vector starts with <span class="math inline">\(u_0\)</span>: <span
+<strong>not</strong> a decision variable (it is a measured constant), so
+the vector starts with <span class="math inline">\(u_0\)</span>: <span
 class="math display">\[\begin{equation*}
     \zeta = \begin{bmatrix} u_0^\top, &amp; x_1^\top, &amp; u_1^\top,
 &amp; x_2^\top, &amp; \cdots, &amp; u_{N-1}^\top, &amp; x_N^\top
@@ -138,14 +138,16 @@ large matrix <span class="math inline">\(H\)</span> is Positive Definite
 Equality Constraints (<span class="math inline">\(\mathcal{C}\zeta =
 d\)</span>)</h4>
 <p>The system dynamics impose a linear equality constraint at every time
-step. Rearranging <span class="math inline">\(x_{k+1} = A_k x_k + B_k
-u_k\)</span> gives: <span class="math display">\[\begin{equation*}
-    A_k x_k + B_k u_k - x_{k+1} = 0, \qquad k = 1, \dots, N{-}1.
-\end{equation*}\]</span> For the first step (<span
-class="math inline">\(k=0\)</span>), the initial state <span
-class="math inline">\(x_0\)</span> is known and moves to the right-hand
-side: <span class="math display">\[\begin{equation*}
-    B_0 u_0 - x_1 = -A_0 x_0
+step. We rearrange the update equation <span
+class="math inline">\(x_{k+1} = A_k x_k + B_k u_k\)</span> to bring all
+decision variables to the left-hand side: <span
+class="math display">\[\begin{equation*}
+    -A_k x_k - B_k u_k + x_{k+1} = 0
+\end{equation*}\]</span> For the special case of the first step (<span
+class="math inline">\(k=0\)</span>), since <span
+class="math inline">\(x_0\)</span> is known, we move it to the
+right-hand side: <span class="math display">\[\begin{equation*}
+    - B_0 u_0 + x_1 = A_0 x_0
 \end{equation*}\]</span></p>
 <p>Stacking these equations for <span class="math inline">\(k=0 \dots
 N-1\)</span> yields the structured system <span
@@ -172,7 +174,7 @@ even for long horizons (<span class="math inline">\(N\)</span>).</p>
 <h3 id="solution-via-kkt-conditions">Solution via KKT Conditions</h3>
 <p>With the LQR problem cast as an equality-constrained Quadratic
 Programme, we can determine the exact solution by applying the
-<em>Karush-Kuhn-Tucker (KKT) conditions</em>.</p>
+<strong>Karush-Kuhn-Tucker (KKT) conditions</strong>.</p>
 <p>For students unfamiliar with this term, the KKT conditions are simply
 the generalisation of the method of Lagrange Multipliers to problems
 with multiple constraints. Since our specific formulation contains no
@@ -199,8 +201,8 @@ zero:</p>
 <span class="math display">\[\nabla_\lambda \mathcal{L} =
 \mathcal{C}\zeta - d = 0\]</span></p></li>
 </ol>
-<p>Combining these yields the <em>KKT System</em>, a linear matrix
-equation: <span class="math display">\[\begin{equation*}
+<p>Combining these yields the <strong>KKT System</strong>, a linear
+matrix equation: <span class="math display">\[\begin{equation*}
     \begin{bmatrix}
         H &amp; \mathcal{C}^\top \\
         \mathcal{C} &amp; 0
@@ -268,7 +270,7 @@ System (The Riccati Recursion)</h4>
 <p>While the large matrix above can be inverted directly using a
 computer (which is how MPC solvers typically work), we can derive the
 fundamental equations of optimal control by solving it analytically via
-<em>block back-substitution</em>.</p>
+<strong>block back-substitution</strong>.</p>
 <p>We start from the very last rows (the end of the horizon) and work
 backwards to the present.</p>
 <p><strong>1. Terminal Condition (<span
@@ -312,7 +314,7 @@ x_3\]</span> This implies <span class="math inline">\(\lambda_3 = P_3
 x_3\)</span>, where <span class="math inline">\(P_3\)</span> is the term
 in the brackets.</p>
 <p><strong>Conclusion:</strong> This pattern repeats for every step
-backwards, giving us the famous <em>Riccati Equation</em>.</p>
+backwards, giving us the famous <strong>Riccati Equation</strong>.</p>
 <div class="summarybox">
 <p><span>Derivation of the Riccati Recursion</span> By solving the KKT
 system via back-substitution, we prove that the optimal control is a
@@ -355,47 +357,48 @@ Control in the next chapter.</p>
 class="math inline">\(m=1\)</span>, force input <span
 class="math inline">\(u\)</span>). The robust two-pass Riccati algorithm
 is implemented below.</p>
-<pre id="lst:matlab_riccati" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:matlab_riccati" data-language="Matlab"
 data-caption="MATLAB implementation of the LQR solution via Riccati recursion."
-data-label="lst:matlab_riccati"><code>clear; clc; close all;
-        
-        %% Problem Setup
-        h = 0.1;               % Time step
-        A = [1, h; 0, 1];      % State matrix
-        B = [0.5*h^2; h];      % Input matrix
-        Tfinal = 10.0;
-        N = floor(Tfinal / h); % Horizon steps
-        
-        x0 = [1.0; 0];         % Initial state
-        Q = eye(2);            % State cost
-        R = 0.1;               % Control cost
-        Qn = eye(2);           % Terminal cost
-        
-        %% Backward Pass (Riccati)
-        P = cell(1, N + 1); 
-        K = cell(1, N);     
-        
-        P{N + 1} = Qn; % Initialize terminal cost
-        
-        for k = N:-1:1
-            Pk_next = P{k + 1};
-            % Compute Gain
-            K{k} = (R + B&#39; * Pk_next * B) \ (B&#39; * Pk_next * A);
-            % Update Cost-to-Go
-            P{k} = Q + A&#39; * Pk_next * (A - B * K{k});
-        end
-        
-        %% Forward Pass (Simulation)
-        x_hist = zeros(2, N + 1);
-        u_hist = zeros(1, N);
-        x_hist(:, 1) = x0;
-        
-        for k = 1:N
-            u_hist(:, k) = -K{k} * x_hist(:, k);
-            x_hist(:, k + 1) = A * x_hist(:, k) + B * u_hist(:, k);
-        end
-        
-        % Plotting results... (omitted)</code></pre>
+data-label="lst:matlab_riccati"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:matlab_riccati-1"><a href="#lst:matlab_riccati-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span> <span class="va">close</span> <span class="va">all</span><span class="op">;</span></span>
+<span id="lst:matlab_riccati-2"><a href="#lst:matlab_riccati-2" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-3"><a href="#lst:matlab_riccati-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">%% Problem Setup</span></span>
+<span id="lst:matlab_riccati-4"><a href="#lst:matlab_riccati-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">h</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>               <span class="co">% Time step</span></span>
+<span id="lst:matlab_riccati-5"><a href="#lst:matlab_riccati-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">A</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">,</span> <span class="va">h</span><span class="op">;</span> <span class="fl">0</span><span class="op">,</span> <span class="fl">1</span>]<span class="op">;</span>      <span class="co">% State matrix</span></span>
+<span id="lst:matlab_riccati-6"><a href="#lst:matlab_riccati-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">^</span><span class="fl">2</span><span class="op">;</span> <span class="va">h</span>]<span class="op">;</span>      <span class="co">% Input matrix</span></span>
+<span id="lst:matlab_riccati-7"><a href="#lst:matlab_riccati-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">Tfinal</span> <span class="op">=</span> <span class="fl">10.0</span><span class="op">;</span></span>
+<span id="lst:matlab_riccati-8"><a href="#lst:matlab_riccati-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">N</span> <span class="op">=</span> <span class="va">floor</span>(<span class="va">Tfinal</span> <span class="op">/</span> <span class="va">h</span>)<span class="op">;</span> <span class="co">% Horizon steps</span></span>
+<span id="lst:matlab_riccati-9"><a href="#lst:matlab_riccati-9" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-10"><a href="#lst:matlab_riccati-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">x0</span> <span class="op">=</span> [<span class="fl">1.0</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span>         <span class="co">% Initial state</span></span>
+<span id="lst:matlab_riccati-11"><a href="#lst:matlab_riccati-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span>            <span class="co">% State cost</span></span>
+<span id="lst:matlab_riccati-12"><a href="#lst:matlab_riccati-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">R</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>               <span class="co">% Control cost</span></span>
+<span id="lst:matlab_riccati-13"><a href="#lst:matlab_riccati-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">Qn</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span>           <span class="co">% Terminal cost</span></span>
+<span id="lst:matlab_riccati-14"><a href="#lst:matlab_riccati-14" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-15"><a href="#lst:matlab_riccati-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">%% Backward Pass (Riccati)</span></span>
+<span id="lst:matlab_riccati-16"><a href="#lst:matlab_riccati-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">P</span> <span class="op">=</span> <span class="va">cell</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span> <span class="op">+</span> <span class="fl">1</span>)<span class="op">;</span> </span>
+<span id="lst:matlab_riccati-17"><a href="#lst:matlab_riccati-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">K</span> <span class="op">=</span> <span class="va">cell</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span>     </span>
+<span id="lst:matlab_riccati-18"><a href="#lst:matlab_riccati-18" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-19"><a href="#lst:matlab_riccati-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">P</span>{<span class="va">N</span> <span class="op">+</span> <span class="fl">1</span>} <span class="op">=</span> <span class="va">Qn</span><span class="op">;</span> <span class="co">% Initialize terminal cost</span></span>
+<span id="lst:matlab_riccati-20"><a href="#lst:matlab_riccati-20" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-21"><a href="#lst:matlab_riccati-21" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="va">N</span><span class="op">:-</span><span class="fl">1</span><span class="op">:</span><span class="fl">1</span></span>
+<span id="lst:matlab_riccati-22"><a href="#lst:matlab_riccati-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">Pk_next</span> <span class="op">=</span> <span class="va">P</span>{<span class="va">k</span> <span class="op">+</span> <span class="fl">1</span>}<span class="op">;</span></span>
+<span id="lst:matlab_riccati-23"><a href="#lst:matlab_riccati-23" aria-hidden="true" tabindex="-1"></a>            <span class="co">% Compute Gain</span></span>
+<span id="lst:matlab_riccati-24"><a href="#lst:matlab_riccati-24" aria-hidden="true" tabindex="-1"></a>            <span class="va">K</span>{<span class="va">k</span>} <span class="op">=</span> (<span class="va">R</span> <span class="op">+</span> <span class="va">B</span><span class="op">&#39;</span> <span class="op">*</span> <span class="va">Pk_next</span> <span class="op">*</span> <span class="va">B</span>) <span class="op">\</span> (<span class="va">B</span><span class="op">&#39;</span> <span class="op">*</span> <span class="va">Pk_next</span> <span class="op">*</span> <span class="va">A</span>)<span class="op">;</span></span>
+<span id="lst:matlab_riccati-25"><a href="#lst:matlab_riccati-25" aria-hidden="true" tabindex="-1"></a>            <span class="co">% Update Cost-to-Go</span></span>
+<span id="lst:matlab_riccati-26"><a href="#lst:matlab_riccati-26" aria-hidden="true" tabindex="-1"></a>            <span class="va">P</span>{<span class="va">k</span>} <span class="op">=</span> <span class="va">Q</span> <span class="op">+</span> <span class="va">A</span><span class="op">&#39;</span> <span class="op">*</span> <span class="va">Pk_next</span> <span class="op">*</span> (<span class="va">A</span> <span class="op">-</span> <span class="va">B</span> <span class="op">*</span> <span class="va">K</span>{<span class="va">k</span>})<span class="op">;</span></span>
+<span id="lst:matlab_riccati-27"><a href="#lst:matlab_riccati-27" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="lst:matlab_riccati-28"><a href="#lst:matlab_riccati-28" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-29"><a href="#lst:matlab_riccati-29" aria-hidden="true" tabindex="-1"></a>        <span class="co">%% Forward Pass (Simulation)</span></span>
+<span id="lst:matlab_riccati-30"><a href="#lst:matlab_riccati-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span> <span class="op">+</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:matlab_riccati-31"><a href="#lst:matlab_riccati-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="lst:matlab_riccati-32"><a href="#lst:matlab_riccati-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span>(<span class="op">:,</span> <span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span><span class="op">;</span></span>
+<span id="lst:matlab_riccati-33"><a href="#lst:matlab_riccati-33" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-34"><a href="#lst:matlab_riccati-34" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="lst:matlab_riccati-35"><a href="#lst:matlab_riccati-35" aria-hidden="true" tabindex="-1"></a>            <span class="va">u_hist</span>(<span class="op">:,</span> <span class="va">k</span>) <span class="op">=</span> <span class="op">-</span><span class="va">K</span>{<span class="va">k</span>} <span class="op">*</span> <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span>)<span class="op">;</span></span>
+<span id="lst:matlab_riccati-36"><a href="#lst:matlab_riccati-36" aria-hidden="true" tabindex="-1"></a>            <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span> <span class="op">+</span> <span class="fl">1</span>) <span class="op">=</span> <span class="va">A</span> <span class="op">*</span> <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span>) <span class="op">+</span> <span class="va">B</span> <span class="op">*</span> <span class="va">u_hist</span>(<span class="op">:,</span> <span class="va">k</span>)<span class="op">;</span></span>
+<span id="lst:matlab_riccati-37"><a href="#lst:matlab_riccati-37" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="lst:matlab_riccati-38"><a href="#lst:matlab_riccati-38" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_riccati-39"><a href="#lst:matlab_riccati-39" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Plotting results... (omitted)</span></span></code></pre></div>
 <p>The simulation results given in Figure <a href="#fig:lqr-solution"
 data-reference-type="ref"
 data-reference="fig:lqr-solution">[fig:lqr-solution]</a> confirm that
@@ -409,17 +412,17 @@ recursion, however, also makes explicit the underlying time-varying
 state-feedback law <span class="math display">\[u_k = -K_k x_k,\]</span>
 which is computationally more efficient and more natural for closed-loop
 implementation.</p>
-<div class="center">
-<p><img src="figures/Finite_LQR.png" style="width:90.0%" /> <span
-id="fig:lqr-solution" data-label="fig:lqr-solution"></span></p>
-</div>
+<figure id="fig:lqr-solution">
+<img src="figures/Finite_LQR.png" style="width:90.0%" />
+<figcaption>Optimal state and control trajectories for the double integrator.</figcaption>
+</figure>
 </div>
 <h3 id="infinite-horizon-lqr-for-stabilisation">Infinite-Horizon LQR for
 Stabilisation</h3>
 <p>In the previous section, we derived the LQR solution for a specific
 horizon <span class="math inline">\(N\)</span>. The resulting
 controller, <span class="math inline">\(u_k = -K_k x_k\)</span>, is
-<em>time-varying</em>; the feedback gain <span
+<strong>time-varying</strong>; the feedback gain <span
 class="math inline">\(K_k\)</span> changes at every single time step as
 the system approaches the final horizon.</p>
 <p>However, in the vast majority of engineering applications, we are not
@@ -458,7 +461,7 @@ class="math inline">\(K_\infty\)</span>. This suggests that for a
 sufficiently long horizon, a single, constant feedback gain is
 effectively optimal for the majority of the trajectory.</p>
 <figure id="fig:riccati_convergence" data-latex-placement="h">
-<img src="figures/Riccati Convergence.png" style="width:90.0%" />
+<embed src="figures/Riccati Convergence.png" style="width:90.0%" />
 <figcaption>Numerical convergence of the Riccati recursion. The plot
 tracks the unique entries of the symmetric cost-to-go matrix <span
 class="math inline">\(P_k\)</span> (<span class="math inline">\(P_{11},
@@ -496,7 +499,7 @@ class="math display">\[\begin{equation*}
 B^\top P_{k+1} A \right)
 \end{equation*}\]</span> Now, applying the steady-state condition <span
 class="math inline">\(P_k = P_{k+1} = P\)</span>, we arrive at the
-<em>Discrete Algebraic Riccati Equation (DARE)</em>: <span
+<strong>Discrete Algebraic Riccati Equation (DARE)</strong>: <span
 class="math display">\[\begin{equation*}
     P = Q + A^\top P A - A^\top P B (R + B^\top P B)^{-1} B^\top P A
 \end{equation*}\]</span> This is a nonlinear matrix equation for the
@@ -556,9 +559,9 @@ feedback gain matrix.</p></li>
 <div class="examplebox">
 <p><span>Numerical Example: Infinite-Horizon Stabilisation</span> To
 demonstrate the power and simplicity of the infinite-horizon LQR
-controller, we revisit the <em>Double Integrator</em> problem. This
-system represents a simple mass controlled by a force, discretised with
-a sampling time of <span class="math inline">\(h=0.1\)</span>
+controller, we revisit the <strong>Double Integrator</strong> problem.
+This system represents a simple mass controlled by a force, discretized
+with a sampling time of <span class="math inline">\(h=0.1\)</span>
 seconds.</p>
 <p><strong>1. System Definition</strong><br />
 The discrete-time state-space matrices <span class="math inline">\((A,
@@ -576,55 +579,55 @@ class="math inline">\(K_k\)</span> for a specific duration, our goal is
 to find a single, constant feedback gain matrix <span
 class="math inline">\(K_{\infty}\)</span> that will stabilise the system
 from any initial condition.</p>
-<p>To do this, we solve the <em>Discrete Algebraic Riccati Equation
-(DARE)</em>. In MATLAB, this is automated by the command
+<p>To do this, we solve the <strong>Discrete Algebraic Riccati Equation
+(DARE)</strong>. In MATLAB, this is automated by the command
 <code>dare</code>, which returns the steady-state solution <span
 class="math inline">\(P_{\infty}\)</span> and the optimal gain <span
 class="math inline">\(K_{\infty}\)</span>.</p>
 <p><strong>3. Implementation</strong> The following MATLAB code
 calculates this gain and simulates the closed-loop response starting
 from <span class="math inline">\(x_0 = [1; 0]\)</span>.</p>
-<pre id="lst:matlab_dare" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:matlab_dare" data-language="Matlab"
 data-caption="MATLAB code for infinite-horizon LQR control using the \texttt{dare} command."
-data-label="lst:matlab_dare"><code>clear; clc; close all;
-        
-        h = 0.1;                        % Sampling time
-        A = [1, h; 0, 1];            % System Dynamics
-        B = [0.5*h^2; h];        % Input Matrix
-        Q = eye(2);                 % State Penalty
-        R = 0.1;                        % Input Penalty
-        
-        [P_inf, L_eig, K_inf] = dare(A, B, Q, R);
-        
-        Tfinal = 10.0;
-        N = floor(Tfinal / h);
-        x0 = [1 ; 0];         
-        x_hist = zeros(2, N + 1);
-        u_hist = zeros(1, N);
-        x_hist(:, 1) = x0;
-        
-        A_cl = A - B * K_inf;
-        
-        for k = 1:N
-                u_hist(:, k) = -K_inf * x_hist(:, k);
-                x_hist(:, k + 1) = A_cl * x_hist(:, k);
-        end
-        
-        t_vec = 0:h:Tfinal;
-        
-        subplot(2,1,1);
-        plot(t_vec, x_hist(1,:), &#39;b-&#39;, &#39;LineWidth&#39;, 2); hold on;
-        plot(t_vec, x_hist(2,:), &#39;r--&#39;, &#39;LineWidth&#39;, 2);
-        grid on; 
-        title(&#39;State Trajectories&#39;); 
-        xlabel(&#39;Time (s)&#39;); ylabel(&#39;State&#39;); 
-        legend({&#39;Position&#39;, &#39;Velocity&#39;});
-        
-        subplot(2,1,2);
-        plot(t_vec(1:end-1), u_hist, &#39;k-&#39;, &#39;LineWidth&#39;, 2);
-        grid on; 
-        title(&#39;Control Input&#39;); 
-        xlabel(&#39;Time (s)&#39;); ylabel(&#39;Control (u)&#39;);</code></pre>
+data-label="lst:matlab_dare"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:matlab_dare-1"><a href="#lst:matlab_dare-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span> <span class="va">close</span> <span class="va">all</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-2"><a href="#lst:matlab_dare-2" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-3"><a href="#lst:matlab_dare-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">h</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>                        <span class="co">% Sampling time</span></span>
+<span id="lst:matlab_dare-4"><a href="#lst:matlab_dare-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">A</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">,</span> <span class="va">h</span><span class="op">;</span> <span class="fl">0</span><span class="op">,</span> <span class="fl">1</span>]<span class="op">;</span>            <span class="co">% System Dynamics</span></span>
+<span id="lst:matlab_dare-5"><a href="#lst:matlab_dare-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">*</span><span class="va">h</span><span class="op">^</span><span class="fl">2</span><span class="op">;</span> <span class="va">h</span>]<span class="op">;</span>        <span class="co">% Input Matrix</span></span>
+<span id="lst:matlab_dare-6"><a href="#lst:matlab_dare-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span>                 <span class="co">% State Penalty</span></span>
+<span id="lst:matlab_dare-7"><a href="#lst:matlab_dare-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">R</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>                        <span class="co">% Input Penalty</span></span>
+<span id="lst:matlab_dare-8"><a href="#lst:matlab_dare-8" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-9"><a href="#lst:matlab_dare-9" aria-hidden="true" tabindex="-1"></a>        [<span class="va">P_inf</span><span class="op">,</span> <span class="va">L_eig</span><span class="op">,</span> <span class="va">K_inf</span>] <span class="op">=</span> <span class="va">dare</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-10"><a href="#lst:matlab_dare-10" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-11"><a href="#lst:matlab_dare-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">Tfinal</span> <span class="op">=</span> <span class="fl">10.0</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-12"><a href="#lst:matlab_dare-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">N</span> <span class="op">=</span> <span class="va">floor</span>(<span class="va">Tfinal</span> <span class="op">/</span> <span class="va">h</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-13"><a href="#lst:matlab_dare-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">x0</span> <span class="op">=</span> [<span class="fl">1</span> <span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span>         </span>
+<span id="lst:matlab_dare-14"><a href="#lst:matlab_dare-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span> <span class="op">+</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-15"><a href="#lst:matlab_dare-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-16"><a href="#lst:matlab_dare-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span>(<span class="op">:,</span> <span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-17"><a href="#lst:matlab_dare-17" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-18"><a href="#lst:matlab_dare-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">A_cl</span> <span class="op">=</span> <span class="va">A</span> <span class="op">-</span> <span class="va">B</span> <span class="op">*</span> <span class="va">K_inf</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-19"><a href="#lst:matlab_dare-19" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-20"><a href="#lst:matlab_dare-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="lst:matlab_dare-21"><a href="#lst:matlab_dare-21" aria-hidden="true" tabindex="-1"></a>                <span class="va">u_hist</span>(<span class="op">:,</span> <span class="va">k</span>) <span class="op">=</span> <span class="op">-</span><span class="va">K_inf</span> <span class="op">*</span> <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-22"><a href="#lst:matlab_dare-22" aria-hidden="true" tabindex="-1"></a>                <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span> <span class="op">+</span> <span class="fl">1</span>) <span class="op">=</span> <span class="va">A_cl</span> <span class="op">*</span> <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-23"><a href="#lst:matlab_dare-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="lst:matlab_dare-24"><a href="#lst:matlab_dare-24" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-25"><a href="#lst:matlab_dare-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">t_vec</span> <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">h</span><span class="op">:</span><span class="va">Tfinal</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-26"><a href="#lst:matlab_dare-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-27"><a href="#lst:matlab_dare-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-28"><a href="#lst:matlab_dare-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">plot</span>(<span class="va">t_vec</span><span class="op">,</span> <span class="va">x_hist</span>(<span class="fl">1</span><span class="op">,:</span>)<span class="op">,</span> <span class="ss">&#39;b-&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> <span class="va">hold</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="lst:matlab_dare-29"><a href="#lst:matlab_dare-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">plot</span>(<span class="va">t_vec</span><span class="op">,</span> <span class="va">x_hist</span>(<span class="fl">2</span><span class="op">,:</span>)<span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-30"><a href="#lst:matlab_dare-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">grid</span> <span class="va">on</span><span class="op">;</span> </span>
+<span id="lst:matlab_dare-31"><a href="#lst:matlab_dare-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">title</span>(<span class="ss">&#39;State Trajectories&#39;</span>)<span class="op">;</span> </span>
+<span id="lst:matlab_dare-32"><a href="#lst:matlab_dare-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlabel</span>(<span class="ss">&#39;Time (s)&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;State&#39;</span>)<span class="op">;</span> </span>
+<span id="lst:matlab_dare-33"><a href="#lst:matlab_dare-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">legend</span>({<span class="ss">&#39;Position&#39;</span><span class="op">,</span> <span class="ss">&#39;Velocity&#39;</span>})<span class="op">;</span></span>
+<span id="lst:matlab_dare-34"><a href="#lst:matlab_dare-34" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:matlab_dare-35"><a href="#lst:matlab_dare-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">2</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-36"><a href="#lst:matlab_dare-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">plot</span>(<span class="va">t_vec</span>(<span class="fl">1</span><span class="op">:</span><span class="kw">end</span><span class="op">-</span><span class="fl">1</span>)<span class="op">,</span> <span class="va">u_hist</span><span class="op">,</span> <span class="ss">&#39;k-&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span></span>
+<span id="lst:matlab_dare-37"><a href="#lst:matlab_dare-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">grid</span> <span class="va">on</span><span class="op">;</span> </span>
+<span id="lst:matlab_dare-38"><a href="#lst:matlab_dare-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">title</span>(<span class="ss">&#39;Control Input&#39;</span>)<span class="op">;</span> </span>
+<span id="lst:matlab_dare-39"><a href="#lst:matlab_dare-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlabel</span>(<span class="ss">&#39;Time (s)&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;Control (u)&#39;</span>)<span class="op">;</span></span></code></pre></div>
 <p><strong>Discussion:</strong> The code makes a single call to
 <code>dare</code> to find the optimal policy. The simulation loop then
 applies the constant feedback law <span class="math inline">\(u_k =
@@ -636,11 +639,10 @@ look-up table of gains, this static <span
 class="math inline">\(K_{\infty}\)</span> is extremely memory-efficient,
 making it the standard choice for regulation tasks on embedded
 hardware.</p>
-<div class="center">
-<p><img src="figures/InFinite_LQR.png" style="width:100.0%" /> <span
-id="fig:infinite_lqr-solution"
-data-label="fig:infinite_lqr-solution"></span></p>
-</div>
+<figure id="fig:infinite_lqr-solution">
+<img src="figures/InFinite_LQR.png" style="width:100.0%" />
+<figcaption>Infinite-horizon LQR solution for the double integrator.</figcaption>
+</figure>
 </div>
 <h3 id="lqr-for-non-zero-setpoint-tracking">LQR for Non-Zero Setpoint
 Tracking</h3>
@@ -675,8 +677,8 @@ class="math inline">\(\dot{v} = 0\)</span>), the motors must generate a
 constant upward thrust exactly equal to the drone’s weight (<span
 class="math inline">\(mg\)</span>). Therefore, the equilibrium input is
 <span class="math inline">\(u_g = mg\)</span>. Without this non-zero
-<em>feedforward</em> term, the controller would constantly fight against
-gravity, resulting in a steady-state error.</p>
+<strong>feedforward</strong> term, the controller would constantly fight
+against gravity, resulting in a steady-state error.</p>
 </div>
 <h4 id="error-dynamics-and-the-deviation-system">Error Dynamics and the
 Deviation System</h4>
@@ -702,10 +704,10 @@ data-reference="eqn:tilde_variables">[eqn:tilde_variables]</a>), we
 arrive at a crucial result: <span
 class="math display">\[\begin{equation*}
     \tilde{x}_{k+1} = A \tilde{x}_k + B \tilde{u}_k
-\end{equation*}\]</span> This reveals that the <em>error dynamics are
-identical to the original system dynamics</em>. Consequently, we can
-design a standard LQR gain <span class="math inline">\(K\)</span> for
-the error system to drive <span class="math inline">\(\tilde{x} \to
+\end{equation*}\]</span> This reveals that the <strong>error dynamics
+are identical to the original system dynamics</strong>. Consequently, we
+can design a standard LQR gain <span class="math inline">\(K\)</span>
+for the error system to drive <span class="math inline">\(\tilde{x} \to
 0\)</span>.</p>
 <h4 id="the-affine-control-law">The Affine Control Law</h4>
 <p>The optimal control for the error system is the standard regulator
@@ -795,70 +797,71 @@ The following code designs an LQR controller based on the
 <em>linear</em> model. However, to prove robustness, we simulate the
 control law against the full <em>nonlinear</em> plant using a
 high-fidelity Runge-Kutta 4 (RK4) integrator.</p>
-<pre id="lst:maglev_tracking" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:maglev_tracking" data-language="Matlab"
 data-caption="LQR Setpoint Tracking for a MagLev System with RK4 Simulation."
-data-label="lst:maglev_tracking"><code>clear; clc; close all;
-        
-        % --- System Parameters ---
-        m = 0.05;      % Mass of ball (kg)
-        g = 9.81;      % Gravity (m/s^2)
-        C = 0.001;     % Magnetic constant (N m^2/A^2)
-        
-        % Nominal Equilibrium (Linearisation Point)
-        y0 = 0.01;     % 10 mm gap
-        u0 = y0 * sqrt(m*g/C); % Required current to hover at y0
-        
-        % --- Linearisation ---
-        Ac = [0, 1; (2*g)/y0, 0]; 
-        Bc = [0; -(2*g)/u0];
-        Cc = [1, 0];   % We measure position
-        
-        % Discretisation
-        Ts = 0.005;    % 5 ms sampling time
-        sys_c = ss(Ac, Bc, Cc, 0);
-        sys_d = c2d(sys_c, Ts, &#39;zoh&#39;);
-        [A, B, C_out, ~] = ssdata(sys_d);
-        
-        % --- LQR Design ---
-        Q = diag([5000, 10]); 
-        R = 1;                
-        [K, S, e] = dlqr(A, B, Q, R);
-        
-
-        y_target = 0.012;       
-        u_target = y_target * sqrt(m*g/C);
-        x_target = [y_target; 0];
-        
-        % Initial Conditions
-        T_final = 1.0;
-        N = floor(T_final/Ts);
-        x = [y0; 0];   
-        
-        % Data logging
-        x_hist = zeros(2, N);
-        u_hist = zeros(1, N);
-        
-        f_dyn = @(x, u) [x(2); g - (C/m) * (u / x(1))^2];
-        
-        % --- 5. Simulation Loop ---
-        for k = 1:N
-                u_val = u_target - K * (x - x_target);
-        
-                % Store data
-                x_hist(:, k) = x;
-                u_hist(k) = u_val;
-        
-                k1 = f_dyn(x, u_val);
-                k2 = f_dyn(x + 0.5*Ts*k1, u_val);
-                k3 = f_dyn(x + 0.5*Ts*k2, u_val);
-                k4 = f_dyn(x + Ts*k3, u_val);
-        
-                x = x + (Ts/6) * (k1 + 2*k2 + 2*k3 + k4);
-                if x(1) &lt;= 0, 
-                    x(1) = 1e-4; 
-                    x(2) = 0; 
-                end
-        end</code></pre>
+data-label="lst:maglev_tracking"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:maglev_tracking-1"><a href="#lst:maglev_tracking-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span> <span class="va">close</span> <span class="va">all</span><span class="op">;</span></span>
+<span id="lst:maglev_tracking-2"><a href="#lst:maglev_tracking-2" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-3"><a href="#lst:maglev_tracking-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">% --- System Parameters ---</span></span>
+<span id="lst:maglev_tracking-4"><a href="#lst:maglev_tracking-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">m</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">;</span>      <span class="co">% Mass of ball (kg)</span></span>
+<span id="lst:maglev_tracking-5"><a href="#lst:maglev_tracking-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">g</span> <span class="op">=</span> <span class="fl">9.81</span><span class="op">;</span>      <span class="co">% Gravity (m/s^2)</span></span>
+<span id="lst:maglev_tracking-6"><a href="#lst:maglev_tracking-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">C</span> <span class="op">=</span> <span class="fl">0.001</span><span class="op">;</span>     <span class="co">% Magnetic constant (N m^2/A^2)</span></span>
+<span id="lst:maglev_tracking-7"><a href="#lst:maglev_tracking-7" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-8"><a href="#lst:maglev_tracking-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Nominal Equilibrium (Linearisation Point)</span></span>
+<span id="lst:maglev_tracking-9"><a href="#lst:maglev_tracking-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">y0</span> <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span>     <span class="co">% 10 mm gap</span></span>
+<span id="lst:maglev_tracking-10"><a href="#lst:maglev_tracking-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">u0</span> <span class="op">=</span> <span class="va">y0</span> <span class="op">*</span> <span class="va">sqrt</span>(<span class="va">m</span><span class="op">*</span><span class="va">g</span><span class="op">/</span><span class="va">C</span>)<span class="op">;</span> <span class="co">% Required current to hover at y0</span></span>
+<span id="lst:maglev_tracking-11"><a href="#lst:maglev_tracking-11" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-12"><a href="#lst:maglev_tracking-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">% --- Linearisation ---</span></span>
+<span id="lst:maglev_tracking-13"><a href="#lst:maglev_tracking-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">Ac</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">,</span> <span class="fl">1</span><span class="op">;</span> (<span class="fl">2</span><span class="op">*</span><span class="va">g</span>)<span class="op">/</span><span class="va">y0</span><span class="op">,</span> <span class="fl">0</span>]<span class="op">;</span> </span>
+<span id="lst:maglev_tracking-14"><a href="#lst:maglev_tracking-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">Bc</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">;</span> <span class="op">-</span>(<span class="fl">2</span><span class="op">*</span><span class="va">g</span>)<span class="op">/</span><span class="va">u0</span>]<span class="op">;</span></span>
+<span id="lst:maglev_tracking-15"><a href="#lst:maglev_tracking-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">Cc</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">,</span> <span class="fl">0</span>]<span class="op">;</span>   <span class="co">% We measure position</span></span>
+<span id="lst:maglev_tracking-16"><a href="#lst:maglev_tracking-16" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-17"><a href="#lst:maglev_tracking-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Discretisation</span></span>
+<span id="lst:maglev_tracking-18"><a href="#lst:maglev_tracking-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">Ts</span> <span class="op">=</span> <span class="fl">0.005</span><span class="op">;</span>    <span class="co">% 5 ms sampling time</span></span>
+<span id="lst:maglev_tracking-19"><a href="#lst:maglev_tracking-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">sys_c</span> <span class="op">=</span> <span class="va">ss</span>(<span class="va">Ac</span><span class="op">,</span> <span class="va">Bc</span><span class="op">,</span> <span class="va">Cc</span><span class="op">,</span> <span class="fl">0</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-20"><a href="#lst:maglev_tracking-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">sys_d</span> <span class="op">=</span> <span class="va">c2d</span>(<span class="va">sys_c</span><span class="op">,</span> <span class="va">Ts</span><span class="op">,</span> <span class="ss">&#39;zoh&#39;</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-21"><a href="#lst:maglev_tracking-21" aria-hidden="true" tabindex="-1"></a>        [<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">C_out</span><span class="op">,</span> <span class="op">~</span>] <span class="op">=</span> <span class="va">ssdata</span>(<span class="va">sys_d</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-22"><a href="#lst:maglev_tracking-22" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-23"><a href="#lst:maglev_tracking-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">% --- LQR Design ---</span></span>
+<span id="lst:maglev_tracking-24"><a href="#lst:maglev_tracking-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">Q</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">5000</span><span class="op">,</span> <span class="fl">10</span>])<span class="op">;</span> </span>
+<span id="lst:maglev_tracking-25"><a href="#lst:maglev_tracking-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>                </span>
+<span id="lst:maglev_tracking-26"><a href="#lst:maglev_tracking-26" aria-hidden="true" tabindex="-1"></a>        [<span class="va">K</span><span class="op">,</span> <span class="va">S</span><span class="op">,</span> <span class="va">e</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-27"><a href="#lst:maglev_tracking-27" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-28"><a href="#lst:maglev_tracking-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:maglev_tracking-29"><a href="#lst:maglev_tracking-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">y_target</span> <span class="op">=</span> <span class="fl">0.012</span><span class="op">;</span>       </span>
+<span id="lst:maglev_tracking-30"><a href="#lst:maglev_tracking-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_target</span> <span class="op">=</span> <span class="va">y_target</span> <span class="op">*</span> <span class="va">sqrt</span>(<span class="va">m</span><span class="op">*</span><span class="va">g</span><span class="op">/</span><span class="va">C</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-31"><a href="#lst:maglev_tracking-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_target</span> <span class="op">=</span> [<span class="va">y_target</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="lst:maglev_tracking-32"><a href="#lst:maglev_tracking-32" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-33"><a href="#lst:maglev_tracking-33" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Initial Conditions</span></span>
+<span id="lst:maglev_tracking-34"><a href="#lst:maglev_tracking-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">T_final</span> <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="lst:maglev_tracking-35"><a href="#lst:maglev_tracking-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">N</span> <span class="op">=</span> <span class="va">floor</span>(<span class="va">T_final</span><span class="op">/</span><span class="va">Ts</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-36"><a href="#lst:maglev_tracking-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">x</span> <span class="op">=</span> [<span class="va">y0</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span>   </span>
+<span id="lst:maglev_tracking-37"><a href="#lst:maglev_tracking-37" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-38"><a href="#lst:maglev_tracking-38" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Data logging</span></span>
+<span id="lst:maglev_tracking-39"><a href="#lst:maglev_tracking-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-40"><a href="#lst:maglev_tracking-40" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-41"><a href="#lst:maglev_tracking-41" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-42"><a href="#lst:maglev_tracking-42" aria-hidden="true" tabindex="-1"></a>        <span class="va">f_dyn</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span>) [<span class="va">x</span>(<span class="fl">2</span>)<span class="op">;</span> <span class="va">g</span> <span class="op">-</span> (<span class="va">C</span><span class="op">/</span><span class="va">m</span>) <span class="op">*</span> (<span class="va">u</span> <span class="op">/</span> <span class="va">x</span>(<span class="fl">1</span>))<span class="op">^</span><span class="fl">2</span>]<span class="op">;</span></span>
+<span id="lst:maglev_tracking-43"><a href="#lst:maglev_tracking-43" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-44"><a href="#lst:maglev_tracking-44" aria-hidden="true" tabindex="-1"></a>        <span class="co">% --- 5. Simulation Loop ---</span></span>
+<span id="lst:maglev_tracking-45"><a href="#lst:maglev_tracking-45" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="lst:maglev_tracking-46"><a href="#lst:maglev_tracking-46" aria-hidden="true" tabindex="-1"></a>                <span class="va">u_val</span> <span class="op">=</span> <span class="va">u_target</span> <span class="op">-</span> <span class="va">K</span> <span class="op">*</span> (<span class="va">x</span> <span class="op">-</span> <span class="va">x_target</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-47"><a href="#lst:maglev_tracking-47" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-48"><a href="#lst:maglev_tracking-48" aria-hidden="true" tabindex="-1"></a>                <span class="co">% Store data</span></span>
+<span id="lst:maglev_tracking-49"><a href="#lst:maglev_tracking-49" aria-hidden="true" tabindex="-1"></a>                <span class="va">x_hist</span>(<span class="op">:,</span> <span class="va">k</span>) <span class="op">=</span> <span class="va">x</span><span class="op">;</span></span>
+<span id="lst:maglev_tracking-50"><a href="#lst:maglev_tracking-50" aria-hidden="true" tabindex="-1"></a>                <span class="va">u_hist</span>(<span class="va">k</span>) <span class="op">=</span> <span class="va">u_val</span><span class="op">;</span></span>
+<span id="lst:maglev_tracking-51"><a href="#lst:maglev_tracking-51" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-52"><a href="#lst:maglev_tracking-52" aria-hidden="true" tabindex="-1"></a>                <span class="va">k1</span> <span class="op">=</span> <span class="va">f_dyn</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u_val</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-53"><a href="#lst:maglev_tracking-53" aria-hidden="true" tabindex="-1"></a>                <span class="va">k2</span> <span class="op">=</span> <span class="va">f_dyn</span>(<span class="va">x</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">Ts</span><span class="op">*</span><span class="va">k1</span><span class="op">,</span> <span class="va">u_val</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-54"><a href="#lst:maglev_tracking-54" aria-hidden="true" tabindex="-1"></a>                <span class="va">k3</span> <span class="op">=</span> <span class="va">f_dyn</span>(<span class="va">x</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">Ts</span><span class="op">*</span><span class="va">k2</span><span class="op">,</span> <span class="va">u_val</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-55"><a href="#lst:maglev_tracking-55" aria-hidden="true" tabindex="-1"></a>                <span class="va">k4</span> <span class="op">=</span> <span class="va">f_dyn</span>(<span class="va">x</span> <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">k3</span><span class="op">,</span> <span class="va">u_val</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-56"><a href="#lst:maglev_tracking-56" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:maglev_tracking-57"><a href="#lst:maglev_tracking-57" aria-hidden="true" tabindex="-1"></a>                <span class="va">x</span> <span class="op">=</span> <span class="va">x</span> <span class="op">+</span> (<span class="va">Ts</span><span class="op">/</span><span class="fl">6</span>) <span class="op">*</span> (<span class="va">k1</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k2</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">k3</span> <span class="op">+</span> <span class="va">k4</span>)<span class="op">;</span></span>
+<span id="lst:maglev_tracking-58"><a href="#lst:maglev_tracking-58" aria-hidden="true" tabindex="-1"></a>                <span class="kw">if</span> <span class="va">x</span>(<span class="fl">1</span>) <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">,</span> </span>
+<span id="lst:maglev_tracking-59"><a href="#lst:maglev_tracking-59" aria-hidden="true" tabindex="-1"></a>                    <span class="va">x</span>(<span class="fl">1</span>) <span class="op">=</span> <span class="fl">1e-4</span><span class="op">;</span> </span>
+<span id="lst:maglev_tracking-60"><a href="#lst:maglev_tracking-60" aria-hidden="true" tabindex="-1"></a>                    <span class="va">x</span>(<span class="fl">2</span>) <span class="op">=</span> <span class="fl">0</span><span class="op">;</span> </span>
+<span id="lst:maglev_tracking-61"><a href="#lst:maglev_tracking-61" aria-hidden="true" tabindex="-1"></a>                <span class="kw">end</span></span>
+<span id="lst:maglev_tracking-62"><a href="#lst:maglev_tracking-62" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span></code></pre></div>
 <p><strong>Result Analysis:</strong> The simulation shown in Figure <a
 href="#fig:maglev" data-reference-type="ref"
 data-reference="fig:maglev">[fig:maglev]</a> confirms that the linear
@@ -868,14 +871,14 @@ class="math inline">\(u_{target}\)</span> rather than zero, validating
 the necessity of the feedforward term <span
 class="math inline">\(u_g\)</span> to maintain equilibrium against
 gravity.</p>
-<div class="center">
-<p><span id="fig:maglev_schematic"
-data-label="fig:maglev_schematic"></span></p>
-</div>
-<div class="center">
-<p><img src="figures/Maglev.png" style="width:70.0%" /> <span
-id="fig:maglev" data-label="fig:maglev"></span></p>
-</div>
+<figure id="fig:maglev_schematic">
+<img src="figures/tikz_ch05_1.png" style="width:70.0%" />
+<figcaption>Schematic of the Magnetic Levitation system.</figcaption>
+</figure>
+<figure id="fig:maglev">
+<img src="figures/Maglev.png" style="width:70.0%" />
+<figcaption>Simulation results for the Magnetic Levitation setpoint tracking problem.</figcaption>
+</figure>
 </div>
 <h3 id="chapter-summary">Chapter Summary</h3>
 <p>This chapter has established the theoretical and numerical

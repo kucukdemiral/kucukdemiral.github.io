@@ -59,8 +59,8 @@ of Chapter <a href="#chap:linear_mpc" data-reference-type="ref"
 data-reference="chap:linear_mpc">[chap:linear_mpc]</a>. For general
 <span class="math inline">\(f\)</span>, the equality constraints <span
 class="math inline">\(x_{k+1} = f(x_k, u_k)\)</span> make the feasible
-set non-convex, and the problem becomes a <em>nonlinear programme
-(NLP)</em>.</p>
+set non-convex, and the problem becomes a <strong>nonlinear programme
+(NLP)</strong>.</p>
 <p>Two consequences follow:</p>
 <ul>
 <li><p><strong>Local minima.</strong> Solvers may converge to a locally
@@ -162,13 +162,14 @@ further here; see <span class="citation"
 data-cites="Rawlings2017"></span> for a detailed treatment.</p>
 <h2 id="sec:nmpc_nlp">NMPC via Nonlinear Programming</h2>
 <h3 id="casadi-and-ipopt">CasADi and IPOPT</h3>
-<p><em>CasADi</em> <span class="citation"
+<p><strong>CasADi</strong> <span class="citation"
 data-cites="Andersson2019"></span> is an open-source framework for
 algorithmic differentiation (AD) and numerical optimisation. It provides
 a symbolic interface for defining nonlinear functions and automatically
 generates the exact Jacobians and Hessians required by NLP solvers.
-CasADi interfaces with <em>IPOPT</em> (Interior Point OPTimiser), a
-primal-dual interior-point solver for large-scale NLPs.</p>
+CasADi interfaces with <strong>IPOPT</strong> (Interior Point
+OPTimiser), a primal-dual interior-point solver for large-scale
+NLPs.</p>
 <p>The workflow in MATLAB is:</p>
 <ol>
 <li><p>Declare symbolic variables via
@@ -235,59 +236,60 @@ u)\)</span>, <span class="math inline">\(k_2 = f(x + \tfrac{h}{2}k_1,
 u)\)</span>, <span class="math inline">\(k_3 = f(x + \tfrac{h}{2}k_2,
 u)\)</span>, <span class="math inline">\(k_4 = f(x + h\,k_3,
 u)\)</span>.</p>
-<pre id="lst:casadi_pendulum" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:casadi_pendulum" data-language="Matlab"
 data-caption="Pendulum swing-up NMPC using CasADi and IPOPT."
-data-label="lst:casadi_pendulum"><code>import casadi.*
-opti = casadi.Opti();
-
-% Parameters
-g_val = 9.81; L = 1; m_val = 1;
-N = 40; dt = 0.05; tau_max = 5;
-Q = diag([50, 0.1]); R_w = 0.1; P_w = diag([1000, 10]);
-
-% Symbolic variables
-X = opti.variable(2, N+1);  U = opti.variable(1, N);
-x_init = opti.parameter(2, 1);
-
-% Continuous dynamics
-f_cont = @(x, u) [x(2); (g_val/L)*sin(x(1)) + u/(m_val*L^2)];
-
-% RK4 integrator
-rk4 = @(x, u, h) rk4_step(x, u, h, f_cont);
-
-% Constraints and cost
-opti.subject_to(X(:,1) == x_init);
-J = 0;
-for k = 1:N
-    opti.subject_to(X(:,k+1) == rk4(X(:,k), U(k), dt));
-    opti.subject_to(-tau_max &lt;= U(k) &lt;= tau_max);
-    J = J + X(:,k)&#39;*Q*X(:,k) + R_w*U(k)^2;
-end
-J = J + X(:,N+1)&#39;*P_w*X(:,N+1);
-opti.minimize(J);
-opti.solver(&#39;ipopt&#39;, struct(&#39;expand&#39;,true), ...
-            struct(&#39;max_iter&#39;,2000, &#39;print_level&#39;,0));
-
-% Receding-horizon simulation
-T_sim = 200; x_curr = [pi; 0];
-x_hist = zeros(2, T_sim+1); x_hist(:,1) = x_curr;
-u_hist = zeros(1, T_sim);
-
-for t = 1:T_sim
-    opti.set_value(x_init, x_curr);
-    sol = opti.solve();
-    u_val = full(sol.value(U(1)));
-    x_curr = full(rk4(x_curr, u_val, dt));
-    x_hist(:,t+1) = x_curr;  u_hist(t) = u_val;
-    opti.set_initial(X, sol.value(X));    % warm-start
-    opti.set_initial(U, sol.value(U));
-end
-
-function xn = rk4_step(x, u, h, f)
-    k1 = f(x,u); k2 = f(x+h/2*k1,u);
-    k3 = f(x+h/2*k2,u); k4 = f(x+h*k3,u);
-    xn = x + (h/6)*(k1+2*k2+2*k3+k4);
-end</code></pre>
+data-label="lst:casadi_pendulum"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:casadi_pendulum-1"><a href="#lst:casadi_pendulum-1" aria-hidden="true" tabindex="-1"></a><span class="va">import</span> <span class="va">casadi</span><span class="op">.*</span></span>
+<span id="lst:casadi_pendulum-2"><a href="#lst:casadi_pendulum-2" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span> <span class="op">=</span> <span class="va">casadi</span>.<span class="va">Opti</span>()<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-3"><a href="#lst:casadi_pendulum-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-4"><a href="#lst:casadi_pendulum-4" aria-hidden="true" tabindex="-1"></a><span class="co">% Parameters</span></span>
+<span id="lst:casadi_pendulum-5"><a href="#lst:casadi_pendulum-5" aria-hidden="true" tabindex="-1"></a><span class="va">g_val</span> <span class="op">=</span> <span class="fl">9.81</span><span class="op">;</span> <span class="va">L</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span> <span class="va">m_val</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-6"><a href="#lst:casadi_pendulum-6" aria-hidden="true" tabindex="-1"></a><span class="va">N</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">dt</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">;</span> <span class="va">tau_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-7"><a href="#lst:casadi_pendulum-7" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">50</span><span class="op">,</span> <span class="fl">0.1</span>])<span class="op">;</span> <span class="va">R_w</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span> <span class="va">P_w</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">1000</span><span class="op">,</span> <span class="fl">10</span>])<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-8"><a href="#lst:casadi_pendulum-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-9"><a href="#lst:casadi_pendulum-9" aria-hidden="true" tabindex="-1"></a><span class="co">% Symbolic variables</span></span>
+<span id="lst:casadi_pendulum-10"><a href="#lst:casadi_pendulum-10" aria-hidden="true" tabindex="-1"></a><span class="va">X</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">variable</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">U</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">variable</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-11"><a href="#lst:casadi_pendulum-11" aria-hidden="true" tabindex="-1"></a><span class="va">x_init</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">parameter</span>(<span class="fl">2</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-12"><a href="#lst:casadi_pendulum-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-13"><a href="#lst:casadi_pendulum-13" aria-hidden="true" tabindex="-1"></a><span class="co">% Continuous dynamics</span></span>
+<span id="lst:casadi_pendulum-14"><a href="#lst:casadi_pendulum-14" aria-hidden="true" tabindex="-1"></a><span class="va">f_cont</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span>) [<span class="va">x</span>(<span class="fl">2</span>)<span class="op">;</span> (<span class="va">g_val</span><span class="op">/</span><span class="va">L</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">x</span>(<span class="fl">1</span>)) <span class="op">+</span> <span class="va">u</span><span class="op">/</span>(<span class="va">m_val</span><span class="op">*</span><span class="va">L</span><span class="op">^</span><span class="fl">2</span>)]<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-15"><a href="#lst:casadi_pendulum-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-16"><a href="#lst:casadi_pendulum-16" aria-hidden="true" tabindex="-1"></a><span class="co">% RK4 integrator</span></span>
+<span id="lst:casadi_pendulum-17"><a href="#lst:casadi_pendulum-17" aria-hidden="true" tabindex="-1"></a><span class="va">rk4</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span>) <span class="va">rk4_step</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span><span class="op">,</span> <span class="va">f_cont</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-18"><a href="#lst:casadi_pendulum-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-19"><a href="#lst:casadi_pendulum-19" aria-hidden="true" tabindex="-1"></a><span class="co">% Constraints and cost</span></span>
+<span id="lst:casadi_pendulum-20"><a href="#lst:casadi_pendulum-20" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">subject_to</span>(<span class="va">X</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x_init</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-21"><a href="#lst:casadi_pendulum-21" aria-hidden="true" tabindex="-1"></a><span class="va">J</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-22"><a href="#lst:casadi_pendulum-22" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="lst:casadi_pendulum-23"><a href="#lst:casadi_pendulum-23" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">subject_to</span>(<span class="va">X</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">rk4</span>(<span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">U</span>(<span class="va">k</span>)<span class="op">,</span> <span class="va">dt</span>))<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-24"><a href="#lst:casadi_pendulum-24" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">subject_to</span>(<span class="op">-</span><span class="va">tau_max</span> <span class="op">&lt;=</span> <span class="va">U</span>(<span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">tau_max</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-25"><a href="#lst:casadi_pendulum-25" aria-hidden="true" tabindex="-1"></a>    <span class="va">J</span> <span class="op">=</span> <span class="va">J</span> <span class="op">+</span> <span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">X</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">R_w</span><span class="op">*</span><span class="va">U</span>(<span class="va">k</span>)<span class="op">^</span><span class="fl">2</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-26"><a href="#lst:casadi_pendulum-26" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="lst:casadi_pendulum-27"><a href="#lst:casadi_pendulum-27" aria-hidden="true" tabindex="-1"></a><span class="va">J</span> <span class="op">=</span> <span class="va">J</span> <span class="op">+</span> <span class="va">X</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">&#39;*</span><span class="va">P_w</span><span class="op">*</span><span class="va">X</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-28"><a href="#lst:casadi_pendulum-28" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">minimize</span>(<span class="va">J</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-29"><a href="#lst:casadi_pendulum-29" aria-hidden="true" tabindex="-1"></a><span class="va">opti</span>.<span class="va">solver</span>(<span class="ss">&#39;ipopt&#39;</span><span class="op">,</span> <span class="va">struct</span>(<span class="ss">&#39;expand&#39;</span><span class="op">,</span><span class="va">true</span>)<span class="op">,</span> <span class="op">...</span></span>
+<span id="lst:casadi_pendulum-30"><a href="#lst:casadi_pendulum-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">struct</span>(<span class="ss">&#39;max_iter&#39;</span><span class="op">,</span><span class="fl">2000</span><span class="op">,</span> <span class="ss">&#39;print_level&#39;</span><span class="op">,</span><span class="fl">0</span>))<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-31"><a href="#lst:casadi_pendulum-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-32"><a href="#lst:casadi_pendulum-32" aria-hidden="true" tabindex="-1"></a><span class="co">% Receding-horizon simulation</span></span>
+<span id="lst:casadi_pendulum-33"><a href="#lst:casadi_pendulum-33" aria-hidden="true" tabindex="-1"></a><span class="va">T_sim</span> <span class="op">=</span> <span class="fl">200</span><span class="op">;</span> <span class="va">x_curr</span> <span class="op">=</span> [<span class="va">pi</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-34"><a href="#lst:casadi_pendulum-34" aria-hidden="true" tabindex="-1"></a><span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span> <span class="va">x_hist</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_curr</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-35"><a href="#lst:casadi_pendulum-35" aria-hidden="true" tabindex="-1"></a><span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-36"><a href="#lst:casadi_pendulum-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-37"><a href="#lst:casadi_pendulum-37" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">t</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
+<span id="lst:casadi_pendulum-38"><a href="#lst:casadi_pendulum-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_value</span>(<span class="va">x_init</span><span class="op">,</span> <span class="va">x_curr</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-39"><a href="#lst:casadi_pendulum-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">sol</span> <span class="op">=</span> <span class="va">opti</span>.<span class="va">solve</span>()<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-40"><a href="#lst:casadi_pendulum-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_val</span> <span class="op">=</span> <span class="va">full</span>(<span class="va">sol</span>.<span class="va">value</span>(<span class="va">U</span>(<span class="fl">1</span>)))<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-41"><a href="#lst:casadi_pendulum-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_curr</span> <span class="op">=</span> <span class="va">full</span>(<span class="va">rk4</span>(<span class="va">x_curr</span><span class="op">,</span> <span class="va">u_val</span><span class="op">,</span> <span class="va">dt</span>))<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-42"><a href="#lst:casadi_pendulum-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_hist</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_curr</span><span class="op">;</span>  <span class="va">u_hist</span>(<span class="va">t</span>) <span class="op">=</span> <span class="va">u_val</span><span class="op">;</span></span>
+<span id="lst:casadi_pendulum-43"><a href="#lst:casadi_pendulum-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_initial</span>(<span class="va">X</span><span class="op">,</span> <span class="va">sol</span>.<span class="va">value</span>(<span class="va">X</span>))<span class="op">;</span>    <span class="co">% warm-start</span></span>
+<span id="lst:casadi_pendulum-44"><a href="#lst:casadi_pendulum-44" aria-hidden="true" tabindex="-1"></a>    <span class="va">opti</span>.<span class="va">set_initial</span>(<span class="va">U</span><span class="op">,</span> <span class="va">sol</span>.<span class="va">value</span>(<span class="va">U</span>))<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-45"><a href="#lst:casadi_pendulum-45" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="lst:casadi_pendulum-46"><a href="#lst:casadi_pendulum-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:casadi_pendulum-47"><a href="#lst:casadi_pendulum-47" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="va">xn</span> <span class="op">=</span> <span class="va">rk4_step</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span><span class="op">,</span> <span class="va">h</span><span class="op">,</span> <span class="va">f</span>)</span>
+<span id="lst:casadi_pendulum-48"><a href="#lst:casadi_pendulum-48" aria-hidden="true" tabindex="-1"></a>    <span class="va">k1</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span> <span class="va">k2</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">/</span><span class="fl">2</span><span class="op">*</span><span class="va">k1</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-49"><a href="#lst:casadi_pendulum-49" aria-hidden="true" tabindex="-1"></a>    <span class="va">k3</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">/</span><span class="fl">2</span><span class="op">*</span><span class="va">k2</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span> <span class="va">k4</span> <span class="op">=</span> <span class="va">f</span>(<span class="va">x</span><span class="op">+</span><span class="va">h</span><span class="op">*</span><span class="va">k3</span><span class="op">,</span><span class="va">u</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-50"><a href="#lst:casadi_pendulum-50" aria-hidden="true" tabindex="-1"></a>    <span class="va">xn</span> <span class="op">=</span> <span class="va">x</span> <span class="op">+</span> (<span class="va">h</span><span class="op">/</span><span class="fl">6</span>)<span class="op">*</span>(<span class="va">k1</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="va">k2</span><span class="op">+</span><span class="fl">2</span><span class="op">*</span><span class="va">k3</span><span class="op">+</span><span class="va">k4</span>)<span class="op">;</span></span>
+<span id="lst:casadi_pendulum-51"><a href="#lst:casadi_pendulum-51" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <p>Figure <a href="#fig:nmpc_pendulum" data-reference-type="ref"
 data-reference="fig:nmpc_pendulum">1.1</a> shows the result. The
 controller swings the pendulum through the lower equilibrium, building
@@ -297,7 +299,7 @@ energy-pumping phase and decays to zero once the pendulum is balanced.
 This trajectory is impossible for any linear controller designed around
 a single equilibrium.</p>
 <figure id="fig:nmpc_pendulum" data-latex-placement="ht">
-<img src="figures/fig_nmpc_pendulum_swingup.png"
+<embed src="figures/fig_nmpc_pendulum_swingup.png"
 style="width:85.0%" />
 <figcaption>NMPC pendulum swing-up. Top: angle <span
 class="math inline">\(\theta\)</span> from the upright position (<span
@@ -310,20 +312,6 @@ class="math inline">\(\tau\)</span>, saturating at <span
 class="math inline">\(\pm 5\)</span> N m during the swing
 phase.</figcaption>
 </figure>
-<div class="notebox">
-<p><span>Alternative: fmincon for Readers Without CasADi</span> The same
-problem can be solved using MATLAB’s <code>fmincon</code> with direct
-multiple shooting. Pack the decision variables as <span
-class="math inline">\(z = [u_0, \dots, u_{N-1}, \theta_1, \omega_1,
-\dots, \theta_N, \omega_N]\)</span>, implement the RK4 dynamics as
-nonlinear equality constraints, and use the
-<code>’interior-point’</code> algorithm. CasADi is preferred because it
-provides exact derivatives automatically, whereas <code>fmincon</code>
-relies on finite differences (slower, less accurate). The
-figure-generation script <code>gen_figures_nmpc.m</code> accompanying
-this book uses <code>fmincon</code> so that no additional toolbox
-installation is required.</p>
-</div>
 
 <h4>Interactive Demo: Pendulum Swing-Up</h4>
 <p>The animation below demonstrates the energy-based swing-up controller followed by linear stabilisation at the inverted equilibrium. Click <strong>Swing Up</strong> to watch the pendulum pump energy and balance at the top.</p>
@@ -376,6 +364,20 @@ print(f"Max torque used: {np.max(np.abs(u_log)):.2f} N*m")
 </code></pre>
 </div>
 
+<div class="notebox">
+<p><span>Alternative: fmincon for Students Without CasADi</span> The
+same problem can be solved using MATLAB’s <code>fmincon</code> with
+direct multiple shooting. Pack the decision variables as <span
+class="math inline">\(z = [u_0, \dots, u_{N-1}, \theta_1, \omega_1,
+\dots, \theta_N, \omega_N]\)</span>, implement the RK4 dynamics as
+nonlinear equality constraints, and use the
+<code>’interior-point’</code> algorithm. CasADi is preferred because it
+provides exact derivatives automatically, whereas <code>fmincon</code>
+relies on finite differences (slower, less accurate). The
+figure-generation script <code>gen_figures_nmpc.m</code> accompanying
+these notes uses <code>fmincon</code> so that no additional toolbox
+installation is required.</p>
+</div>
 <h2 id="sec:scp">Sequential Convex Programming</h2>
 <p>NLP solvers (IPOPT, SNOPT) are general and powerful but carry
 overhead: algorithmic differentiation infrastructure, barrier parameter
@@ -400,9 +402,9 @@ the robot dynamics around the <em>reference trajectory</em> and solved a
 single QP per MPC step. This works when the actual state stays close to
 the reference. But what if the reference is unavailable, or the
 deviation is large?</p>
-<p><em>Successive convexification</em> (SCvx) generalises this idea:
-linearise around the <em>current best trajectory estimate</em>, solve
-the QP, update the estimate, and iterate until convergence. The
+<p><strong>Successive convexification</strong> (SCvx) generalises this
+idea: linearise around the <em>current best trajectory estimate</em>,
+solve the QP, update the estimate, and iterate until convergence. The
 reference trajectory is replaced by the previous iteration’s
 solution.</p>
 <h3 id="sec:scvx">Successive Convexification (SCvx)</h3>
@@ -416,9 +418,9 @@ class="math display">\[\begin{align*}
 \bar{u}_k}, &amp;
     c_k &amp;= f(\bar{x}_k, \bar{u}_k) - A_k\,\bar{x}_k -
 B_k\,\bar{u}_k.
-\end{align*}\]</span> The <em>affine approximation</em> of the dynamics
-is: <span class="math display">\[x_{k+1} \approx A_k\, x_k + B_k\, u_k +
-c_k.\]</span> Two mechanisms ensure convergence:</p>
+\end{align*}\]</span> The <strong>affine approximation</strong> of the
+dynamics is: <span class="math display">\[x_{k+1} \approx A_k\, x_k +
+B_k\, u_k + c_k.\]</span> Two mechanisms ensure convergence:</p>
 <div class="alertbox">
 <p><span>SCvx Is Not a Controller—It Is an Offline Trajectory
 Optimiser</span> SCvx solves the nonlinear OCP <em>once</em> for a fixed
@@ -546,10 +548,10 @@ original cost plus a penalty on constraint violation), preventing
 divergence. In practice, 5–15 iterations typically suffice.</p>
 </div>
 <h3 id="sec:gusto">GUSTO: Penalised Trust Regions</h3>
-<p><em>GuSTO</em> (Guaranteed Sequential Trajectory Optimisation) <span
-class="citation" data-cites="Bonalli2019"></span> replaces the hard
-trust-region constraint with a soft penalty. At iteration <span
-class="math inline">\(i\)</span>, solve: <span
+<p><strong>GuSTO</strong> (Guaranteed Sequential Trajectory
+Optimisation) <span class="citation" data-cites="Bonalli2019"></span>
+replaces the hard trust-region constraint with a soft penalty. At
+iteration <span class="math inline">\(i\)</span>, solve: <span
 class="math display">\[\min_{x, u, \nu} \;\;
 \sum_{k=0}^{N-1}\bigl[\ell(x_k, u_k) + w_\nu \|\nu_k\|_1\bigr] +
 V_f(x_N) + \frac{\lambda^{(i)}}{2}\sum_{k=0}^{N}\|x_k -
@@ -791,97 +793,98 @@ or, if a quadratic trust-region penalty is used, a QP.</p>
 <h3 id="matlab-implementation">MATLAB Implementation</h3>
 <p>The following code implements SCvx for the rocket landing using
 YALMIP and <code>quadprog</code>.</p>
-<pre id="lst:scvx_rocket" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:scvx_rocket" data-language="Matlab"
 data-caption="SCvx for powered descent guidance (rocket landing)."
-data-label="lst:scvx_rocket"><code>m = 30; g_val = 9.81; J_r = 10; l_arm = 1.5;
-Ts = 0.2; N_h = 40; nx = 6; nu = 2;
-T_min = 40; T_max = 400;
-del_max = 0.35;  th_max = 0.785;  % 20 deg, 45 deg
-w_vc = 1e5;      % virtual control penalty
-
-x0 = [12; 50; -2; -10; 0.05; 0];
-xf = zeros(6, 1);
-
-% Nonlinear dynamics (Forward Euler)
-f_nl = @(x, u) [x(1) + Ts*x(3);
-                 x(2) + Ts*x(4);
-                 x(3) - Ts*(u(1)/m)*sin(x(5)+u(2));
-                 x(4) + Ts*((u(1)/m)*cos(x(5)+u(2)) - g_val);
-                 x(5) + Ts*x(6);
-                 x(6) - Ts*(u(1)*l_arm/J_r)*sin(u(2))];
-
-% Initial guess: linear interpolation + hover thrust
-xb = zeros(nx, N_h+1);  ub = zeros(nu, N_h);
-for k = 0:N_h
-    xb(:,k+1) = x0 + (k/N_h)*(xf - x0);
-end
-ub(1,:) = m * g_val;  % hover thrust
-
-% SCvx iterations
-max_iter = 15; Delta = 50; tol = 1e-3;
-for iter = 1:max_iter
-    % Compute Jacobians and affine terms at linearisation point
-    Ak = zeros(nx, nx, N_h); Bk = zeros(nx, nu, N_h);
-    ck = zeros(nx, N_h);
-    for k = 1:N_h
-        [Ak(:,:,k), Bk(:,:,k), ck(:,k)] = ...
-            linearise(xb(:,k), ub(:,k), f_nl, Ts, m, g_val, J_r, l_arm);
-    end
-
-    % Solve QP subproblem
-    x_var = sdpvar(nx, N_h+1, &#39;full&#39;);
-    u_var = sdpvar(nu, N_h, &#39;full&#39;);
-    nu_vc = sdpvar(nx, N_h, &#39;full&#39;);
-
-    con = [x_var(:,1) == x0, x_var(:,N_h+1) == xf];
-    obj = 0;
-    for k = 1:N_h
-        con = [con, x_var(:,k+1) == Ak(:,:,k)*x_var(:,k) ...
-               + Bk(:,:,k)*u_var(:,k) + ck(:,k) + nu_vc(:,k)];
-        con = [con, T_min &lt;= u_var(1,k) &lt;= T_max];
-        con = [con, -del_max &lt;= u_var(2,k) &lt;= del_max];
-        con = [con, -th_max &lt;= x_var(5,k) &lt;= th_max];
-        con = [con, x_var(2,k) &gt;= 0];
-        % Trust region
-        con = [con, -Delta &lt;= x_var(:,k)-xb(:,k) &lt;= Delta];
-        con = [con, -Delta &lt;= u_var(:,k)-ub(:,k) &lt;= Delta];
-        obj = obj + Ts*u_var(1,k) + w_vc*norm(nu_vc(:,k),1);
-    end
-    optimize(con, obj, sdpsettings(&#39;verbose&#39;,0,&#39;solver&#39;,&#39;quadprog&#39;));
-
-    x_new = value(x_var); u_new = value(u_var);
-    vc_norm = max(abs(value(nu_vc(:))));
-    dx = max(abs(x_new(:) - xb(:)));
-
-    fprintf(&#39;Iter %2d: dx=%.4e, vc=%.4e\n&#39;, iter, dx, vc_norm);
-    xb = x_new; ub = u_new;
-    if dx &lt; tol &amp;&amp; vc_norm &lt; tol, break; end
-end</code></pre>
+data-label="lst:scvx_rocket"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:scvx_rocket-1"><a href="#lst:scvx_rocket-1" aria-hidden="true" tabindex="-1"></a><span class="va">m</span> <span class="op">=</span> <span class="fl">30</span><span class="op">;</span> <span class="va">g_val</span> <span class="op">=</span> <span class="fl">9.81</span><span class="op">;</span> <span class="va">J_r</span> <span class="op">=</span> <span class="fl">10</span><span class="op">;</span> <span class="va">l_arm</span> <span class="op">=</span> <span class="fl">1.5</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-2"><a href="#lst:scvx_rocket-2" aria-hidden="true" tabindex="-1"></a><span class="va">Ts</span> <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span> <span class="va">N_h</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">nx</span> <span class="op">=</span> <span class="fl">6</span><span class="op">;</span> <span class="va">nu</span> <span class="op">=</span> <span class="fl">2</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-3"><a href="#lst:scvx_rocket-3" aria-hidden="true" tabindex="-1"></a><span class="va">T_min</span> <span class="op">=</span> <span class="fl">40</span><span class="op">;</span> <span class="va">T_max</span> <span class="op">=</span> <span class="fl">400</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-4"><a href="#lst:scvx_rocket-4" aria-hidden="true" tabindex="-1"></a><span class="va">del_max</span> <span class="op">=</span> <span class="fl">0.35</span><span class="op">;</span>  <span class="va">th_max</span> <span class="op">=</span> <span class="fl">0.785</span><span class="op">;</span>  <span class="co">% 20 deg, 45 deg</span></span>
+<span id="lst:scvx_rocket-5"><a href="#lst:scvx_rocket-5" aria-hidden="true" tabindex="-1"></a><span class="va">w_vc</span> <span class="op">=</span> <span class="fl">1e5</span><span class="op">;</span>      <span class="co">% virtual control penalty</span></span>
+<span id="lst:scvx_rocket-6"><a href="#lst:scvx_rocket-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-7"><a href="#lst:scvx_rocket-7" aria-hidden="true" tabindex="-1"></a><span class="va">x0</span> <span class="op">=</span> [<span class="fl">12</span><span class="op">;</span> <span class="fl">50</span><span class="op">;</span> <span class="op">-</span><span class="fl">2</span><span class="op">;</span> <span class="op">-</span><span class="fl">10</span><span class="op">;</span> <span class="fl">0.05</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-8"><a href="#lst:scvx_rocket-8" aria-hidden="true" tabindex="-1"></a><span class="va">xf</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">6</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-9"><a href="#lst:scvx_rocket-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-10"><a href="#lst:scvx_rocket-10" aria-hidden="true" tabindex="-1"></a><span class="co">% Nonlinear dynamics (Forward Euler)</span></span>
+<span id="lst:scvx_rocket-11"><a href="#lst:scvx_rocket-11" aria-hidden="true" tabindex="-1"></a><span class="va">f_nl</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span> <span class="va">u</span>) [<span class="va">x</span>(<span class="fl">1</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">3</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-12"><a href="#lst:scvx_rocket-12" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">2</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">4</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-13"><a href="#lst:scvx_rocket-13" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">3</span>) <span class="op">-</span> <span class="va">Ts</span><span class="op">*</span>(<span class="va">u</span>(<span class="fl">1</span>)<span class="op">/</span><span class="va">m</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">x</span>(<span class="fl">5</span>)<span class="op">+</span><span class="va">u</span>(<span class="fl">2</span>))<span class="op">;</span></span>
+<span id="lst:scvx_rocket-14"><a href="#lst:scvx_rocket-14" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">4</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span>((<span class="va">u</span>(<span class="fl">1</span>)<span class="op">/</span><span class="va">m</span>)<span class="op">*</span><span class="va">cos</span>(<span class="va">x</span>(<span class="fl">5</span>)<span class="op">+</span><span class="va">u</span>(<span class="fl">2</span>)) <span class="op">-</span> <span class="va">g_val</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-15"><a href="#lst:scvx_rocket-15" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">5</span>) <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">x</span>(<span class="fl">6</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-16"><a href="#lst:scvx_rocket-16" aria-hidden="true" tabindex="-1"></a>                 <span class="va">x</span>(<span class="fl">6</span>) <span class="op">-</span> <span class="va">Ts</span><span class="op">*</span>(<span class="va">u</span>(<span class="fl">1</span>)<span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">u</span>(<span class="fl">2</span>))]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-17"><a href="#lst:scvx_rocket-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-18"><a href="#lst:scvx_rocket-18" aria-hidden="true" tabindex="-1"></a><span class="co">% Initial guess: linear interpolation + hover thrust</span></span>
+<span id="lst:scvx_rocket-19"><a href="#lst:scvx_rocket-19" aria-hidden="true" tabindex="-1"></a><span class="va">xb</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">ub</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-20"><a href="#lst:scvx_rocket-20" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">N_h</span></span>
+<span id="lst:scvx_rocket-21"><a href="#lst:scvx_rocket-21" aria-hidden="true" tabindex="-1"></a>    <span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span> <span class="op">+</span> (<span class="va">k</span><span class="op">/</span><span class="va">N_h</span>)<span class="op">*</span>(<span class="va">xf</span> <span class="op">-</span> <span class="va">x0</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-22"><a href="#lst:scvx_rocket-22" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="lst:scvx_rocket-23"><a href="#lst:scvx_rocket-23" aria-hidden="true" tabindex="-1"></a><span class="va">ub</span>(<span class="fl">1</span><span class="op">,:</span>) <span class="op">=</span> <span class="va">m</span> <span class="op">*</span> <span class="va">g_val</span><span class="op">;</span>  <span class="co">% hover thrust</span></span>
+<span id="lst:scvx_rocket-24"><a href="#lst:scvx_rocket-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-25"><a href="#lst:scvx_rocket-25" aria-hidden="true" tabindex="-1"></a><span class="co">% SCvx iterations</span></span>
+<span id="lst:scvx_rocket-26"><a href="#lst:scvx_rocket-26" aria-hidden="true" tabindex="-1"></a><span class="va">max_iter</span> <span class="op">=</span> <span class="fl">15</span><span class="op">;</span> <span class="va">Delta</span> <span class="op">=</span> <span class="fl">50</span><span class="op">;</span> <span class="va">tol</span> <span class="op">=</span> <span class="fl">1e-3</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-27"><a href="#lst:scvx_rocket-27" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">iter</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">max_iter</span></span>
+<span id="lst:scvx_rocket-28"><a href="#lst:scvx_rocket-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Compute Jacobians and affine terms at linearisation point</span></span>
+<span id="lst:scvx_rocket-29"><a href="#lst:scvx_rocket-29" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ak</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span> <span class="va">Bk</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-30"><a href="#lst:scvx_rocket-30" aria-hidden="true" tabindex="-1"></a>    <span class="va">ck</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-31"><a href="#lst:scvx_rocket-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N_h</span></span>
+<span id="lst:scvx_rocket-32"><a href="#lst:scvx_rocket-32" aria-hidden="true" tabindex="-1"></a>        [<span class="va">Ak</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">Bk</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">ck</span>(<span class="op">:,</span><span class="va">k</span>)] <span class="op">=</span> <span class="op">...</span></span>
+<span id="lst:scvx_rocket-33"><a href="#lst:scvx_rocket-33" aria-hidden="true" tabindex="-1"></a>            <span class="va">linearise</span>(<span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">ub</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span> <span class="va">f_nl</span><span class="op">,</span> <span class="va">Ts</span><span class="op">,</span> <span class="va">m</span><span class="op">,</span> <span class="va">g_val</span><span class="op">,</span> <span class="va">J_r</span><span class="op">,</span> <span class="va">l_arm</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-34"><a href="#lst:scvx_rocket-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="lst:scvx_rocket-35"><a href="#lst:scvx_rocket-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-36"><a href="#lst:scvx_rocket-36" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Solve QP subproblem</span></span>
+<span id="lst:scvx_rocket-37"><a href="#lst:scvx_rocket-37" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_var</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">+</span><span class="fl">1</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-38"><a href="#lst:scvx_rocket-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_var</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N_h</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-39"><a href="#lst:scvx_rocket-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">nu_vc</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N_h</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-40"><a href="#lst:scvx_rocket-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-41"><a href="#lst:scvx_rocket-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">con</span> <span class="op">=</span> [<span class="va">x_var</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x0</span><span class="op">,</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">N_h</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">xf</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-42"><a href="#lst:scvx_rocket-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">obj</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-43"><a href="#lst:scvx_rocket-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N_h</span></span>
+<span id="lst:scvx_rocket-44"><a href="#lst:scvx_rocket-44" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">Ak</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">*</span><span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">...</span></span>
+<span id="lst:scvx_rocket-45"><a href="#lst:scvx_rocket-45" aria-hidden="true" tabindex="-1"></a>               <span class="op">+</span> <span class="va">Bk</span>(<span class="op">:,:,</span><span class="va">k</span>)<span class="op">*</span><span class="va">u_var</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">ck</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">nu_vc</span>(<span class="op">:,</span><span class="va">k</span>)]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-46"><a href="#lst:scvx_rocket-46" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">T_min</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="fl">1</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">T_max</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-47"><a href="#lst:scvx_rocket-47" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">del_max</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="fl">2</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">del_max</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-48"><a href="#lst:scvx_rocket-48" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">th_max</span> <span class="op">&lt;=</span> <span class="va">x_var</span>(<span class="fl">5</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">th_max</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-49"><a href="#lst:scvx_rocket-49" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">x_var</span>(<span class="fl">2</span><span class="op">,</span><span class="va">k</span>) <span class="op">&gt;=</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-50"><a href="#lst:scvx_rocket-50" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Trust region</span></span>
+<span id="lst:scvx_rocket-51"><a href="#lst:scvx_rocket-51" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">Delta</span> <span class="op">&lt;=</span> <span class="va">x_var</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">-</span><span class="va">xb</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">Delta</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-52"><a href="#lst:scvx_rocket-52" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="op">-</span><span class="va">Delta</span> <span class="op">&lt;=</span> <span class="va">u_var</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">-</span><span class="va">ub</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">Delta</span>]<span class="op">;</span></span>
+<span id="lst:scvx_rocket-53"><a href="#lst:scvx_rocket-53" aria-hidden="true" tabindex="-1"></a>        <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span><span class="va">u_var</span>(<span class="fl">1</span><span class="op">,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">w_vc</span><span class="op">*</span><span class="va">norm</span>(<span class="va">nu_vc</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-54"><a href="#lst:scvx_rocket-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="lst:scvx_rocket-55"><a href="#lst:scvx_rocket-55" aria-hidden="true" tabindex="-1"></a>    <span class="va">optimize</span>(<span class="va">con</span><span class="op">,</span> <span class="va">obj</span><span class="op">,</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span><span class="fl">0</span><span class="op">,</span><span class="ss">&#39;solver&#39;</span><span class="op">,</span><span class="ss">&#39;quadprog&#39;</span>))<span class="op">;</span></span>
+<span id="lst:scvx_rocket-56"><a href="#lst:scvx_rocket-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-57"><a href="#lst:scvx_rocket-57" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_new</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">x_var</span>)<span class="op">;</span> <span class="va">u_new</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">u_var</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-58"><a href="#lst:scvx_rocket-58" aria-hidden="true" tabindex="-1"></a>    <span class="va">vc_norm</span> <span class="op">=</span> <span class="va">max</span>(<span class="va">abs</span>(<span class="va">value</span>(<span class="va">nu_vc</span>(<span class="op">:</span>))))<span class="op">;</span></span>
+<span id="lst:scvx_rocket-59"><a href="#lst:scvx_rocket-59" aria-hidden="true" tabindex="-1"></a>    <span class="va">dx</span> <span class="op">=</span> <span class="va">max</span>(<span class="va">abs</span>(<span class="va">x_new</span>(<span class="op">:</span>) <span class="op">-</span> <span class="va">xb</span>(<span class="op">:</span>)))<span class="op">;</span></span>
+<span id="lst:scvx_rocket-60"><a href="#lst:scvx_rocket-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:scvx_rocket-61"><a href="#lst:scvx_rocket-61" aria-hidden="true" tabindex="-1"></a>    <span class="va">fprintf</span>(<span class="ss">&#39;Iter %2d: dx=%.4e, vc=%.4e\n&#39;</span><span class="op">,</span> <span class="va">iter</span><span class="op">,</span> <span class="va">dx</span><span class="op">,</span> <span class="va">vc_norm</span>)<span class="op">;</span></span>
+<span id="lst:scvx_rocket-62"><a href="#lst:scvx_rocket-62" aria-hidden="true" tabindex="-1"></a>    <span class="va">xb</span> <span class="op">=</span> <span class="va">x_new</span><span class="op">;</span> <span class="va">ub</span> <span class="op">=</span> <span class="va">u_new</span><span class="op">;</span></span>
+<span id="lst:scvx_rocket-63"><a href="#lst:scvx_rocket-63" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="va">dx</span> <span class="op">&lt;</span> <span class="va">tol</span> <span class="op">&amp;&amp;</span> <span class="va">vc_norm</span> <span class="op">&lt;</span> <span class="va">tol</span><span class="op">,</span> <span class="kw">break</span><span class="op">;</span> <span class="kw">end</span></span>
+<span id="lst:scvx_rocket-64"><a href="#lst:scvx_rocket-64" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <p>The <code>linearise</code> helper computes the Jacobians <span
 class="math inline">\(A_k\)</span>, <span
 class="math inline">\(B_k\)</span> and the constant <span
 class="math inline">\(c_k = f(\bar{x}_k, \bar{u}_k) - A_k \bar{x}_k -
 B_k \bar{u}_k\)</span> at each time step using the analytical
 expressions derived above:</p>
-<pre id="lst:linearise_helper" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:linearise_helper" data-language="Matlab"
 data-caption="The \texttt{linearise} helper function for the rocket dynamics."
-data-label="lst:linearise_helper"><code>function [Ak, Bk, ck] = linearise(xb, ub, f_nl, Ts, m, g_val, J_r, l_arm)
-    th = xb(5); T_b = ub(1); del = ub(2);
-    s = sin(th + del); c = cos(th + del);
-    Ak = [1 0 Ts 0  0 0;
-          0 1 0  Ts 0 0;
-          0 0 1  0  -Ts*T_b/m*c  0;
-          0 0 0  1  -Ts*T_b/m*s  0;
-          0 0 0  0   1           Ts;
-          0 0 0  0   0            1];
-    Bk = [0              0;
-          0              0;
-         -Ts/m*s        -Ts*T_b/m*c;
-          Ts/m*c        -Ts*T_b/m*s;
-          0              0;
-         -Ts*l_arm/J_r*sin(del)  -Ts*T_b*l_arm/J_r*cos(del)];
-    ck = f_nl(xb, ub) - Ak*xb - Bk*ub;
-end</code></pre>
+data-label="lst:linearise_helper"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:linearise_helper-1"><a href="#lst:linearise_helper-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> [<span class="va">Ak</span><span class="op">,</span> <span class="va">Bk</span><span class="op">,</span> <span class="va">ck</span>] <span class="op">=</span> <span class="va">linearise</span>(<span class="va">xb</span><span class="op">,</span> <span class="va">ub</span><span class="op">,</span> <span class="va">f_nl</span><span class="op">,</span> <span class="va">Ts</span><span class="op">,</span> <span class="va">m</span><span class="op">,</span> <span class="va">g_val</span><span class="op">,</span> <span class="va">J_r</span><span class="op">,</span> <span class="va">l_arm</span>)</span>
+<span id="lst:linearise_helper-2"><a href="#lst:linearise_helper-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">th</span> <span class="op">=</span> <span class="va">xb</span>(<span class="fl">5</span>)<span class="op">;</span> <span class="va">T_b</span> <span class="op">=</span> <span class="va">ub</span>(<span class="fl">1</span>)<span class="op">;</span> <span class="va">del</span> <span class="op">=</span> <span class="va">ub</span>(<span class="fl">2</span>)<span class="op">;</span></span>
+<span id="lst:linearise_helper-3"><a href="#lst:linearise_helper-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">s</span> <span class="op">=</span> <span class="va">sin</span>(<span class="va">th</span> <span class="op">+</span> <span class="va">del</span>)<span class="op">;</span> <span class="va">c</span> <span class="op">=</span> <span class="va">cos</span>(<span class="va">th</span> <span class="op">+</span> <span class="va">del</span>)<span class="op">;</span></span>
+<span id="lst:linearise_helper-4"><a href="#lst:linearise_helper-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">Ak</span> <span class="op">=</span> [<span class="fl">1</span> <span class="fl">0</span> <span class="va">Ts</span> <span class="fl">0</span>  <span class="fl">0</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-5"><a href="#lst:linearise_helper-5" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">1</span> <span class="fl">0</span>  <span class="va">Ts</span> <span class="fl">0</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-6"><a href="#lst:linearise_helper-6" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">1</span>  <span class="fl">0</span>  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span>  <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-7"><a href="#lst:linearise_helper-7" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">1</span>  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span>  <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-8"><a href="#lst:linearise_helper-8" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">0</span>   <span class="fl">1</span>           <span class="va">Ts</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-9"><a href="#lst:linearise_helper-9" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span> <span class="fl">0</span> <span class="fl">0</span>  <span class="fl">0</span>   <span class="fl">0</span>            <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="lst:linearise_helper-10"><a href="#lst:linearise_helper-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">Bk</span> <span class="op">=</span> [<span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-11"><a href="#lst:linearise_helper-11" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-12"><a href="#lst:linearise_helper-12" aria-hidden="true" tabindex="-1"></a>         <span class="op">-</span><span class="va">Ts</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span>        <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-13"><a href="#lst:linearise_helper-13" aria-hidden="true" tabindex="-1"></a>          <span class="va">Ts</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">c</span>        <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">/</span><span class="va">m</span><span class="op">*</span><span class="va">s</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-14"><a href="#lst:linearise_helper-14" aria-hidden="true" tabindex="-1"></a>          <span class="fl">0</span>              <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-15"><a href="#lst:linearise_helper-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span><span class="op">*</span><span class="va">sin</span>(<span class="va">del</span>)  <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">T_b</span><span class="op">*</span><span class="va">l_arm</span><span class="op">/</span><span class="va">J_r</span><span class="op">*</span><span class="va">cos</span>(<span class="va">del</span>)]<span class="op">;</span></span>
+<span id="lst:linearise_helper-16"><a href="#lst:linearise_helper-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">ck</span> <span class="op">=</span> <span class="va">f_nl</span>(<span class="va">xb</span><span class="op">,</span> <span class="va">ub</span>) <span class="op">-</span> <span class="va">Ak</span><span class="op">*</span><span class="va">xb</span> <span class="op">-</span> <span class="va">Bk</span><span class="op">*</span><span class="va">ub</span><span class="op">;</span></span>
+<span id="lst:linearise_helper-17"><a href="#lst:linearise_helper-17" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <div class="notebox">
 <p><span>Figures Generated with GuSTO Variant</span> The figures in this
 section were generated using the GuSTO variant (soft quadratic proximity
@@ -917,7 +920,7 @@ descent.</p></li>
 decelerating smoothly to zero velocity at the surface.</p></li>
 </ol>
 <figure id="fig:nmpc_rocket_traj" data-latex-placement="ht">
-<img src="figures/fig_nmpc_rocket_traj.png" style="width:90.0%" />
+<embed src="figures/fig_nmpc_rocket_traj.png" style="width:90.0%" />
 <figcaption>Rocket landing trajectory computed by SCvx. Left: 2D
 trajectory with rocket attitude at selected time steps. The rocket
 corrects horizontal drift, decelerates, and lands vertically at the
@@ -926,7 +929,7 @@ and thrust/gimbal inputs. Dashed lines indicate constraint
 limits.</figcaption>
 </figure>
 <figure id="fig:scvx_convergence" data-latex-placement="ht">
-<img src="figures/fig_scvx_convergence.png" style="width:70.0%" />
+<embed src="figures/fig_scvx_convergence.png" style="width:70.0%" />
 <figcaption>SCvx convergence: maximum trajectory change <span
 class="math inline">\(\max_k\|x_k^{(i+1)} - x_k^{(i)}\|_\infty\)</span>
 and virtual control magnitude <span
@@ -1224,7 +1227,7 @@ the QP, and apply <span class="math inline">\(u_0^*\)</span>.</p></li>
 milliseconds for structured solvers. Over successive time steps, the
 single-iteration updates accumulate into full NLP convergence, provided
 the system evolves continuously. RTI is the workhorse of real-time NMPC
-and is implemented in the <em>acados</em> framework <span
+and is implemented in the <strong>acados</strong> framework <span
 class="citation" data-cites="Verschueren2022"></span>.</p>
 <div class="notebox">
 <p><span>RTI and Successive Linearisation</span> RTI is closely related
@@ -1252,6 +1255,7 @@ class="math display">\[\bar{u}_k^{\text{new}} = u_{k+1}^*, \;\; k = 0,
 \dots, N{-}2, \qquad \bar{u}_{N-1}^{\text{new}} = u_{N-1}^*.\]</span>
 This provides an excellent initial guess for the NLP solver (or SCvx),
 dramatically reducing the number of iterations needed.</p>
+
 <h2 id="sec:robot_tracking">Application: Reference Tracking for a Nonholonomic Robot</h2>
 
 <p>We now apply linearised MPC with warm-starting to a <em>nonholonomic mobile robot</em> (unicycle model). The state is <span class="math inline">\(\mathbf{x} = [x,\, y,\, \theta]^\top\)</span> (position and heading) and the input is <span class="math inline">\(\mathbf{u} = [v,\, \omega]^\top\)</span> (linear and angular velocity). The discrete-time dynamics are:</p>
@@ -1411,7 +1415,6 @@ print(f"Final tracking error: {E[-1]:.4f} m")
 print(f"Mean tracking error:  {np.mean(E):.4f} m")
 print(f"Max |v|: {np.max(np.abs(U[:,0])):.2f} m/s, Max |\u03C9|: {np.max(np.abs(U[:,1])):.2f} rad/s")</code></pre>
 </div>
-
 
 <h2 id="sec:quadrotor_nmpc">Application: 3D Quadrotor Position Control</h2>
 
@@ -1796,7 +1799,6 @@ print(f"Steps:      {len(u_hist)}")
 if EKF_ON:
     print(f"Final d_est: ({d_est[-1,0]:.2f}, {d_est[-1,1]:.2f}, {d_est[-1,2]:.2f}) N")</code></pre>
 </div>
-
 
 <h2 id="sec:nmpc_guidelines">Practical Guidelines</h2>
 <div class="summarybox">

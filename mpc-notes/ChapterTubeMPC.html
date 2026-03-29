@@ -3,7 +3,7 @@ class="math inline">\(^{(*)}\)</span></h1>
 <blockquote>
 <p><em>“Standard MPC tells you the best thing to do if the world is
 perfect. Tube MPC tells you what to do when it isn’t.”</em><br />
-— paraphrasing <em>David Q. Mayne</em></p>
+— paraphrasing <strong>David Q. Mayne</strong></p>
 </blockquote>
 <p>Every MPC formulation we have seen so far relies on a perfect model:
 <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>. The
@@ -16,16 +16,17 @@ class="math inline">\(A\)</span> and <span
 class="math inline">\(B\)</span> matrices themselves. Even a tiny
 modelling error, accumulated over many steps, can push the real state
 across a constraint boundary that the controller thought was safe.</p>
-<p>This chapter addresses the question: <em>how do we guarantee
-constraint satisfaction when the model is not perfect?</em> The answer
-is <em>robust MPC</em>, and the most practical and widely-used form is
-called <em>Tube MPC</em>, introduced by Langson et al. <span
-class="citation" data-cites="Langson2004"></span> and further developed
-by Mayne et al. <span class="citation" data-cites="Mayne2005"></span>.
-The central idea is straightforward: instead of planning a single
-trajectory, we plan a “tube” of trajectories. As long as the disturbance
-is bounded, the real trajectory stays inside the tube, and the tube is
-designed so that constraints are never violated.</p>
+<p>This chapter addresses the question: <strong>how do we guarantee
+constraint satisfaction when the model is not perfect?</strong> The
+answer is <em>robust MPC</em>, and the most practical and widely-used
+form is called <strong>Tube MPC</strong>, introduced by Langson et
+al. <span class="citation" data-cites="Langson2004"></span> and further
+developed by Mayne et al. <span class="citation"
+data-cites="Mayne2005"></span>. The central idea is straightforward:
+instead of planning a single trajectory, we plan a “tube” of
+trajectories. As long as the disturbance is bounded, the real trajectory
+stays inside the tube, and the tube is designed so that constraints are
+never violated.</p>
 <h2 id="sec:tube_problem">The Problem: Disturbances and Constraint
 Violations</h2>
 <p>Consider the linear system with an additive disturbance: <span
@@ -110,22 +111,24 @@ for completeness and to motivate the more practical alternative.</p>
 <p>Tube MPC avoids the computational explosion by separating the problem
 into two parts:</p>
 <ol>
-<li><p>A <em>nominal trajectory</em> <span
+<li><p>A <strong>nominal trajectory</strong> <span
 class="math inline">\(z_k\)</span> that is planned as if there were no
 disturbance. This is a standard MPC problem.</p></li>
-<li><p>A <em>feedback controller</em> <span class="math inline">\(-K(x_k
-- z_k)\)</span> that keeps the real state <span
-class="math inline">\(x_k\)</span> close to the nominal trajectory <span
-class="math inline">\(z_k\)</span>, despite the disturbance.</p></li>
+<li><p>A <strong>feedback controller</strong> <span
+class="math inline">\(-K(x_k - z_k)\)</span> that keeps the real state
+<span class="math inline">\(x_k\)</span> close to the nominal trajectory
+<span class="math inline">\(z_k\)</span>, despite the
+disturbance.</p></li>
 </ol>
 <div class="notebox">
 <p><span>Notation: <span class="math inline">\(z_k\)</span> in This
 Chapter</span> Throughout this chapter, <span
-class="math inline">\(z_k\)</span> denotes the <em>nominal state</em>
-(the disturbance-free planned trajectory). This is unrelated to the
-augmented state vector <span class="math inline">\(z_k = [x_k^\top\;\;
-d_k^\top]^\top\)</span> used in the offset-free MPC formulation of
-Chapter <a href="#chap:output_fb_mpc" data-reference-type="ref"
+class="math inline">\(z_k\)</span> denotes the <strong>nominal
+state</strong> (the disturbance-free planned trajectory). This is
+unrelated to the augmented state vector <span class="math inline">\(z_k
+= [x_k^\top\;\; d_k^\top]^\top\)</span> used in the offset-free MPC
+formulation of Chapter <a href="#chap:output_fb_mpc"
+data-reference-type="ref"
 data-reference="chap:output_fb_mpc">[chap:output_fb_mpc]</a>. The two
 uses of <span class="math inline">\(z_k\)</span> never appear in the
 same context.</p>
@@ -137,9 +140,9 @@ bounded. The set of all possible deviations forms a “tube” around the
 nominal trajectory. By tightening the constraints on the nominal
 trajectory (shrinking them inward by the tube width), we guarantee that
 the real trajectory satisfies the original constraints.</p>
-<p>This is the essence of Tube MPC: <em>plan the nominal path
+<p>This is the essence of Tube MPC: <strong>plan the nominal path
 conservatively, and let a feedback controller handle the
-disturbances.</em></p>
+disturbances.</strong></p>
 <h2 id="set-operations-minkowski-sum-and-pontryagin-difference">Set
 Operations: Minkowski Sum and Pontryagin Difference</h2>
 <p>Before developing Tube MPC formally, we need two set operations that
@@ -168,7 +171,7 @@ corners. Figure <a href="#fig:minkowski_sum" data-reference-type="ref"
 data-reference="fig:minkowski_sum">1.1</a> illustrates this
 operation.</p>
 <figure id="fig:minkowski_sum" data-latex-placement="H">
-<img src="figures/minkowski_sum.png" style="width:95.0%" />
+<embed src="figures/minkowski_sum.png" style="width:95.0%" />
 <figcaption>Minkowski sum of a square <span
 class="math inline">\(P\)</span> and a diamond <span
 class="math inline">\(W\)</span>. The result <span
@@ -210,7 +213,7 @@ inflates a set, <span class="math inline">\(\ominus\)</span> shrinks it.
 See Figure <a href="#fig:pontryagin_diff" data-reference-type="ref"
 data-reference="fig:pontryagin_diff">1.2</a> for an illustration.</p>
 <figure id="fig:pontryagin_diff" data-latex-placement="H">
-<img src="figures/pontryagin_diff.png" style="width:95.0%" />
+<embed src="figures/pontryagin_diff.png" style="width:95.0%" />
 <figcaption>Pontryagin difference <span
 class="math inline">\(\mathcal{X} \ominus \mathcal{E}\)</span>. The
 original constraint set <span class="math inline">\(\mathcal{X}\)</span>
@@ -271,13 +274,14 @@ class="math display">\[\begin{equation}
     u_k = v_k - K(x_k - z_k) = v_k - Ke_k
 \end{equation}\]</span> where:</p>
 <ul>
-<li><p><span class="math inline">\(v_k\)</span> is the <em>nominal
-input</em>, computed by the MPC optimiser. It steers the nominal
+<li><p><span class="math inline">\(v_k\)</span> is the <strong>nominal
+input</strong>, computed by the MPC optimiser. It steers the nominal
 trajectory <span class="math inline">\(z_k\)</span> toward the
 origin.</p></li>
-<li><p><span class="math inline">\(K\)</span> is a <em>fixed feedback
-gain</em> (typically the LQR gain from <code>dlqr</code>, chosen so that
-<span class="math inline">\(A - BK\)</span> is Schur stable). It keeps
+<li><p><span class="math inline">\(K\)</span> is a <strong>fixed
+feedback gain</strong> (typically the LQR gain from <code>dlqr</code>,
+so <span class="math inline">\(K &gt; 0\)</span> and <span
+class="math inline">\(u = -Kx\)</span> stabilises the system). It keeps
 the real state close to the nominal state by rejecting
 disturbances.</p></li>
 </ul>
@@ -295,9 +299,10 @@ data-reference="eq:nominal_system">[eq:nominal_system]</a>:</p>
     x_{k+1} &amp;= Ax_k + B(v_k - Ke_k) + w_k \\
     z_{k+1} &amp;= Az_k + Bv_k
 \end{align*}\]</span></p>
-<p>Subtracting: <span class="math display">\[\begin{equation*}
-    {e_{k+1} = (A - BK)\,e_k + w_k}
-\end{equation*}\]</span></p>
+<p>Subtracting: <span class="math display">\[\begin{equation}
+\label{eq:error_dynamics}
+    \boxed{e_{k+1} = (A - BK)\,e_k + w_k}
+\end{equation}\]</span></p>
 <p>This is the key result. The error dynamics are <em>autonomous</em>:
 they do not depend on <span class="math inline">\(v_k\)</span> at all.
 The nominal input cancels out. The error evolves purely under the
@@ -326,8 +331,8 @@ class="math inline">\(\mathcal{E}\)</span>, it stays in <span
 class="math inline">\(\mathcal{E}\)</span> forever, no matter what
 disturbances occur.</p>
 </div>
-<p>The smallest such set is the <em>minimal RPI (mRPI) set</em>, denoted
-<span class="math inline">\(\mathcal{E}_\infty\)</span> <span
+<p>The smallest such set is the <strong>minimal RPI (mRPI) set</strong>,
+denoted <span class="math inline">\(\mathcal{E}_\infty\)</span> <span
 class="citation" data-cites="Rakovic2005"></span>. It can be
 characterised explicitly: <span class="math display">\[\begin{equation}
 \label{eq:mrpi}
@@ -369,7 +374,7 @@ stable). Figure <a href="#fig:mrpi_iteration" data-reference-type="ref"
 data-reference="fig:mrpi_iteration">1.3</a> illustrates this
 convergence.</p>
 <figure id="fig:mrpi_iteration" data-latex-placement="H">
-<img src="figures/mrpi_iteration.png" style="width:60.0%" />
+<embed src="figures/mrpi_iteration.png" style="width:60.0%" />
 <figcaption>Iterative computation of the mRPI set. Starting from <span
 class="math inline">\(\Omega_0 = \mathcal{W}\)</span> (innermost set),
 each iteration adds a smaller and smaller set <span
@@ -602,7 +607,7 @@ dashed line is the nominal trajectory. All realisations remain within
 the constraint bounds, despite the disturbances.</p>
 </div>
 <figure id="fig:tube_scalar" data-latex-placement="H">
-<img src="figures/tube_mpc_scalar.png" style="width:85.0%" />
+<embed src="figures/tube_mpc_scalar.png" style="width:85.0%" />
 <figcaption>Tube MPC applied to the scalar system <span
 class="math inline">\(x_{k+1} = 1.2\,x_k + u_k + w_k\)</span> with <span
 class="math inline">\(|w_k| \le 0.1\)</span>. Fifty disturbance
@@ -640,34 +645,36 @@ class="math inline">\(\mathcal{E}\)</span>.</strong></p>
 data-reference-type="eqref" data-reference="eq:mrpi">[eq:mrpi]</a>. For
 a two-state system, this is not practical by hand. Using MPT3 in
 MATLAB:</p>
-<pre class="matlab" data-language="Matlab"><code>A = [1 1; 0 1]; B = [0.5; 1];
-Q = eye(2); R = 1;
-[K_lqr, ~] = dlqr(A, B, Q, R);
-Acl = A - B*K_lqr;
-
-% Disturbance set
-W = Polyhedron(&#39;lb&#39;, [-0.05; -0.05], &#39;ub&#39;, [0.05; 0.05]);
-
-% Compute mRPI set (iterative Minkowski sum approximation)
-% Note: invariantSet() computes the MAXIMAL positive invariant set,
-% which is NOT the mRPI. The mRPI is computed via the iteration below.
-Omega = W;
-for i = 1:30
-    Omega_new = Omega + (Acl^i) * W;  % Minkowski sum
-    if Omega_new == Omega              % convergence check
-        fprintf(&#39;mRPI converged at iteration %d\n&#39;, i);
-        break;
-    end
-    Omega = Omega_new;
-end
-E = Omega;</code></pre>
+<div class="sourceCode" id="cb1" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">A</span> <span class="op">=</span> [<span class="fl">1</span> <span class="fl">1</span><span class="op">;</span> <span class="fl">0</span> <span class="fl">1</span>]<span class="op">;</span> <span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span> <span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>[<span class="va">K_lqr</span><span class="op">,</span> <span class="op">~</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">Acl</span> <span class="op">=</span> <span class="va">A</span> <span class="op">-</span> <span class="va">B</span><span class="op">*</span><span class="va">K_lqr</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">% Disturbance set</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="va">W</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> [<span class="op">-</span><span class="fl">0.05</span><span class="op">;</span> <span class="op">-</span><span class="fl">0.05</span>]<span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> [<span class="fl">0.05</span><span class="op">;</span> <span class="fl">0.05</span>])<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">% Compute mRPI set (iterative Minkowski sum approximation)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">% Note: invariantSet() computes the MAXIMAL positive invariant set,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">% which is NOT the mRPI. The mRPI is computed via the iteration below.</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="va">Omega</span> <span class="op">=</span> <span class="va">W</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">i</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">30</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="va">Omega_new</span> <span class="op">=</span> <span class="va">Omega</span> <span class="op">+</span> (<span class="va">Acl</span><span class="op">^</span><span class="va">i</span>) <span class="op">*</span> <span class="va">W</span><span class="op">;</span>  <span class="co">% Minkowski sum</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="va">Omega_new</span> <span class="op">==</span> <span class="va">Omega</span>              <span class="co">% convergence check</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;mRPI converged at iteration %d\n&#39;</span><span class="op">,</span> <span class="va">i</span>)<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">break</span><span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">Omega</span> <span class="op">=</span> <span class="va">Omega_new</span><span class="op">;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="va">E</span> <span class="op">=</span> <span class="va">Omega</span><span class="op">;</span></span></code></pre></div>
 <p><strong>Step 3: Tighten constraints.</strong></p>
-<pre class="matlab" data-language="Matlab"><code>X = Polyhedron(&#39;lb&#39;, [-5; -3], &#39;ub&#39;, [5; 3]);
-U = Polyhedron(&#39;lb&#39;, -1, &#39;ub&#39;, 1);
-KE = K_lqr * E;           % Image of E under K (set of |Ke| values)
-
-Xt = X - E;               % Pontryagin difference
-Vt = U - KE;              % Pontryagin difference</code></pre>
+<div class="sourceCode" id="cb2" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">X</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> [<span class="op">-</span><span class="fl">5</span><span class="op">;</span> <span class="op">-</span><span class="fl">3</span>]<span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> [<span class="fl">5</span><span class="op">;</span> <span class="fl">3</span>])<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">U</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> <span class="op">-</span><span class="fl">1</span><span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">KE</span> <span class="op">=</span> <span class="va">K_lqr</span> <span class="op">*</span> <span class="va">E</span><span class="op">;</span>           <span class="co">% Image of E under K (set of |Ke| values)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">Xt</span> <span class="op">=</span> <span class="va">X</span> <span class="op">-</span> <span class="va">E</span><span class="op">;</span>               <span class="co">% Pontryagin difference</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">Vt</span> <span class="op">=</span> <span class="va">U</span> <span class="op">-</span> <span class="va">KE</span><span class="op">;</span>              <span class="co">% Pontryagin difference</span></span></code></pre></div>
 <p><strong>Step 4: Solve nominal MPC with tightened
 constraints.</strong></p>
 <p>The optimisation <a href="#eq:tube_mpc_opt"
@@ -727,36 +734,52 @@ the best we can hope for with persistent disturbances — we cannot drive
 the state to exactly zero when the disturbance keeps pushing it
 around.</p>
 <h2 id="sec:tube_comparison">Tube MPC vs Standard MPC: A Comparison</h2>
-<div class="center">
-<div class="tabular">
-<p><span>L<span>4cm</span> C<span>4.5cm</span>
-C<span>4.5cm</span></span> &amp; <strong>Standard MPC</strong> &amp;
-<strong>Tube MPC</strong><br />
-Model &amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span>
-&amp; <span class="math inline">\(x_{k+1} = Ax_k + Bu_k +
-w_k\)</span><br />
-Disturbance &amp; Ignored &amp; Bounded: <span class="math inline">\(w_k
-\in \mathcal{W}\)</span><br />
-Constraint guarantee &amp; Nominal only &amp; Robust (for all <span
-class="math inline">\(w \in \mathcal{W}\)</span>)<br />
-Online computation &amp; Solve QP &amp; Solve QP (same size) +
-feedback<br />
-Offline computation &amp; <span class="math inline">\(P\)</span>, <span
-class="math inline">\(K\)</span>, <span
-class="math inline">\(\mathcal{X}_f\)</span> &amp; <span
-class="math inline">\(P\)</span>, <span
-class="math inline">\(K\)</span>, <span
-class="math inline">\(\mathcal{E}\)</span>, <span
-class="math inline">\(\mathcal{X}_t\)</span>, <span
-class="math inline">\(\mathcal{V}\)</span>, <span
-class="math inline">\(\mathcal{X}_f\)</span><br />
-Convergence &amp; <span class="math inline">\(x_k \to 0\)</span> &amp;
-<span class="math inline">\(x_k \to \mathcal{E}\)</span> (neighbourhood
-of 0)<br />
-Feasible region &amp; Larger &amp; Smaller (due to tightening)<br />
-</p>
-</div>
-</div>
+<table style="width:100%; border-collapse:collapse; margin:1em 0;">
+<thead>
+<tr style="border-bottom:2px solid #333;">
+<th style="text-align:left; padding:8px 12px;"></th>
+<th style="text-align:center; padding:8px 12px;">Standard MPC</th>
+<th style="text-align:center; padding:8px 12px;">Tube MPC</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Model</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_{k+1} = Ax_k + Bu_k + w_k\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Disturbance</td>
+<td style="text-align:center; padding:6px 12px;">Ignored</td>
+<td style="text-align:center; padding:6px 12px;">Bounded: <span class="math inline">\(w_k \in \mathcal{W}\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Constraint guarantee</td>
+<td style="text-align:center; padding:6px 12px;">Nominal only</td>
+<td style="text-align:center; padding:6px 12px;">Robust (for all <span class="math inline">\(w \in \mathcal{W}\)</span>)</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Online computation</td>
+<td style="text-align:center; padding:6px 12px;">Solve QP</td>
+<td style="text-align:center; padding:6px 12px;">Solve QP (same size) + feedback</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Offline computation</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(P\)</span>, <span class="math inline">\(K\)</span>, <span class="math inline">\(\mathcal{E}\)</span>, <span class="math inline">\(\mathcal{X}_t\)</span>, <span class="math inline">\(\mathcal{V}\)</span>, <span class="math inline">\(\mathcal{X}_f\)</span></td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Convergence</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_k \to 0\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_k \to \mathcal{E}\)</span> (neighbourhood of 0)</td>
+</tr>
+<tr style="border-bottom:2px solid #333;">
+<td style="padding:6px 12px;">Feasible region</td>
+<td style="text-align:center; padding:6px 12px;">Larger</td>
+<td style="text-align:center; padding:6px 12px;">Smaller (due to tightening)</td>
+</tr>
+</tbody>
+</table>
 <p>The main takeaway: Tube MPC achieves robust guarantees at essentially
 no additional online cost. The extra work is in the offline design
 (computing <span class="math inline">\(\mathcal{E}\)</span> and
@@ -768,135 +791,137 @@ MPC.</p>
 for the scalar system from Section <a href="#sec:tube_example_scalar"
 data-reference-type="ref"
 data-reference="sec:tube_example_scalar">1.8</a>, using YALMIP.</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Tube MPC implementation for the scalar system"><code>% x_{k+1} = 1.2*x_k + u_k + w_k,  |w_k| &lt;= 0.1
-clear; clc;
-
-%--- System parameters ---
-a = 1.2;  b = 1;
-Q = 1;    R = 1;    N = 5;
-
-%--- Constraints ---
-x_max = 5;   u_max = 1;   w_max = 0.1;
-
-%--- Step 1: LQR gain ---
-[K_lqr, P_dare] = dlqr(a, b, Q, R);
-K = K_lqr;         % K &gt; 0 (dlqr convention); control law: u = -K*x
-a_cl = a - b*K;    % closed-loop eigenvalue: a_cl = a - b*K
-fprintf(&#39;K = %.4f, a_cl = %.4f\n&#39;, K, a_cl);
-
-%--- Step 2: mRPI set (scalar: geometric series) ---
-e_bar = w_max / (1 - abs(a_cl));
-fprintf(&#39;mRPI half-width: e_bar = %.4f\n&#39;, e_bar);
-
-%--- Step 3: Tighten constraints ---
-x_max_t = x_max - e_bar;              % tightened state
-u_max_t = u_max - abs(K) * e_bar;     % tightened input
-fprintf(&#39;Tightened: |z| &lt;= %.3f, |v| &lt;= %.3f\n&#39;, x_max_t, u_max_t);
-
-%--- Step 4: Build nominal MPC with YALMIP ---
-% z(1) is a decision variable (optimised), not fixed to x(k).
-% Constraint: |x(k) - z(1)| &lt;= e_bar (i.e., x(k) in {z(1)} + E).
-z = sdpvar(1, N+1);   % nominal states (z(1) = z_0 is optimised)
-v = sdpvar(1, N);      % nominal inputs
-x_meas = sdpvar(1);   % parameter: measured state
-
-constraints = [];
-cost = 0;
-for i = 1:N
-    cost = cost + z(i)^2 * Q + v(i)^2 * R;
-    constraints = [constraints, ...
-        z(i+1) == a*z(i) + b*v(i), ...
-        -x_max_t &lt;= z(i) &lt;= x_max_t, ...
-        -u_max_t &lt;= v(i) &lt;= u_max_t];
-end
-cost = cost + z(N+1)^2 * P_dare;  % terminal cost
-constraints = [constraints, -x_max_t &lt;= z(N+1) &lt;= x_max_t];
-
-% Tube constraint: x(k) must lie in {z_0} + E
-constraints = [constraints, -e_bar &lt;= x_meas - z(1) &lt;= e_bar];
-
-params_in = x_meas;          % parameter: measured state
-sols_out = [v(1), z(1)];     % solutions: first nominal input AND z_0
-
-ops = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;quadprog&#39;);
-controller = optimizer(constraints, cost, ops, params_in, sols_out);
-
-%--- Step 5: Simulate ---
-T_sim = 30;
-x = zeros(1, T_sim+1);
-z_traj = zeros(1, T_sim+1);
-u_applied = zeros(1, T_sim);
-
-x(1) = 2.0;      % initial condition
-
-rng(42);
-for k = 1:T_sim
-    % Solve nominal MPC (z_0 is optimised, not fixed to x(k))
-    sol = controller(x(k));
-    v0 = sol(1);
-    z0 = sol(2);
-
-    % Apply tube control law: u = v - K*(x - z)
-    % Note: z0 ~= x(k) in general, so the feedback term is nonzero
-    u_applied(k) = v0 - K * (x(k) - z0);
-    u_applied(k) = max(-u_max, min(u_max, u_applied(k)));
-
-    % Simulate real system with disturbance
-    w = w_max * (2*rand - 1);   % uniform in [-w_max, w_max]
-    x(k+1) = a * x(k) + b * u_applied(k) + w;
-
-    % Store nominal trajectory for plotting
-    z_traj(k) = z0;
-    z_traj(k+1) = a * z0 + b * v0;
-end
-
-%--- Plot ---
-figure;
-subplot(2,1,1);
-plot(0:T_sim, x, &#39;b-&#39;, &#39;LineWidth&#39;, 1.5); hold on;
-plot(0:T_sim, z_traj, &#39;r--&#39;, &#39;LineWidth&#39;, 1.5);
-yline(x_max, &#39;g--&#39;); yline(-x_max, &#39;g--&#39;);
-ylabel(&#39;State&#39;); legend(&#39;Actual x_k&#39;, &#39;Nominal z_k&#39;, &#39;Constraint&#39;);
-title(&#39;Tube MPC: Scalar System&#39;); grid on;
-
-subplot(2,1,2);
-stairs(0:T_sim-1, u_applied, &#39;b-&#39;, &#39;LineWidth&#39;, 1.5);
-yline(u_max, &#39;g--&#39;); yline(-u_max, &#39;g--&#39;);
-xlabel(&#39;Time step k&#39;); ylabel(&#39;Input u_k&#39;);
-legend(&#39;Applied input&#39;, &#39;Constraint&#39;); grid on;</code></pre>
+<div class="sourceCode" id="cb3" data-language="Matlab"
+data-caption="Tube MPC implementation for the scalar system"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">% x_{k+1} = 1.2*x_k + u_k + w_k,  |w_k| &lt;= 0.1</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">%--- System parameters ---</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="va">a</span> <span class="op">=</span> <span class="fl">1.2</span><span class="op">;</span>  <span class="va">b</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>    <span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>    <span class="va">N</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Constraints ---</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">x_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span>   <span class="va">u_max</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>   <span class="va">w_max</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Step 1: LQR gain ---</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>[<span class="va">K_lqr</span><span class="op">,</span> <span class="va">P_dare</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">a</span><span class="op">,</span> <span class="va">b</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="va">K</span> <span class="op">=</span> <span class="va">K_lqr</span><span class="op">;</span>         <span class="co">% K &gt; 0 (dlqr convention); control law: u = -K*x</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="va">a_cl</span> <span class="op">=</span> <span class="va">a</span> <span class="op">-</span> <span class="va">b</span><span class="op">*</span><span class="va">K</span><span class="op">;</span>    <span class="co">% closed-loop eigenvalue: a_cl = a - b*K</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;K = %.4f, a_cl = %.4f\n&#39;</span><span class="op">,</span> <span class="va">K</span><span class="op">,</span> <span class="va">a_cl</span>)<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Step 2: mRPI set (scalar: geometric series) ---</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="va">e_bar</span> <span class="op">=</span> <span class="va">w_max</span> <span class="op">/</span> (<span class="fl">1</span> <span class="op">-</span> <span class="va">abs</span>(<span class="va">a_cl</span>))<span class="op">;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;mRPI half-width: e_bar = %.4f\n&#39;</span><span class="op">,</span> <span class="va">e_bar</span>)<span class="op">;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Step 3: Tighten constraints ---</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="va">x_max_t</span> <span class="op">=</span> <span class="va">x_max</span> <span class="op">-</span> <span class="va">e_bar</span><span class="op">;</span>              <span class="co">% tightened state</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="va">u_max_t</span> <span class="op">=</span> <span class="va">u_max</span> <span class="op">-</span> <span class="va">abs</span>(<span class="va">K</span>) <span class="op">*</span> <span class="va">e_bar</span><span class="op">;</span>     <span class="co">% tightened input</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Tightened: |z| &lt;= %.3f, |v| &lt;= %.3f\n&#39;</span><span class="op">,</span> <span class="va">x_max_t</span><span class="op">,</span> <span class="va">u_max_t</span>)<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Step 4: Build nominal MPC with YALMIP ---</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">% z(1) is a decision variable (optimised), not fixed to x(k).</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">% Constraint: |x(k) - z(1)| &lt;= e_bar (i.e., x(k) in {z(1)} + E).</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="va">z</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>   <span class="co">% nominal states (z(1) = z_0 is optimised)</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="va">v</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span>      <span class="co">% nominal inputs</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="va">x_meas</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">1</span>)<span class="op">;</span>   <span class="co">% parameter: measured state</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="va">constraints</span> <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="va">cost</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">i</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="va">cost</span> <span class="op">=</span> <span class="va">cost</span> <span class="op">+</span> <span class="va">z</span>(<span class="va">i</span>)<span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="va">Q</span> <span class="op">+</span> <span class="va">v</span>(<span class="va">i</span>)<span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="va">R</span><span class="op">;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">z</span>(<span class="va">i</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">a</span><span class="op">*</span><span class="va">z</span>(<span class="va">i</span>) <span class="op">+</span> <span class="va">b</span><span class="op">*</span><span class="va">v</span>(<span class="va">i</span>)<span class="op">,</span> <span class="op">...</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="va">x_max_t</span> <span class="op">&lt;=</span> <span class="va">z</span>(<span class="va">i</span>) <span class="op">&lt;=</span> <span class="va">x_max_t</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="va">u_max_t</span> <span class="op">&lt;=</span> <span class="va">v</span>(<span class="va">i</span>) <span class="op">&lt;=</span> <span class="va">u_max_t</span>]<span class="op">;</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="va">cost</span> <span class="op">=</span> <span class="va">cost</span> <span class="op">+</span> <span class="va">z</span>(<span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="va">P_dare</span><span class="op">;</span>  <span class="co">% terminal cost</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="op">-</span><span class="va">x_max_t</span> <span class="op">&lt;=</span> <span class="va">z</span>(<span class="va">N</span><span class="op">+</span><span class="fl">1</span>) <span class="op">&lt;=</span> <span class="va">x_max_t</span>]<span class="op">;</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="co">% Tube constraint: x(k) must lie in {z_0} + E</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="op">-</span><span class="va">e_bar</span> <span class="op">&lt;=</span> <span class="va">x_meas</span> <span class="op">-</span> <span class="va">z</span>(<span class="fl">1</span>) <span class="op">&lt;=</span> <span class="va">e_bar</span>]<span class="op">;</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="va">params_in</span> <span class="op">=</span> <span class="va">x_meas</span><span class="op">;</span>          <span class="co">% parameter: measured state</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="va">sols_out</span> <span class="op">=</span> [<span class="va">v</span>(<span class="fl">1</span>)<span class="op">,</span> <span class="va">z</span>(<span class="fl">1</span>)]<span class="op">;</span>     <span class="co">% solutions: first nominal input AND z_0</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="va">ops</span> <span class="op">=</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span> <span class="ss">&#39;solver&#39;</span><span class="op">,</span> <span class="ss">&#39;quadprog&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="va">controller</span> <span class="op">=</span> <span class="va">optimizer</span>(<span class="va">constraints</span><span class="op">,</span> <span class="va">cost</span><span class="op">,</span> <span class="va">ops</span><span class="op">,</span> <span class="va">params_in</span><span class="op">,</span> <span class="va">sols_out</span>)<span class="op">;</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Step 5: Simulate ---</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="va">T_sim</span> <span class="op">=</span> <span class="fl">30</span><span class="op">;</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="va">x</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="va">z_traj</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="va">u_applied</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="va">x</span>(<span class="fl">1</span>) <span class="op">=</span> <span class="fl">2.0</span><span class="op">;</span>      <span class="co">% initial condition</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="va">rng</span>(<span class="fl">42</span>)<span class="op">;</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Solve nominal MPC (z_0 is optimised, not fixed to x(k))</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>    <span class="va">sol</span> <span class="op">=</span> <span class="va">controller</span>(<span class="va">x</span>(<span class="va">k</span>))<span class="op">;</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>    <span class="va">v0</span> <span class="op">=</span> <span class="va">sol</span>(<span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>    <span class="va">z0</span> <span class="op">=</span> <span class="va">sol</span>(<span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Apply tube control law: u = v - K*(x - z)</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Note: z0 ~= x(k) in general, so the feedback term is nonzero</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_applied</span>(<span class="va">k</span>) <span class="op">=</span> <span class="va">v0</span> <span class="op">-</span> <span class="va">K</span> <span class="op">*</span> (<span class="va">x</span>(<span class="va">k</span>) <span class="op">-</span> <span class="va">z0</span>)<span class="op">;</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_applied</span>(<span class="va">k</span>) <span class="op">=</span> <span class="va">max</span>(<span class="op">-</span><span class="va">u_max</span><span class="op">,</span> <span class="va">min</span>(<span class="va">u_max</span><span class="op">,</span> <span class="va">u_applied</span>(<span class="va">k</span>)))<span class="op">;</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Simulate real system with disturbance</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    <span class="va">w</span> <span class="op">=</span> <span class="va">w_max</span> <span class="op">*</span> (<span class="fl">2</span><span class="op">*</span><span class="va">rand</span> <span class="op">-</span> <span class="fl">1</span>)<span class="op">;</span>   <span class="co">% uniform in [-w_max, w_max]</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    <span class="va">x</span>(<span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">a</span> <span class="op">*</span> <span class="va">x</span>(<span class="va">k</span>) <span class="op">+</span> <span class="va">b</span> <span class="op">*</span> <span class="va">u_applied</span>(<span class="va">k</span>) <span class="op">+</span> <span class="va">w</span><span class="op">;</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Store nominal trajectory for plotting</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    <span class="va">z_traj</span>(<span class="va">k</span>) <span class="op">=</span> <span class="va">z0</span><span class="op">;</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="va">z_traj</span>(<span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">a</span> <span class="op">*</span> <span class="va">z0</span> <span class="op">+</span> <span class="va">b</span> <span class="op">*</span> <span class="va">v0</span><span class="op">;</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="co">%--- Plot ---</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="va">figure</span><span class="op">;</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a><span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a><span class="va">plot</span>(<span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">,</span> <span class="va">x</span><span class="op">,</span> <span class="ss">&#39;b-&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">1.5</span>)<span class="op">;</span> <span class="va">hold</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a><span class="va">plot</span>(<span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">,</span> <span class="va">z_traj</span><span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">1.5</span>)<span class="op">;</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a><span class="va">yline</span>(<span class="va">x_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span> <span class="va">yline</span>(<span class="op">-</span><span class="va">x_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a><span class="va">ylabel</span>(<span class="ss">&#39;State&#39;</span>)<span class="op">;</span> <span class="va">legend</span>(<span class="ss">&#39;Actual x_k&#39;</span><span class="op">,</span> <span class="ss">&#39;Nominal z_k&#39;</span><span class="op">,</span> <span class="ss">&#39;Constraint&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a><span class="va">title</span>(<span class="ss">&#39;Tube MPC: Scalar System&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="va">stairs</span>(<span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">-</span><span class="fl">1</span><span class="op">,</span> <span class="va">u_applied</span><span class="op">,</span> <span class="ss">&#39;b-&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">1.5</span>)<span class="op">;</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a><span class="va">yline</span>(<span class="va">u_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span> <span class="va">yline</span>(<span class="op">-</span><span class="va">u_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;Time step k&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;Input u_k&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a><span class="va">legend</span>(<span class="ss">&#39;Applied input&#39;</span><span class="op">,</span> <span class="ss">&#39;Constraint&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span></code></pre></div>
 <h2 id="sec:tube_mpt3">Computing the mRPI Set with MPT3</h2>
 <p>For multi-state systems, computing the mRPI set by hand is
 impractical. The MPT3 toolbox <span class="citation"
 data-cites="Herceg2013"></span> provides automated tools for this. The
 key steps are:</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Computing the mRPI set and tightened constraints using MPT3"><code>% System: x+ = Ax + Bu + w,  w in W
-
-A = [1 1; 0 1];   B = [0.5; 1];
-Q = eye(2);        R = 1;
-
-% LQR gain
-[K_lqr, P_dare] = dlqr(A, B, Q, R);
-Acl = A - B*K_lqr;
-
-% Define constraint sets as Polyhedra
-X = Polyhedron(&#39;lb&#39;, [-5; -3], &#39;ub&#39;, [5; 3]);     % state
-U = Polyhedron(&#39;lb&#39;, -1, &#39;ub&#39;, 1);                 % input
-W = Polyhedron(&#39;lb&#39;, [-0.05; -0.05], ...
-               &#39;ub&#39;, [0.05; 0.05]);                 % disturbance
-
-% --- Compute the mRPI set ---
-% Iterative Minkowski sum: E = W + Acl*W + Acl^2*W + ...
-E = W;
-for i = 1:30
-    E_new = E + Acl^i * W;   % Minkowski sum
-    if E_new == E             % convergence check
-        fprintf(&#39;mRPI converged at iteration %d\n&#39;, i);
-        break;
-    end
-    E = E_new;
-end</code></pre>
+<div class="sourceCode" id="cb4" data-language="Matlab"
+data-caption="Computing the mRPI set and tightened constraints using MPT3"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">% System: x+ = Ax + Bu + w,  w in W</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="va">A</span> <span class="op">=</span> [<span class="fl">1</span> <span class="fl">1</span><span class="op">;</span> <span class="fl">0</span> <span class="fl">1</span>]<span class="op">;</span>   <span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span>        <span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">% LQR gain</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>[<span class="va">K_lqr</span><span class="op">,</span> <span class="va">P_dare</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="va">Acl</span> <span class="op">=</span> <span class="va">A</span> <span class="op">-</span> <span class="va">B</span><span class="op">*</span><span class="va">K_lqr</span><span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">% Define constraint sets as Polyhedra</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="va">X</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> [<span class="op">-</span><span class="fl">5</span><span class="op">;</span> <span class="op">-</span><span class="fl">3</span>]<span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> [<span class="fl">5</span><span class="op">;</span> <span class="fl">3</span>])<span class="op">;</span>     <span class="co">% state</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="va">U</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> <span class="op">-</span><span class="fl">1</span><span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span>                 <span class="co">% input</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="va">W</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> [<span class="op">-</span><span class="fl">0.05</span><span class="op">;</span> <span class="op">-</span><span class="fl">0.05</span>]<span class="op">,</span> <span class="op">...</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>               <span class="ss">&#39;ub&#39;</span><span class="op">,</span> [<span class="fl">0.05</span><span class="op">;</span> <span class="fl">0.05</span>])<span class="op">;</span>                 <span class="co">% disturbance</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">% --- Compute the mRPI set ---</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">% Iterative Minkowski sum: E = W + Acl*W + Acl^2*W + ...</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="va">E</span> <span class="op">=</span> <span class="va">W</span><span class="op">;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">i</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">30</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">E_new</span> <span class="op">=</span> <span class="va">E</span> <span class="op">+</span> <span class="va">Acl</span><span class="op">^</span><span class="va">i</span> <span class="op">*</span> <span class="va">W</span><span class="op">;</span>   <span class="co">% Minkowski sum</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="va">E_new</span> <span class="op">==</span> <span class="va">E</span>             <span class="co">% convergence check</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;mRPI converged at iteration %d\n&#39;</span><span class="op">,</span> <span class="va">i</span>)<span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">break</span><span class="op">;</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="va">E</span> <span class="op">=</span> <span class="va">E_new</span><span class="op">;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <div class="notebox">
 <p><span>Convergence check</span> The equality test
 <code>E_new == E</code> uses MPT3’s polytope comparison, which involves
@@ -906,28 +931,29 @@ more numerically robust. The outer-approximation algorithm of <span
 class="citation" data-cites="Rakovic2005"></span> provides explicit
 error bounds.</p>
 </div>
-<pre class="matlab" data-language="Matlab"><code>
-% --- Tighten constraints ---
-KE  = K_lqr * E;        % image of E under gain K (set of |Ke| values)
-Xt  = X - E;             % Pontryagin difference: X ominus E
-Vt  = U - KE;            % Pontryagin difference: U ominus KE
-
-% --- Compute terminal set for nominal system ---
-sys_nom = LTISystem(&#39;A&#39;, A - B*K_lqr);
-% NOTE: Xt.Internal.lb/ub exist because X and E are both boxes (hyperrectangles).
-% For general polytopic constraints, use Xt.A and Xt.b with LTISystem&#39;s setConstraint method.
-sys_nom.x.min = Xt.Internal.lb;
-sys_nom.x.max = Xt.Internal.ub;
-Xf = sys_nom.invariantSet();
-
-% --- Extract half-space representation for QP ---
-% Tightened state: Xt.A * z &lt;= Xt.b
-% Tightened input: Vt.A * v &lt;= Vt.b
-% Terminal:        Xf.A * z_N &lt;= Xf.b
-
-fprintf(&#39;Tightened state constraints: %d inequalities\n&#39;, size(Xt.A, 1));
-fprintf(&#39;Tightened input constraints: %d inequalities\n&#39;, size(Vt.A, 1));
-fprintf(&#39;Terminal set: %d inequalities\n&#39;, size(Xf.A, 1));</code></pre>
+<div class="sourceCode" id="cb5" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">% --- Tighten constraints ---</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">KE</span>  <span class="op">=</span> <span class="va">K_lqr</span> <span class="op">*</span> <span class="va">E</span><span class="op">;</span>        <span class="co">% image of E under gain K (set of |Ke| values)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">Xt</span>  <span class="op">=</span> <span class="va">X</span> <span class="op">-</span> <span class="va">E</span><span class="op">;</span>             <span class="co">% Pontryagin difference: X ominus E</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="va">Vt</span>  <span class="op">=</span> <span class="va">U</span> <span class="op">-</span> <span class="va">KE</span><span class="op">;</span>            <span class="co">% Pontryagin difference: U ominus KE</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">% --- Compute terminal set for nominal system ---</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="va">sys_nom</span> <span class="op">=</span> <span class="va">LTISystem</span>(<span class="ss">&#39;A&#39;</span><span class="op">,</span> <span class="va">A</span> <span class="op">-</span> <span class="va">B</span><span class="op">*</span><span class="va">K_lqr</span>)<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">% </span><span class="al">NOTE</span><span class="co">: Xt.Internal.lb/ub exist because X and E are both boxes (hyperrectangles).</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">% For general polytopic constraints, use Xt.A and Xt.b with LTISystem&#39;s setConstraint method.</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="va">sys_nom</span>.<span class="va">x</span>.<span class="va">min</span> <span class="op">=</span> <span class="va">Xt</span>.<span class="va">Internal</span>.<span class="va">lb</span><span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="va">sys_nom</span>.<span class="va">x</span>.<span class="va">max</span> <span class="op">=</span> <span class="va">Xt</span>.<span class="va">Internal</span>.<span class="va">ub</span><span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="va">Xf</span> <span class="op">=</span> <span class="va">sys_nom</span>.<span class="va">invariantSet</span>()<span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">% --- Extract half-space representation for QP ---</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">% Tightened state: Xt.A * z &lt;= Xt.b</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">% Tightened input: Vt.A * v &lt;= Vt.b</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">% Terminal:        Xf.A * z_N &lt;= Xf.b</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Tightened state constraints: %d inequalities\n&#39;</span><span class="op">,</span> <span class="va">size</span>(<span class="va">Xt</span>.<span class="va">A</span><span class="op">,</span> <span class="fl">1</span>))<span class="op">;</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Tightened input constraints: %d inequalities\n&#39;</span><span class="op">,</span> <span class="va">size</span>(<span class="va">Vt</span>.<span class="va">A</span><span class="op">,</span> <span class="fl">1</span>))<span class="op">;</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Terminal set: %d inequalities\n&#39;</span><span class="op">,</span> <span class="va">size</span>(<span class="va">Xf</span>.<span class="va">A</span><span class="op">,</span> <span class="fl">1</span>))<span class="op">;</span></span></code></pre></div>
 <div class="notebox">
 <p><span>Approximate mRPI for large systems</span> For systems with more
 than 3–4 states, the exact mRPI computation can produce polytopes with a
@@ -946,6 +972,137 @@ class="math inline">\(A_{cl}^{s+1}\mathcal{W} \subseteq
 class="math inline">\(\hat{\mathcal{E}}\)</span> is a true RPI set while
 keeping the number of polytope faces manageable.</p>
 </div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + scipy)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing the mRPI set and tightened constraints using mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+import mpt4py as mpt
+
+# System: x+ = Ax + Bu + w
+A = np.array([[1, 1], [0, 1]])
+B = np.array([[0.5], [1]])
+Q = np.eye(2);  R = np.array([[1.0]])
+
+# LQR gain
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
+Acl = A - B @ K
+
+# Constraint sets as polytopes
+X = mpt.Polyhedron(lb=np.array([-5, -3]), ub=np.array([5, 3]))
+U = mpt.Polyhedron(lb=np.array([-1.0]),   ub=np.array([1.0]))
+W = mpt.Polyhedron(lb=np.array([-0.05, -0.05]),
+                    ub=np.array([ 0.05,  0.05]))
+
+# --- Compute the mRPI set ---
+# E = W + Acl*W + Acl^2*W + ...
+E = W
+for i in range(1, 31):
+    Acl_i = np.linalg.matrix_power(Acl, i)
+    E_new = E + Acl_i * W       # Minkowski sum
+    if E_new == E:               # convergence
+        print(f"mRPI converged at iteration {i}")
+        break
+    E = E_new
+
+# --- Tighten constraints ---
+X_tight = X - E                  # Pontryagin difference
+V = U - K * E                   # tightened input set
+
+print(f"mRPI set E has {E.A.shape[0]} half-planes")
+print(f"Tightened state set: {X_tight.A.shape[0]} half-planes")
+print(f"Tightened input set: {V.A.shape[0]} half-planes")
+
+# Verify non-emptiness
+print(f"X_tight non-empty: {not X_tight.is_empty}")
+print(f"V non-empty: {not V.is_empty}")</code></pre></div>
+
+<h4>Try It Yourself: Tube MPC Design Pipeline</h4>
+<p>The code below implements the complete Tube MPC offline design — mRPI set, constraint tightening, terminal set — and closed-loop simulation with random disturbances. Because the computation involves iterative LP solves and QP-based MPC, it is too heavy for browser-based execution. Run it in Google Colab or locally instead.</p>
+
+<div class="notebox">
+<p><span>Run the Tube MPC Demo</span></p>
+<p style="margin-bottom:12px;">
+<a href="https://colab.research.google.com/github/kucukdemiral/kucukdemiral.github.io/blob/main/tube_mpc_demo.ipynb"
+   target="_blank" rel="noopener" style="text-decoration:none;">
+<img src="https://colab.research.google.com/assets/colab-badge.svg"
+     alt="Open In Colab" style="vertical-align:middle;"></a>
+&nbsp; Open in Google Colab &mdash; no installation required. The notebook walks through each step with plots.
+</p>
+<p>Or download <a href="../tube_mpc_demo.py"><code>tube_mpc_demo.py</code></a> and run locally:</p>
+<pre><code>pip install numpy matplotlib control cvxpy piqp \
+    --find-links https://github.com/PREDICT-EPFL/MPC-Course-EPFL/releases/expanded_assets/mpt4py_wheels \
+    --find-links https://github.com/PREDICT-EPFL/MPC-Course-EPFL/releases/expanded_assets/pycddlib_wheels \
+    mpt4py==0.1.5
+python tube_mpc_demo.py</code></pre>
+<p>Modify the <code>USER SETTINGS</code> section to experiment with: the disturbance bound <code>w_max</code>, the input weight <code>R_weight</code> (controls LQR aggressiveness and tube width), the constraint bounds <code>x_max</code>/<code>u_max</code>, and the MPC horizon <code>N_horizon</code>.</p>
+</div>
+
+<div class="sourceCode" data-language="Python" data-caption="Tube MPC design pipeline (excerpt — full code in Colab notebook above)"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+from mpt4py import Polyhedron
+import cvxpy as cp
+
+# ── System and LQR ──────────────────────────────────────────
+A  = np.array([[1, 1], [0, 1]])
+B  = np.array([[1], [0.5]])
+Q  = np.eye(2);  R = 10*np.eye(1)
+P  = solve_discrete_are(A, B, Q, R)
+K  = -np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)   # u = Kx
+A_cl = A + B @ K
+
+# ── Constraint sets (polytopes) ──────────────────────────────
+X = Polyhedron.from_Hrep(np.vstack((np.eye(2),-np.eye(2))), 3*np.ones(4))
+U = Polyhedron.from_Hrep(np.vstack(([1],[-1])),             0.5*np.ones(2))
+W = Polyhedron.from_Hrep(np.vstack((np.eye(2),-np.eye(2))), 0.1*np.ones(4))
+
+# ── Step 1: mRPI set  E = W ⊕ A_cl W ⊕ A_cl² W ⊕ ··· ──────
+E = W
+for i in range(1, 40):
+    E_new = E + np.linalg.matrix_power(A_cl, i) @ W    # Minkowski sum
+    E_new.minHrep()
+    if np.linalg.norm(np.linalg.matrix_power(A_cl,i), 2) < 1e-3:
+        break
+    E = E_new
+
+# ── Step 2: Tighten constraints ─────────────────────────────
+X_t = X - E                       # Pontryagin difference  X̃ = X ⊖ E
+U_t = U - E.affine_map(K)         # Ũ = U ⊖ KE
+
+# ── Step 3: Terminal set (maximal invariant inside X̃ ∩ K⁻¹Ũ)
+Omega = X_t.intersect(Polyhedron.from_Hrep(U_t.A @ K, U_t.b))
+for _ in range(30):
+    Omega_new = Polyhedron.from_Hrep(
+        np.vstack((Omega.A, Omega.A @ A_cl)),
+        np.concatenate((Omega.b, Omega.b)))
+    Omega_new.minHrep()
+    if Omega_new == Omega: break
+    Omega = Omega_new
+Xf_t = Omega
+
+# ── Step 4: Tube MPC (cvxpy) ────────────────────────────────
+N = 10;  nx, nu = 2, 1
+z = cp.Variable((N+1, nx));  v = cp.Variable((N, nu))
+x0 = cp.Parameter(nx)
+cost = sum(cp.quad_form(z[k],Q) + cp.quad_form(v[k],R) for k in range(N))
+cost += cp.quad_form(z[N], P)
+cons  = [E.A @ (x0 - z[0]) <= E.b,                          # x₀ ∈ z₀ ⊕ E
+         z[1:].T == A @ z[:-1].T + B @ v.T,                 # dynamics
+         X_t.A @ z[:-1].T <= X_t.b.reshape(-1,1),           # tightened states
+         U_t.A @ v.T      <= U_t.b.reshape(-1,1),           # tightened inputs
+         Xf_t.A @ z[N]    <= Xf_t.b]                        # terminal
+prob = cp.Problem(cp.Minimize(cost), cons)
+
+# ── Step 5: Closed-loop with tube law  u = v* + K(x − z*) ──
+xk = np.array([1.5, 0.5])
+for k in range(40):
+    x0.value = xk
+    prob.solve(cp.PIQP)
+    uk = v[0].value + K @ (xk - z[0].value)    # tube law
+    wk = np.random.uniform(-0.1, 0.1, 2)       # random disturbance
+    xk = A @ xk + B @ uk + wk                  # true dynamics</code></pre></div>
+
 <h2 id="sec:tube_visualisation">Visualising the Tube</h2>
 <p>Figure <a href="#fig:tube_concept" data-reference-type="ref"
 data-reference="fig:tube_concept">1.5</a> illustrates the key concept.
@@ -958,7 +1115,7 @@ The nominal trajectory respects the tightened constraints (orange
 lines), which guarantees the actual trajectory respects the original
 constraints (green dashed lines).</p>
 <figure id="fig:tube_concept" data-latex-placement="H">
-<img src="figures/tube_mpc_concept.png" style="width:85.0%" />
+<embed src="figures/tube_mpc_concept.png" style="width:85.0%" />
 <figcaption>The tube concept in state space. Grey ellipses represent the
 cross-section <span class="math inline">\(\mathcal{E}\)</span> of the
 tube at each time step. The nominal trajectory (red) stays within the
@@ -1030,6 +1187,7 @@ data-cites="Mayne2000"></span>. The textbooks by Rawlings et al. <span
 class="citation" data-cites="Rawlings2017"></span> and Borrelli et
 al. <span class="citation" data-cites="Borrelli2017"></span> provide
 detailed treatments of both nominal and robust MPC.</p>
+
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>
 <li><p>Consider the scalar system <span class="math inline">\(x_{k+1} =
@@ -1078,7 +1236,7 @@ the trade-off.</p></li>
 </ol></li>
 <li><p>Consider the double integrator from Section <a
 href="#sec:tube_example_2d" data-reference-type="ref"
-data-reference="sec:tube_example_2d">1.9</a>. Using MATLAB and MPT3:</p>
+data-reference="sec:tube_example_2d">1.9</a>. Using MATLAB/MPT3 or Python (<code>mpt4py</code> + <code>qpsolvers</code>):</p>
 <ol>
 <li><p>Compute the mRPI set <span
 class="math inline">\(\mathcal{E}\)</span> for <span

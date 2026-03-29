@@ -1,94 +1,39 @@
-<h1 id="app:prob">Probability and Statistics: A Self-Study
-Reference</h1>
-<p>Modern control systems — from Kalman filters and Linear Quadratic
-Gaussian (LQG) regulators to stochastic MPC and Reinforcement Learning
-(RL) — are built on probability theory. This appendix introduces the
-core ideas from scratch, assuming only basic school-level mathematics.
-Every concept is illustrated with worked examples and MATLAB code so
-that you can develop intuition interactively before encountering these
-tools in the main text.</p>
-<p>By the end of this appendix you should be comfortable with random
-variables, Gaussian distributions, expectations, covariance matrices,
-Bayes’ theorem, and stochastic processes — the exact toolkit needed for
-Chapters on Kalman filtering, LQG, and stochastic MPC.</p>
+<h1 id="app:prob">Probability and Statistics: A Self-Study Reference</h1>
+<p>Modern control systems — from Kalman filters and Linear Quadratic Gaussian (LQG) regulators to stochastic MPC and Reinforcement Learning (RL) — are built on probability theory. This appendix introduces the core ideas from scratch, assuming only basic school-level mathematics. Every concept is illustrated with worked examples and MATLAB code so that you can develop intuition interactively before encountering these tools in the main text.</p>
+<p>By the end of this appendix you should be comfortable with random variables, Gaussian distributions, expectations, covariance matrices, Bayes’ theorem, and stochastic processes — the exact toolkit needed for Chapters on Kalman filtering, LQG, stochastic MPC, and RL.</p>
 <h2 id="sec:app_prob_why">Why Probability in Control?</h2>
-<p>Every real control system operates in an uncertain environment.
-Sensors do not report exact values — they add noise. Actuators do not
-deliver exactly the commanded force or voltage. The plant model is
-always an approximation of reality. Disturbances (wind, load changes,
-temperature) are not known in advance.</p>
-<p>Deterministic control (classical PID, standard MPC) ignores this
-uncertainty or handles it implicitly through robustness margins.
-Probabilistic control treats uncertainty explicitly by modelling unknown
-quantities as <em>random variables</em> and designing controllers that
-perform well <em>on average</em> or with <em>guaranteed
-probability</em>. The four main applications you will encounter in this
-book are:</p>
+<p>Every real control system operates in an uncertain environment. Sensors do not report exact values — they add noise. Actuators do not deliver exactly the commanded force or voltage. The plant model is always an approximation of reality. Disturbances (wind, load changes, temperature) are not known in advance.</p>
+<p>Deterministic control (classical PID, standard MPC) ignores this uncertainty or handles it implicitly through robustness margins. Probabilistic control treats uncertainty explicitly by modelling unknown quantities as <em>random variables</em> and designing controllers that perform well <em>on average</em> or with <em>guaranteed probability</em>. The four main applications you will encounter in these notes are:</p>
 <ul>
-<li><p><strong>Kalman filter</strong>: optimal state estimator when
-process and measurement noise are Gaussian.</p></li>
-<li><p><strong>LQG control</strong>: combines a Kalman filter with an
-LQR controller to minimise expected quadratic cost under Gaussian
-noise.</p></li>
-<li><p><strong>Stochastic MPC</strong>: replaces hard constraints with
-chance constraints (e.g. satisfy a comfort bound with probability
-0.95).</p></li>
-<li><p><strong>Reinforcement Learning</strong>: the agent observes noisy
-states and learns an optimal policy by maximising expected cumulative
-reward.</p></li>
+<li><p><strong>Kalman filter</strong>: optimal state estimator when process and measurement noise are Gaussian.</p></li>
+<li><p><strong>LQG control</strong>: combines a Kalman filter with an LQR controller to minimise expected quadratic cost under Gaussian noise.</p></li>
+<li><p><strong>Stochastic MPC</strong>: replaces hard constraints with chance constraints (e.g. satisfy a comfort bound with probability 0.95).</p></li>
+<li><p><strong>Reinforcement Learning</strong>: the agent observes noisy states and learns an optimal policy by maximising expected cumulative reward.</p></li>
 </ul>
 <h2 id="sec:app_sample_space">Sample Spaces, Outcomes, and Events</h2>
 <div class="defnbox">
-<p><span>Sample Space and Event</span> The <em>sample space</em> <span
-class="math inline">\(\Omega\)</span> is the set of all possible
-outcomes of a random experiment. An <em>event</em> <span
-class="math inline">\(A\)</span> is any subset <span
-class="math inline">\(A \subseteq \Omega\)</span>. The
-<em>probability</em> of event <span class="math inline">\(A\)</span>,
-written <span class="math inline">\(P(A)\)</span>, is a number in <span
-class="math inline">\([0,1]\)</span> that quantifies how likely <span
-class="math inline">\(A\)</span> is to occur.</p>
+<p><span>Sample Space and Event</span> The <strong>sample space</strong> <span class="math inline">\(\Omega\)</span> is the set of all possible outcomes of a random experiment. An <strong>event</strong> <span class="math inline">\(A\)</span> is any subset <span class="math inline">\(A \subseteq \Omega\)</span>. The <strong>probability</strong> of event <span class="math inline">\(A\)</span>, written <span class="math inline">\(P(A)\)</span>, is a number in <span class="math inline">\([0,1]\)</span> that quantifies how likely <span class="math inline">\(A\)</span> is to occur.</p>
 </div>
-<p><strong>The three axioms of probability</strong> (Kolmogorov,
-1933):</p>
+<p><strong>The three axioms of probability</strong> (Kolmogorov, 1933):</p>
 <ol>
-<li><p><span class="math inline">\(P(A) \geq 0\)</span> for every event
-<span class="math inline">\(A\)</span>.</p></li>
-<li><p><span class="math inline">\(P(\Omega) = 1\)</span> (something
-always happens).</p></li>
-<li><p>If <span class="math inline">\(A\)</span> and <span
-class="math inline">\(B\)</span> are <em>mutually exclusive</em> (<span
-class="math inline">\(A \cap B = \emptyset\)</span>), then <span
-class="math inline">\(P(A \cup B) = P(A) + P(B)\)</span>.</p></li>
+<li><p><span class="math inline">\(P(A) \geq 0\)</span> for every event <span class="math inline">\(A\)</span>.</p></li>
+<li><p><span class="math inline">\(P(\Omega) = 1\)</span> (something always happens).</p></li>
+<li><p>If <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are <em>mutually exclusive</em> (<span class="math inline">\(A \cap B = \emptyset\)</span>), then <span class="math inline">\(P(A \cup B) = P(A) + P(B)\)</span>.</p></li>
 </ol>
-<p>From these three axioms every other rule of probability can be
-derived. Key consequences:</p>
+<p>From these three axioms every other rule of probability can be derived. Key consequences:</p>
 <ul>
 <li><p><span class="math inline">\(P(\emptyset) = 0\)</span></p></li>
-<li><p><span class="math inline">\(P(A^c) = 1 - P(A)\)</span>, where
-<span class="math inline">\(A^c\)</span> is the complement of <span
-class="math inline">\(A\)</span></p></li>
-<li><p><span class="math inline">\(P(A \cup B) = P(A) + P(B) - P(A \cap
-B)\)</span> (inclusion–exclusion)</p></li>
+<li><p><span class="math inline">\(P(A^c) = 1 - P(A)\)</span>, where <span class="math inline">\(A^c\)</span> is the complement of <span class="math inline">\(A\)</span></p></li>
+<li><p><span class="math inline">\(P(A \cup B) = P(A) + P(B) - P(A \cap B)\)</span> (inclusion–exclusion)</p></li>
 <li><p><span class="math inline">\(0 \leq P(A) \leq 1\)</span></p></li>
 </ul>
 <div class="examplebox">
-<p><span>Sensor failure probability</span> A temperature sensor fails
-independently on any given day with probability <span
-class="math inline">\(p = 0.02\)</span>. Over a 5-day week, what is the
-probability that it fails at least once?</p>
-<p>Let <span class="math inline">\(A_i\)</span> be the event “fails on
-day <span class="math inline">\(i\)</span>”. The complement is “never
-fails in 5 days”: <span class="math display">\[P(\text{never fails}) =
-(1-0.02)^5 = 0.98^5 \approx 0.904.\]</span> Therefore: <span
-class="math display">\[P(\text{at least one failure}) = 1 - 0.904 =
-0.096.\]</span> There is roughly a 9.6% chance of at least one failure
-per week.</p>
+<p><span>Sensor failure probability</span> A temperature sensor fails independently on any given day with probability <span class="math inline">\(p = 0.02\)</span>. Over a 5-day week, what is the probability that it fails at least once?</p>
+<p>Let <span class="math inline">\(A_i\)</span> be the event “fails on day <span class="math inline">\(i\)</span>”. The complement is “never fails in 5 days”: <span class="math display">\[P(\text{never fails}) = (1-0.02)^5 = 0.98^5 \approx 0.904.\]</span> Therefore: <span class="math display">\[P(\text{at least one failure}) = 1 - 0.904 = 0.096.\]</span> There is roughly a 9.6% chance of at least one failure per week.</p>
 <pre class="matlab" data-language="Matlab"><code>p_fail   = 0.02;
 n_days   = 5;
 p_none   = (1 - p_fail)^n_days    % 0.9039
 p_atleast1 = 1 - p_none           % 0.0961</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -103,46 +48,19 @@ print(f"P(no failure in {n_days} days) = {p_none:.4f}")
 print(f"P(at least 1 failure)          = {p_atleast1:.4f}")</code></pre>
 </div>
 </div>
-<h2 id="sec:app_conditional">Conditional Probability and
-Independence</h2>
+<h2 id="sec:app_conditional">Conditional Probability and Independence</h2>
 <div class="defnbox">
-<p><span>Conditional Probability</span> The <em>conditional
-probability</em> of event <span class="math inline">\(A\)</span> given
-that event <span class="math inline">\(B\)</span> has occurred (with
-<span class="math inline">\(P(B) &gt; 0\)</span>) is: <span
-class="math display">\[P(A \mid B) = \frac{P(A \cap B)}{P(B)}.\]</span>
-Intuitively, conditioning on <span class="math inline">\(B\)</span>
-restricts the sample space to <span class="math inline">\(B\)</span> and
-rescales probabilities accordingly.</p>
+<p><span>Conditional Probability</span> The <strong>conditional probability</strong> of event <span class="math inline">\(A\)</span> given that event <span class="math inline">\(B\)</span> has occurred (with <span class="math inline">\(P(B) &gt; 0\)</span>) is: <span class="math display">\[P(A \mid B) = \frac{P(A \cap B)}{P(B)}.\]</span> Intuitively, conditioning on <span class="math inline">\(B\)</span> restricts the sample space to <span class="math inline">\(B\)</span> and rescales probabilities accordingly.</p>
 </div>
 <div class="defnbox">
-<p><span>Statistical Independence</span> Events <span
-class="math inline">\(A\)</span> and <span
-class="math inline">\(B\)</span> are <em>independent</em> if knowing
-<span class="math inline">\(B\)</span> occurred gives no information
-about <span class="math inline">\(A\)</span>: <span
-class="math display">\[P(A \mid B) = P(A) \quad \Longleftrightarrow
-\quad
-  P(A \cap B) = P(A)\,P(B).\]</span> In Kalman filtering, process noise
-and measurement noise are assumed to be mutually independent, which
-greatly simplifies the filter equations.</p>
+<p><span>Statistical Independence</span> Events <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are <strong>independent</strong> if knowing <span class="math inline">\(B\)</span> occurred gives no information about <span class="math inline">\(A\)</span>: <span class="math display">\[P(A \mid B) = P(A) \quad \Longleftrightarrow \quad
+  P(A \cap B) = P(A)\,P(B).\]</span> In Kalman filtering, process noise and measurement noise are assumed to be mutually independent, which greatly simplifies the filter equations.</p>
 </div>
 <div class="examplebox">
-<p><span>Conditional probability with a noisy sensor</span> A room is
-occupied 70% of the time. When occupied, a motion sensor triggers with
-probability 0.9. When empty, it still triggers (false alarm) with
-probability 0.05. Given that the sensor triggered, what is the
-probability the room is actually occupied?</p>
-<p>Let <span class="math inline">\(O\)</span> = “room occupied”, <span
-class="math inline">\(T\)</span> = “sensor triggered”. <span
-class="math display">\[P(O) = 0.7,\quad P(T \mid O) = 0.9,\quad P(T \mid
-O^c) = 0.05.\]</span> By the <em>law of total probability</em>: <span
-class="math display">\[P(T) = P(T\mid O)P(O) + P(T\mid O^c)P(O^c)
-       = 0.9\times0.7 + 0.05\times0.3 = 0.645.\]</span> By conditional
-probability: <span class="math display">\[P(O\mid T) = \frac{P(T\mid
-O)\,P(O)}{P(T)}
-             = \frac{0.63}{0.645} \approx 0.977.\]</span> If the sensor
-triggers, the room is occupied with about 97.7% confidence.</p>
+<p><span>Conditional probability with a noisy sensor</span> A room is occupied 70% of the time. When occupied, a motion sensor triggers with probability 0.9. When empty, it still triggers (false alarm) with probability 0.05. Given that the sensor triggered, what is the probability the room is actually occupied?</p>
+<p>Let <span class="math inline">\(O\)</span> = “room occupied”, <span class="math inline">\(T\)</span> = “sensor triggered”. <span class="math display">\[P(O) = 0.7,\quad P(T \mid O) = 0.9,\quad P(T \mid O^c) = 0.05.\]</span> By the <strong>law of total probability</strong>: <span class="math display">\[P(T) = P(T\mid O)P(O) + P(T\mid O^c)P(O^c)
+       = 0.9\times0.7 + 0.05\times0.3 = 0.645.\]</span> By conditional probability: <span class="math display">\[P(O\mid T) = \frac{P(T\mid O)\,P(O)}{P(T)}
+             = \frac{0.63}{0.645} \approx 0.977.\]</span> If the sensor triggers, the room is occupied with about 97.7% confidence.</p>
 <pre class="matlab" data-language="Matlab"><code>P_O   = 0.7;
 P_T_O = 0.9;    % true positive rate
 P_T_Oc= 0.05;   % false alarm rate
@@ -150,7 +68,6 @@ P_Oc  = 1 - P_O;
 
 P_T   = P_T_O*P_O + P_T_Oc*P_Oc;     % 0.6450
 P_O_T = P_T_O * P_O / P_T             % 0.9767</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -169,60 +86,27 @@ print(f"P(obstacle | trigger)   = {P_O_T:.4f}")</code></pre>
 </div>
 <h2 id="sec:app_bayes">Bayes’ Theorem</h2>
 <div class="defnbox">
-<p><span>Bayes’ Theorem</span> For events <span
-class="math inline">\(A\)</span> and <span
-class="math inline">\(B\)</span> with <span class="math inline">\(P(B)
-&gt; 0\)</span>: <span class="math display">\[{P(A \mid B) = \frac{P(B
-\mid A)\,P(A)}{P(B)}}.\]</span> In words: the <em>posterior</em>
-probability of <span class="math inline">\(A\)</span> given evidence
-<span class="math inline">\(B\)</span> equals the <em>likelihood</em>
-<span class="math inline">\(P(B\mid A)\)</span> times the <em>prior</em>
-<span class="math inline">\(P(A)\)</span>, divided by the <em>marginal
-likelihood</em> (evidence) <span
-class="math inline">\(P(B)\)</span>.</p>
+<p><span>Bayes’ Theorem</span> For events <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> with <span class="math inline">\(P(B) &gt; 0\)</span>: <span class="math display">\[{P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}}.\]</span> In words: the <strong>posterior</strong> probability of <span class="math inline">\(A\)</span> given evidence <span class="math inline">\(B\)</span> equals the <strong>likelihood</strong> <span class="math inline">\(P(B\mid A)\)</span> times the <strong>prior</strong> <span class="math inline">\(P(A)\)</span>, divided by the <strong>marginal likelihood</strong> (evidence) <span class="math inline">\(P(B)\)</span>.</p>
 </div>
-<p>Bayes’ theorem is the mathematical foundation of the Kalman filter.
-At every time step the filter:</p>
+<p>Bayes’ theorem is the mathematical foundation of the Kalman filter. At every time step the filter:</p>
 <ol>
 <li><p>Uses the prior state estimate (before the measurement).</p></li>
 <li><p>Updates it with the likelihood of the new measurement.</p></li>
-<li><p>Produces a posterior estimate that combines both sources of
-information optimally.</p></li>
+<li><p>Produces a posterior estimate that combines both sources of information optimally.</p></li>
 </ol>
-<p>This three-step pattern — prior <span
-class="math inline">\(\to\)</span> likelihood <span
-class="math inline">\(\to\)</span> posterior — repeats at every time
-step and is precisely the <em>predict–correct</em> structure of the
-Kalman filter described in the main text.</p>
+<p>This three-step pattern — prior <span class="math inline">\(\to\)</span> likelihood <span class="math inline">\(\to\)</span> posterior — repeats at every time step and is precisely the <em>predict–correct</em> structure of the Kalman filter described in the main text.</p>
 <div class="notebox">
-<p><span>Bayes’ theorem and the Kalman filter</span> The Kalman filter
-is the exact, closed-form solution to Bayes’ theorem when all
-distributions are Gaussian and the system is linear. For non-linear or
-non-Gaussian systems, approximate methods (Extended Kalman Filter,
-Unscented Kalman Filter, Particle Filter) are needed — all of which
-still implement the same Bayesian predict–correct cycle.</p>
+<p><span>Bayes’ theorem and the Kalman filter</span> The Kalman filter is the exact, closed-form solution to Bayes’ theorem when all distributions are Gaussian and the system is linear. For non-linear or non-Gaussian systems, approximate methods (Extended Kalman Filter, Unscented Kalman Filter, Particle Filter) are needed — all of which still implement the same Bayesian predict–correct cycle.</p>
 </div>
 <h2 id="sec:app_rv">Random Variables</h2>
 <div class="defnbox">
-<p><span>Random Variable</span> A <em>random variable</em> (RV) <span
-class="math inline">\(X\)</span> is a function that assigns a numerical
-value to every outcome in the sample space <span
-class="math inline">\(\Omega\)</span>. It is <em>discrete</em> if it
-takes countably many values and <em>continuous</em> if it takes values
-in a continuous range.</p>
+<p><span>Random Variable</span> A <strong>random variable</strong> (RV) <span class="math inline">\(X\)</span> is a function that assigns a numerical value to every outcome in the sample space <span class="math inline">\(\Omega\)</span>. It is <strong>discrete</strong> if it takes countably many values and <strong>continuous</strong> if it takes values in a continuous range.</p>
 </div>
 <h3 id="subsec:app_discrete">Discrete Random Variables</h3>
-<p>A discrete RV is characterised by its <em>probability mass
-function</em> (PMF): <span class="math display">\[p_X(x) = P(X = x),
-\qquad \sum_{\text{all }x} p_X(x) = 1.\]</span></p>
+<p>A discrete RV is characterised by its <strong>probability mass function</strong> (PMF): <span class="math display">\[p_X(x) = P(X = x), \qquad \sum_{\text{all }x} p_X(x) = 1.\]</span></p>
 <div class="examplebox">
-<p><span>PMF of a discrete sensor reading</span> A quantised position
-sensor reports integer values in <span
-class="math inline">\(\{-2,-1,0,1,2\}\)</span> with equal probability.
-Plot the PMF.</p>
-<p><span class="math inline">\(p_X(x) = 1/5\)</span> for each <span
-class="math inline">\(x \in \{-2,-1,0,1,2\}\)</span>, zero elsewhere (a
-uniform discrete distribution).</p>
+<p><span>PMF of a discrete sensor reading</span> A quantised position sensor reports integer values in <span class="math inline">\(\{-2,-1,0,1,2\}\)</span> with equal probability. Plot the PMF.</p>
+<p><span class="math inline">\(p_X(x) = 1/5\)</span> for each <span class="math inline">\(x \in \{-2,-1,0,1,2\}\)</span>, zero elsewhere (a uniform discrete distribution).</p>
 <pre class="matlab" data-language="Matlab"><code>x   = -2:2;
 pmf = ones(1,5) / 5;
 
@@ -232,7 +116,6 @@ xlabel(&#39;Sensor reading x&#39;);
 ylabel(&#39;P(X = x)&#39;);
 title(&#39;PMF of quantised sensor&#39;);
 ylim([0, 0.4]); grid on;</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -260,84 +143,36 @@ plt.close(fig)
 print("PMF values:", {int(k): round(float(v), 4) for k, v in zip(x, pmf)})</code></pre>
 </div>
 </div>
-<figure id="fig:app_pmf_discrete" data-latex-placement="htbp">
-<img src="figures/fig_app_pmf_discrete.png" style="width:65.0%" />
-<figcaption>PMF of the quantised sensor. Each of the five possible
-readings has equal probability <span
-class="math inline">\(1/5\)</span>.</figcaption>
-</figure>
 <h3 id="subsec:app_continuous">Continuous Random Variables</h3>
-<p>A continuous RV is characterised by its <em>probability density
-function</em> (PDF) <span class="math inline">\(f_X(x)\)</span>, defined
-so that: <span class="math display">\[P(a \leq X \leq b) = \int_a^b
-f_X(x)\,\mathrm{d}x,
+<p>A continuous RV is characterised by its <strong>probability density function</strong> (PDF) <span class="math inline">\(f_X(x)\)</span>, defined so that: <span class="math display">\[P(a \leq X \leq b) = \int_a^b f_X(x)\,\mathrm{d}x,
   \qquad
   \int_{-\infty}^{\infty} f_X(x)\,\mathrm{d}x = 1.\]</span></p>
 <div class="alertbox">
-<p><span>PDF values are NOT probabilities</span> <span
-class="math inline">\(f_X(x)\)</span> can exceed 1. Only <em>areas</em>
-under the PDF curve represent probabilities. <span
-class="math inline">\(P(X = x) = 0\)</span> for any single point <span
-class="math inline">\(x\)</span> (a continuous RV never takes an exact
-value).</p>
+<p><span>PDF values are NOT probabilities</span> <span class="math inline">\(f_X(x)\)</span> can exceed 1. Only <em>areas</em> under the PDF curve represent probabilities. <span class="math inline">\(P(X = x) = 0\)</span> for any single point <span class="math inline">\(x\)</span> (a continuous RV never takes an exact value).</p>
 </div>
-<p>The <em>cumulative distribution function</em> (CDF) collects
-probability up to <span class="math inline">\(x\)</span>: <span
-class="math display">\[F_X(x) = P(X \leq x) = \int_{-\infty}^{x}
-f_X(t)\,\mathrm{d}t.\]</span></p>
+<p>The <strong>cumulative distribution function</strong> (CDF) collects probability up to <span class="math inline">\(x\)</span>: <span class="math display">\[F_X(x) = P(X \leq x) = \int_{-\infty}^{x} f_X(t)\,\mathrm{d}t.\]</span></p>
 <h2 id="sec:app_distributions">Key Probability Distributions</h2>
 <h3 id="subsec:app_uniform">Uniform Distribution</h3>
 <div class="defnbox">
-<p><span>Uniform Distribution <span
-class="math inline">\(\mathcal{U}(a,b)\)</span></span> <span
-class="math inline">\(X \sim \mathcal{U}(a,b)\)</span> has constant
-density on <span class="math inline">\([a,b]\)</span>: <span
-class="math display">\[f_X(x) = \frac{1}{b-a}, \quad a \leq x \leq
-b;\qquad
-  f_X(x) = 0 \text{ otherwise.}\]</span> Mean: <span
-class="math inline">\((a+b)/2\)</span>.Variance: <span
-class="math inline">\((b-a)^2/12\)</span>.</p>
+<p><span>Uniform Distribution <span class="math inline">\(\mathcal{U}(a,b)\)</span></span> <span class="math inline">\(X \sim \mathcal{U}(a,b)\)</span> has constant density on <span class="math inline">\([a,b]\)</span>: <span class="math display">\[f_X(x) = \frac{1}{b-a}, \quad a \leq x \leq b;\qquad
+  f_X(x) = 0 \text{ otherwise.}\]</span> Mean: <span class="math inline">\((a+b)/2\)</span>.Variance: <span class="math inline">\((b-a)^2/12\)</span>.</p>
 </div>
 <h3 id="subsec:app_gaussian">The Gaussian (Normal) Distribution</h3>
-<p>The Gaussian distribution is the most important distribution in
-control engineering. Its central role follows from the <em>Central Limit
-Theorem</em>: the sum of many independent random variables tends to a
-Gaussian, regardless of their individual distributions. Sensor noise,
-modelling errors, and thermal fluctuations are all well approximated as
-Gaussian.</p>
+<p>The Gaussian distribution is the most important distribution in control engineering. Its central role follows from the <strong>Central Limit Theorem</strong>: the sum of many independent random variables tends to a Gaussian, regardless of their individual distributions. Sensor noise, modelling errors, and thermal fluctuations are all well approximated as Gaussian.</p>
 <div class="defnbox">
-<p><span>Gaussian Distribution <span
-class="math inline">\(\mathcal{N}(\mu, \sigma^2)\)</span></span> A
-scalar RV <span class="math inline">\(X \sim \mathcal{N}(\mu,
-\sigma^2)\)</span> has PDF: <span class="math display">\[f_X(x) =
-\frac{1}{\sqrt{2\pi\sigma^2}}
+<p><span>Gaussian Distribution <span class="math inline">\(\mathcal{N}(\mu, \sigma^2)\)</span></span> A scalar RV <span class="math inline">\(X \sim \mathcal{N}(\mu, \sigma^2)\)</span> has PDF: <span class="math display">\[f_X(x) = \frac{1}{\sqrt{2\pi\sigma^2}}
             \exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right),
-  \quad x \in \mathbb{R},\]</span> where <span
-class="math inline">\(\mu\)</span> is the <em>mean</em> (centre) and
-<span class="math inline">\(\sigma^2\)</span> is the <em>variance</em>
-(spread). The <em>standard deviation</em> is <span
-class="math inline">\(\sigma = \sqrt{\sigma^2}\)</span>.</p>
+  \quad x \in \mathbb{R},\]</span> where <span class="math inline">\(\mu\)</span> is the <strong>mean</strong> (centre) and <span class="math inline">\(\sigma^2\)</span> is the <strong>variance</strong> (spread). The <strong>standard deviation</strong> is <span class="math inline">\(\sigma = \sqrt{\sigma^2}\)</span>.</p>
 </div>
 <figure id="fig:gauss_pdf" data-latex-placement="htbp">
-
-<figcaption>Gaussian PDFs. Increasing <span
-class="math inline">\(\sigma^2\)</span> widens the bell curve (more
-uncertainty); shifting <span class="math inline">\(\mu\)</span> moves
-its centre (different expected value).</figcaption>
+<img src="figures/tikz_appProb_1.png" style="width:85.0%" />
+<figcaption>Gaussian PDFs. Increasing <span class="math inline">\(\sigma^2\)</span> widens the bell curve (more uncertainty); shifting <span class="math inline">\(\mu\)</span> moves its centre (different expected value).</figcaption>
 </figure>
-<p><strong>The 68–95–99.7 rule</strong> (essential for engineering):
-<span class="math display">\[P(\mu - \sigma \leq X \leq \mu +
-\sigma)    \approx 0.683,\quad
+<p><strong>The 68–95–99.7 rule</strong> (essential for engineering): <span class="math display">\[P(\mu - \sigma \leq X \leq \mu + \sigma)    \approx 0.683,\quad
   P(\mu - 2\sigma \leq X \leq \mu + 2\sigma)  \approx 0.954,\quad
-  P(\mu - 3\sigma \leq X \leq \mu + 3\sigma)  \approx
-0.997.\]</span></p>
+  P(\mu - 3\sigma \leq X \leq \mu + 3\sigma)  \approx 0.997.\]</span></p>
 <div class="examplebox">
-<p><span>Gaussian sensor noise in MATLAB</span> A temperature sensor
-measures a true value of <span
-class="math inline">\(20\,^\circ\)</span>C with additive Gaussian noise
-of standard deviation <span class="math inline">\(\sigma =
-0.5\,^\circ\)</span>C. Simulate 10 000 measurements and verify the
-68–95–99.7 rule.</p>
+<p><span>Gaussian sensor noise in MATLAB</span> A temperature sensor measures a true value of <span class="math inline">\(20\,^\circ\)</span>C with additive Gaussian noise of standard deviation <span class="math inline">\(\sigma = 0.5\,^\circ\)</span>C. Simulate 10 000 measurements and verify the 68–95–99.7 rule.</p>
 <pre class="matlab" data-language="Matlab"><code>mu    = 20;
 sigma = 0.5;
 N     = 10000;
@@ -362,10 +197,6 @@ xlabel(&#39;Measurement (deg C)&#39;);
 ylabel(&#39;Probability density&#39;);
 title(&#39;Simulated Gaussian sensor noise&#39;);
 legend(&#39;Histogram&#39;,&#39;True PDF&#39;); grid on;</code></pre>
-<p>Running the code confirms all three percentages to within 1% of their
-theoretical values. <code>normpdf(x,mu,sigma)</code> evaluates the
-Gaussian PDF; <code>normcdf</code> evaluates the CDF.</p>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -402,18 +233,9 @@ for k in [1, 2, 3]:
     frac = np.mean(np.abs(meas - mu) <= k*sigma)
     print(f"Within {k}σ: {frac:.4f} (theory: {normal_dist.cdf(k) - normal_dist.cdf(-k):.4f})")</code></pre>
 </div>
+<p>Running the code confirms all three percentages to within 1% of their theoretical values. <code>normpdf(x,mu,sigma)</code> evaluates the Gaussian PDF; <code>normcdf</code> evaluates the CDF.</p>
 </div>
-<figure id="fig:app_gauss_hist" data-latex-placement="htbp">
-<img src="figures/fig_app_gauss_hist.png" style="width:72.0%" />
-<figcaption>Histogram of 10 000 simulated sensor measurements overlaid
-with the true Gaussian PDF <span
-class="math inline">\(\mathcal{N}(20,\,0.25)\)</span>. Dashed lines mark
-<span class="math inline">\(\pm 1\sigma\)</span>, <span
-class="math inline">\(\pm 2\sigma\)</span>, and <span
-class="math inline">\(\pm 3\sigma\)</span> bounds.</figcaption>
-</figure>
-<h3 id="exponential-and-other-useful-distributions">Exponential and
-Other Useful Distributions</h3>
+<h3 id="exponential-and-other-useful-distributions">Exponential and Other Useful Distributions</h3>
 <div class="center">
 <table>
 <thead>
@@ -426,68 +248,41 @@ Other Useful Distributions</h3>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Uniform <span
-class="math inline">\(\mathcal{U}(a,b)\)</span></strong></td>
-<td style="text-align: left;"><span
-class="math inline">\(\tfrac{1}{b-a}\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\tfrac{a+b}{2}\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\tfrac{(b-a)^2}{12}\)</span></td>
+<td style="text-align: left;"><strong>Uniform <span class="math inline">\(\mathcal{U}(a,b)\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(\tfrac{1}{b-a}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\tfrac{a+b}{2}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\tfrac{(b-a)^2}{12}\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Gaussian <span
-class="math inline">\(\mathcal{N}(\mu,\sigma^2)\)</span></strong></td>
-<td style="text-align: left;"><span
-class="math inline">\(\tfrac{1}{\sqrt{2\pi\sigma^2}}e^{-(x-\mu)^2/2\sigma^2}\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\mu\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\sigma^2\)</span></td>
+<td style="text-align: left;"><strong>Gaussian <span class="math inline">\(\mathcal{N}(\mu,\sigma^2)\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(\tfrac{1}{\sqrt{2\pi\sigma^2}}e^{-(x-\mu)^2/2\sigma^2}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\mu\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\sigma^2\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Exponential <span
-class="math inline">\(\mathrm{Exp}(\lambda)\)</span></strong></td>
-<td style="text-align: left;"><span class="math inline">\(\lambda
-e^{-\lambda x}\)</span>, <span
-class="math inline">\(x\geq0\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(1/\lambda\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(1/\lambda^2\)</span></td>
+<td style="text-align: left;"><strong>Exponential <span class="math inline">\(\mathrm{Exp}(\lambda)\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(\lambda e^{-\lambda x}\)</span>, <span class="math inline">\(x\geq0\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(1/\lambda\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(1/\lambda^2\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Bernoulli <span
-class="math inline">\(\mathrm{Bern}(p)\)</span></strong></td>
-<td style="text-align: left;"><span
-class="math inline">\(p^x(1-p)^{1-x}\)</span>, <span
-class="math inline">\(x\in\{0,1\}\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(p\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(p(1-p)\)</span></td>
+<td style="text-align: left;"><strong>Bernoulli <span class="math inline">\(\mathrm{Bern}(p)\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(p^x(1-p)^{1-x}\)</span>, <span class="math inline">\(x\in\{0,1\}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(p\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(p(1-p)\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Poisson <span
-class="math inline">\(\mathrm{Poi}(\lambda)\)</span></strong></td>
-<td style="text-align: left;"><span
-class="math inline">\(e^{-\lambda}\lambda^k/k!\)</span>, <span
-class="math inline">\(k=0,1,\ldots\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\lambda\)</span></td>
-<td style="text-align: left;"><span
-class="math inline">\(\lambda\)</span></td>
+<td style="text-align: left;"><strong>Poisson <span class="math inline">\(\mathrm{Poi}(\lambda)\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(e^{-\lambda}\lambda^k/k!\)</span>, <span class="math inline">\(k=0,1,\ldots\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\lambda\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\lambda\)</span></td>
 </tr>
 </tbody>
 </table>
 </div>
-<h2 id="sec:app_moments">Expectation, Variance, and Standard
-Deviation</h2>
+<h2 id="sec:app_moments">Expectation, Variance, and Standard Deviation</h2>
 <div class="defnbox">
-<p><span>Expected Value (Mean)</span> The <em>expected value</em> (or
-<em>mean</em>) of a random variable <span
-class="math inline">\(X\)</span> is its probability-weighted average:
-<span class="math display">\[\mu = \mathbb{E}[X] =
+<p><span>Expected Value (Mean)</span> The <strong>expected value</strong> (or <strong>mean</strong>) of a random variable <span class="math inline">\(X\)</span> is its probability-weighted average: <span class="math display">\[\mu = \mathbb{E}[X] =
   \begin{cases}
     \displaystyle\sum_x x\,p_X(x) &amp; \text{(discrete)}, \\[6pt]
     \displaystyle\int_{-\infty}^{\infty} x\,f_X(x)\,\mathrm{d}x &amp;
@@ -495,31 +290,14 @@ class="math inline">\(X\)</span> is its probability-weighted average:
   \end{cases}\]</span></p>
 </div>
 <div class="defnbox">
-<p><span>Variance and Standard Deviation</span> The <em>variance</em>
-measures the average squared deviation from the mean: <span
-class="math display">\[\sigma^2 = \mathrm{Var}(X) =
-\mathbb{E}\!\left[(X-\mu)^2\right]
-           = \mathbb{E}[X^2] - \mu^2.\]</span> The <em>standard
-deviation</em> <span class="math inline">\(\sigma =
-\sqrt{\mathrm{Var}(X)}\)</span> has the same units as <span
-class="math inline">\(X\)</span> and is the most intuitive measure of
-spread.</p>
+<p><span>Variance and Standard Deviation</span> The <strong>variance</strong> measures the average squared deviation from the mean: <span class="math display">\[\sigma^2 = \mathrm{Var}(X) = \mathbb{E}\!\left[(X-\mu)^2\right]
+           = \mathbb{E}[X^2] - \mu^2.\]</span> The <strong>standard deviation</strong> <span class="math inline">\(\sigma = \sqrt{\mathrm{Var}(X)}\)</span> has the same units as <span class="math inline">\(X\)</span> and is the most intuitive measure of spread.</p>
 </div>
-<p><strong>Linearity of expectation</strong> (always true, regardless of
-dependence): <span class="math display">\[\mathbb{E}[aX + bY + c] =
-a\,\mathbb{E}[X] + b\,\mathbb{E}[Y] + c.\]</span></p>
-<p><strong>Variance under linear transformation:</strong> <span
-class="math display">\[\mathrm{Var}(aX + b) =
-a^2\,\mathrm{Var}(X).\]</span></p>
+<p><strong>Linearity of expectation</strong> (always true, regardless of dependence): <span class="math display">\[\mathbb{E}[aX + bY + c] = a\,\mathbb{E}[X] + b\,\mathbb{E}[Y] + c.\]</span></p>
+<p><strong>Variance under linear transformation:</strong> <span class="math display">\[\mathrm{Var}(aX + b) = a^2\,\mathrm{Var}(X).\]</span></p>
 <div class="examplebox">
-<p><span>Mean and variance of measurement noise</span> The measurement
-noise in a Kalman filter is modelled as <span class="math inline">\(v_k
-\sim \mathcal{N}(0, R)\)</span> with <span class="math inline">\(R =
-0.25\)</span>. What fraction of measurements lie within <span
-class="math inline">\(\pm 1\,^\circ\)</span>C of the true value?</p>
-<p><span class="math inline">\(\sigma = \sqrt{0.25} = 0.5\)</span>. We
-need <span class="math inline">\(P(-1 \leq v_k \leq 1) = P(-2\sigma \leq
-v_k \leq 2\sigma) \approx
+<p><span>Mean and variance of measurement noise</span> The measurement noise in a Kalman filter is modelled as <span class="math inline">\(v_k \sim \mathcal{N}(0, R)\)</span> with <span class="math inline">\(R = 0.25\)</span>. What fraction of measurements lie within <span class="math inline">\(\pm 1\,^\circ\)</span>C of the true value?</p>
+<p><span class="math inline">\(\sigma = \sqrt{0.25} = 0.5\)</span>. We need <span class="math inline">\(P(-1 \leq v_k \leq 1) = P(-2\sigma \leq v_k \leq 2\sigma) \approx
 0.954\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>R     = 0.25;
 sigma = sqrt(R);        % 0.5
@@ -535,7 +313,6 @@ prob2 = 2*normcdf(z) - 1                             % 0.9545
 v = sigma * randn(1, 1e6);
 fprintf(&#39;Sample mean:     %.4f\n&#39;, mean(v))    % ~0
 fprintf(&#39;Sample variance: %.4f\n&#39;, var(v))     % ~0.25</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -561,29 +338,12 @@ print(f"  Sample variance: {np.var(v):.4f}  (true: {R})")</code></pre>
 </div>
 <h2 id="sec:app_covariance">Covariance and Correlation</h2>
 <div class="defnbox">
-<p><span>Covariance</span> The <em>covariance</em> of two random
-variables <span class="math inline">\(X\)</span> and <span
-class="math inline">\(Y\)</span> measures how they vary together: <span
-class="math display">\[\mathrm{Cov}(X,Y) = \mathbb{E}\!\left[(X -
-\mathbb{E}[X])
+<p><span>Covariance</span> The <strong>covariance</strong> of two random variables <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> measures how they vary together: <span class="math display">\[\mathrm{Cov}(X,Y) = \mathbb{E}\!\left[(X - \mathbb{E}[X])
                        (Y - \mathbb{E}[Y])\right]
-                     = \mathbb{E}[XY] -
-\mathbb{E}[X]\,\mathbb{E}[Y].\]</span> Note that <span
-class="math inline">\(\mathrm{Cov}(X,X) = \mathrm{Var}(X)\)</span>. If
-<span class="math inline">\(X\)</span> and <span
-class="math inline">\(Y\)</span> are independent, <span
-class="math inline">\(\mathrm{Cov}(X,Y) = 0\)</span> (but the converse
-is not generally true).</p>
+                     = \mathbb{E}[XY] - \mathbb{E}[X]\,\mathbb{E}[Y].\]</span> Note that <span class="math inline">\(\mathrm{Cov}(X,X) = \mathrm{Var}(X)\)</span>. If <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> are independent, <span class="math inline">\(\mathrm{Cov}(X,Y) = 0\)</span> (but the converse is not generally true).</p>
 </div>
 <div class="defnbox">
-<p><span>Pearson Correlation Coefficient</span> The <em>correlation
-coefficient</em> normalises covariance to the range <span
-class="math inline">\([-1,1]\)</span>: <span
-class="math display">\[\rho_{XY} = \frac{\mathrm{Cov}(X,Y)}{\sigma_X
-\sigma_Y}.\]</span> <span class="math inline">\(\rho = 1\)</span>:
-perfect positive linear relationship; <span class="math inline">\(\rho =
--1\)</span>: perfect negative; <span class="math inline">\(\rho =
-0\)</span>: uncorrelated (no linear relationship).</p>
+<p><span>Pearson Correlation Coefficient</span> The <strong>correlation coefficient</strong> normalises covariance to the range <span class="math inline">\([-1,1]\)</span>: <span class="math display">\[\rho_{XY} = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y}.\]</span> <span class="math inline">\(\rho = 1\)</span>: perfect positive linear relationship; <span class="math inline">\(\rho = -1\)</span>: perfect negative; <span class="math inline">\(\rho = 0\)</span>: uncorrelated (no linear relationship).</p>
 </div>
 <div class="examplebox">
 <p><span>Covariance and correlation in MATLAB</span></p>
@@ -607,7 +367,6 @@ subplot(1,2,1); scatter(x, y1, 5, &#39;.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_1&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho1));
 subplot(1,2,2); scatter(x, y2, 5, &#39;r.&#39;); grid on;
 xlabel(&#39;x&#39;); ylabel(&#39;y_2&#39;); title(sprintf(&#39;\\rho = %.2f&#39;, rho2));</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -643,77 +402,30 @@ print(f"Cov(x,y1):\n{np.cov(x, y1)}")
 print(f"\nCov(x,y2):\n{np.cov(x, y2)}")</code></pre>
 </div>
 </div>
-<figure id="fig:app_covariance_scatter" data-latex-placement="htbp">
-<img src="figures/fig_app_covariance_scatter.png"
-style="width:85.0%" />
-<figcaption>Scatter plots illustrating correlation. Left: <span
-class="math inline">\(y_1 = 2x + \text{noise}\)</span> shows strong
-positive correlation (<span class="math inline">\(\rho \approx
-0.97\)</span>). Right: <span class="math inline">\(y_2\)</span> is
-independent of <span class="math inline">\(x\)</span> (<span
-class="math inline">\(\rho \approx 0\)</span>).</figcaption>
-</figure>
 <h2 id="sec:app_mvgauss">The Multivariate Gaussian Distribution</h2>
-<p>State vectors in control systems are multi-dimensional. The Kalman
-filter propagates a full <em>joint</em> probability distribution over
-all state components simultaneously, which requires the multivariate
-generalisation of the Gaussian.</p>
+<p>State vectors in control systems are multi-dimensional. The Kalman filter propagates a full <em>joint</em> probability distribution over all state components simultaneously, which requires the multivariate generalisation of the Gaussian.</p>
 <div class="defnbox">
-<p><span>Multivariate Gaussian <span
-class="math inline">\(\mathcal{N}(\boldsymbol{\mu},
-\Sigma)\)</span></span> A random vector <span class="math inline">\(x
-\in \mathbb{R}^n\)</span> follows a <em>multivariate Gaussian</em>
-distribution with mean vector <span
-class="math inline">\(\boldsymbol{\mu} \in \mathbb{R}^n\)</span> and
-<em>covariance matrix</em> <span class="math inline">\(\Sigma \in
-\mathbb{R}^{n\times n}\)</span> if its PDF is: <span
-class="math display">\[f(x) = \frac{1}{(2\pi)^{n/2}\sqrt{\det(\Sigma)}}
+<p><span>Multivariate Gaussian <span class="math inline">\(\mathcal{N}(\boldsymbol{\mu}, \Sigma)\)</span></span> A random vector <span class="math inline">\(x \in \mathbb{R}^n\)</span> follows a <strong>multivariate Gaussian</strong> distribution with mean vector <span class="math inline">\(\boldsymbol{\mu} \in \mathbb{R}^n\)</span> and <strong>covariance matrix</strong> <span class="math inline">\(\Sigma \in \mathbb{R}^{n\times n}\)</span> if its PDF is: <span class="math display">\[f(x) = \frac{1}{(2\pi)^{n/2}\sqrt{\det(\Sigma)}}
                   \exp\!\left(-\frac{1}{2}
                   (x-\boldsymbol{\mu})^\top
                   \Sigma^{-1}
-                  (x-\boldsymbol{\mu})\right).\]</span> The covariance
-matrix <span class="math inline">\(\Sigma\)</span> must be <em>symmetric
-positive semi-definite</em>: <span class="math inline">\(\Sigma =
-\Sigma^\top\)</span> and <span class="math inline">\(\Sigma \succeq
-0\)</span>.</p>
+                  (x-\boldsymbol{\mu})\right).\]</span> The covariance matrix <span class="math inline">\(\Sigma\)</span> must be <strong>symmetric positive semi-definite</strong>: <span class="math inline">\(\Sigma = \Sigma^\top\)</span> and <span class="math inline">\(\Sigma \succeq 0\)</span>.</p>
 </div>
-<p>The diagonal entries of <span class="math inline">\(\Sigma\)</span>
-are the individual variances: <span class="math inline">\(\Sigma_{ii} =
-\mathrm{Var}(x_i)\)</span>. The off-diagonal entries are covariances:
-<span class="math inline">\(\Sigma_{ij} = \mathrm{Cov}(x_i,
-x_j)\)</span>.</p>
+<p>The diagonal entries of <span class="math inline">\(\Sigma\)</span> are the individual variances: <span class="math inline">\(\Sigma_{ii} = \mathrm{Var}(x_i)\)</span>. The off-diagonal entries are covariances: <span class="math inline">\(\Sigma_{ij} = \mathrm{Cov}(x_i, x_j)\)</span>.</p>
 <figure id="fig:bivariate_gauss" data-latex-placement="htbp">
-
-<figcaption>Equal-probability contours of two bivariate Gaussian
-distributions. When <span class="math inline">\(\Sigma = I\)</span> the
-contours are circles (independent components). When off-diagonal
-covariance is large the contours tilt into ellipses aligned with the
-correlated direction.</figcaption>
+<img src="figures/tikz_appProb_2.png" style="width:85.0%" />
+<figcaption>Equal-probability contours of two bivariate Gaussian distributions. When <span class="math inline">\(\Sigma = I\)</span> the contours are circles (independent components). When off-diagonal covariance is large the contours tilt into ellipses aligned with the correlated direction.</figcaption>
 </figure>
 <div class="notebox">
-<p><span>Covariance matrices in the Kalman filter</span> The Kalman
-filter maintains the state estimate as <span class="math inline">\(x_k
-\sim \mathcal{N}(\hat{x}_k, P_k)\)</span>, where <span
-class="math inline">\(P_k\)</span> is the <em>error covariance
-matrix</em>. At each step:</p>
+<p><span>Covariance matrices in the Kalman filter</span> The Kalman filter maintains the state estimate as <span class="math inline">\(x_k \sim \mathcal{N}(\hat{x}_k, P_k)\)</span>, where <span class="math inline">\(P_k\)</span> is the <strong>error covariance matrix</strong>. At each step:</p>
 <ul>
-<li><p><strong>Prediction</strong>: <span
-class="math inline">\(P\)</span> grows (uncertainty increases because
-the model is imperfect).</p></li>
-<li><p><strong>Correction</strong>: <span
-class="math inline">\(P\)</span> shrinks (the measurement reduces
-uncertainty).</p></li>
+<li><p><strong>Prediction</strong>: <span class="math inline">\(P\)</span> grows (uncertainty increases because the model is imperfect).</p></li>
+<li><p><strong>Correction</strong>: <span class="math inline">\(P\)</span> shrinks (the measurement reduces uncertainty).</p></li>
 </ul>
-<p>The Kalman gain <span class="math inline">\(K\)</span> is precisely
-the factor that balances how much to trust the model prediction versus
-the new measurement.</p>
+<p>The Kalman gain <span class="math inline">\(K\)</span> is precisely the factor that balances how much to trust the model prediction versus the new measurement.</p>
 </div>
 <div class="examplebox">
-<p><span>Multivariate Gaussian samples in MATLAB</span> Generate samples
-from a bivariate Gaussian with <span
-class="math inline">\(\boldsymbol{\mu} = [1,\;-2]^\top\)</span> and
-<span class="math inline">\(\Sigma = \begin{bmatrix} 2 &amp; 0.8 \\ 0.8
-&amp; 1 \end{bmatrix}\)</span>.</p>
+<p><span>Multivariate Gaussian samples in MATLAB</span> Generate samples from a bivariate Gaussian with <span class="math inline">\(\boldsymbol{\mu} = [1,\;-2]^\top\)</span> and <span class="math inline">\(\Sigma = \begin{bmatrix} 2 &amp; 0.8 \\ 0.8 &amp; 1 \end{bmatrix}\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>mu    = [1; -2];
 Sigma = [2, 0.8; 0.8, 1];
 
@@ -738,7 +450,6 @@ legend(&#39;Samples&#39;,&#39;Mean&#39;); grid on; axis equal;
 % Verify sample statistics
 fprintf(&#39;Sample mean:  [%.3f, %.3f]\n&#39;, mean(samples));
 disp(&#39;Sample covariance:&#39;); disp(cov(samples))</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -779,147 +490,22 @@ print(f"True mean:    {mu}")
 print(f"\nSample covariance:\n{np.cov(samples.T)}")</code></pre>
 </div>
 </div>
-<figure id="fig:app_mvnrnd_samples" data-latex-placement="htbp">
-<img src="figures/fig_app_mvnrnd_samples.png" style="width:65.0%" />
-<figcaption>2 000 samples from a bivariate Gaussian with <span
-class="math inline">\(\boldsymbol{\mu} = [1,\,-2]^\top\)</span> and
-correlated covariance. Red ellipses show the <span
-class="math inline">\(1\sigma\)</span> and <span
-class="math inline">\(2\sigma\)</span> contours, which are tilted due to
-the positive off-diagonal covariance.</figcaption>
-</figure>
-<h2 id="sec:app_cond_gauss">Conditional Multivariate Gaussian</h2>
-<p>A second closure property of Gaussians—equally important as linear
-transformations—is that <em>conditioning</em> a joint Gaussian on some
-of its components produces another Gaussian. This is the mathematical
-foundation of both the Kalman filter update step and Gaussian process
-regression (Chapter 11).</p>
+<h2 id="sec:app_linear_gauss">Linear Transformations of Gaussian Variables</h2>
+<p>A crucial property that makes Gaussian distributions so convenient for control is that they are <em>closed under linear transformations</em>: a linear function of a Gaussian is still Gaussian.</p>
 <div class="defnbox">
-<p><span>Conditional Gaussian Distribution</span> Suppose <span
-class="math inline">\(\begin{bmatrix} x_a \\ x_b \end{bmatrix} \sim
-\mathcal{N}\!\left(\begin{bmatrix} \mu_a \\ \mu_b \end{bmatrix},\;
-\begin{bmatrix} \Sigma_{aa} &amp; \Sigma_{ab} \\ \Sigma_{ba} &amp;
-\Sigma_{bb} \end{bmatrix}\right)\)</span>. Then the conditional
-distribution of <span class="math inline">\(x_a\)</span> given <span
-class="math inline">\(x_b = \bar{x}_b\)</span> is: <span
-class="math display">\[x_a \mid x_b = \bar{x}_b \;\sim\;
-\mathcal{N}\!\bigl(\mu_{a|b},\; \Sigma_{a|b}\bigr)\]</span> where: <span
-class="math display">\[\begin{align*}
-    \mu_{a|b} &amp;= \mu_a + \Sigma_{ab}\,\Sigma_{bb}^{-1}\,(\bar{x}_b -
-\mu_b) \\
-    \Sigma_{a|b} &amp;= \Sigma_{aa} -
-\Sigma_{ab}\,\Sigma_{bb}^{-1}\,\Sigma_{ba}
-\end{align*}\]</span></p>
-</div>
-<p>Two observations are worth noting:</p>
-<ul>
-<li><p>The conditional mean <span
-class="math inline">\(\mu_{a|b}\)</span> is the prior mean <span
-class="math inline">\(\mu_a\)</span> plus a correction proportional to
-how far the observed value <span
-class="math inline">\(\bar{x}_b\)</span> deviates from its prior mean
-<span class="math inline">\(\mu_b\)</span>. The matrix <span
-class="math inline">\(\Sigma_{ab}\,\Sigma_{bb}^{-1}\)</span> determines
-how much <span class="math inline">\(x_a\)</span> adjusts in response —
-this is exactly the structure of the Kalman gain.</p></li>
-<li><p>The conditional covariance <span
-class="math inline">\(\Sigma_{a|b}\)</span> does not depend on the
-observed value <span class="math inline">\(\bar{x}_b\)</span>; it
-depends only on the prior covariance structure. Observing <span
-class="math inline">\(x_b\)</span> always reduces variance by the same
-amount, regardless of what value is observed.</p></li>
-</ul>
-<div class="examplebox">
-<p><span>Conditional Gaussian: numerical example</span> Let <span
-class="math inline">\(\begin{bmatrix} x_1 \\ x_2 \end{bmatrix} \sim
-\mathcal{N}\!\left(\begin{bmatrix} 0 \\ 0 \end{bmatrix},\;
-\begin{bmatrix} 1 &amp; 0.8 \\ 0.8 &amp; 1
-\end{bmatrix}\right)\)</span>. Compute <span class="math inline">\(x_1
-\mid x_2 = 1.5\)</span>.</p>
-<p>Identify <span class="math inline">\(\mu_a = 0\)</span>, <span
-class="math inline">\(\mu_b = 0\)</span>, <span
-class="math inline">\(\Sigma_{aa} = 1\)</span>, <span
-class="math inline">\(\Sigma_{ab} = 0.8\)</span>, <span
-class="math inline">\(\Sigma_{bb} = 1\)</span>. Then: <span
-class="math display">\[\begin{align*}
-    \mu_{1|2} &amp;= 0 + 0.8 \cdot 1^{-1} \cdot (1.5 - 0) = 1.2 \\
-    \sigma^2_{1|2} &amp;= 1 - 0.8 \cdot 1^{-1} \cdot 0.8 = 0.36
-\end{align*}\]</span> So <span class="math inline">\(x_1 \mid x_2 = 1.5
-\;\sim\; \mathcal{N}(1.2,\; 0.36)\)</span>. Knowing <span
-class="math inline">\(x_2 = 1.5\)</span> shifts our prediction of <span
-class="math inline">\(x_1\)</span> from 0 to 1.2, and reduces the
-variance from 1 to 0.36.</p>
-<p>This is exactly how Gaussian process prediction works (Chapter 11,
-Section 11.2.1): the “training outputs” play the role of <span
-class="math inline">\(x_b\)</span>, and the “test output” plays the role
-of <span class="math inline">\(x_a\)</span>. The kernel matrix provides
-the covariance structure.</p>
-</div>
-<h2 id="sec:app_chance_constraints">Chance Constraints and the Inverse
-CDF</h2>
-<p>In stochastic MPC and GP-MPC (Chapter 11), hard state constraints
-<span class="math inline">\(x_k \le x_{\max}\)</span> cannot be
-guaranteed when the state is uncertain. Instead, we require the
-constraint to hold with high probability: <span
-class="math display">\[\Pr(x_k \le x_{\max}) \ge 1 - \delta\]</span>
-where <span class="math inline">\(\delta \in (0, 1)\)</span> is a small
-violation probability (e.g. <span class="math inline">\(\delta =
-0.05\)</span> for 95% confidence).</p>
-<p>If <span class="math inline">\(x_k \sim \mathcal{N}(\mu_k,
-\sigma_k^2)\)</span>, this chance constraint can be converted to a
-<em>deterministic</em> constraint on the mean: <span
-class="math display">\[\mu_k + \Phi^{-1}(1-\delta)\,\sigma_k \le
-x_{\max}\]</span> where <span class="math inline">\(\Phi^{-1}\)</span>
-is the inverse CDF (quantile function) of the standard normal
-distribution. Common values: <span class="math inline">\(\Phi^{-1}(0.95)
-\approx 1.645\)</span>, <span class="math inline">\(\Phi^{-1}(0.975)
-\approx 1.960\)</span>, <span class="math inline">\(\Phi^{-1}(0.99)
-\approx 2.326\)</span>.</p>
-<p>The term <span
-class="math inline">\(\Phi^{-1}(1-\delta)\,\sigma_k\)</span> is the
-<em>constraint tightening</em>: the safety margin grows with uncertainty
-<span class="math inline">\(\sigma_k\)</span> and with the required
-confidence level <span class="math inline">\(1-\delta\)</span>. In
-MATLAB: <code>kappa = norminv(1 - delta)</code>.</p>
-<h2 id="sec:app_linear_gauss">Linear Transformations of Gaussian
-Variables</h2>
-<p>A crucial property that makes Gaussian distributions so convenient
-for control is that they are <em>closed under linear
-transformations</em>: a linear function of a Gaussian is still
-Gaussian.</p>
-<div class="defnbox">
-<p><span>Linear Transformation of a Gaussian Vector</span> If <span
-class="math inline">\(x \sim \mathcal{N}(\boldsymbol{\mu},
-\Sigma)\)</span> and <span class="math inline">\(y = Ax + b\)</span>,
-then: <span class="math display">\[y \sim \mathcal{N}\!\left(
+<p><span>Linear Transformation of a Gaussian Vector</span> If <span class="math inline">\(x \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)\)</span> and <span class="math inline">\(y = Ax + b\)</span>, then: <span class="math display">\[y \sim \mathcal{N}\!\left(
     A\boldsymbol{\mu} + b,\;
     A\Sigma A^\top
   \right).\]</span></p>
 </div>
-<p>This is exactly the <em>predict step</em> of the Kalman filter. If
-the state <span class="math inline">\(x_k \sim \mathcal{N}(\hat{x}_k,
-P_k)\)</span> and the system evolves as <span
-class="math inline">\(x_{k+1} = Ax_k +
-w_k\)</span> with process noise <span class="math inline">\(w_k \sim
-\mathcal{N}(0, Q)\)</span>, then the predicted state distribution is:
-<span class="math display">\[x_{k+1} \sim \mathcal{N}\!\left(
+<p>This is exactly the <strong>predict step</strong> of the Kalman filter. If the state <span class="math inline">\(x_k \sim \mathcal{N}(\hat{x}_k, P_k)\)</span> and the system evolves as <span class="math inline">\(x_{k+1} = Ax_k +
+w_k\)</span> with process noise <span class="math inline">\(w_k \sim \mathcal{N}(0, Q)\)</span>, then the predicted state distribution is: <span class="math display">\[x_{k+1} \sim \mathcal{N}\!\left(
     A\hat{x}_k,\;
     A P_k A^\top + Q
-  \right).\]</span> No approximation is involved — the result is exact
-because all operations are linear and all distributions are
-Gaussian.</p>
+  \right).\]</span> No approximation is involved — the result is exact because all operations are linear and all distributions are Gaussian.</p>
 <div class="examplebox">
-<p><span>Propagating uncertainty through a linear system</span> A
-one-dimensional system has <span class="math inline">\(x_{k+1} =
-0.9\,x_k + w_k\)</span> with <span class="math inline">\(w_k \sim
-\mathcal{N}(0, 0.01)\)</span>. The initial state is <span
-class="math inline">\(x_0 \sim \mathcal{N}(5, 1)\)</span>. Propagate the
-mean and variance for 10 steps.</p>
-<p>At each step: <span class="math inline">\(\mu_{k+1} =
-0.9\,\mu_k\)</span> and <span class="math inline">\(\sigma^2_{k+1} =
-0.81\,\sigma^2_k + 0.01\)</span>. The variance decays towards the
-steady-state value <span class="math inline">\(\sigma^2_\infty =
-0.01/(1-0.81) \approx 0.053\)</span>.</p>
+<p><span>Propagating uncertainty through a linear system</span> A one-dimensional system has <span class="math inline">\(x_{k+1} = 0.9\,x_k + w_k\)</span> with <span class="math inline">\(w_k \sim \mathcal{N}(0, 0.01)\)</span>. The initial state is <span class="math inline">\(x_0 \sim \mathcal{N}(5, 1)\)</span>. Propagate the mean and variance for 10 steps.</p>
+<p>At each step: <span class="math inline">\(\mu_{k+1} = 0.9\,\mu_k\)</span> and <span class="math inline">\(\sigma^2_{k+1} = 0.81\,\sigma^2_k + 0.01\)</span>. The variance decays towards the steady-state value <span class="math inline">\(\sigma^2_\infty = 0.01/(1-0.81) \approx 0.053\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>a     = 0.9;
 Q     = 0.01;    % process noise variance
 mu    = 5;
@@ -946,7 +532,6 @@ plot(0:N, P_log, &#39;r-o&#39;, &#39;LineWidth&#39;, 1.5);
 yline(Q/(1-a^2), &#39;k--&#39;, &#39;Steady state&#39;, &#39;LineWidth&#39;, 1);
 ylabel(&#39;\sigma^2_k&#39;); xlabel(&#39;Step k&#39;);
 title(&#39;Propagated variance&#39;); grid on;</code></pre>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -990,39 +575,15 @@ plt.close(fig)
 print(f"Steady-state variance: {P_ss:.6f}")</code></pre>
 </div>
 </div>
-<figure id="fig:app_uncertainty_prop" data-latex-placement="htbp">
-<img src="figures/fig_app_uncertainty_prop.png" style="width:75.0%" />
-<figcaption>Propagation of a Gaussian state distribution through <span
-class="math inline">\(x_{k+1} = 0.9\,x_k + w_k\)</span>. Top: the mean
-decays towards zero with a <span class="math inline">\(\pm
-2\sigma\)</span> confidence band. Bottom: the variance converges to the
-steady-state value <span class="math inline">\(\sigma^2_\infty = Q/(1 -
-a^2) \approx 0.053\)</span>.</figcaption>
-</figure>
 <h2 id="sec:app_stochastic">Stochastic Processes</h2>
-<p>A <em>stochastic process</em> is a sequence of random variables
-indexed by time: <span
-class="math inline">\(\{X_k\}_{k=0}^{\infty}\)</span> (discrete time) or
-<span class="math inline">\(\{X(t)\}_{t\geq0}\)</span> (continuous
-time). In control, the key stochastic processes are:</p>
+<p>A <strong>stochastic process</strong> is a sequence of random variables indexed by time: <span class="math inline">\(\{X_k\}_{k=0}^{\infty}\)</span> (discrete time) or <span class="math inline">\(\{X(t)\}_{t\geq0}\)</span> (continuous time). In control, the key stochastic processes are:</p>
 <ul>
-<li><p><strong>White noise</strong>: uncorrelated sequence where each
-sample is drawn independently from the same distribution. Used to model
-process noise <span class="math inline">\(w_k\)</span> and measurement
-noise <span class="math inline">\(v_k\)</span> in state-space
-models.</p></li>
-<li><p><strong>Random walk</strong>: <span class="math inline">\(X_{k+1}
-= X_k + w_k\)</span> where <span class="math inline">\(w_k\)</span> is
-white noise. The variance grows without bound.</p></li>
-<li><p><strong>Markov process</strong>: the future depends only on the
-present state, not the past. State-space models are (first-order) Markov
-by construction: <span class="math inline">\(x_{k+1} = f(x_k, u_k,
-w_k)\)</span>.</p></li>
+<li><p><strong>White noise</strong>: uncorrelated sequence where each sample is drawn independently from the same distribution. Used to model process noise <span class="math inline">\(w_k\)</span> and measurement noise <span class="math inline">\(v_k\)</span> in state-space models.</p></li>
+<li><p><strong>Random walk</strong>: <span class="math inline">\(X_{k+1} = X_k + w_k\)</span> where <span class="math inline">\(w_k\)</span> is white noise. The variance grows without bound.</p></li>
+<li><p><strong>Markov process</strong>: the future depends only on the present state, not the past. State-space models are (first-order) Markov by construction: <span class="math inline">\(x_{k+1} = f(x_k, u_k, w_k)\)</span>.</p></li>
 </ul>
 <div class="defnbox">
-<p><span>White Noise Assumptions in State-Space Control</span> The
-standard Kalman filter assumptions are: <span
-class="math display">\[\begin{align*}
+<p><span>White Noise Assumptions in State-Space Control</span> The standard Kalman filter assumptions are: <span class="math display">\[\begin{align*}
   w_k &amp;\sim \mathcal{N}(0, Q), \quad
   \text{(process noise)} \\
   v_k &amp;\sim \mathcal{N}(0, R), \quad
@@ -1031,12 +592,7 @@ class="math display">\[\begin{align*}
   \text{(uncorrelated across time)} \\
   \mathbb{E}[v_k v_j^\top] &amp;= R\,\delta_{kj}, \quad
   \mathbb{E}[w_k v_j^\top] &amp;= 0,
-\end{align*}\]</span> where <span class="math inline">\(\delta_{kj} =
-1\)</span> if <span class="math inline">\(k=j\)</span>, else <span
-class="math inline">\(0\)</span> (Kronecker delta). Matrices <span
-class="math inline">\(Q \succeq 0\)</span> and <span
-class="math inline">\(R \succ 0\)</span> are the noise covariance
-matrices that appear explicitly in the Kalman filter equations.</p>
+\end{align*}\]</span> where <span class="math inline">\(\delta_{kj} = 1\)</span> if <span class="math inline">\(k=j\)</span>, else <span class="math inline">\(0\)</span> (Kronecker delta). Matrices <span class="math inline">\(Q \succeq 0\)</span> and <span class="math inline">\(R \succ 0\)</span> are the noise covariance matrices that appear explicitly in the Kalman filter equations.</p>
 </div>
 <div class="examplebox">
 <p><span>Simulating white noise and a random walk</span></p>
@@ -1052,28 +608,14 @@ plot(w); xlabel(&#39;k&#39;); ylabel(&#39;w_k&#39;);
 title(&#39;White noise sequence&#39;); grid on;
 
 subplot(3,1,2);
-maxlag = 20;
-acf = zeros(1, maxlag+1);
-w_c = w - mean(w);
-c0 = sum(w_c.^2);
-for lag = 0:maxlag
-    acf(lag+1) = sum(w_c(1:end-lag).*w_c(lag+1:end))/c0;
-end
-stem(0:maxlag, acf, &#39;filled&#39;, &#39;LineWidth&#39;, 1.5);
-xlabel(&#39;Lag&#39;); ylabel(&#39;ACF&#39;);
+autocorr(w, 20);   % should spike only at lag 0
 title(&#39;Autocorrelation of white noise&#39;);
-yline(1.96/sqrt(N), &#39;r--&#39;); yline(-1.96/sqrt(N), &#39;r--&#39;);
 
 % Random walk: x_{k+1} = x_k + w_k
 x = cumsum(w);
 subplot(3,1,3);
 plot(x, &#39;r&#39;); xlabel(&#39;k&#39;); ylabel(&#39;x_k&#39;);
 title(&#39;Random walk (cumulative sum of white noise)&#39;); grid on;</code></pre>
-<p>The autocorrelation plot confirms that white noise has zero
-correlation at all non-zero lags (within statistical fluctuation). The
-random walk drifts unpredictably because its variance grows as <span
-class="math inline">\(k \cdot Q\)</span>.</p>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -1122,46 +664,21 @@ plt.close(fig)
 
 print(f"White noise — mean: {np.mean(w):.4f}, var: {np.var(w):.4f} (expect {Q})")</code></pre>
 </div>
+<p>The autocorrelation plot confirms that white noise has zero correlation at all non-zero lags (within statistical fluctuation). The random walk drifts unpredictably because its variance grows as <span class="math inline">\(k \cdot Q\)</span>.</p>
 </div>
-<figure id="fig:app_white_noise_rw" data-latex-placement="htbp">
-<img src="figures/fig_app_white_noise_rw.png" style="width:82.0%" />
-<figcaption>Top: a white noise sequence <span class="math inline">\(w_k
-\sim \mathcal{N}(0, 0.5)\)</span>. Middle: its autocorrelation function,
-confirming zero correlation at all non-zero lags. Bottom: the random
-walk <span class="math inline">\(x_k = \sum_{i=1}^{k} w_i\)</span> with
-the <span class="math inline">\(\pm 2\sigma\)</span> envelope <span
-class="math inline">\(\pm 2\sqrt{kQ}\)</span> showing unbounded variance
-growth.</figcaption>
-</figure>
-<h2 id="sec:app_lln_clt">The Law of Large Numbers and the Central Limit
-Theorem</h2>
+<h2 id="sec:app_lln_clt">The Law of Large Numbers and the Central Limit Theorem</h2>
 <p>These two theorems are the bedrock of statistical intuition.</p>
 <div class="defnbox">
-<p><span>Law of Large Numbers (LLN)</span> Let <span
-class="math inline">\(X_1, X_2, \ldots, X_N\)</span> be independent,
-identically distributed (i.i.d.) random variables with mean <span
-class="math inline">\(\mu\)</span>. The sample mean converges to the
-true mean as the sample size grows: <span
-class="math display">\[\bar{X}_N = \frac{1}{N}\sum_{i=1}^N X_i
-\;\xrightarrow{\;N\to\infty\;}\; \mu.\]</span></p>
+<p><span>Law of Large Numbers (LLN)</span> Let <span class="math inline">\(X_1, X_2, \ldots, X_N\)</span> be independent, identically distributed (i.i.d.) random variables with mean <span class="math inline">\(\mu\)</span>. The sample mean converges to the true mean as the sample size grows: <span class="math display">\[\bar{X}_N = \frac{1}{N}\sum_{i=1}^N X_i \;\xrightarrow{\;N\to\infty\;}\; \mu.\]</span></p>
 </div>
 <div class="defnbox">
-<p><span>Central Limit Theorem (CLT)</span> Under the same conditions
-(i.i.d., finite variance <span class="math inline">\(\sigma^2\)</span>),
-the <em>standardised</em> sample mean converges in distribution to a
-standard Gaussian: <span class="math display">\[\frac{\bar{X}_N -
-\mu}{\sigma/\sqrt{N}}
+<p><span>Central Limit Theorem (CLT)</span> Under the same conditions (i.i.d., finite variance <span class="math inline">\(\sigma^2\)</span>), the <em>standardised</em> sample mean converges in distribution to a standard Gaussian: <span class="math display">\[\frac{\bar{X}_N - \mu}{\sigma/\sqrt{N}}
   \;\xrightarrow{\;d\;}\;
   \mathcal{N}(0,1)
-  \quad \text{as } N \to \infty.\]</span> This is why Gaussian noise is
-such a universal model: it emerges naturally as the aggregate effect of
-many small, independent perturbations.</p>
+  \quad \text{as } N \to \infty.\]</span> This is why Gaussian noise is such a universal model: it emerges naturally as the aggregate effect of many small, independent perturbations.</p>
 </div>
 <div class="examplebox">
-<p><span>Demonstrating the CLT in MATLAB</span> Show that the sample
-mean of <span class="math inline">\(N\)</span> uniform random variables
-approaches a Gaussian as <span class="math inline">\(N\)</span>
-increases.</p>
+<p><span>Demonstrating the CLT in MATLAB</span> Show that the sample mean of <span class="math inline">\(N\)</span> uniform random variables approaches a Gaussian as <span class="math inline">\(N\)</span> increases.</p>
 <pre class="matlab" data-language="Matlab"><code>n_trials = 5000;
 figure;
 
@@ -1184,11 +701,6 @@ for idx = 1:4
     xlim([-4 4]);
 end
 sgtitle(&#39;Central Limit Theorem: convergence to Gaussian&#39;);</code></pre>
-<p>Even for <span class="math inline">\(N=10\)</span> the histogram
-already resembles a bell curve. By <span
-class="math inline">\(N=1000\)</span> the agreement with the standard
-Gaussian (red curve) is almost perfect.</p>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -1221,44 +733,20 @@ fig.suptitle('Central Limit Theorem: convergence to Gaussian', color='#D4E0ED', 
 plt.tight_layout()
 plt.close(fig)</code></pre>
 </div>
+<p>Even for <span class="math inline">\(N=10\)</span> the histogram already resembles a bell curve. By <span class="math inline">\(N=1000\)</span> the agreement with the standard Gaussian (red curve) is almost perfect.</p>
 </div>
-<figure id="fig:app_clt_demo" data-latex-placement="htbp">
-<img src="figures/fig_app_clt_demo.png" style="width:82.0%" />
-<figcaption>Central Limit Theorem in action. The standardised sample
-mean of <span class="math inline">\(N\)</span> uniform random variables
-(blue histogram) converges to the standard Gaussian (red curve) as <span
-class="math inline">\(N\)</span> increases.</figcaption>
-</figure>
 <h2 id="sec:app_montecarlo">Monte Carlo Methods</h2>
-<p>Monte Carlo methods approximate expectations and probabilities by
-drawing many random samples. They are used in stochastic MPC to evaluate
-chance constraints (e.g. “what fraction of scenarios violate a
-temperature bound?”) and in RL to estimate policy value functions.</p>
+<p>Monte Carlo methods approximate expectations and probabilities by drawing many random samples. They are used in stochastic MPC to evaluate chance constraints (e.g. “what fraction of scenarios violate a temperature bound?”) and in RL to estimate policy value functions.</p>
 <div class="defnbox">
-<p><span>Monte Carlo Estimation</span> To estimate <span
-class="math inline">\(\mathbb{E}[g(X)]\)</span> for some function <span
-class="math inline">\(g\)</span> and random variable <span
-class="math inline">\(X\)</span>:</p>
+<p><span>Monte Carlo Estimation</span> To estimate <span class="math inline">\(\mathbb{E}[g(X)]\)</span> for some function <span class="math inline">\(g\)</span> and random variable <span class="math inline">\(X\)</span>:</p>
 <ol>
-<li><p>Draw <span class="math inline">\(N\)</span> i.i.d. samples <span
-class="math inline">\(x^{(1)}, x^{(2)}, \ldots, x^{(N)}\)</span> from
-the distribution of <span class="math inline">\(X\)</span>.</p></li>
-<li><p>Compute the sample average: <span
-class="math inline">\(\hat{\mathbb{E}}[g(X)] = \dfrac{1}{N}\sum_{i=1}^N
-g(x^{(i)})\)</span>.</p></li>
+<li><p>Draw <span class="math inline">\(N\)</span> i.i.d. samples <span class="math inline">\(x^{(1)}, x^{(2)}, \ldots, x^{(N)}\)</span> from the distribution of <span class="math inline">\(X\)</span>.</p></li>
+<li><p>Compute the sample average: <span class="math inline">\(\hat{\mathbb{E}}[g(X)] = \dfrac{1}{N}\sum_{i=1}^N g(x^{(i)})\)</span>.</p></li>
 </ol>
-<p>By the LLN this estimate converges to the true expectation. The
-standard error of the estimate is <span
-class="math inline">\(\sigma_{g(X)}/\sqrt{N}\)</span>, so accuracy
-improves as <span class="math inline">\(1/\sqrt{N}\)</span>.</p>
+<p>By the LLN this estimate converges to the true expectation. The standard error of the estimate is <span class="math inline">\(\sigma_{g(X)}/\sqrt{N}\)</span>, so accuracy improves as <span class="math inline">\(1/\sqrt{N}\)</span>.</p>
 </div>
 <div class="examplebox">
-<p><span>Monte Carlo chance constraint evaluation</span> In a stochastic
-MPC application, room temperature at the next step is <span
-class="math inline">\(x_1 \sim \mathcal{N}(21.5,\; 0.04)\)</span> (mean
-21.5<span class="math inline">\(^\circ\)</span>C, variance 0.04).
-Estimate the probability that the comfort constraint <span
-class="math inline">\(x_1 \geq 21\,^\circ\)</span>C is satisfied.</p>
+<p><span>Monte Carlo chance constraint evaluation</span> In a stochastic MPC application, room temperature at the next step is <span class="math inline">\(x_1 \sim \mathcal{N}(21.5,\; 0.04)\)</span> (mean 21.5<span class="math inline">\(^\circ\)</span>C, variance 0.04). Estimate the probability that the comfort constraint <span class="math inline">\(x_1 \geq 21\,^\circ\)</span>C is satisfied.</p>
 <pre class="matlab" data-language="Matlab"><code>mu_x  = 21.5;
 var_x = 0.04;
 N     = 100000;
@@ -1273,11 +761,6 @@ p_exact   = 1 - normcdf(21, mu_x, sqrt(var_x))  % 0.9938
 
 fprintf(&#39;Monte Carlo: %.4f\n&#39;, p_mc);
 fprintf(&#39;Exact:       %.4f\n&#39;, p_exact);</code></pre>
-<p>Both methods give <span class="math inline">\(P(x_1 \geq 21) \approx
-0.9938\)</span>, i.e. the comfort constraint is satisfied 99.4% of the
-time. In stochastic MPC this would be expressed as the chance constraint
-<span class="math inline">\(P(x_1 \geq 21) \geq 0.95\)</span>.</p>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -1315,58 +798,31 @@ print(f"P(x >= {constraint}):")
 print(f"  Monte Carlo (N={N}): {p_mc:.4f}")
 print(f"  Exact (CDF):         {p_exact:.4f}")</code></pre>
 </div>
+<p>Both methods give <span class="math inline">\(P(x_1 \geq 21) \approx 0.9938\)</span>, i.e. the comfort constraint is satisfied 99.4% of the time. In stochastic MPC this would be expressed as the chance constraint <span class="math inline">\(P(x_1 \geq 21) \geq 0.95\)</span>.</p>
 </div>
-<figure id="fig:app_monte_carlo" data-latex-placement="htbp">
-<img src="figures/fig_app_monte_carlo.png" style="width:72.0%" />
-<figcaption>Monte Carlo evaluation of the chance constraint <span
-class="math inline">\(P(x \geq 21) \geq 0.95\)</span>. The shaded red
-region to the left of <span class="math inline">\(x_{\min} = 21\)</span>
-is the constraint violation area, which contains only <span
-class="math inline">\(\approx 0.6\%\)</span> of the probability
-mass.</figcaption>
-</figure>
-<h2 id="sec:app_kalman_prob">Connecting Probability to the Kalman
-Filter</h2>
-<p>With the tools of this appendix, the Kalman filter equations can now
-be understood probabilistically rather than just algorithmically.</p>
-<p>The <em>state-space model</em> is: <span
-class="math display">\[\begin{align*}
+<h2 id="sec:app_kalman_prob">Connecting Probability to the Kalman Filter</h2>
+<p>With the tools of this appendix, the Kalman filter equations can now be understood probabilistically rather than just algorithmically.</p>
+<p>The <strong>state-space model</strong> is: <span class="math display">\[\begin{align}
   {x}_{k+1} &amp;= A{x}_k + B{u}_k + {w}_k,
-  \qquad {w}_k \sim \mathcal{N}({0}, Q), \\
+  \qquad {w}_k \sim \mathcal{N}({0}, Q), \label{eq:ss1}\\
   {y}_k     &amp;= C{x}_k + {v}_k,
-  \qquad {v}_k \sim \mathcal{N}({0}, R).
-\end{align*}\]</span></p>
-<p>The Kalman filter maintains a Gaussian belief over the state: <span
-class="math display">\[p({x}_k \mid {y}_{0:k}) =
-\mathcal{N}(\hat{{x}}_k, P_k).\]</span></p>
-<p><strong>Predict step</strong> (propagate using the system model):
-<span class="math display">\[\begin{align}
+  \qquad {v}_k \sim \mathcal{N}({0}, R). \label{eq:ss2}
+\end{align}\]</span></p>
+<p>The Kalman filter maintains a Gaussian belief over the state: <span class="math display">\[p({x}_k \mid {y}_{0:k}) = \mathcal{N}(\hat{{x}}_k, P_k).\]</span></p>
+<p><strong>Predict step</strong> (propagate using the system model): <span class="math display">\[\begin{align}
   \hat{{x}}_{k|k-1} &amp;= A\hat{{x}}_{k-1} + B{u}_{k-1}, \\
   P_{k|k-1}                 &amp;= A P_{k-1} A^\top + Q.
-\end{align}\]</span> This is the linear transformation rule from
-Section <a href="#sec:app_linear_gauss" data-reference-type="ref"
-data-reference="sec:app_linear_gauss">1.12</a>.</p>
-<p><strong>Correct step</strong> (update using the new measurement):
-<span class="math display">\[\begin{align}
+\end{align}\]</span> This is the linear transformation rule from Section <a href="#sec:app_linear_gauss" data-reference-type="ref" data-reference="sec:app_linear_gauss">1.10</a>.</p>
+<p><strong>Correct step</strong> (update using the new measurement): <span class="math display">\[\begin{align}
   K_k               &amp;= P_{k|k-1} C^\top
                         (C P_{k|k-1} C^\top + R)^{-1},
                         \quad\text{(Kalman gain)} \\
   \hat{{x}}_k &amp;= \hat{{x}}_{k|k-1}
                         + K_k({y}_k - C\hat{{x}}_{k|k-1}), \\
   P_k               &amp;= (I - K_k C)\,P_{k|k-1}.
-\end{align}\]</span> The Kalman gain <span
-class="math inline">\(K_k\)</span> is the optimal Bayesian weighting
-between the model prediction and the measurement. When <span
-class="math inline">\(R\)</span> is large (noisy sensor), <span
-class="math inline">\(K_k \to 0\)</span> and the filter trusts the
-model. When <span class="math inline">\(Q\)</span> is large (uncertain
-model), <span class="math inline">\(K_k\)</span> increases and the
-filter trusts the measurement.</p>
+\end{align}\]</span> The Kalman gain <span class="math inline">\(K_k\)</span> is the optimal Bayesian weighting between the model prediction and the measurement. When <span class="math inline">\(R\)</span> is large (noisy sensor), <span class="math inline">\(K_k \to 0\)</span> and the filter trusts the model. When <span class="math inline">\(Q\)</span> is large (uncertain model), <span class="math inline">\(K_k\)</span> increases and the filter trusts the measurement.</p>
 <div class="examplebox">
-<p><span>One-dimensional Kalman filter in MATLAB</span> Estimate the
-position of a slowly drifting signal with process noise <span
-class="math inline">\(Q = 0.1\)</span> and measurement noise <span
-class="math inline">\(R = 2\)</span>.</p>
+<p><span>One-dimensional Kalman filter in MATLAB</span> Estimate the position of a slowly drifting signal with process noise <span class="math inline">\(Q = 0.1\)</span> and measurement noise <span class="math inline">\(R = 2\)</span>.</p>
 <pre class="matlab" data-language="Matlab"><code>A = 1;  C = 1;  Q = 0.1;  R = 2;
 N = 60;  rng(5);
 
@@ -1397,10 +853,6 @@ plot(x_hat,  &#39;r-&#39;,  &#39;LineWidth&#39;, 2);
 legend(&#39;True state&#39;,&#39;Measurements&#39;,&#39;Kalman estimate&#39;);
 xlabel(&#39;Time step k&#39;); ylabel(&#39;Position&#39;);
 title(&#39;1-D Kalman Filter&#39;); grid on;</code></pre>
-<p>The Kalman estimate (red) tracks the true state (black) much more
-closely than the raw noisy measurements (blue dots), demonstrating the
-filter’s noise-rejection capability.</p>
-
 <div class="pyodide-runner">
 <script type="pyodide-setup">
 import numpy as np
@@ -1457,54 +909,24 @@ err = x_true - x_hat
 print(f"RMSE = {np.sqrt(np.mean(err**2)):.4f}")
 print(f"Final gain K = {K:.4f},  Final P = {P:.4f}")</code></pre>
 </div>
+<p>The Kalman estimate (red) tracks the true state (black) much more closely than the raw noisy measurements (blue dots), demonstrating the filter’s noise-rejection capability.</p>
 </div>
-<figure id="fig:app_kalman_1d" data-latex-placement="htbp">
-<img src="figures/fig_app_kalman_1d.png" style="width:82.0%" />
-<figcaption>1-D Kalman filter tracking a random walk. Top: the Kalman
-estimate (red) tracks the true state (black) far more closely than the
-noisy measurements (blue dots); the shaded band shows <span
-class="math inline">\(\pm 2\sigma\)</span> confidence. Bottom: the
-estimation error variance <span class="math inline">\(P_k\)</span>
-converges quickly to its steady-state value.</figcaption>
-</figure>
 <h2 id="sec:app_rl_prob">Probability in Reinforcement Learning</h2>
-<p>Reinforcement Learning frames the control problem as a <em>Markov
-Decision Process</em> (MDP), which is a direct application of the
-probabilistic tools developed in this appendix.</p>
+<p>Reinforcement Learning frames the control problem as a <strong>Markov Decision Process</strong> (MDP), which is a direct application of the probabilistic tools developed in this appendix.</p>
 <div class="defnbox">
-<p><span>Markov Decision Process</span> An MDP is defined by the tuple
-<span class="math inline">\((\mathcal{S}, \mathcal{A},
+<p><span>Markov Decision Process</span> An MDP is defined by the tuple <span class="math inline">\((\mathcal{S}, \mathcal{A},
 \mathcal{P}, r, \gamma)\)</span>:</p>
 <ul>
-<li><p><span class="math inline">\(\mathcal{S}\)</span>: state space
-(e.g. room temperatures)</p></li>
-<li><p><span class="math inline">\(\mathcal{A}\)</span>: action space
-(e.g. heater power levels)</p></li>
-<li><p><span class="math inline">\(\mathcal{P}(s&#39; \mid s,
-a)\)</span>: <em>transition probability</em> — probability of reaching
-state <span class="math inline">\(s&#39;\)</span> from state <span
-class="math inline">\(s\)</span> under action <span
-class="math inline">\(a\)</span></p></li>
-<li><p><span class="math inline">\(r(s,a)\)</span>: reward function
-(e.g. negative energy cost)</p></li>
-<li><p><span class="math inline">\(\gamma \in [0,1)\)</span>: discount
-factor for future rewards</p></li>
+<li><p><span class="math inline">\(\mathcal{S}\)</span>: state space (e.g. room temperatures)</p></li>
+<li><p><span class="math inline">\(\mathcal{A}\)</span>: action space (e.g. heater power levels)</p></li>
+<li><p><span class="math inline">\(\mathcal{P}(s&#39; \mid s, a)\)</span>: <strong>transition probability</strong> — probability of reaching state <span class="math inline">\(s&#39;\)</span> from state <span class="math inline">\(s\)</span> under action <span class="math inline">\(a\)</span></p></li>
+<li><p><span class="math inline">\(r(s,a)\)</span>: reward function (e.g. negative energy cost)</p></li>
+<li><p><span class="math inline">\(\gamma \in [0,1)\)</span>: discount factor for future rewards</p></li>
 </ul>
-<p>The agent’s goal is to find a policy <span
-class="math inline">\(\pi(a \mid s)\)</span> (a conditional probability
-distribution over actions given states) that maximises the <em>expected
-discounted return</em>: <span class="math display">\[J(\pi) =
-\mathbb{E}_\pi\!\left[\sum_{k=0}^{\infty} \gamma^k r(s_k,
-a_k)\right].\]</span></p>
+<p>The agent’s goal is to find a policy <span class="math inline">\(\pi(a \mid s)\)</span> (a conditional probability distribution over actions given states) that maximises the <strong>expected discounted return</strong>: <span class="math display">\[J(\pi) = \mathbb{E}_\pi\!\left[\sum_{k=0}^{\infty} \gamma^k r(s_k, a_k)\right].\]</span></p>
 </div>
-<p>Every concept used in this definition — conditional probability,
-expectation, Markov property — has been covered in the earlier sections
-of this appendix. The connection between RL and MPC is that both seek to
-maximise a sum of future rewards/costs; RL does so by <em>learning</em>
-the optimal policy from data rather than by solving an explicit
-optimisation problem at each step.</p>
-<h2 id="sec:app_prob_ref">Quick Reference: MATLAB Commands for
-Probability</h2>
+<p>Every concept used in this definition — conditional probability, expectation, Markov property — has been covered in the earlier sections of this appendix. The connection between RL and MPC is that both seek to maximise a sum of future rewards/costs; RL does so by <em>learning</em> the optimal policy from data rather than by solving an explicit optimisation problem at each step.</p>
+<h2 id="sec:app_prob_ref">Quick Reference: MATLAB Commands for Probability</h2>
 <div class="center">
 <table>
 <thead>
@@ -1518,16 +940,12 @@ Probability</h2>
 <tr>
 <td style="text-align: left;">randn(m,n)</td>
 <td style="text-align: left;">Standard Gaussian samples</td>
-<td style="text-align: left;"><span
-class="math inline">\(\mathcal{N}(0,1)\)</span>, size <span
-class="math inline">\(m\times n\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{N}(0,1)\)</span>, size <span class="math inline">\(m\times n\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">rand(m,n)</td>
-<td style="text-align: left;">Uniform <span
-class="math inline">\([0,1]\)</span> samples</td>
-<td style="text-align: left;">Size <span class="math inline">\(m\times
-n\)</span></td>
+<td style="text-align: left;">Uniform <span class="math inline">\([0,1]\)</span> samples</td>
+<td style="text-align: left;">Size <span class="math inline">\(m\times n\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">rng(seed)</td>
@@ -1537,26 +955,22 @@ n\)</span></td>
 <tr>
 <td style="text-align: left;">normpdf(x,mu,sig)</td>
 <td style="text-align: left;">Gaussian PDF</td>
-<td style="text-align: left;">Scalar or vector <span
-class="math inline">\(x\)</span></td>
+<td style="text-align: left;">Scalar or vector <span class="math inline">\(x\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">normcdf(x,mu,sig)</td>
 <td style="text-align: left;">Gaussian CDF</td>
-<td style="text-align: left;"><span class="math inline">\(P(X\leq
-x)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(P(X\leq x)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">norminv(p,mu,sig)</td>
 <td style="text-align: left;">Inverse CDF (quantile)</td>
-<td style="text-align: left;"><span class="math inline">\(x\)</span>
-such that <span class="math inline">\(P(X\leq x)=p\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(x\)</span> such that <span class="math inline">\(P(X\leq x)=p\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">mvnrnd(mu,Sigma,N)</td>
 <td style="text-align: left;">Multivariate Gaussian samples</td>
-<td style="text-align: left;"><span class="math inline">\(N\)</span>
-rows</td>
+<td style="text-align: left;"><span class="math inline">\(N\)</span> rows</td>
 </tr>
 <tr>
 <td style="text-align: left;">mvnpdf(X,mu,Sigma)</td>
@@ -1571,43 +985,36 @@ rows</td>
 <tr>
 <td style="text-align: left;">var(x)</td>
 <td style="text-align: left;">Sample variance</td>
-<td style="text-align: left;">Unbiased (<span
-class="math inline">\(N-1\)</span> denominator)</td>
+<td style="text-align: left;">Unbiased (<span class="math inline">\(N-1\)</span> denominator)</td>
 </tr>
 <tr>
 <td style="text-align: left;">std(x)</td>
 <td style="text-align: left;">Sample standard deviation</td>
-<td style="text-align: left;"><span
-class="math inline">\(\sqrt{\texttt{var}(x)}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\sqrt{\texttt{var}(x)}\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">cov(X)</td>
 <td style="text-align: left;">Sample covariance matrix</td>
-<td style="text-align: left;"><code>X</code> is <span
-class="math inline">\(N\times p\)</span> data matrix</td>
+<td style="text-align: left;"><code>X</code> is <span class="math inline">\(N\times p\)</span> data matrix</td>
 </tr>
 <tr>
 <td style="text-align: left;">corr(x,y)</td>
 <td style="text-align: left;">Pearson correlation</td>
-<td style="text-align: left;">Returns scalar in <span
-class="math inline">\([-1,1]\)</span></td>
+<td style="text-align: left;">Returns scalar in <span class="math inline">\([-1,1]\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">autocorr(x,n)</td>
 <td style="text-align: left;">Sample autocorrelation</td>
-<td style="text-align: left;">Up to lag <span
-class="math inline">\(n\)</span></td>
+<td style="text-align: left;">Up to lag <span class="math inline">\(n\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">histogram(x,k)</td>
 <td style="text-align: left;">Histogram</td>
-<td style="text-align: left;">Use
-<code>’Normalization’,’pdf’</code></td>
+<td style="text-align: left;">Use <code>’Normalization’,’pdf’</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">eig(Sigma)</td>
-<td style="text-align: left;">Eigenvalues of <span
-class="math inline">\(\Sigma\)</span></td>
+<td style="text-align: left;">Eigenvalues of <span class="math inline">\(\Sigma\)</span></td>
 <td style="text-align: left;">Check positive definiteness</td>
 </tr>
 <tr>
@@ -1621,36 +1028,12 @@ class="math inline">\(\Sigma\)</span></td>
 <div class="summarybox">
 <p><span>Probability Summary for Control Engineers</span></p>
 <ol>
-<li><p><strong>Everything uncertain is a random variable.</strong>
-Sensor noise, model errors, and disturbances are all modelled as random
-variables with known distributions.</p></li>
-<li><p><strong>The Gaussian is central.</strong> Sensor noise and
-process disturbances are almost always modelled as Gaussian because of
-the CLT, and because Gaussians are closed under linear
-transformations.</p></li>
-<li><p><strong>Mean and covariance matrix</strong> fully characterise a
-Gaussian distribution. The Kalman filter propagates exactly these two
-quantities.</p></li>
-<li><p><strong>Bayes’ theorem is the theoretical backbone</strong> of
-all state estimation. The Kalman filter is its exact solution under
-linearity and Gaussianity.</p></li>
-<li><p><strong><span class="math inline">\(Q\)</span> and <span
-class="math inline">\(R\)</span> are design choices.</strong> The
-process noise covariance <span class="math inline">\(Q\)</span> and
-measurement noise covariance <span class="math inline">\(R\)</span> in
-the Kalman filter determine how much the filter trusts the model versus
-the sensor. Larger <span class="math inline">\(R\)</span> <span
-class="math inline">\(\Rightarrow\)</span> trust the model more; larger
-<span class="math inline">\(Q\)</span> <span
-class="math inline">\(\Rightarrow\)</span> trust the sensor
-more.</p></li>
-<li><p><strong>Chance constraints in stochastic MPC</strong> replace
-hard bounds with probabilistic ones: <span class="math inline">\(P(Cx_k
-\leq d) \geq 1-\epsilon\)</span>. Monte Carlo or analytical Gaussian CDF
-methods evaluate these constraints.</p></li>
-<li><p><strong>RL uses expectations everywhere.</strong> Value
-functions, policy gradients, and Bellman equations are all defined in
-terms of expected rewards under a probability distribution over future
-trajectories.</p></li>
+<li><p><strong>Everything uncertain is a random variable.</strong> Sensor noise, model errors, and disturbances are all modelled as random variables with known distributions.</p></li>
+<li><p><strong>The Gaussian is central.</strong> Sensor noise and process disturbances are almost always modelled as Gaussian because of the CLT, and because Gaussians are closed under linear transformations.</p></li>
+<li><p><strong>Mean and covariance matrix</strong> fully characterise a Gaussian distribution. The Kalman filter propagates exactly these two quantities.</p></li>
+<li><p><strong>Bayes’ theorem is the theoretical backbone</strong> of all state estimation. The Kalman filter is its exact solution under linearity and Gaussianity.</p></li>
+<li><p><strong><span class="math inline">\(Q\)</span> and <span class="math inline">\(R\)</span> are design choices.</strong> The process noise covariance <span class="math inline">\(Q\)</span> and measurement noise covariance <span class="math inline">\(R\)</span> in the Kalman filter determine how much the filter trusts the model versus the sensor. Larger <span class="math inline">\(R\)</span> <span class="math inline">\(\Rightarrow\)</span> trust the model more; larger <span class="math inline">\(Q\)</span> <span class="math inline">\(\Rightarrow\)</span> trust the sensor more.</p></li>
+<li><p><strong>Chance constraints in stochastic MPC</strong> replace hard bounds with probabilistic ones: <span class="math inline">\(P(Cx_k \leq d) \geq 1-\epsilon\)</span>. Monte Carlo or analytical Gaussian CDF methods evaluate these constraints.</p></li>
+<li><p><strong>RL uses expectations everywhere.</strong> Value functions, policy gradients, and Bellman equations are all defined in terms of expected rewards under a probability distribution over future trajectories.</p></li>
 </ol>
 </div>

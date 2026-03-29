@@ -13,44 +13,31 @@ guidance under thrust constraints). Its ability to handle multivariable
 dynamics and hard constraints within a single optimisation framework
 makes it applicable wherever classical single-loop controllers reach
 their limits.</p>
-<h5 id="aim-and-scope.">Aim and scope.</h5>
-<p>This book has been written with a strongly practical emphasis. The
-primary objective is to introduce MPC in a way that allows readers to
-apply the techniques they learn directly to realistic engineering
-problems, rather than treating MPC as a purely theoretical topic.
-Wherever possible, abstract concepts are motivated using physical
-intuition, illustrative examples, and implementation-oriented
-discussions. Mathematical depth is deliberately balanced against clarity
-and applicability throughout.</p>
-<p>The first eight chapters form the core of the book. They take the
-reader from the mathematical foundations—optimisation, state-space
-modelling, controllability, observability—through the LQR and Kalman
-filter, to the formulation and implementation of constrained linear MPC
-with output feedback. Each chapter includes worked examples and MATLAB
-code so that readers can reproduce every result.</p>
-<p>Beyond the core, several supplementary chapters extend MPC into more
-advanced territory: robust and tube MPC for systems with bounded
-disturbances, nonlinear MPC via direct transcription and sequential
-convexification, and learning-based MPC methods including GP-MPC,
-Koopman MPC, and data-driven predictive control (DeePC). A Simulink
-implementation chapter demonstrates closed-loop MPC in a building energy
-system. Two self-study appendices review the required linear algebra and
-the probability theory used in the Kalman filter chapters.</p>
-<p>The book is structured so that it can be followed either as a
-companion to a taught course or as a self-contained resource for
-independent study. A reader who works through the chapters sequentially
-should acquire a working knowledge of MPC sufficient to model systems,
+<p>These lecture notes have been prepared for the Model Predictive
+Control module delivered as part of the MSc Applied Instrumentation and
+Control programme at Glasgow Caledonian University. The material has
+been designed with a strongly practical emphasis. The primary objective
+is to introduce MPC in a way that allows students to apply the
+techniques they learn directly to realistic engineering problems, rather
+than treating MPC as a purely theoretical topic. Wherever possible,
+abstract concepts are motivated using physical intuition, illustrative
+examples, and implementation-oriented discussions.</p>
+<p>The notes are structured so that they can be followed either as
+guided lecture material or as a self-contained resource for independent
+study. A student who works through the notes sequentially should be able
+to acquire a working knowledge of MPC sufficient to model systems,
 formulate predictive control problems, and implement controllers using
-modern computational tools.</p>
-<h5 id="the-symbol.">The <span class="math inline">\(^{(*)}\)</span>
-symbol.</h5>
-<p>Chapters and sections marked with <span
+modern computational tools. To accommodate delivery within approximately
+three weeks, mathematical depth is deliberately balanced against clarity
+and applicability.</p>
+<p><strong>A note on the <span class="math inline">\(^{(*)}\)</span>
+symbol.</strong> Chapters and sections marked with <span
 class="math inline">\(^{(*)}\)</span> in their title contain
-supplementary material that goes beyond the core exposition. This
-includes the formal stability theory section in the MPC chapter
-(recursive feasibility, terminal sets, and the Lyapunov stability
-proof), the Simulink implementation chapter (Chapter <a
-href="#chap:simulink_mpc" data-reference-type="ref"
+supplementary material that is not covered during the timetabled
+lectures. Specifically, this includes the formal stability theory
+section in the MPC chapter (recursive feasibility, terminal sets, and
+the Lyapunov stability proof), the Simulink implementation chapter
+(Chapter <a href="#chap:simulink_mpc" data-reference-type="ref"
 data-reference="chap:simulink_mpc">[chap:simulink_mpc]</a>), the Robust
 and Tube MPC chapter (Chapter <a href="#chap:tube_mpc"
 data-reference-type="ref"
@@ -59,49 +46,104 @@ chapter (Chapter <a href="#chap:nmpc" data-reference-type="ref"
 data-reference="chap:nmpc">[chap:nmpc]</a>), the MPC with Learning
 chapter (Chapter <a href="#chap:learning_mpc" data-reference-type="ref"
 data-reference="chap:learning_mpc">[chap:learning_mpc]</a>), and the
-conclusion chapter (Chapter <a href="#chap:conclusion"
-data-reference-type="ref"
-data-reference="chap:conclusion">[chap:conclusion]</a>). The core
-material is contained in the unmarked chapters and sections.</p>
+course conclusion and further topics chapter (Chapter <a
+href="#chap:conclusion" data-reference-type="ref"
+data-reference="chap:conclusion">[chap:conclusion]</a>). These chapters
+and sections are included for completeness and for students who wish to
+deepen their understanding independently. The core assessed material is
+contained in the unmarked chapters and sections.</p>
 <h5 id="software-prerequisites.">Software prerequisites.</h5>
-<p>The MATLAB code throughout this book requires:</p>
+<p>The MATLAB code throughout these notes requires:</p>
 <ul>
-<li><p>MATLAB R2019b or later (for <code>yline</code>,
+<li><p>MATLAB R2018b or later (for <code>yline</code>,
 <code>tiledlayout</code>).</p></li>
-<li><p><em>Control System Toolbox</em> — <code>ctrb</code>,
+<li><p><strong>Control System Toolbox</strong> — <code>ctrb</code>,
 <code>obsv</code>, <code>dlqr</code>, <code>dare</code>,
 <code>c2d</code>, <code>ss</code>.</p></li>
-<li><p><em>Optimization Toolbox</em> — <code>quadprog</code>,
+<li><p><strong>Optimization Toolbox</strong> — <code>quadprog</code>,
 <code>linprog</code>.</p></li>
-<li><p><em>YALMIP</em> (free, <a href="https://yalmip.github.io"
+<li><p><strong>YALMIP</strong> (free, <a href="https://yalmip.github.io"
 class="uri">https://yalmip.github.io</a>) — used in every MPC
 chapter.</p></li>
-<li><p><em>MPT3</em> (free, <a href="https://www.mpt3.org"
+<li><p><strong>MPT3</strong> (free, <a href="https://www.mpt3.org"
 class="uri">https://www.mpt3.org</a>) — polytopic sets in Chapters <a
 href="#chap:linear_mpc" data-reference-type="ref"
 data-reference="chap:linear_mpc">[chap:linear_mpc]</a> and <a
 href="#chap:tube_mpc" data-reference-type="ref"
 data-reference="chap:tube_mpc">[chap:tube_mpc]</a>.</p></li>
-<li><p><em>CasADi</em> (free, <a href="https://web.casadi.org"
+<li><p><strong>CasADi</strong> (free, <a href="https://web.casadi.org"
 class="uri">https://web.casadi.org</a>) — nonlinear MPC in Chapter <a
 href="#chap:nmpc" data-reference-type="ref"
 data-reference="chap:nmpc">[chap:nmpc]</a>.</p></li>
 </ul>
 <p>Optional toolboxes: Statistics and Machine Learning Toolbox
 (<code>normpdf</code>, <code>normcdf</code>, <code>norminv</code>,
-<code>mvnrnd</code>), Deep Learning Toolbox
-(<code>feedforwardnet</code>), and Simulink.</p>
-<h5 id="prerequisites.">Prerequisites.</h5>
+<code>mvnrnd</code>), Deep Learning Toolbox (<code>fitnet</code>), and
+Simulink.</p>
+<p>Beyond the core assessed material, the notes include several
+supplementary chapters. Robust and Tube MPC is developed in full,
+including set operations, constraint tightening, worked examples, and
+MATLAB implementations. A dedicated chapter on Nonlinear MPC covers
+direct transcription, CasADi/IPOPT, successive convexification, and a
+powered rocket landing application. The chapter on MPC with Learning
+treats GP-MPC, Koopman MPC, DeePC, and Learning MPC with complete
+derivations and MATLAB code. The Simulink chapter demonstrates a
+closed-loop MPC simulation for a building energy system.</p>
 <p>A basic background in SISO control systems, state-space
 representations, linear algebra, and numerical computation is assumed.
 Familiarity with MATLAB is strongly recommended, as examples and
-implementations throughout the book rely on MATLAB-based workflows. With
-this background, the material should be accessible to graduate-level
-readers in control, instrumentation, and related engineering
-disciplines. Readers who need to refresh specific mathematical topics
-are encouraged to consult the appendices as needed.</p>
-<div class="flushright">
-<p><em>İbrahim Küçükdemiral</em><br />
-Glasgow, Scotland, UK<br />
-2026</p>
-</div>
+implementations throughout the notes rely on MATLAB-based workflows.
+Several examples also use the YALMIP optimisation toolbox, which is
+freely available at <code>https://yalmip.github.io</code>. With this
+background, the material should be accessible to postgraduate students
+in control, instrumentation, and related engineering disciplines. Two
+self-study appendices are included at the end of these notes: one
+reviewing the required linear algebra and one covering the probability
+theory used in the Kalman filter chapters. Distance learning students
+are encouraged to consult these appendices as needed.</p>
+<ul>
+<li><p><strong>Chapter 1</strong> introduces MPC and motivates the
+receding horizon principle through a building energy case
+study.</p></li>
+<li><p><strong>Chapter 2</strong> covers optimisation: decision
+variables, cost functions, constraints, convexity, and problem
+classifications.</p></li>
+<li><p><strong>Chapter 3</strong> develops the state-space framework,
+discretisation, and discrete-time stability.</p></li>
+<li><p><strong>Chapter 4</strong> treats controllability and
+observability with rank conditions and MATLAB verification.</p></li>
+<li><p><strong>Chapter 5</strong> formulates LQR as a finite-horizon
+optimisation, derives the Riccati recursion and infinite-horizon
+LQR.</p></li>
+<li><p><strong>Chapter 6</strong> derives the Kalman filter, covers
+duality and covariance tuning.</p></li>
+<li><p><strong>Chapter 7</strong> presents the standard linear MPC
+formulation, receding horizon, stability theory<span
+class="math inline">\(^{(*)}\)</span>, explicit MPC<span
+class="math inline">\(^{(*)}\)</span>, and reference tracking MPC<span
+class="math inline">\(^{(*)}\)</span>.</p></li>
+<li><p><strong>Chapter 8</strong> extends MPC to output-feedback and
+offset-free tracking via disturbance modelling and target
+calculation.</p></li>
+<li><p><strong>Chapter 9<span
+class="math inline">\(^{(*)}\)</span></strong> demonstrates MPC
+implementation in Simulink with a four-zone building heating case
+study.</p></li>
+<li><p><strong>Tube MPC<span
+class="math inline">\(^{(*)}\)</span></strong> develops robust MPC for
+bounded disturbances with Minkowski sums, constraint tightening, and
+MPT3 code.</p></li>
+<li><p><strong>Nonlinear MPC<span
+class="math inline">\(^{(*)}\)</span></strong> covers direct
+transcription, CasADi/IPOPT, SCvx, GuSTO, rocket landing, and Real-Time
+Iteration.</p></li>
+<li><p><strong>MPC with Learning<span
+class="math inline">\(^{(*)}\)</span></strong> treats GP-MPC, Koopman
+MPC, DeePC, and Learning MPC with worked examples and MATLAB
+code.</p></li>
+<li><p><strong>Conclusion<span
+class="math inline">\(^{(*)}\)</span></strong> surveys further topics
+and provides pointers for advanced study.</p></li>
+</ul>
+<p>These notes aim to give students the skills to implement MPC on
+constrained engineering systems.</p>

@@ -33,8 +33,8 @@ computationally impossible.</p>
 <p>In a general sense, the Oxford Dictionary defines optimisation
 as:</p>
 <ul>
-<li><p>“The action of making the <em>best</em> or <em>most
-effective</em> use of a situation or resource.”</p></li>
+<li><p>“The action of making the <strong>best</strong> or <strong>most
+effective</strong> use of a situation or resource.”</p></li>
 </ul>
 <p>In engineering, we translate this concept into a precise mathematical
 framework. We are not just “trying to do our best”; we are
@@ -42,8 +42,8 @@ systematically searching for a specific numerical value that satisfies a
 mathematical criterion.</p>
 <div class="defnbox">
 <p><span>Mathematical Definition of Optimisation</span> A numerical
-approach for seeking a <em>best</em> decision or action from a <em>set
-of alternatives</em>.</p>
+approach for seeking a <strong>best</strong> decision or action from a
+<strong>set of alternatives</strong>.</p>
 </div>
 <h2 id="the-anatomy-of-an-optimisation-problem">The Anatomy of an
 Optimisation Problem</h2>
@@ -82,10 +82,10 @@ engineering from pure mathematics by strictly enforcing physical limits
 (e.g., maximum voltage, tank capacity) or safety bounds (e.g., obstacle
 avoidance).</p></li>
 </ol>
-<p>Mathematically, we denote the decision variables as <span
-class="math inline">\(x\)</span> (and occasionally <span
-class="math inline">\(z\)</span> when we need to distinguish them from
-the system state). The standard optimisation form is written as:</p>
+<p>Mathematically, we often denote the decision variables as <span
+class="math inline">\(z\)</span> to distinguish them from the system
+state <span class="math inline">\(x\)</span> used in control theory. The
+standard optimisation form is written as:</p>
 <p><span class="math display">\[\begin{equation}
     \begin{aligned}
         \min_{x} \quad &amp; J (x) \\
@@ -116,8 +116,8 @@ decision variable.</p></li>
 functions, and constraints concrete, let us consider two distinct
 optimisation problems.</p>
 <p>The process of translating a physical or data-driven problem into a
-mathematical optimisation format is known as <em>modelling</em>. This
-step is often more challenging than the solution itself. In both
+mathematical optimisation format is known as <strong>modelling</strong>.
+This step is often more challenging than the solution itself. In both
 examples below, we follow a systematic three-step approach:</p>
 <ol>
 <li><p><strong>Identify the Decision Variables:</strong> What are the
@@ -143,10 +143,10 @@ construct an open-top box with the maximum possible volume. We achieve
 this by cutting equal squares of side length <span
 class="math inline">\(x\)</span> from the four corners and folding up
 the sides.</p>
-<div class="center">
-
-</div>
-<p><span id="fig:box_volume" data-label="fig:box_volume"></span></p>
+<figure id="fig:box_volume">
+<img src="figures/tikz_ch02_1.png" style="width:70.0%" />
+<figcaption>Box volume maximisation problem.</figcaption>
+</figure>
 <p>We map this problem to the three components of optimisation:</p>
 <ol>
 <li><p><strong>Decision Variable (<span
@@ -190,13 +190,13 @@ data-reference-type="ref"
 data-reference="fig:linear_regression">[fig:linear_regression]</a>.</p>
 <p>We want to find the linear model (a straight line) that "best fits"
 this data.</p>
-<div class="center">
-<p><span id="fig:linear_regression"
-data-label="fig:linear_regression"></span></p>
-</div>
+<figure id="fig:linear_regression">
+<img src="figures/tikz_ch02_2.png" style="width:70.0%" />
+<figcaption>Dataset (red), linear interpolation (blue).</figcaption>
+</figure>
 <p>Note that in this specific problem, the <span
-class="math inline">\(x\)</span> values are <em>constants</em> (data we
-measured), not decision variables.</p>
+class="math inline">\(x\)</span> values are <strong>constants</strong>
+(data we measured), not decision variables.</p>
 <ol>
 <li><p><strong>Decision Variables:</strong> The parameters of the line:
 the slope vector <span class="math inline">\(a \in \mathbb{R}^n\)</span>
@@ -276,8 +276,8 @@ contains different types of information.</p></li>
 class="math inline">\(J\)</span>):</strong> The checkout till scans your
 items. It applies a specific rule (the price list) to your vector. It
 multiplies each item by its value and sums them up: <span
-class="math display">\[J(x) = (2 \times \pounds 1.00) + (6 \times
-\pounds 0.20) + (1 \times \pounds 0.80)\]</span></p></li>
+class="math display">\[J(x) = (2 \times \text{£}1.00) + (6 \times
+\text{£}0.20) + (1 \times \text{£}0.80)\]</span></p></li>
 <li><p><strong>The Scalar (<span
 class="math inline">\(J\)</span>):</strong> The till produces a single
 number: <span>£4.00</span>.</p></li>
@@ -285,10 +285,10 @@ number: <span>£4.00</span>.</p></li>
 <p>This is visually described in Figure <a
 href="#fig:cost_function_analogy" data-reference-type="ref"
 data-reference="fig:cost_function_analogy">[fig:cost_function_analogy]</a>.</p>
-<div class="center">
-<p><span id="fig:cost_function_analogy"
-data-label="fig:cost_function_analogy"></span></p>
-</div>
+<figure id="fig:cost_function_analogy">
+<img src="figures/tikz_ch02_3.png" style="width:70.0%" />
+<figcaption>Analogy of cost function.</figcaption>
+</figure>
 <h4 class="unnumbered" id="why-is-this-important-in-engineering">Why is
 this important in Engineering?</h4>
 <p>You cannot easily say which of two shopping baskets is
@@ -369,17 +369,17 @@ x_2 \geq x_1^3\)</span> (Must be above the cubic curve).</p></li>
 intersection of these two regions (the purple area as shown in Figure <a
 href="#fig:intersection_of_constraints" data-reference-type="ref"
 data-reference="fig:intersection_of_constraints">[fig:intersection_of_constraints]</a>).</p>
-<div class="center">
-<p><span id="fig:intersection_of_constraints"
-data-label="fig:intersection_of_constraints"></span></p>
-</div>
+<figure id="fig:intersection_of_constraints">
+<img src="figures/tikz_ch02_4.png" style="width:70.0%" />
+<figcaption>Intersection of constraints. Blue region x&#x2082; &#x2265; x&#x2081;&#xB3;, red region x&#x2081;&#xB2; + x&#x2082;&#xB2; &#x2264; 4. S is the intersection and the feasible domain.</figcaption>
+</figure>
 </div>
 <h3 id="standard-form-minimisation-vs.-maximisation">Standard Form:
 Minimisation vs. Maximisation</h3>
 <p>Standard numerical solvers (like <code>quadprog</code> or
 <code>fmincon</code> in MATLAB) are typically written to perform
-<em>minimisation</em>. However, engineering problems are often phrased
-as maximisation (e.g., maximise profit, maximise volume).</p>
+<strong>minimisation</strong>. However, engineering problems are often
+phrased as maximisation (e.g., maximise profit, maximise volume).</p>
 <p>To reconcile this, we rely on a mathematical identity. But first, we
 must clarify a precise piece of notation often used in optimisation: the
 difference between <span class="math inline">\(\min\)</span> and <span
@@ -389,8 +389,8 @@ Minimum:</strong><br />
 </p>
 <ul>
 <li><p><strong><span class="math inline">\(\min f(x)\)</span>:</strong>
-Returns the <em>value</em> of the function at the minimum. This is the
-score (the vertical axis on a graph).</p></li>
+Returns the <strong>value</strong> of the function at the minimum. This
+is the score (the vertical axis on a graph).</p></li>
 <li><p><strong><span class="math inline">\(\arg \min
 f(x)\)</span>:</strong> Returns the <span>argument</span> (the variable
 <span class="math inline">\(x\)</span>) that produces that minimum. This
@@ -413,17 +413,16 @@ equivalent to finding the argument that minimises its negative:</p>
 class="math inline">\(-1\)</span> flips the curve upside down. A peak
 (maximum) in the original function becomes a valley (minimum) in the
 negated function. While the vertical values flip signs, the
-<em>horizontal location (<span class="math inline">\(x\)</span>)</em> of
-the optimal point remains exactly the same. This is pictured in
-Figure <a href="#fig:minimization_vs_max" data-reference-type="ref"
+<strong>horizontal location (<span
+class="math inline">\(x\)</span>)</strong> of the optimal point remains
+exactly the same. This is pictured in Figure <a
+href="#fig:minimization_vs_max" data-reference-type="ref"
 data-reference="fig:minimization_vs_max">1.1</a>.</p>
 <figure id="fig:minimization_vs_max">
-<div class="center">
-
-</div>
+<img src="figures/tikz_ch02_5.png" style="width:70.0%" />
 <figcaption>Visual representation of the equivalence between
 maximisation and minimisation. To maximise an objective function <span
-class="math inline">\(f(x)\)</span> (teal curve), one can equivalently
+class="math inline">\(f(x)\)</span> (green curve), one can equivalently
 minimise its negative, <span class="math inline">\(-f(x)\)</span> (red
 curve). Note that while the vertical value flips sign, the optimal
 decision variable <span class="math inline">\(x^*\)</span> (the
@@ -441,23 +440,24 @@ on a supercomputer and still fail to find the best solution.</p>
 number of variables); rather, it is the geometry of the problem.</p>
 <p>The difference between easy and hard problems lies not in the number
 of variables but in the geometry of the search space. The central
-concept here is <em>Convexity</em>: if the objective is convex and the
-constraints form a convex set, then any local minimum is guaranteed to
-be the global minimum. We begin by defining the building blocks of this
-geometry: sets and functions.</p>
+concept here is <strong>Convexity</strong>: if the objective is convex
+and the constraints form a convex set, then any local minimum is
+guaranteed to be the global minimum. We begin by defining the building
+blocks of this geometry: sets and functions.</p>
 <h3 id="convex-sets">Convex Sets</h3>
 <p>A fundamental concept in optimisation, particularly in Model
-Predictive Control (MPC), is that of a <em>convex set</em>. Working with
-convex sets and functions simplifies the optimisation problem
-significantly, often guaranteeing that any local optimum is also a
-global optimum.</p>
+Predictive Control (MPC), is that of a <strong>convex set</strong>.
+Working with convex sets and functions simplifies the optimisation
+problem significantly, often guaranteeing that any local optimum is also
+a global optimum.</p>
 <div class="defnbox">
 <p><span>Convex Set</span> A set <span
-class="math inline">\(\mathcal{X}\)</span> is <em>convex</em> if and
-only if for any pair of points <span class="math inline">\(x\)</span>
-and <span class="math inline">\(y\)</span> in <span
-class="math inline">\(\mathcal{X}\)</span>, any <em>convex
-combination</em> of <span class="math inline">\(x\)</span> and <span
+class="math inline">\(\mathcal{X}\)</span> is <strong>convex</strong> if
+and only if for any pair of points <span
+class="math inline">\(x\)</span> and <span
+class="math inline">\(y\)</span> in <span
+class="math inline">\(\mathcal{X}\)</span>, any <strong>convex
+combination</strong> of <span class="math inline">\(x\)</span> and <span
 class="math inline">\(y\)</span> lies in <span
 class="math inline">\(\mathcal{X}\)</span>.</p>
 </div>
@@ -520,7 +520,7 @@ data-reference="fig:hyperplane_halfspace">1.3</a>.</p>
 ensures that optimisation problems with linear constraints remain
 convex.</p>
 <figure id="fig:hyperplane_halfspace" data-latex-placement="!h">
-
+<img src="figures/tikz_ch02_6.png" style="width:75.0%" />
 <figcaption>Visual representation of a hyperplane (left) and a closed
 half-space (right). The vector <span class="math inline">\(a\)</span> is
 normal to the boundary.</figcaption>
@@ -535,12 +535,12 @@ class="math display">\[\begin{equation}
 this to the standard hyperplane definition <span
 class="math inline">\(a^\top x = b\)</span>, we define the vectors:
 <span class="math display">\[\begin{equation}
-        a = \begin{bmatrix} 2 \\ 1 \end{bmatrix}, \quad x =
-\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}, \quad b = 2
+        a = \begin{pmatrix} 2 \\ 1 \end{pmatrix}, \quad x =
+\begin{pmatrix} x_1 \\ x_2 \end{pmatrix}, \quad b = 2
 \end{equation}\]</span> Thus, the equation becomes: <span
 class="math display">\[\begin{equation}
-        \underbrace{\begin{bmatrix} 2 &amp; 1 \end{bmatrix}}_{a^\top}
-\begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \underbrace{2}_{b}
+        \underbrace{\begin{pmatrix} 2 &amp; 1 \end{pmatrix}}_{a^\top}
+\begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \underbrace{2}_{b}
 \end{equation}\]</span></p>
 <p><strong>Connection to the Gradient:</strong><br />
 Readers needing a refresher on vectors, matrices, and eigenvalues may
@@ -557,9 +557,9 @@ the partial derivatives with respect to <span
 class="math inline">\(x_1\)</span> and <span
 class="math inline">\(x_2\)</span>: <span
 class="math display">\[\begin{equation}
-        a = \nabla_x f = \begin{bmatrix} \dfrac{\partial f}{\partial
-x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{bmatrix} =
-\begin{bmatrix} 2 \\ 1 \end{bmatrix}
+        a = \nabla_x f = \begin{pmatrix} \dfrac{\partial f}{\partial
+x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{pmatrix} =
+\begin{pmatrix} 2 \\ 1 \end{pmatrix}
 \end{equation}\]</span> This confirms that the vector <span
 class="math inline">\(a = (2, 1)^\top\)</span> is the gradient of the
 linear function defining the hyperplane. Geometrically, the gradient
@@ -568,10 +568,10 @@ class="math inline">\(a\)</span> is perpendicular to the line <span
 class="math inline">\(2x_1 + x_2 = 2\)</span>, as shown in Figure <a
 href="#fig:example_hyperplane" data-reference-type="ref"
 data-reference="fig:example_hyperplane">[fig:example_hyperplane]</a>.</p>
-<div class="center">
-<p><span id="fig:example_hyperplane"
-data-label="fig:example_hyperplane"></span></p>
-</div>
+<figure id="fig:example_hyperplane">
+<img src="figures/tikz_ch02_7.png" style="width:70.0%" />
+<figcaption>Geometric example of the hyperplane 2x&#x2081; + x&#x2082; = 2. The normal vector a = (2,1)&#x1D40; determines the orientation of the line.</figcaption>
+</figure>
 </div>
 <div class="defnbox">
 <p><span>Polyhedron</span> Let <span class="math inline">\(a_i \in
@@ -635,9 +635,10 @@ polytope.</p>
 in the <span class="math inline">\((x_1,x_2)\)</span>–plane as shown in
 Figure <a href="#fig:polyhedron" data-reference-type="ref"
 data-reference="fig:polyhedron">[fig:polyhedron]</a>:</p>
-<div class="center">
-<p><span id="fig:polyhedron" data-label="fig:polyhedron"></span></p>
-</div>
+<figure id="fig:polyhedron">
+<img src="figures/tikz_ch02_8.png" style="width:70.0%" />
+<figcaption>Intersection of half-spaces is a convex polyhedron.</figcaption>
+</figure>
 </div>
 <h3 id="convex-functions">Convex Functions</h3>
 <p>Let <span class="math inline">\(S\)</span> be a convex subset of a
@@ -647,10 +648,11 @@ class="math inline">\(\mathbb{R}\)</span> as follows.</p>
 <div class="defnbox">
 <p><span>Convex Function</span> A function <span
 class="math inline">\(f: S \rightarrow \mathbb{R}\)</span> is said to be
-<em>convex</em> if <span class="math inline">\(S\)</span> is convex and
-the following inequality holds for all <span class="math inline">\(z_1,
-z_2 \in S\)</span> and for all <span class="math inline">\(\lambda \in
-[0, 1]\)</span>: <span class="math display">\[\begin{equation}
+<strong>convex</strong> if <span class="math inline">\(S\)</span> is
+convex and the following inequality holds for all <span
+class="math inline">\(z_1, z_2 \in S\)</span> and for all <span
+class="math inline">\(\lambda \in [0, 1]\)</span>: <span
+class="math display">\[\begin{equation}
         f(\lambda z_1 + (1 - \lambda)z_2) \leq \lambda f(z_1) + (1 -
 \lambda)f(z_2)
 \end{equation}\]</span> Geometrically, this means that the line segment
@@ -660,8 +662,8 @@ the graph between the two points.</p>
 <div class="defnbox">
 <p><span>Concave Function</span> A function <span
 class="math inline">\(f: S \rightarrow \mathbb{R}\)</span> is
-<em>concave</em> if <span class="math inline">\(S\)</span> is convex and
-<span class="math inline">\(-f\)</span> is a convex function.
+<strong>concave</strong> if <span class="math inline">\(S\)</span> is
+convex and <span class="math inline">\(-f\)</span> is a convex function.
 Equivalently, the inequality in the definition of convexity is
 reversed.</p>
 </div>
@@ -676,7 +678,7 @@ two points (the black dot on the curve) is always less than or equal to
 the weighted average of the function values (the black dot on the red
 line).</p>
 <figure id="fig:convex_func" data-latex-placement="h">
-
+<img src="figures/tikz_ch02_9.png" style="width:65.0%" />
 <figcaption>Geometric interpretation of a convex function. The line
 segment connecting any two points on the curve lies above the function
 values.</figcaption>
@@ -695,10 +697,10 @@ fit a standard form, we can solve it efficiently using off-the-shelf
 software.</p>
 <p>We typically classify problems in two ways:</p>
 <ol>
-<li><p>By the <em>existence and type of constraints</em> (Constrained
-vs. Unconstrained).</p></li>
-<li><p>By the <em>mathematical structure</em> of the cost and constraint
-functions (Linear, Quadratic, Nonlinear).</p></li>
+<li><p>By the <strong>existence and type of constraints</strong>
+(Constrained vs. Unconstrained).</p></li>
+<li><p>By the <strong>mathematical structure</strong> of the cost and
+constraint functions (Linear, Quadratic, Nonlinear).</p></li>
 </ol>
 <h3 id="classification-i-existence-of-constraints">Classification I:
 Existence of Constraints</h3>
@@ -743,9 +745,10 @@ level curves <span class="math inline">\(J=2\)</span>, <span
 class="math inline">\(J=6\)</span>, <span
 class="math inline">\(J=12\)</span> and <span
 class="math inline">\(J=20\)</span>.</p>
-<div class="center">
-<p><span id="fig:level_curves" data-label="fig:level_curves"></span></p>
-</div>
+<figure id="fig:level_curves">
+<img src="figures/tikz_ch02_10.png" style="width:70.0%" />
+<figcaption>Level curves of J(x) = x&#x2081;&#xB2; + x&#x2082;&#xB2;.</figcaption>
+</figure>
 <p>The optimiser searches for the level curve with the smallest possible
 <span class="math inline">\(c\)</span>. Geometrically, this is the
 centre of the concentric circles.</p>
@@ -778,10 +781,10 @@ subject to a linear equality constraint.</p>
 Figure <a href="#fig:optimization_with_constraints"
 data-reference-type="ref"
 data-reference="fig:optimization_with_constraints">[fig:optimization_with_constraints]</a>.</p>
-<div class="center">
-<p>. <span id="fig:optimization_with_constraints"
-data-label="fig:optimization_with_constraints"></span></p>
-</div>
+<figure id="fig:optimization_with_constraints">
+<img src="figures/tikz_ch02_11.png" style="width:70.0%" />
+<figcaption>Minimising J(x) on the line h(x) = 0.</figcaption>
+</figure>
 <p>The optimal point is found where the constraint line is exactly
 <span>tangent</span> to a level curve.</p>
 </div>
@@ -801,35 +804,37 @@ class="math display">\[\begin{aligned}
         x_1 \ge 0, \ x_2 &amp;\ge 0
     \end{aligned}\]</span></p>
 <p>Visualisation is excellent for understanding, but to get numerical
-answers, we use software. In this course, we utilise <em>YALMIP</em>, an
-open source MATLAB toolbox that allows us to write optimisation problems
-using syntax that looks almost identical to the mathematics.</p>
+answers, we use software. In this course, we utilise
+<strong>YALMIP</strong>, an open source MATLAB toolbox that allows us to
+write optimisation problems using syntax that looks almost identical to
+the mathematics.</p>
 <p>The workflow always follows three steps:</p>
 <div class="center">
 <p>Define Optimisation Variables <span
 class="math inline">\(\to\)</span> Define Model <span
 class="math inline">\(\to\)</span> Solve.</p>
 </div>
-<pre class="matlab" data-language="Matlab"><code>        % &#39;sdpvar&#39; creates a symbolic variable that YALMIP tracks.
-        x = sdpvar(2,1); 
-        
-        % 2. Define the Objective Function
-        J = x(1)^2 + x(2)^2;
-        
-        % 3. Define Constraints
-        % We create a list of inequalities using standard MATLAB brackets.
-        Constraints = [ -x(1) - 2*x(2) + 5 &lt;= 0, ...
-                                2*x(1) +   x(2) - 5 &lt;= 0, ...
-                                x(1) &gt;= 0, ...
-                                x(2) &gt;= 0 ];
-        
-        % 4. Call the Solver
-        % We ask YALMIP to minimise J subject to Constraints
-        optimize(Constraints, J);
-        
-        % 5. Extract Result
-        % The symbolic variable &#39;x&#39; now holds the optimal value.
-        x_star = value(x) % Result: (1, 2)</code></pre>
+<div class="sourceCode" id="cb1" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>        <span class="co">% &#39;sdpvar&#39; creates a symbolic variable that YALMIP tracks.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">x</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 2. Define the Objective Function</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">J</span> <span class="op">=</span> <span class="va">x</span>(<span class="fl">1</span>)<span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="va">x</span>(<span class="fl">2</span>)<span class="op">^</span><span class="fl">2</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 3. Define Constraints</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">% We create a list of inequalities using standard MATLAB brackets.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">Constraints</span> <span class="op">=</span> [ <span class="op">-</span><span class="va">x</span>(<span class="fl">1</span>) <span class="op">-</span> <span class="fl">2</span><span class="op">*</span><span class="va">x</span>(<span class="fl">2</span>) <span class="op">+</span> <span class="fl">5</span> <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                                <span class="fl">2</span><span class="op">*</span><span class="va">x</span>(<span class="fl">1</span>) <span class="op">+</span>   <span class="va">x</span>(<span class="fl">2</span>) <span class="op">-</span> <span class="fl">5</span> <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                                <span class="va">x</span>(<span class="fl">1</span>) <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                                <span class="va">x</span>(<span class="fl">2</span>) <span class="op">&gt;=</span> <span class="fl">0</span> ]<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 4. Call the Solver</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">% We ask YALMIP to minimise J subject to Constraints</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">optimize</span>(<span class="va">Constraints</span><span class="op">,</span> <span class="va">J</span>)<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 5. Extract Result</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="co">% The symbolic variable &#39;x&#39; now holds the optimal value.</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_star</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">x</span>) <span class="co">% Result: (1, 2)</span></span></code></pre></div>
 <p><strong>Visualisation:</strong> Geometrically, the optimiser
 “expands” the level curves (blue circles) from the origin until they
 first touch the feasible region (grey polygon).</p>
@@ -840,7 +845,7 @@ first touch the feasible region (grey polygon).</p>
 <h5 id="type-c-general-constraints">Type C: General Constraints</h5>
 <p>In the most general case, a problem contains both equality and
 inequality constraints. The solver must find a solution that lies inside
-the inequality region <em>and</em> lies exactly on the equality
+the inequality region <strong>and</strong> lies exactly on the equality
 curve.</p>
 <p>Geometrically, the feasible set is the intersection of the regions
 defined by all constraints. This often effectively reduces the
@@ -865,24 +870,25 @@ MATLAB, a single equals sign (<code>=</code>) represents assignment
 (e.g., setting a variable’s value). To represent a logical equality
 condition (<span class="math inline">\(h(x)=0\)</span>), we must use the
 double equals sign (<code>==</code>).</p>
-<pre class="matlab" data-language="Matlab"><code>        x = sdpvar(2,1);
-        J = x(1)^2 + x(2)^2;
-        
-        % 2. Define Inequality Constraints (The Feasible Region)
-        g1 = [-x(1) - 2*x(2) + 5 &lt;= 0]; 
-        g2 = [ 2*x(1) + x(2) - 5 &lt;= 0]; 
-        g3 = [x(1) &gt;= 0];               
-        g4 = [x(2) &gt;= 0];     
-        
-        % 3. Define Equality Constraint (The Manifold)
-        % Note the use of &#39;==&#39; for logical equality
-        h  = [x(1) + 2*x(2) - 7 == 0];
-        
-        % 4. Combine and Solve
-        Constraints = [g1, g2, g3, g4, h];
-        optimize(Constraints, J);
-        
-        x_star = value(x) % Result: (1, 3)</code></pre>
+<div class="sourceCode" id="cb2" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>        <span class="va">x</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">J</span> <span class="op">=</span> <span class="va">x</span>(<span class="fl">1</span>)<span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="va">x</span>(<span class="fl">2</span>)<span class="op">^</span><span class="fl">2</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 2. Define Inequality Constraints (The Feasible Region)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">g1</span> <span class="op">=</span> [<span class="op">-</span><span class="va">x</span>(<span class="fl">1</span>) <span class="op">-</span> <span class="fl">2</span><span class="op">*</span><span class="va">x</span>(<span class="fl">2</span>) <span class="op">+</span> <span class="fl">5</span> <span class="op">&lt;=</span> <span class="fl">0</span>]<span class="op">;</span> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">g2</span> <span class="op">=</span> [ <span class="fl">2</span><span class="op">*</span><span class="va">x</span>(<span class="fl">1</span>) <span class="op">+</span> <span class="va">x</span>(<span class="fl">2</span>) <span class="op">-</span> <span class="fl">5</span> <span class="op">&lt;=</span> <span class="fl">0</span>]<span class="op">;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">g3</span> <span class="op">=</span> [<span class="va">x</span>(<span class="fl">1</span>) <span class="op">&gt;=</span> <span class="fl">0</span>]<span class="op">;</span>               </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">g4</span> <span class="op">=</span> [<span class="va">x</span>(<span class="fl">2</span>) <span class="op">&gt;=</span> <span class="fl">0</span>]<span class="op">;</span>     </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 3. Define Equality Constraint (The Manifold)</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Note the use of &#39;==&#39; for logical equality</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">h</span>  <span class="op">=</span> [<span class="va">x</span>(<span class="fl">1</span>) <span class="op">+</span> <span class="fl">2</span><span class="op">*</span><span class="va">x</span>(<span class="fl">2</span>) <span class="op">-</span> <span class="fl">7</span> <span class="op">==</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 4. Combine and Solve</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">Constraints</span> <span class="op">=</span> [<span class="va">g1</span><span class="op">,</span> <span class="va">g2</span><span class="op">,</span> <span class="va">g3</span><span class="op">,</span> <span class="va">g4</span><span class="op">,</span> <span class="va">h</span>]<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">optimize</span>(<span class="va">Constraints</span><span class="op">,</span> <span class="va">J</span>)<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_star</span> <span class="op">=</span> <span class="va">value</span>(<span class="va">x</span>) <span class="co">% Result: (1, 3)</span></span></code></pre></div>
 <p><strong>Visualisation and Analysis:</strong> The geometry of this
 problem is illustrated in Figure <a
 href="#fig:Intersection_of_constraints" data-reference-type="ref"
@@ -895,10 +901,10 @@ line.</p></li>
 <p>A valid solution must satisfy <em>both</em> conditions. Therefore,
 the feasible set is reduced to the specific line segment where the
 orange line slices through the grey triangle.</p>
-<div class="center">
-<p><span id="fig:Intersection_of_constraints"
-data-label="fig:Intersection_of_constraints"></span></p>
-</div>
+<figure id="fig:Intersection_of_constraints">
+<img src="figures/tikz_ch02_13.png" style="width:70.0%" />
+<figcaption>Intersection of equality and inequality constraints.</figcaption>
+</figure>
 <p><strong>The Cost of Constraints:</strong> In the previous example
 (inequalities only), the optimiser could reach the point <span
 class="math inline">\((1,2)\)</span>, which yielded a cost of <span
@@ -943,7 +949,7 @@ class="math inline">\(Gx\le h\)</span> and dashed lines shows the cost
 for different values of <span class="math inline">\(c^\top
 x\)</span>.</p>
 <figure id="fig:LP" data-latex-placement="!htb">
-
+<img src="figures/tikz_ch02_14.png" style="width:55.0%" />
 <figcaption>Linear optimisation on a polytope.</figcaption>
 </figure>
 <div class="examplebox">
@@ -960,7 +966,7 @@ one that requires the <em>least control effort</em>. In engineering
 consumption, which corresponds to the sum of the absolute values of the
 inputs.</p>
 <p><strong>1. The 1-Norm and Notation:</strong> Mathematically, we want
-to minimise the <em>1-norm</em> of the input vector <span
+to minimise the <strong>1-norm</strong> of the input vector <span
 class="math inline">\(u \in \mathbb{R}^m\)</span>: <span
 class="math display">\[\begin{equation}
         \|u\|_1 = \sum_{i=1}^{m} |u_i| = |u_1|+|u_2|+\cdots + |u_m|
@@ -1077,35 +1083,36 @@ class="math inline">\(\mu\)</span>g)</p></li>
 data-reference-type="ref" data-reference="fig:stigler2d">1.6</a> shows
 the feasible solution set along with the optimal solution that minimises
 the cost of nutrition.</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Solving Stigler&#39;s Problem with YALMIP"><code>clear; clc;
-    
-    x1 = sdpvar(1); % Corn (kg)
-    x2 = sdpvar(1); % Bread (kg)
-    
-    Objective = 2*x1 + 0.5*x2;
-    
-    % 3. Define Constraints
-    Constraints = [];
-    Constraints = [Constraints, 2000 &lt;= 750*x1 + 650*x2 &lt;= 3000];
-    Constraints = [Constraints, 500 &lt;= 250*x1 &lt;= 800];
-    Constraints = [Constraints, x1 &gt;= 0, x2 &gt;= 0];
-    
-    % &#39;linprog&#39; for LP; use &#39;quadprog&#39; or &#39;osqp&#39; for QP/SOCP variants.
-    options = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;linprog&#39;);
-    sol = optimize(Constraints, Objective, options);
-    
-    if sol.problem == 0
-        fprintf(&#39;Optimal Solution:\n&#39;);
-        fprintf(&#39;x1 (Corn) : %.4f kg\n&#39;, value(x1));
-        fprintf(&#39;x2 (Bread): %.4f kg\n&#39;, value(x2));
-        fprintf(&#39;Min Cost  : $%.4f\n&#39;, value(Objective));
-    else
-        disp(&#39;Problem could not be solved.&#39;);
-    end</code></pre>
+<div class="sourceCode" id="cb3" data-language="Matlab"
+data-caption="Solving Stigler&#39;s Problem with YALMIP"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">clear</span><span class="op">;</span> <span class="va">clc</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">x1</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">1</span>)<span class="op">;</span> <span class="co">% Corn (kg)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">x2</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">1</span>)<span class="op">;</span> <span class="co">% Bread (kg)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">Objective</span> <span class="op">=</span> <span class="fl">2</span><span class="op">*</span><span class="va">x1</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span><span class="va">x2</span><span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">% 3. Define Constraints</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">Constraints</span> <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">Constraints</span> <span class="op">=</span> [<span class="va">Constraints</span><span class="op">,</span> <span class="fl">2000</span> <span class="op">&lt;=</span> <span class="fl">750</span><span class="op">*</span><span class="va">x1</span> <span class="op">+</span> <span class="fl">650</span><span class="op">*</span><span class="va">x2</span> <span class="op">&lt;=</span> <span class="fl">3000</span>]<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">Constraints</span> <span class="op">=</span> [<span class="va">Constraints</span><span class="op">,</span> <span class="fl">500</span> <span class="op">&lt;=</span> <span class="fl">250</span><span class="op">*</span><span class="va">x1</span> <span class="op">&lt;=</span> <span class="fl">800</span>]<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">Constraints</span> <span class="op">=</span> [<span class="va">Constraints</span><span class="op">,</span> <span class="va">x1</span> <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">,</span> <span class="va">x2</span> <span class="op">&gt;=</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">% &#39;linprog&#39; for LP; use &#39;quadprog&#39; or &#39;osqp&#39; for QP/SOCP variants.</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">options</span> <span class="op">=</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span> <span class="ss">&#39;solver&#39;</span><span class="op">,</span> <span class="ss">&#39;linprog&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">sol</span> <span class="op">=</span> <span class="va">optimize</span>(<span class="va">Constraints</span><span class="op">,</span> <span class="va">Objective</span><span class="op">,</span> <span class="va">options</span>)<span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="va">sol</span>.<span class="va">problem</span> <span class="op">==</span> <span class="fl">0</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;Optimal Solution:\n&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;x1 (Corn) : %.4f kg\n&#39;</span><span class="op">,</span> <span class="va">value</span>(<span class="va">x1</span>))<span class="op">;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;x2 (Bread): %.4f kg\n&#39;</span><span class="op">,</span> <span class="va">value</span>(<span class="va">x2</span>))<span class="op">;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">fprintf</span>(<span class="ss">&#39;Min Cost  : $%.4f\n&#39;</span><span class="op">,</span> <span class="va">value</span>(<span class="va">Objective</span>))<span class="op">;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">disp</span>(<span class="ss">&#39;Problem could not be solved.&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span></code></pre></div>
 </div>
 <figure id="fig:stigler2d" data-latex-placement="h!">
-<img src="figures/Stigler2d.png" style="width:70.0%" />
+<embed src="figures/Stigler2d.png" style="width:70.0%" />
 <figcaption>Numerical solution of the 2d Stigler problem in
 MATLAB.</figcaption>
 </figure>
@@ -1196,14 +1203,14 @@ f}{\partial x_1 \partial x_2} \\[12pt]
         6 &amp; 2 \\
         2 &amp; 10
     \end{bmatrix}\]</span> Note that for smooth functions, the Hessian
-is always a <em>symmetric</em> matrix (<span
+is always a <strong>symmetric</strong> matrix (<span
 class="math inline">\(H_{ij} = H_{ji}\)</span>).</p>
 </div>
 <p>In the strictly convex case (where <span class="math inline">\(P
 \succ 0\)</span>), the level sets of the objective function form
 concentric ellipses. This structure guarantees that the optimisation
-problem yields a <em>unique global minimiser</em>, provided the feasible
-region is non-empty.</p>
+problem yields a <strong>unique global minimiser</strong>, provided the
+feasible region is non-empty.</p>
 <p>Geometrically, the solver searches for the smallest possible ellipse
 that still overlaps with the constraints. The optimal solution is found
 at the precise point where this lowest-cost contour touches (or
@@ -1211,7 +1218,7 @@ at the precise point where this lowest-cost contour touches (or
 illustrated in Figure <a href="#fig:QP" data-reference-type="ref"
 data-reference="fig:QP">1.7</a>.</p>
 <figure id="fig:QP" data-latex-placement="!h">
-
+<img src="figures/tikz_ch02_15.png" style="width:55.0%" />
 <figcaption>Convex quadratic optimisation on a polytope. Contours
 indicate decreasing objective value towards the optimal point <span
 class="math inline">\(x^\star\)</span>.</figcaption>
@@ -1251,9 +1258,10 @@ data-reference="fig:qp_distance">[fig:qp_distance]</a>), the closest
 point within the box to <span class="math inline">\((3,2)\)</span> is
 the upper-right corner of the box, <span class="math inline">\(x^* = (1,
 1)\)</span>.</p>
-<div class="center">
-<p><span id="fig:qp_distance" data-label="fig:qp_distance"></span></p>
-</div>
+<figure id="fig:qp_distance">
+<img src="figures/tikz_ch02_16.png" style="width:70.0%" />
+<figcaption>Geometry of the optimisation problem.</figcaption>
+</figure>
 <p>To solve this problem numerically using a solver (like OSQP,
 quadprog, or GUROBI), we must map the problem into the standard
 Quadratic Programming form: <span
@@ -1391,7 +1399,7 @@ class="math display">\[\begin{align*}
     &amp; Ax = b
 \end{align*}\]</span></p>
 <figure id="fig:NonconvexQP" data-latex-placement="h">
-
+<img src="figures/tikz_ch02_17.png" style="width:55.0%" />
 <figcaption>Nonconvex quadratic optimisation on a polytope. The dashed
 lines represent the contours of a saddle-shaped objective function. The
 global optimum is likely at a vertex, but local minima may
@@ -1504,11 +1512,11 @@ class="math display">\[\begin{align}
 Mixed-Integer Linear Programme (MILP) due to the binary variables <span
 class="math inline">\(u(k), s(k), z(k)\)</span>. It requires specialised
 solvers like Gurobi or CPLEX. In the software section later, we will
-implement a <em>simplified</em> version of this (a continuous LP) to
-demonstrate the concept in MATLAB.</p>
+implement a <strong>simplified</strong> version of this (a continuous
+LP) to demonstrate the concept in MATLAB.</p>
 </div>
 <figure id="fig:MIP" data-latex-placement="!htb">
-
+<img src="figures/tikz_ch02_18.png" style="width:60.0%" />
 <figcaption>MILP feasible set: discrete integer lattice points within a
 polytope.</figcaption>
 </figure>
@@ -1531,20 +1539,23 @@ Active-Set methods or Interior-Point methods).</p></li>
 <p>Choosing the right parser depends heavily on the programming
 environment (MATLAB vs. Python) and the type of problem (Convex vs.
 Nonlinear).</p>
-<p>For <em>MATLAB</em> users, <em>YALMIP</em> is the de facto standard
-for prototyping. It supports a vast array of solvers and allows users to
-switch between them by changing a single line of code. <em>CVX</em> is
-another popular option, specifically designed for Disciplined Convex
-Programming (DCP), a methodology that requires users to compose their
-optimisation problems from a fixed library of convex functions and
-composition rules so that convexity is automatically verified.</p>
-<p>For <em>Python</em> users, <em>CVXPY</em> is the equivalent of CVX,
-providing a clean object-oriented interface for convex problems.</p>
-<p>For <em>Nonlinear MPC (NMPC)</em> and high-performance applications,
-<em>CasADi</em> is widely used in both Python and MATLAB. Unlike
-standard parsers, CasADi implements Algorithmic Differentiation (AD),
-allowing it to compute exact gradients and Hessians automatically, which
-is critical for solving nonlinear control problems efficiently.</p>
+<p>For <strong>MATLAB</strong> users, <strong>YALMIP</strong> is the de
+facto standard for prototyping. It supports a vast array of solvers and
+allows users to switch between them by changing a single line of code.
+<strong>CVX</strong> is another popular option, specifically designed
+for Disciplined Convex Programming (DCP), a methodology that requires
+users to compose their optimisation problems from a fixed library of
+convex functions and composition rules so that convexity is
+automatically verified.</p>
+<p>For <strong>Python</strong> users, <strong>CVXPY</strong> is the
+equivalent of CVX, providing a clean object-oriented interface for
+convex problems.</p>
+<p>For <strong>Nonlinear MPC (NMPC)</strong> and high-performance
+applications, <strong>CasADi</strong> is widely used in both Python and
+MATLAB. Unlike standard parsers, CasADi implements Algorithmic
+Differentiation (AD), allowing it to compute exact gradients and
+Hessians automatically, which is critical for solving nonlinear control
+problems efficiently.</p>
 <div id="tab:parsers">
 <table>
 <caption>Comparison of Common Modelling Languages (Parsers)</caption>
@@ -1610,26 +1621,26 @@ deployment requirements.</p>
 <h4 class="unnumbered"
 id="linear-and-quadratic-solvers-standard-mpc">Linear and Quadratic
 Solvers (Standard MPC)</h4>
-<p>For linear MPC, we typically solve a <em>Quadratic Programme
-(QP)</em>. Solvers like <em>OSQP</em> (Operator Splitting Quadratic
-Programme) and <em>quadprog</em> are popular because they are robust,
-code-generatable, and solve for moderate accuracy very quickly.
-<em>qpOASES</em> is an active-set solver specifically designed for MPC;
-it uses "warm-starting" to solve the next time-step’s problem almost
-instantly based on the previous solution.</p>
-<p>For commercial applications, <em>Gurobi</em> and <em>CPLEX</em> are
-the industry leaders, offering unmatched speed for large-scale
-Mixed-Integer (MIP) and convex problems.</p>
+<p>For linear MPC, we typically solve a <strong>Quadratic Programme
+(QP)</strong>. Solvers like <strong>OSQP</strong> (Operator Splitting
+Quadratic Programme) and <strong>quadprog</strong> are popular because
+they are robust, code-generatable, and solve for moderate accuracy very
+quickly. <strong>qpOASES</strong> is an active-set solver specifically
+designed for MPC; it uses "warm-starting" to solve the next time-step’s
+problem almost instantly based on the previous solution.</p>
+<p>For commercial applications, <strong>Gurobi</strong> and
+<strong>CPLEX</strong> are the industry leaders, offering unmatched
+speed for large-scale Mixed-Integer (MIP) and convex problems.</p>
 <h4 class="unnumbered"
 id="conic-and-nonlinear-solvers-robust-nonlinear-mpc">Conic and
 Nonlinear Solvers (Robust &amp; Nonlinear MPC)</h4>
 <p>If the MPC formulation involves ellipsoidal constraints (Robust MPC)
-or Linear Matrix Inequalities (LMIs), a <em>Conic Solver</em> is
-required. <em>MOSEK</em> is the industry leader for these types of
-problems (SOCP and SDP). For pure MATLAB-based research involving LMIs,
-<em>SeDuMi</em> remains a classic open-source option.</p>
-<p>For Nonlinear MPC, <em>IPOPT</em> (Interior Point OPTimizer) is the
-standard open-source engine, often paired with CasADi.</p>
+or Linear Matrix Inequalities (LMIs), a <strong>Conic Solver</strong> is
+required. <strong>MOSEK</strong> is the industry leader for these types
+of problems (SOCP and SDP). For pure MATLAB-based research involving
+LMIs, <strong>SeDuMi</strong> remains a classic open-source option.</p>
+<p>For Nonlinear MPC, <strong>IPOPT</strong> (Interior Point OPTimizer)
+is the standard open-source engine, often paired with CasADi.</p>
 <div id="tab:solvers">
 <table>
 <caption>List of Common Numerical Solvers</caption>
@@ -1727,9 +1738,9 @@ computer can solve. In this section, we explore a complex energy
 management system as an example.</p>
 <h3 id="economic-mpc-for-smart-grids">Economic MPC for Smart Grids</h3>
 <p>In this example, we explore a sophisticated application of
-optimisation: <em>Economic Energy Management</em>. The goal here is
-purely economic: minimise the total cost of electricity over a 24-hour
-horizon.</p>
+optimisation: <strong>Economic Energy Management</strong>. The goal here
+is purely economic: minimise the total cost of electricity over a
+24-hour horizon.</p>
 <h4 id="problem-scenario">Problem Scenario</h4>
 <p>Although the general problem formulation (the MILP discussed earlier)
 included complex generator logic, for this MATLAB example we will solve
@@ -1788,52 +1799,53 @@ YALMIP)</h4>
 Since this problem is purely continuous, we solve it as a Linear
 Programme (LP) using <code>quadprog</code> (with zero quadratic cost) or
 <code>linprog</code>.</p>
-<pre class="matlab" data-language="Matlab"><code>    N = 24;                 % Horizon (24 hours)
-    E_cap = 13.5;           % Battery Capacity (kWh, e.g., Tesla Powerwall)
-    P_max = 5;              % Max Charge/Discharge rate (kW)
-    dt = 1;                 % Time step (1 hour)
-    
-    % --- 2. Forecast Data (Profiles) ---
-    % Price: 0.10 (Off-peak), 0.30 (Peak: 17:00-21:00)
-    Price = 0.10 * ones(N,1);  Price(18:21) = 0.30; 
-    
-    % Solar: Peak at noon (simple sine wave approx)
-    t = (0:N-1)&#39;;
-    Solar = max(0, 4 * sin(pi * (t - 6) / 12)); 
-    
-    % Load: Peaks in morning and evening
-    Load = 1 + 2 * exp(-(t-19).^2/10) + 1 * exp(-(t-8).^2/5);
-    
-    % --- 3. Optimisation Variables ---
-    P_grid = sdpvar(N, 1);   % Grid Power
-    P_bat  = sdpvar(N, 1);   % Battery Power
-    E_bat  = sdpvar(N+1, 1); % Battery State of Charge
-    
-    % --- 4. Constraints Construction ---
-    C = [];
-    
-    % Start with empty battery (Assumption for this specific day)
-    % In real MPC, E_bat(1) would equal the measured sensor value.
-    C = [C, E_bat(1) == 0]; 
-    
-    for k = 1:N
-        % Dynamics: Energy integration
-        C = [C, E_bat(k+1) == E_bat(k) + P_bat(k) * dt];
-    
-        % Power Balance: Supply (Grid+Solar) = Demand (Load+BatteryCharge)
-        C = [C, P_grid(k) + Solar(k) == Load(k) + P_bat(k)];
-    
-        % Physical Constraints
-        C = [C, 0 &lt;= E_bat(k+1) &lt;= E_cap]; % Capacity limits
-        C = [C, -P_max &lt;= P_bat(k) &lt;= P_max]; % Power limits
-    end
-    
-    % --- 5. Objective: Minimise Total Cost ---
-    Objective = Price&#39; * P_grid;
-    
-    % --- 6. Solve ---
-    ops = sdpsettings(&#39;solver&#39;,&#39;quadprog&#39;,&#39;verbose&#39;,0);
-    sol = optimize(C, Objective, ops);</code></pre>
+<div class="sourceCode" id="cb4" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="va">N</span> <span class="op">=</span> <span class="fl">24</span><span class="op">;</span>                 <span class="co">% Horizon (24 hours)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">E_cap</span> <span class="op">=</span> <span class="fl">13.5</span><span class="op">;</span>           <span class="co">% Battery Capacity (kWh, e.g., Tesla Powerwall)</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">P_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span>              <span class="co">% Max Charge/Discharge rate (kW)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">dt</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>                 <span class="co">% Time step (1 hour)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- 2. Forecast Data (Profiles) ---</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Price: 0.10 (Off-peak), 0.30 (Peak: 17:00-21:00)</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">Price</span> <span class="op">=</span> <span class="fl">0.10</span> <span class="op">*</span> <span class="va">ones</span>(<span class="va">N</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">Price</span>(<span class="fl">18</span><span class="op">:</span><span class="fl">21</span>) <span class="op">=</span> <span class="fl">0.30</span><span class="op">;</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Solar: Peak at noon (simple sine wave approx)</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">t</span> <span class="op">=</span> (<span class="fl">0</span><span class="op">:</span><span class="va">N</span><span class="op">-</span><span class="fl">1</span>)<span class="op">&#39;;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">Solar</span> <span class="op">=</span> <span class="va">max</span>(<span class="fl">0</span><span class="op">,</span> <span class="fl">4</span> <span class="op">*</span> <span class="va">sin</span>(<span class="va">pi</span> <span class="op">*</span> (<span class="va">t</span> <span class="op">-</span> <span class="fl">6</span>) <span class="op">/</span> <span class="fl">12</span>))<span class="op">;</span> </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Load: Peaks in morning and evening</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">Load</span> <span class="op">=</span> <span class="fl">1</span> <span class="op">+</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">exp</span>(<span class="op">-</span>(<span class="va">t</span><span class="op">-</span><span class="fl">19</span>)<span class="op">.^</span><span class="fl">2</span><span class="op">/</span><span class="fl">10</span>) <span class="op">+</span> <span class="fl">1</span> <span class="op">*</span> <span class="va">exp</span>(<span class="op">-</span>(<span class="va">t</span><span class="op">-</span><span class="fl">8</span>)<span class="op">.^</span><span class="fl">2</span><span class="op">/</span><span class="fl">5</span>)<span class="op">;</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- 3. Optimisation Variables ---</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="va">P_grid</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">N</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span>   <span class="co">% Grid Power</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">P_bat</span>  <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">N</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span>   <span class="co">% Battery Power</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">E_bat</span>  <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">N</span><span class="op">+</span><span class="fl">1</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span> <span class="co">% Battery State of Charge</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- 4. Constraints Construction ---</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="va">C</span> <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Start with empty battery (Assumption for this specific day)</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">% In real MPC, E_bat(1) would equal the measured sensor value.</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="va">C</span> <span class="op">=</span> [<span class="va">C</span><span class="op">,</span> <span class="va">E_bat</span>(<span class="fl">1</span>) <span class="op">==</span> <span class="fl">0</span>]<span class="op">;</span> </span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Dynamics: Energy integration</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">C</span> <span class="op">=</span> [<span class="va">C</span><span class="op">,</span> <span class="va">E_bat</span>(<span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">E_bat</span>(<span class="va">k</span>) <span class="op">+</span> <span class="va">P_bat</span>(<span class="va">k</span>) <span class="op">*</span> <span class="va">dt</span>]<span class="op">;</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Power Balance: Supply (Grid+Solar) = Demand (Load+BatteryCharge)</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">C</span> <span class="op">=</span> [<span class="va">C</span><span class="op">,</span> <span class="va">P_grid</span>(<span class="va">k</span>) <span class="op">+</span> <span class="va">Solar</span>(<span class="va">k</span>) <span class="op">==</span> <span class="va">Load</span>(<span class="va">k</span>) <span class="op">+</span> <span class="va">P_bat</span>(<span class="va">k</span>)]<span class="op">;</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Physical Constraints</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">C</span> <span class="op">=</span> [<span class="va">C</span><span class="op">,</span> <span class="fl">0</span> <span class="op">&lt;=</span> <span class="va">E_bat</span>(<span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">&lt;=</span> <span class="va">E_cap</span>]<span class="op">;</span> <span class="co">% Capacity limits</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">C</span> <span class="op">=</span> [<span class="va">C</span><span class="op">,</span> <span class="op">-</span><span class="va">P_max</span> <span class="op">&lt;=</span> <span class="va">P_bat</span>(<span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">P_max</span>]<span class="op">;</span> <span class="co">% Power limits</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- 5. Objective: Minimise Total Cost ---</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">Objective</span> <span class="op">=</span> <span class="va">Price</span><span class="op">&#39;</span> <span class="op">*</span> <span class="va">P_grid</span><span class="op">;</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- 6. Solve ---</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    <span class="va">ops</span> <span class="op">=</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;solver&#39;</span><span class="op">,</span><span class="ss">&#39;quadprog&#39;</span><span class="op">,</span><span class="ss">&#39;verbose&#39;</span><span class="op">,</span><span class="fl">0</span>)<span class="op">;</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="va">sol</span> <span class="op">=</span> <span class="va">optimize</span>(<span class="va">C</span><span class="op">,</span> <span class="va">Objective</span><span class="op">,</span> <span class="va">ops</span>)<span class="op">;</span></span></code></pre></div>
 <h4 id="visualising-the-result">Visualising the Result</h4>
 <p>The result is best understood visually (Figure <a
 href="#fig:smartgrid" data-reference-type="ref"
@@ -1881,8 +1893,8 @@ is empty, the problem is infeasible, and no solution exists.</p></li>
 <li><p><strong>Convexity:</strong> The most critical property of an
 optimisation problem is convexity. If the objective function is convex
 (bowl-shaped) and the constraints form a convex set, any local minimum
-found is guaranteed to be the <em>global minimum</em>. This reliability
-is essential for safety-critical control systems.</p></li>
+found is guaranteed to be the <strong>global minimum</strong>. This
+reliability is essential for safety-critical control systems.</p></li>
 <li><p><strong>Standard Forms:</strong></p>
 <ul>
 <li><p><strong>LP (Linear Programme):</strong> Linear cost and
@@ -1900,1260 +1912,6 @@ seek to minimise cost. To maximise a benefit (like profit), we simply
 minimise the negative of that function: <span
 class="math display">\[\arg \max f(x) \equiv \arg \min
 (-f(x))\]</span></p></li>
-</ul>
-<h2 id="sec:numerical_methods">Numerical Methods for Optimisation<span
-class="math inline">\(^{(*)}\)</span></h2>
-<p>The previous sections defined the components of an optimisation
-problem—decision variables, cost function, and constraints—and
-classified common problem types (LP, QP, MILP). This section addresses a
-natural follow-up question: <em>how do numerical solvers actually find
-the optimal solution?</em> We begin with the simplest case, finding
-roots of scalar functions, and progressively build toward multi-variable
-constrained optimisation algorithms. The methods introduced here
-underpin virtually every solver used in Model Predictive Control.</p>
-<p>The key insight linking root finding to optimisation is the
-first-order necessary condition: for <span
-class="math inline">\(x^*\)</span> to be a local minimum of a
-differentiable function <span class="math inline">\(J(x)\)</span>, the
-gradient must vanish, <span class="math display">\[\nabla J(x^*) =
-0.\]</span> Therefore, finding an optimum <em>reduces to finding a
-root</em> of the gradient. We begin by studying two classical
-root-finding algorithms—bisection and Newton–Raphson—before generalising
-them to multi-variable optimisation.</p>
-<h3 id="the-bisection-method">The Bisection Method</h3>
-<div class="defnbox">
-<p><span>Bisection Method</span> Given a continuous function <span
-class="math inline">\(g\colon \mathbb{R}\to\mathbb{R}\)</span> and an
-interval <span class="math inline">\([a,b]\)</span> such that <span
-class="math inline">\(g(a)\cdot g(b)&lt;0\)</span>, the Intermediate
-Value Theorem guarantees at least one root <span
-class="math inline">\(x^*\in(a,b)\)</span>. The bisection method
-evaluates <span class="math inline">\(g\)</span> at the midpoint <span
-class="math inline">\(c=(a+b)/2\)</span> and replaces the endpoint whose
-function value has the same sign as <span
-class="math inline">\(g(c)\)</span>, thereby halving the bracket at each
-step.</p>
-<p><strong>Convergence rate:</strong> linear. After <span
-class="math inline">\(k\)</span> iterations the error satisfies <span
-class="math display">\[|x_k - x^*| \;\le\;
-\frac{b-a}{2^{k}}.\]</span></p>
-</div>
-<div class="algorithm">
-<div class="algorithmic">
-<p><span class="math inline">\(g\)</span>, <span
-class="math inline">\(a\)</span>, <span
-class="math inline">\(b\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> with <span
-class="math inline">\(g(a)\cdot g(b)&lt;0\)</span> <span
-class="math inline">\(c \gets (a+b)/2\)</span> <span
-class="math inline">\(b \gets c\)</span> <span class="math inline">\(a
-\gets c\)</span> <span class="math inline">\((a+b)/2\)</span></p>
-</div>
-</div>
-<div class="center">
-<p><span id="fig:num_bisection"
-data-label="fig:num_bisection"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Root Finding by Bisection</span> Consider finding the roots of
-the polynomial <span class="math display">\[g(x) \;=\; 3x^2 - 6x + 2
-\;=\; 0.\]</span> This arises, for instance, when setting the gradient
-of a cost function to zero. We observe that <span
-class="math inline">\(g(0)=2&gt;0\)</span> and <span
-class="math inline">\(g(0.5)=-0.25&lt;0\)</span>, so by the IVT a root
-lies in <span class="math inline">\([0,\,0.5]\)</span>.</p>
-<p>Applying Algorithm <a href="#alg:bisection" data-reference-type="ref"
-data-reference="alg:bisection">[alg:bisection]</a>:</p>
-<div class="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: center;"><span
-class="math inline">\(k\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(a_k\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(b_k\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(c_k\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(g(c_k)\)</span></th>
-<th style="text-align: left;">Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">0</td>
-<td style="text-align: center;">0.0000</td>
-<td style="text-align: center;">0.5000</td>
-<td style="text-align: center;">0.2500</td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.6875\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(a \gets
-c\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">1</td>
-<td style="text-align: center;">0.2500</td>
-<td style="text-align: center;">0.5000</td>
-<td style="text-align: center;">0.3750</td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.1719\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(a \gets
-c\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">2</td>
-<td style="text-align: center;">0.3750</td>
-<td style="text-align: center;">0.5000</td>
-<td style="text-align: center;">0.4375</td>
-<td style="text-align: right;"><span
-class="math inline">\(-0.0508\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(b \gets
-c\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">3</td>
-<td style="text-align: center;">0.3750</td>
-<td style="text-align: center;">0.4375</td>
-<td style="text-align: center;">0.4063</td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.0576\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(a \gets
-c\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">4</td>
-<td style="text-align: center;">0.4063</td>
-<td style="text-align: center;">0.4375</td>
-<td style="text-align: center;">0.4219</td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.0027\)</span></td>
-<td style="text-align: left;"><span class="math inline">\(a \gets
-c\)</span></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>After 5 iterations the bracket width is <span
-class="math inline">\(0.4375-0.4219=0.0156\)</span>, and the midpoint
-<span class="math inline">\(0.4297\)</span> is already close to the
-exact root <span class="math inline">\(x^*=1-\sqrt{3}/3\approx
-0.4226\)</span>. Reaching six-decimal accuracy requires about 20
-iterations.</p>
-</div>
-<pre class="matlab" data-language="Matlab"
-data-caption="Bisection method in MATLAB."><code>g = @(x) 3*x.^2 - 6*x + 2;
-a = 0; b = 0.5; tol = 1e-6;
-while (b - a) &gt; tol
-    c = (a + b) / 2;
-    if g(a) * g(c) &lt; 0
-        b = c;
-    else
-        a = c;
-    end
-end
-fprintf(&#39;Root: %.6f\n&#39;, (a+b)/2);</code></pre>
-<h3 id="newtonraphson-method">Newton–Raphson Method</h3>
-<div class="defnbox">
-<p><span>Newton–Raphson Iteration</span> We seek <span
-class="math inline">\(x^*\)</span> such that <span
-class="math inline">\(g(x^*)=0\)</span>, but we cannot solve this
-equation directly. Instead, we <em>approximate</em> <span
-class="math inline">\(g\)</span> near the current iterate <span
-class="math inline">\(x_k\)</span> using a first-order Taylor expansion:
-<span class="math display">\[g(x) \;\approx\; g(x_k) + g&#39;(x_k)\,(x -
-x_k).\]</span> Setting this linear approximation to zero and solving for
-<span class="math inline">\(x\)</span> gives the next iterate: <span
-class="math display">\[0 = g(x_k) + g&#39;(x_k)\,(x_{k+1} - x_k)
-    \quad\Longrightarrow\quad
-    {\;x_{k+1} \;=\; x_k \;-\; \frac{g(x_k)}{g&#39;(x_k)}\;}\]</span>
-Geometrically, this replaces the curve <span
-class="math inline">\(g\)</span> by its tangent line at <span
-class="math inline">\(x_k\)</span> and takes the root of that tangent as
-the next iterate. The process repeats, producing progressively better
-approximations.</p>
-<p>Convergence is <em>quadratic</em> near the root: there exists a
-constant <span class="math inline">\(C&gt;0\)</span> such that <span
-class="math display">\[|x_{k+1}-x^*| \;\le\; C\,|x_k-x^*|^2.\]</span>
-This means the number of correct digits roughly <em>doubles</em> at each
-step.</p>
-</div>
-<div class="center">
-<p><span id="fig:num_newton_raphson"
-data-label="fig:num_newton_raphson"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Newton–Raphson for Root Finding</span> We apply Newton–Raphson
-to the same function <span
-class="math inline">\(g(x)=3x^2-6x+2\)</span>, with derivative <span
-class="math inline">\(g&#39;(x)=6x-6\)</span>. Starting from <span
-class="math inline">\(x_0=0\)</span>:</p>
-<div class="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: center;"><span
-class="math inline">\(k\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(x_k\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(g(x_k)\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(g&#39;(x_k)\)</span></th>
-<th style="text-align: center;"><span class="math inline">\(x_{k+1}=x_k
-- g/g&#39;\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">0</td>
-<td style="text-align: center;"><span
-class="math inline">\(0.0000\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(+2.0000\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(-6.0000\)</span></td>
-<td style="text-align: center;"><span
-class="math inline">\(0.3333\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">1</td>
-<td style="text-align: center;"><span
-class="math inline">\(0.3333\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.3333\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(-4.0000\)</span></td>
-<td style="text-align: center;"><span
-class="math inline">\(0.4167\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">2</td>
-<td style="text-align: center;"><span
-class="math inline">\(0.4167\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.0208\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(-3.5000\)</span></td>
-<td style="text-align: center;"><span
-class="math inline">\(0.4226\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">3</td>
-<td style="text-align: center;"><span
-class="math inline">\(0.4226\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(+0.0001\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(-3.4643\)</span></td>
-<td style="text-align: center;"><span
-class="math inline">\(0.4226\)</span></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>Newton–Raphson converges to six-decimal accuracy in only <em>3
-iterations</em>, compared with roughly 20 iterations for bisection. This
-dramatic speedup is a direct consequence of the quadratic convergence
-rate: once the iterates are close to the root, the number of correct
-digits approximately doubles at each step.</p>
-</div>
-<div class="notebox">
-<p><span>Connection to Optimisation</span> When we apply the
-Newton–Raphson method to the first-order optimality condition <span
-class="math inline">\(J&#39;(x)=0\)</span>, the update formula becomes
-<span class="math display">\[x_{k+1} \;=\; x_k \;-\;
-\frac{J&#39;(x_k)}{J&#39;&#39;(x_k)}.\]</span> This is <em>Newton’s
-method for one-dimensional optimisation</em>. In the next subsection, we
-generalise this idea to multiple dimensions: the scalar derivative <span
-class="math inline">\(J&#39;\)</span> is replaced by the gradient <span
-class="math inline">\(\nabla J\)</span>, and the scalar second
-derivative <span class="math inline">\(J&#39;&#39;\)</span> is replaced
-by the Hessian matrix <span class="math inline">\(\nabla^2
-J\)</span>.</p>
-</div>
-<h3 id="unconstrained-optimisation-gradient-based-methods">Unconstrained
-Optimisation: Gradient-Based Methods</h3>
-<p>We now generalise the root-finding ideas from one dimension to
-multiple dimensions. Given a differentiable cost function <span
-class="math inline">\(J\colon\mathbb{R}^n\to\mathbb{R}\)</span>, the
-necessary condition for a local minimum is <span
-class="math inline">\(\nabla J(x^*)=0\)</span>. The gradient <span
-class="math inline">\(\nabla J(x)\in\mathbb{R}^n\)</span> points in the
-direction of steepest <em>ascent</em>; its negative <span
-class="math inline">\(-\nabla J(x)\)</span> is the direction of steepest
-<em>descent</em>. This observation motivates the iterative algorithms
-below.</p>
-<h4 id="gradient-descent-steepest-descent">Gradient Descent (Steepest
-Descent)</h4>
-<div class="defnbox">
-<p><span>Gradient Descent</span> Starting from an initial guess <span
-class="math inline">\(x_0\in\mathbb{R}^n\)</span>, the gradient descent
-method generates iterates <span class="math display">\[x_{k+1} \;=\; x_k
-\;-\; \alpha\,\nabla J(x_k),\]</span> where <span
-class="math inline">\(\alpha&gt;0\)</span> is the <em>step size</em> (or
-<em>learning rate</em>). If <span class="math inline">\(\alpha\)</span>
-is sufficiently small and <span class="math inline">\(J\)</span> is
-smooth, the cost decreases monotonically: <span
-class="math inline">\(J(x_{k+1})&lt;J(x_k)\)</span>.</p>
-</div>
-<div class="algorithm">
-<div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, initial guess <span
-class="math inline">\(x_0\)</span>, step size <span
-class="math inline">\(\alpha&gt;0\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> <span
-class="math inline">\(k \gets 0\)</span> <span
-class="math inline">\(x_{k+1} \gets x_k - \alpha\,\nabla J(x_k)\)</span>
-<span class="math inline">\(k \gets k+1\)</span> <span
-class="math inline">\(x_k\)</span></p>
-</div>
-</div>
-<div class="center">
-<p><span id="fig:num_gradient_descent"
-data-label="fig:num_gradient_descent"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Gradient Descent on a Quadratic</span> Minimise <span
-class="math inline">\(J(x)=5x_1^2+x_2^2\)</span> starting from <span
-class="math inline">\(x_0=(4,\,3)^\top\)</span> with a fixed step size
-<span class="math inline">\(\alpha=0.08\)</span>.</p>
-<p>The gradient is <span class="math inline">\(\nabla
-J(x)=(10x_1,\;2x_2)^\top\)</span>.</p>
-<div class="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: center;"><span
-class="math inline">\(k\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(x_1\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(x_2\)</span></th>
-<th style="text-align: right;"><span
-class="math inline">\(J(x)\)</span></th>
-<th style="text-align: right;"><span class="math inline">\(\|\nabla
-J\|\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">0</td>
-<td style="text-align: right;"><span
-class="math inline">\(4.0000\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(3.0000\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(89.00\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(40.45\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">1</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.8000\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.5200\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(9.55\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(9.46\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">2</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.1600\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.1168\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(4.61\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(4.53\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">3</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.0320\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.7781\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(3.17\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(3.57\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">4</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.0064\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.4936\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.23\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.99\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">5</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.0013\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.2546\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.57\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.51\)</span></td>
-</tr>
-<tr>
-<td style="text-align: center;">6</td>
-<td style="text-align: right;"><span
-class="math inline">\(0.0003\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.0539\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(1.11\)</span></td>
-<td style="text-align: right;"><span
-class="math inline">\(2.11\)</span></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>After 7 iterations the cost has only decreased from <span
-class="math inline">\(89\)</span> to <span
-class="math inline">\(1.11\)</span>. The zigzag pattern visible in
-Figure <a href="#fig:num_gradient_descent" data-reference-type="ref"
-data-reference="fig:num_gradient_descent">[fig:num_gradient_descent]</a>
-arises because the contours are elongated ellipses: the step overshoots
-in the <span class="math inline">\(x_1\)</span>-direction (steep
-curvature) and undershoots in the <span
-class="math inline">\(x_2\)</span>-direction (gentle curvature). A
-single step size <span class="math inline">\(\alpha\)</span> cannot
-simultaneously suit both scales.</p>
-</div>
-<h4 id="step-size-selection-armijo-backtracking">Step-Size Selection:
-Armijo Backtracking</h4>
-<p>A fixed step size <span class="math inline">\(\alpha\)</span> is
-fragile—too large causes divergence, too small makes convergence
-impractically slow. The <em>Armijo backtracking line search</em>
-adaptively selects <span class="math inline">\(\alpha\)</span> at each
-step to guarantee sufficient decrease.</p>
-<div class="defnbox">
-<p><span>Armijo Condition</span> A step size <span
-class="math inline">\(\alpha\)</span> satisfies the <em>Armijo
-(sufficient decrease) condition</em> if <span
-class="math display">\[J(x_k + \alpha\, d_k) \;\le\; J(x_k) \;+\;
-c\,\alpha\,\nabla J(x_k)^\top d_k,\]</span> where <span
-class="math inline">\(d_k\)</span> is the search direction (e.g. <span
-class="math inline">\(d_k=-\nabla J(x_k)\)</span>) and <span
-class="math inline">\(c\in(0,1)\)</span> is a small constant (typically
-<span class="math inline">\(c=10^{-4}\)</span>). The right-hand side is
-a linear model of the decrease; the condition requires the actual
-decrease to be at least as large as a fraction <span
-class="math inline">\(c\)</span> of the predicted decrease.</p>
-</div>
-<div class="algorithm">
-<div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, current iterate <span
-class="math inline">\(x_k\)</span>, search direction <span
-class="math inline">\(d_k\)</span> <span class="math inline">\(c =
-10^{-4}\)</span>, contraction factor <span class="math inline">\(\beta =
-0.5\)</span> <span class="math inline">\(\alpha \gets 1\)</span> <span
-class="math inline">\(\alpha \gets \beta\,\alpha\)</span> <span
-class="math inline">\(\alpha\)</span></p>
-</div>
-</div>
-<div class="notebox">
-<p><span>Relevance to MPC</span> In real-time Nonlinear MPC
-(Chapter 10), Sequential Quadratic Programming (SQP) solvers such as
-<code>SNOPT</code> and <code>IPOPT</code> use globalised Newton steps
-with Armijo-type line searches. This prevents the solver from
-overshooting, which could violate safety constraints on a physical
-system. The backtracking mechanism is therefore not merely a numerical
-convenience—it is a practical safeguard.</p>
-</div>
-<h4 id="newtons-method-for-optimisation">Newton’s Method for
-Optimisation</h4>
-<p>Gradient descent uses only first-order information (the gradient).
-Newton’s method also uses <em>second-order</em> information (the
-Hessian), enabling much faster convergence by accounting for the
-curvature of <span class="math inline">\(J\)</span>.</p>
-<div class="defnbox">
-<p><span>Newton’s Method for Optimisation</span> Starting from <span
-class="math inline">\(x_0\in\mathbb{R}^n\)</span>, Newton’s method
-generates iterates by solving the linear system <span
-class="math display">\[\nabla^2 J(x_k)\, d_k \;=\; -\nabla
-J(x_k)\]</span> for the <em>Newton direction</em> <span
-class="math inline">\(d_k\)</span>, then updating <span
-class="math inline">\(x_{k+1}=x_k+\alpha_k\, d_k\)</span> (with <span
-class="math inline">\(\alpha_k\)</span> chosen by an Armijo line search,
-or <span class="math inline">\(\alpha_k=1\)</span> for a full Newton
-step). Near a local minimum with a positive-definite Hessian,
-convergence is <em>quadratic</em>.</p>
-</div>
-<div class="algorithm">
-<div class="algorithmic">
-<p><span class="math inline">\(J\)</span>, <span
-class="math inline">\(\nabla J\)</span>, <span
-class="math inline">\(\nabla^2 J\)</span>, initial guess <span
-class="math inline">\(x_0\)</span>, tolerance <span
-class="math inline">\(\varepsilon&gt;0\)</span> <span
-class="math inline">\(k \gets 0\)</span> Solve <span
-class="math inline">\(\nabla^2 J(x_k)\, d_k = -\nabla J(x_k)\)</span>
-for <span class="math inline">\(d_k\)</span> <span
-class="math inline">\(\alpha_k \gets \textsc{ArmijoBacktrack}(J, \nabla
-J, x_k, d_k)\)</span> <span class="math inline">\(x_{k+1} \gets x_k +
-\alpha_k\, d_k\)</span> <span class="math inline">\(k \gets k+1\)</span>
-<span class="math inline">\(x_k\)</span></p>
-</div>
-</div>
-<div class="center">
-<p><span id="fig:num_newton_vs_gd"
-data-label="fig:num_newton_vs_gd"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Newton vs. Gradient Descent</span> We apply Newton’s method to
-the same problem: <span
-class="math inline">\(J(x)=5x_1^2+x_2^2\)</span>, starting from <span
-class="math inline">\(x_0=(4,\,3)^\top\)</span>.</p>
-<p>The gradient and Hessian are <span class="math display">\[\nabla J(x)
-= \begin{bmatrix} 10x_1 \\ 2x_2 \end{bmatrix}, \qquad
-    \nabla^2 J = \begin{bmatrix} 10 &amp; 0 \\ 0 &amp; 2 \end{bmatrix}
-\quad \text{(constant)}.\]</span> At <span
-class="math inline">\(x_0=(4,3)^\top\)</span>: <span
-class="math display">\[\nabla J(x_0) = \begin{bmatrix} 40 \\ 6
-\end{bmatrix}, \qquad
-    d_0 = -\bigl(\nabla^2 J\bigr)^{-1}\nabla J(x_0)
-    = -\begin{bmatrix} 1/10 &amp; 0 \\ 0 &amp; 1/2 \end{bmatrix}
-    \begin{bmatrix} 40 \\ 6 \end{bmatrix}
-    = \begin{bmatrix} -4 \\ -3 \end{bmatrix}.\]</span> With a full
-Newton step (<span class="math inline">\(\alpha=1\)</span>): <span
-class="math display">\[x_1 = x_0 + d_0 = \begin{bmatrix} 4 \\ 3
-\end{bmatrix} + \begin{bmatrix} -4 \\ -3 \end{bmatrix} = \begin{bmatrix}
-0 \\ 0 \end{bmatrix} = x^*.\]</span> Newton’s method converges in
-<em>one step</em> because <span class="math inline">\(J\)</span> is
-quadratic and the Hessian is constant. Gradient descent required 20+
-iterations for comparable accuracy.</p>
-<p>This observation is directly relevant to MPC: the standard MPC cost
-function is a convex quadratic programme (QP), so Newton-type solvers
-(e.g. active-set or interior-point methods) converge in very few
-iterations per active-set change.</p>
-</div>
-<pre class="matlab" data-language="Matlab"
-data-caption="Newton&#39;s method with Armijo backtracking for a 2D quadratic."><code>x = [4; 3]; tol = 1e-8;
-H = [10 0; 0 2];              % Hessian (constant for this quadratic)
-J = @(z) 5*z(1)^2 + z(2)^2;  % cost function
-for k = 1:50
-    g = [10*x(1); 2*x(2)];    % gradient
-    if norm(g) &lt; tol, break; end
-    d = -H \ g;                % Newton direction
-    alpha = 1;                 % Armijo backtracking
-    while J(x + alpha*d) &gt; J(x) + 1e-4*alpha*(g&#39;*d)
-        alpha = 0.5 * alpha;
-    end
-    x = x + alpha * d;
-    fprintf(&#39;k=%d: x=[%.4f, %.4f], J=%.6f\n&#39;, k, x(1), x(2), J(x));
-end</code></pre>
-<h3 id="constrained-optimisation-lagrange-multipliers">Constrained
-Optimisation: Lagrange Multipliers</h3>
-<p>The unconstrained methods we have studied so far find minima by
-solving <span class="math inline">\(\nabla J(x^*) = 0\)</span>. However,
-in Model Predictive Control, we always operate under
-constraints—dynamics equations impose equality constraints, while
-actuator limits and safety bounds impose inequalities. How do we find a
-minimum when the optimum is forced to lie on a constraint surface?</p>
-<h4 id="geometric-intuition-tangency-of-level-curves">Geometric
-Intuition: Tangency of Level Curves</h4>
-<p>Consider minimising <span class="math inline">\(J(x) = x_1^2 +
-x_2^2\)</span> subject to <span class="math inline">\(x_1 + 2x_2 =
-4\)</span>. The level curves of <span class="math inline">\(J\)</span>
-are concentric circles centred at the origin. The constraint is a
-straight line. As we move along the constraint line, <span
-class="math inline">\(J\)</span> decreases until we reach a point where
-the constraint is <em>tangent</em> to a level curve—this is the
-constrained minimum. At this special point, the gradient of <span
-class="math inline">\(J\)</span> is parallel to the gradient of the
-constraint: <span class="math display">\[\nabla J(x^*) = -\lambda
-\,\nabla h(x^*) \quad \text{for some scalar } \lambda.\]</span> The key
-geometric insight is that if <span class="math inline">\(\nabla
-J\)</span> had any component along the constraint surface, we could
-slide along the constraint and further reduce <span
-class="math inline">\(J\)</span>. Only when the gradient of <span
-class="math inline">\(J\)</span> is entirely perpendicular to the
-constraint (i.e., parallel to <span class="math inline">\(\nabla
-h\)</span>) is there no improving direction remaining.</p>
-<div class="center">
-<p><span id="fig:num_lagrange_geometry"
-data-label="fig:num_lagrange_geometry"></span></p>
-</div>
-<h4 id="the-lagrangian-function">The Lagrangian Function</h4>
-<p>The geometric observation—that <span class="math inline">\(\nabla
-J\)</span> and <span class="math inline">\(\nabla h\)</span> must be
-parallel at the optimum—can be formalised algebraically by introducing
-an auxiliary variable <span class="math inline">\(\lambda\)</span>
-called the <em>Lagrange multiplier</em>.</p>
-<div class="defnbox">
-<p><span>The Lagrangian and First-Order Conditions</span> For the
-equality-constrained problem <span class="math display">\[\min_{x}\;
-J(x) \quad \text{subject to} \quad h(x) = 0,\]</span> define the
-<em>Lagrangian</em>: <span class="math display">\[\mathcal{L}(x,\lambda)
-\;=\; J(x) + \lambda^\top h(x).\]</span> At a constrained minimum <span
-class="math inline">\((x^*,\lambda^*)\)</span>, the following
-first-order necessary conditions hold: <span
-class="math display">\[\begin{align*}
-        \nabla_x \mathcal{L} &amp;= \nabla J(x^*) + \lambda^{*\top}
-\nabla h(x^*) = 0 &amp;&amp; \text{(Stationarity)}\\
-        h(x^*) &amp;= 0 &amp;&amp; \text{(Feasibility)}
-\end{align*}\]</span> This is a system of <span
-class="math inline">\((n+q)\)</span> equations in <span
-class="math inline">\((n+q)\)</span> unknowns: <span
-class="math inline">\(n\)</span> primal variables <span
-class="math inline">\(x\)</span> and <span
-class="math inline">\(q\)</span> multipliers <span
-class="math inline">\(\lambda\)</span>.</p>
-</div>
-<p>The Lagrange multiplier <span class="math inline">\(\lambda\)</span>
-has an important economic interpretation: it measures the
-<em>sensitivity</em> of the optimal cost to a perturbation of the
-constraint. If we relax the constraint to <span
-class="math inline">\(h(x) = \epsilon\)</span>, the optimal cost changes
-by approximately <span class="math inline">\(\lambda\,\epsilon\)</span>.
-In MPC, this tells us how much the cost would improve if we slightly
-relaxed an actuator limit or a state bound—a quantity known as the
-<em>shadow price</em>.</p>
-<div class="examplebox">
-<p><span>Lagrange Multipliers: Worked Example</span> Minimise <span
-class="math inline">\(J(x) = x_1^2 + x_2^2\)</span> subject to <span
-class="math inline">\(h(x) = x_1 + 2x_2 - 4 = 0\)</span>.</p>
-<p><strong>Step 1: Form the Lagrangian.</strong> <span
-class="math display">\[\mathcal{L}(x,\lambda) = x_1^2 + x_2^2 +
-\lambda(x_1 + 2x_2 - 4).\]</span></p>
-<p><strong>Step 2: First-order conditions.</strong> <span
-class="math display">\[\begin{align*}
-        \frac{\partial \mathcal{L}}{\partial x_1} &amp;= 2x_1 + \lambda
-= 0 &amp;&amp;\Longrightarrow \quad x_1 = -\tfrac{\lambda}{2}, \\[4pt]
-        \frac{\partial \mathcal{L}}{\partial x_2} &amp;= 2x_2 + 2\lambda
-= 0 &amp;&amp;\Longrightarrow \quad x_2 = -\lambda, \\[4pt]
-        \frac{\partial \mathcal{L}}{\partial \lambda} &amp;= x_1 + 2x_2
-- 4 = 0 &amp;&amp;\text{(feasibility)}.
-\end{align*}\]</span></p>
-<p><strong>Step 3: Substitute into the feasibility condition.</strong>
-<span class="math display">\[\bigl(-\tfrac{\lambda}{2}\bigr) +
-2(-\lambda) = 4 \quad\Longrightarrow\quad -\tfrac{5\lambda}{2} = 4
-\quad\Longrightarrow\quad \lambda^* = -\tfrac{8}{5} = -1.6.\]</span></p>
-<p><strong>Step 4: Back-substitute.</strong> <span
-class="math display">\[x_1^* = -\frac{-1.6}{2} = 0.8, \qquad x_2^* =
--(-1.6) = 1.6.\]</span></p>
-<p>The constrained minimum is <span class="math inline">\(x^* = (0.8,\;
-1.6)\)</span> with optimal cost <span class="math inline">\(J^* = 0.64 +
-2.56 = 3.20\)</span>.</p>
-<p><strong>Interpretation:</strong> <span
-class="math inline">\(\lambda^* = -1.6\)</span> means that perturbing
-the constraint to <span class="math inline">\(x_1 + 2x_2 = 4 +
-\epsilon\)</span> would <em>increase</em> the optimal cost by
-approximately <span class="math inline">\(1.6\epsilon\)</span>. This is
-intuitive: the unconstrained minimum is the origin, so pushing the
-constraint line further away forces a larger cost.</p>
-</div>
-<h3 id="the-karushkuhntucker-kkt-conditions">The Karush–Kuhn–Tucker
-(KKT) Conditions</h3>
-<p>The Lagrange multiplier method handles equality constraints
-beautifully, but most practical problems—especially in MPC—involve
-<em>inequality</em> constraints: actuator saturations (<span
-class="math inline">\(|u| \le u_{\max}\)</span>), state bounds (<span
-class="math inline">\(x_{\min} \le x \le x_{\max}\)</span>), and safety
-regions. The Karush–Kuhn–Tucker (KKT) conditions extend Lagrange
-multipliers to handle both equality and inequality constraints
-simultaneously.</p>
-<h4 id="active-and-inactive-constraints">Active and Inactive
-Constraints</h4>
-<p>Consider an inequality constraint <span class="math inline">\(g_i(x)
-\le 0\)</span>. At a candidate solution <span
-class="math inline">\(x^*\)</span>, two situations arise:</p>
-<ul>
-<li><p><strong>Active (binding):</strong> <span
-class="math inline">\(g_i(x^*) = 0\)</span>—the constraint is tight, and
-<span class="math inline">\(x^*\)</span> lies on the constraint
-boundary. This constraint actively shapes the solution.</p></li>
-<li><p><strong>Inactive:</strong> <span class="math inline">\(g_i(x^*)
-&lt; 0\)</span>—the constraint is satisfied with slack. Removing it
-would not change the solution.</p></li>
-</ul>
-<p>The fundamental insight is that active constraints behave like
-equality constraints at the optimum (because <span
-class="math inline">\(g_i = 0\)</span>), while inactive constraints can
-be ignored. The KKT conditions formalise this observation by introducing
-a multiplier for each inequality and a rule that automatically “switches
-off” inactive constraints.</p>
-<h4 id="statement-of-the-kkt-conditions">Statement of the KKT
-Conditions</h4>
-<div class="defnbox">
-<p><span>Karush–Kuhn–Tucker (KKT) Necessary Conditions</span> Consider
-the general constrained problem: <span class="math display">\[\min_{x}\;
-J(x) \quad \text{s.t.} \quad g_i(x) \le 0,\; i=1,\ldots,m, \quad h_j(x)
-= 0,\; j=1,\ldots,q.\]</span> If <span
-class="math inline">\(x^*\)</span> is a local minimum satisfying a
-constraint qualification, then there exist multipliers <span
-class="math inline">\(\mu_i \ge 0\)</span> and <span
-class="math inline">\(\lambda_j\)</span> such that:</p>
-<ol>
-<li><p><strong>Stationarity:</strong> <span
-class="math display">\[\nabla J(x^*) + \sum_{i=1}^{m} \mu_i \,\nabla
-g_i(x^*) + \sum_{j=1}^{q} \lambda_j \,\nabla h_j(x^*) =
-0\]</span></p></li>
-<li><p><strong>Primal feasibility:</strong> <span
-class="math display">\[g_i(x^*) \le 0, \qquad h_j(x^*) =
-0\]</span></p></li>
-<li><p><strong>Dual feasibility:</strong> <span
-class="math display">\[\mu_i \ge 0\]</span></p></li>
-<li><p><strong>Complementary slackness:</strong> <span
-class="math display">\[\mu_i \, g_i(x^*) = 0 \quad \forall\,
-i\]</span></p></li>
-</ol>
-</div>
-<div class="notebox">
-<p><span>Complementary Slackness Demystified</span> Condition 4 encodes
-the active/inactive logic. For each inequality constraint, exactly one
-of two cases holds:</p>
-<ul>
-<li><p><span class="math inline">\(g_i(x^*) = 0\)</span> — the
-constraint is <em>active</em> and its multiplier <span
-class="math inline">\(\mu_i\)</span> may be positive, or</p></li>
-<li><p><span class="math inline">\(\mu_i = 0\)</span> — the constraint
-is <em>inactive</em> and exerts no influence.</p></li>
-</ul>
-<p>A useful analogy: imagine a ball rolling downhill inside a fenced
-yard. If the ball comes to rest against a fence (active constraint,
-<span class="math inline">\(g_i = 0\)</span>), the fence pushes back
-with a reaction force <span class="math inline">\(\mu_i &gt;
-0\)</span>—without it, the ball would roll further. If the ball settles
-in the middle of the yard, far from any fence (inactive, <span
-class="math inline">\(g_i &lt; 0\)</span>), that fence exerts no force
-at all (<span class="math inline">\(\mu_i = 0\)</span>)—the ball does
-not even “know” it is there. The product <span
-class="math inline">\(\mu_i\,g_i = 0\)</span> captures precisely this:
-either you are at the fence and it pushes, or you are away from it and
-it does nothing.</p>
-</div>
-<div class="alertbox">
-<p><span>When Are KKT Conditions Sufficient?</span> In general, the KKT
-conditions are only <em>necessary</em>—they identify candidate solutions
-but do not guarantee a global minimum. However, for <em>convex</em>
-problems (convex <span class="math inline">\(J\)</span>, convex feasible
-set), the KKT conditions are both necessary <em>and</em> sufficient.
-Since the standard MPC problem is a convex QP, any point satisfying the
-KKT conditions is the global optimum. This is precisely what solvers
-like <code>quadprog</code> exploit.</p>
-</div>
-<h4 id="geometric-interpretation">Geometric Interpretation</h4>
-<p>The stationarity condition has a powerful geometric meaning: at the
-constrained optimum, the negative gradient of the cost (the “desired
-descent direction”) must be expressible as a non-negative combination of
-the active constraint gradients. In other words, every direction that
-would decrease <span class="math inline">\(J\)</span> violates at least
-one active constraint—you are “stuck” at the optimum.</p>
-<div class="center">
-<p><span id="fig:num_kkt_geometry"
-data-label="fig:num_kkt_geometry"></span></p>
-</div>
-<p>When the optimum lies at the intersection of <em>two or more</em>
-active constraints, the descent direction must lie inside the cone
-spanned by their gradient vectors. The following figure illustrates this
-vertex case.</p>
-<div class="center">
-<p><span id="fig:num_kkt_vertex"
-data-label="fig:num_kkt_vertex"></span></p>
-</div>
-<div class="examplebox">
-<p><span>KKT Conditions: Complete Worked Example</span> Minimise <span
-class="math inline">\(J(x) = (x_1 - 4)^2 + (x_2 - 3)^2\)</span> subject
-to <span class="math inline">\(x_1 + x_2 \le 5\)</span>, <span
-class="math inline">\(x_1 \ge 0\)</span>, <span
-class="math inline">\(x_2 \ge 0\)</span>.</p>
-<p><strong>Step 1: Rewrite constraints in standard form <span
-class="math inline">\(g_i(x) \le 0\)</span>.</strong> <span
-class="math display">\[\begin{align*}
-        g_1(x) &amp;= x_1 + x_2 - 5 \le 0, \\
-        g_2(x) &amp;= -x_1 \le 0, \\
-        g_3(x) &amp;= -x_2 \le 0.
-\end{align*}\]</span></p>
-<p><strong>Step 2: Form the Lagrangian.</strong> <span
-class="math display">\[\mathcal{L} = (x_1-4)^2 + (x_2-3)^2 +
-\mu_1(x_1+x_2-5) + \mu_2(-x_1) + \mu_3(-x_2).\]</span></p>
-<p><strong>Step 3: Stationarity conditions.</strong> <span
-class="math display">\[\begin{align}
-        \frac{\partial \mathcal{L}}{\partial x_1} &amp;= 2(x_1 - 4) +
-\mu_1 - \mu_2 = 0 \tag{i} \\[4pt]
-        \frac{\partial \mathcal{L}}{\partial x_2} &amp;= 2(x_2 - 3) +
-\mu_1 - \mu_3 = 0 \tag{ii}
-\end{align}\]</span></p>
-<p><strong>Step 4: Apply complementary slackness.</strong> We
-hypothesise that only <span class="math inline">\(g_1\)</span> is active
-(<span class="math inline">\(\mu_2 = \mu_3 = 0\)</span>): <span
-class="math display">\[\begin{align*}
-        \text{From (i):} &amp;\quad 2(x_1-4) + \mu_1 = 0
-\quad\Longrightarrow\quad x_1 = 4 - \tfrac{\mu_1}{2}, \\[3pt]
-        \text{From (ii):} &amp;\quad 2(x_2-3) + \mu_1 = 0
-\quad\Longrightarrow\quad x_2 = 3 - \tfrac{\mu_1}{2}, \\[3pt]
-        \text{From } g_1 \text{ active:} &amp;\quad x_1 + x_2 = 5
-\quad\Longrightarrow\quad \bigl(4 - \tfrac{\mu_1}{2}\bigr) + \bigl(3 -
-\tfrac{\mu_1}{2}\bigr) = 5 \\
-        &amp;\quad\Longrightarrow\quad 7 - \mu_1 = 5
-\quad\Longrightarrow\quad \mu_1 = 2.
-\end{align*}\]</span></p>
-<p>So <span class="math inline">\(x_1^* = 3\)</span>, <span
-class="math inline">\(x_2^* = 2\)</span>, <span
-class="math inline">\(\mu_1^* = 2\)</span>.</p>
-<p><strong>Step 5: Verify all KKT conditions.</strong></p>
-<ul>
-<li><p><em>Stationarity:</em> <span class="math inline">\(2(3-4)+2-0 =
-0\)</span> and <span class="math inline">\(2(2-3)+2-0 =
-0\)</span></p></li>
-<li><p><em>Primal feasibility:</em> <span class="math inline">\(3+2-5 =
-0 \le 0\)</span>, <span class="math inline">\(-3 \le 0\)</span>, <span
-class="math inline">\(-2 \le 0\)</span></p></li>
-<li><p><em>Dual feasibility:</em> <span class="math inline">\(\mu_1 = 2
-\ge 0\)</span>, <span class="math inline">\(\mu_2 = 0\)</span>, <span
-class="math inline">\(\mu_3 = 0\)</span></p></li>
-<li><p><em>Complementary slackness:</em> <span
-class="math inline">\(\mu_1 g_1 = 2 \cdot 0 = 0\)</span>, <span
-class="math inline">\(\mu_2 g_2 = 0\)</span>, <span
-class="math inline">\(\mu_3 g_3 = 0\)</span></p></li>
-</ul>
-<p><strong>Optimal cost:</strong> <span class="math inline">\(J^* =
-(3-4)^2 + (2-3)^2 = 1 + 1 = 2\)</span>.</p>
-<p><strong>Interpretation:</strong> <span class="math inline">\(\mu_1 =
-2\)</span> means that relaxing the budget constraint by <span
-class="math inline">\(\epsilon\)</span> (allowing <span
-class="math inline">\(x_1 + x_2 \le 5 + \epsilon\)</span>) would reduce
-the cost by approximately <span
-class="math inline">\(2\epsilon\)</span>.</p>
-</div>
-<pre class="matlab" data-language="Matlab"
-data-caption="Solving the KKT example with \texttt{quadprog}."><code>H = 2*eye(2);                  % Hessian of J
-f = [-8; -6];                   % linear term (see note below)
-A = [1 1]; b = 5;               % g1: x1 + x2 &lt;= 5
-lb = [0; 0];                    % g2,g3: x &gt;= 0
-
-[x_opt, J_opt, ~, ~, dual] = quadprog(H, f, A, b, [], [], lb);
-fprintf(&#39;x*   = [%.4f, %.4f]\n&#39;, x_opt(1), x_opt(2));
-fprintf(&#39;J*   = %.4f\n&#39;, J_opt + 25);
-fprintf(&#39;mu1  = %.4f (inequality)\n&#39;, dual.ineqlin);
-fprintf(&#39;mu2,mu3 = [%.4f, %.4f] (lower bounds)\n&#39;, ...
-         dual.lower(1), dual.lower(2));
-% Note: quadprog minimises (1/2)x&#39;Hx + f&#39;x.  Our cost expands as
-% J = x1^2 - 8*x1 + 16 + x2^2 - 6*x2 + 9 = x&#39;*I*x + [-8,-6]*x + 25,
-% so H = 2I, f = [-8;-6], and we add 25 to recover the true cost.</code></pre>
-<h3 id="how-solvers-work-interior-point-and-active-set-methods">How
-Solvers Work: Interior-Point and Active-Set Methods</h3>
-<p>The KKT conditions tell us <em>what</em> the optimal solution looks
-like. But how do practical QP solvers—the workhorses behind every MPC
-controller—actually <em>find</em> that solution? Two dominant
-algorithmic paradigms exist: the <em>active-set method</em> and the
-<em>interior-point method</em>. Understanding their mechanics helps MPC
-engineers choose the right solver, diagnose convergence failures, and
-exploit warm-starting.</p>
-<h4 id="the-active-set-method">The Active-Set Method</h4>
-<p>The active-set method is motivated by a simple observation: if we
-<em>knew</em> which inequality constraints were active (binding) at the
-optimum, we could replace them with equalities and solve an
-equality-constrained QP—a problem that reduces to a single linear
-system. Of course, we do not know the active set in advance, so the
-algorithm discovers it iteratively.</p>
-<p>The method maintains a <em>working set</em> <span
-class="math inline">\(\mathcal{W}_k\)</span>: the subset of inequality
-constraints currently treated as equalities. At each iteration, the
-algorithm performs the following steps:</p>
-<ol>
-<li><p><strong>Solve the equality-constrained subproblem.</strong> With
-the constraints in <span class="math inline">\(\mathcal{W}_k\)</span>
-enforced as equalities (and all other inequality constraints temporarily
-ignored), solve the resulting KKT system to obtain a candidate step
-<span class="math inline">\(d_k\)</span> and the associated Lagrange
-multipliers <span class="math inline">\(\mu_i\)</span> for <span
-class="math inline">\(i \in \mathcal{W}_k\)</span>.</p></li>
-<li><p><strong>If <span class="math inline">\(d_k = 0\)</span> (no
-improving direction exists within the working set):</strong></p>
-<ul>
-<li><p>Check the multipliers. If <span class="math inline">\(\mu_i \geq
-0\)</span> for all <span class="math inline">\(i \in
-\mathcal{W}_k\)</span>, the KKT conditions are satisfied—<em>stop</em>,
-we are optimal.</p></li>
-<li><p>If some <span class="math inline">\(\mu_j &lt; 0\)</span>, then
-constraint <span class="math inline">\(j\)</span> was incorrectly
-assumed active. Remove it from <span
-class="math inline">\(\mathcal{W}_k\)</span> and repeat.</p></li>
-</ul></li>
-<li><p><strong>If <span class="math inline">\(d_k \neq 0\)</span> (an
-improving direction exists):</strong></p>
-<ul>
-<li><p>Take a step along <span class="math inline">\(d_k\)</span>, using
-the largest step length <span class="math inline">\(\alpha_k \in (0,
-1]\)</span> that does not violate any inactive constraint.</p></li>
-<li><p>If an inactive constraint becomes active (a <em>blocking
-constraint</em>), add it to <span
-class="math inline">\(\mathcal{W}_k\)</span>.</p></li>
-<li><p>Update the iterate: <span class="math inline">\(x_{k+1} = x_k +
-\alpha_k d_k\)</span>.</p></li>
-</ul></li>
-</ol>
-<p>Geometrically, the method walks along edges and vertices of the
-feasible polytope, much like the simplex method for linear programmes.
-Each iteration either moves to a new vertex (adding or dropping a
-constraint from the working set) or confirms optimality. For convex QPs,
-the algorithm terminates in a finite number of iterations—bounded by
-<span class="math inline">\(\binom{m}{n}\)</span> working-set
-combinations in the worst case, but typically far fewer in practice.</p>
-<div class="center">
-<p><span id="fig:num_active_set"
-data-label="fig:num_active_set"></span></p>
-</div>
-<div class="notebox">
-<p><span>Warm-Starting in MPC</span> Between consecutive MPC time steps,
-the optimal solution shifts only slightly (the system has moved by one
-time step). The active set from the previous solution is almost always
-correct for the new problem. Solvers like <code>qpOASES</code> exploit
-this by <em>warm-starting</em>: initialising the working set from the
-previous solution, so that only 1–3 iterations are needed to solve the
-new QP. This is what makes active-set methods the preferred choice for
-real-time linear MPC, achieving solve times well below 1 ms for moderate
-problem sizes.</p>
-</div>
-<h4 id="the-interior-point-barrier-method">The Interior-Point (Barrier)
-Method</h4>
-<p>The interior-point method takes a contrasting philosophy to the
-active-set approach: instead of walking along the boundary of the
-feasible region, it approaches the optimum from the <em>interior</em>.
-The key idea is to replace the hard inequality constraints <span
-class="math inline">\(g_i(x) \leq 0\)</span> with a smooth penalty that
-becomes infinite at the boundary, keeping all iterates strictly inside
-the feasible region.</p>
-<p>Concretely, the inequality-constrained problem is approximated by the
-<em>barrier problem</em>: <span class="math display">\[\begin{equation}
-    \min_{x} \; J(x) - t \sum_{i=1}^{m} \ln\bigl(-g_i(x)\bigr),
-    \label{eq:barrier_problem}
-\end{equation}\]</span> where <span class="math inline">\(t &gt;
-0\)</span> is the <em>barrier parameter</em>. The logarithmic term <span
-class="math inline">\(-t \ln(-g_i(x))\)</span> is finite only when <span
-class="math inline">\(g_i(x) &lt; 0\)</span> (strictly feasible) and
-blows up to <span class="math inline">\(+\infty\)</span> as <span
-class="math inline">\(g_i(x) \to 0^-\)</span>, creating an invisible
-repulsive wall at each constraint boundary.</p>
-<p>For each fixed <span class="math inline">\(t &gt; 0\)</span>, the
-barrier problem <a href="#eq:barrier_problem"
-data-reference-type="eqref"
-data-reference="eq:barrier_problem">[eq:barrier_problem]</a> is an
-unconstrained (or equality-constrained) smooth problem that can be
-solved by Newton’s method. The solution <span
-class="math inline">\(x^*(t)\)</span> lies in the strict interior of the
-feasible set. As <span class="math inline">\(t \to 0\)</span>, the
-barrier penalty weakens and <span class="math inline">\(x^*(t)\)</span>
-approaches the true constrained optimum <span
-class="math inline">\(x^*\)</span>. The curve traced by <span
-class="math inline">\(x^*(t)\)</span> as <span
-class="math inline">\(t\)</span> decreases is called the <em>central
-path</em>.</p>
-<p>A crucial advantage of interior-point methods is their worst-case
-complexity: <span class="math inline">\(O(\sqrt{m} \cdot
-\log(1/\varepsilon))\)</span> Newton steps suffice to reach <span
-class="math inline">\(\varepsilon\)</span>-optimality, where <span
-class="math inline">\(m\)</span> is the number of inequality
-constraints. This polynomial-time guarantee contrasts with the
-potentially exponential worst case of active-set methods (though
-active-set methods are typically faster in practice for small,
-warm-started problems).</p>
-<div class="center">
-<p><span id="fig:num_interior_point"
-data-label="fig:num_interior_point"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Barrier Method: A 2D Illustration</span> Minimise <span
-class="math inline">\(J(x) = x_1^2 + x_2^2\)</span> subject to <span
-class="math inline">\(x_1 + x_2 \geq 1\)</span>, <span
-class="math inline">\(x_1 \geq 0\)</span>, <span
-class="math inline">\(x_2 \geq 0\)</span>.</p>
-<p>Rewriting in standard form <span class="math inline">\(g_i(x) \leq
-0\)</span>: <span class="math display">\[\begin{align*}
-        g_1(x) &amp;= 1 - x_1 - x_2 \leq 0, \\
-        g_2(x) &amp;= -x_1 \leq 0, \\
-        g_3(x) &amp;= -x_2 \leq 0.
-\end{align*}\]</span></p>
-<p>The barrier problem becomes: <span class="math display">\[\min_{x} \;
-x_1^2 + x_2^2 - t\bigl[\ln(x_1 + x_2 - 1) + \ln(x_1) +
-\ln(x_2)\bigr].\]</span></p>
-<p>By symmetry, <span class="math inline">\(x_1 = x_2\)</span> at every
-barrier optimum (and at the true constrained optimum). The true
-constrained optimum is <span class="math inline">\(x^* = (0.5,\;
-0.5)\)</span> with <span class="math inline">\(J^* = 0.5\)</span>.</p>
-<p>Setting the gradient of the barrier objective to zero and exploiting
-symmetry, we can solve for <span class="math inline">\(x^*(t)\)</span>
-analytically. The results for decreasing values of <span
-class="math inline">\(t\)</span> are:</p>
-<div class="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: center;"><span
-class="math inline">\(t\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(x_1^*(t)\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(x_2^*(t)\)</span></th>
-<th style="text-align: center;"><span
-class="math inline">\(J(x^*(t))\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">1.000</td>
-<td style="text-align: center;">1.000</td>
-<td style="text-align: center;">1.000</td>
-<td style="text-align: center;">2.000</td>
-</tr>
-<tr>
-<td style="text-align: center;">0.100</td>
-<td style="text-align: center;">0.554</td>
-<td style="text-align: center;">0.554</td>
-<td style="text-align: center;">0.614</td>
-</tr>
-<tr>
-<td style="text-align: center;">0.010</td>
-<td style="text-align: center;">0.505</td>
-<td style="text-align: center;">0.505</td>
-<td style="text-align: center;">0.510</td>
-</tr>
-<tr>
-<td style="text-align: center;">0.001</td>
-<td style="text-align: center;">0.501</td>
-<td style="text-align: center;">0.501</td>
-<td style="text-align: center;">0.501</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>As <span class="math inline">\(t \to 0\)</span>, the barrier solution
-converges to <span class="math inline">\((0.5, 0.5)\)</span>, confirming
-that the logarithmic penalty progressively releases the iterates toward
-the constrained boundary.</p>
-</div>
-<h4 id="the-primal-dual-interior-point-method">The Primal-Dual
-Interior-Point Method</h4>
-<p>The basic barrier method described above requires solving a full
-unconstrained minimisation sub-problem at each outer iteration—an
-“optimisation within an optimisation.” The <em>primal-dual
-interior-point method</em> avoids this inefficiency by applying Newton’s
-method <em>directly</em> to a perturbed version of the KKT system. This
-is the algorithm used by virtually all modern interior-point solvers,
-including IPOPT, MOSEK, OOQP, and MATLAB’s <code>quadprog</code>
-(interior-point-convex option).</p>
-<p>The central idea is to introduce slack variables <span
-class="math inline">\(s_i = -g_i(x) &gt; 0\)</span> and relax the
-complementary slackness condition <span class="math inline">\(\mu_i
-g_i(x) = 0\)</span> to the <em>perturbed</em> form <span
-class="math inline">\(\mu_i s_i = \tau\)</span>, where <span
-class="math inline">\(\tau &gt; 0\)</span> is the barrier parameter. The
-complete perturbed KKT system is: <span
-class="math display">\[\begin{equation}
-    \begin{aligned}
-        \nabla J(x) + \sum_{i=1}^{m} \mu_i \nabla g_i(x) +
-\sum_{j=1}^{q} \lambda_j \nabla h_j(x) &amp;= 0, &amp; &amp;
-\text{(Stationarity)} \\
-        h_j(x) &amp;= 0, \quad j = 1,\ldots,q, &amp; &amp;
-\text{(Equality feasibility)} \\
-        g_i(x) + s_i &amp;= 0, \quad s_i &gt; 0, \quad i = 1,\ldots,m,
-&amp; &amp; \text{(Slack definition)} \\
-        S \mu &amp;= \tau \mathbf{1}, &amp; &amp; \text{(Perturbed
-complementarity)}
-    \end{aligned}
-    \label{eq:perturbed_kkt}
-\end{equation}\]</span> where <span class="math inline">\(S =
-\operatorname{diag}(s_1, \ldots, s_m)\)</span>, <span
-class="math inline">\(\mu = (\mu_1,\ldots,\mu_m)^\top\)</span>, and
-<span class="math inline">\(\mathbf{1}\)</span> is the vector of all
-ones.</p>
-<div class="defnbox">
-<p><span>Primal-Dual Interior-Point Method</span> Given the perturbed
-KKT system <a href="#eq:perturbed_kkt" data-reference-type="eqref"
-data-reference="eq:perturbed_kkt">[eq:perturbed_kkt]</a>, the
-primal-dual method proceeds as follows:</p>
-<ol>
-<li><p><strong>Linearise:</strong> Compute the Newton step <span
-class="math inline">\((\Delta x, \Delta s, \Delta \mu, \Delta
-\lambda)\)</span> by linearising system <a href="#eq:perturbed_kkt"
-data-reference-type="eqref"
-data-reference="eq:perturbed_kkt">[eq:perturbed_kkt]</a> around the
-current iterate <span class="math inline">\((x_k, s_k, \mu_k,
-\lambda_k)\)</span>.</p></li>
-<li><p><strong>Step length:</strong> Choose <span
-class="math inline">\(\alpha \in (0, 1]\)</span> to maintain strict
-positivity: <span class="math inline">\(s_k + \alpha \Delta s &gt;
-0\)</span> and <span class="math inline">\(\mu_k + \alpha \Delta \mu
-&gt; 0\)</span>.</p></li>
-<li><p><strong>Update:</strong> Set <span
-class="math inline">\((x_{k+1}, s_{k+1}, \mu_{k+1}, \lambda_{k+1}) =
-(x_k, s_k, \mu_k, \lambda_k) + \alpha (\Delta x, \Delta s, \Delta \mu,
-\Delta \lambda)\)</span>.</p></li>
-<li><p><strong>Reduce barrier:</strong> Update <span
-class="math inline">\(\tau \leftarrow \sigma \tau\)</span> with
-centering parameter <span class="math inline">\(\sigma \in (0,
-1)\)</span>.</p></li>
-<li><p><strong>Repeat</strong> until <span class="math inline">\(\tau
-&lt; \varepsilon\)</span> and the KKT residual is sufficiently
-small.</p></li>
-</ol>
-</div>
-<p>The key advantage over the basic barrier method is efficiency: each
-iteration requires only <em>one</em> Newton step on the full KKT system,
-rather than an entire sub-problem solve. Moreover, the Newton system
-possesses a structured sparsity pattern that can be exploited via block
-elimination (the Schur complement), reducing the per-iteration linear
-algebra cost dramatically. Convergence is superlinear near the solution,
-meaning the method takes fewer total iterations than the basic barrier
-approach.</p>
-<div class="notebox">
-<p><span>Why Primal-Dual Dominates Modern Solvers</span> The primal-dual
-interior-point method is the algorithm of choice for large-scale
-optimisation because:</p>
-<ol>
-<li><p>It requires <span class="math inline">\(O(\sqrt{m}\,
-\log(1/\varepsilon))\)</span> iterations regardless of the number of
-variables—each iteration is one Newton step on the KKT system.</p></li>
-<li><p>It naturally produces both primal (<span
-class="math inline">\(x\)</span>) and dual (<span
-class="math inline">\(\mu\)</span>, <span
-class="math inline">\(\lambda\)</span>) solutions, providing sensitivity
-information for free.</p></li>
-<li><p>For QPs, the Newton system is a structured linear system with
-known sparsity, making each iteration very efficient to solve.</p></li>
-</ol>
-</div>
-<div class="center">
-<p><span id="fig:num_primal_dual"
-data-label="fig:num_primal_dual"></span></p>
-</div>
-<div class="examplebox">
-<p><span>Primal-Dual Step: Explicit Construction</span> Consider the
-same QP from the barrier example: minimise <span
-class="math inline">\(J(x) = x_1^2 + x_2^2\)</span> subject to <span
-class="math inline">\(x_1 + x_2 \geq 1\)</span>, <span
-class="math inline">\(x_1 \geq 0\)</span>, <span
-class="math inline">\(x_2 \geq 0\)</span>.</p>
-<p>Starting from an interior point <span class="math inline">\(x^0 =
-(1,\, 1)^\top\)</span>, with slacks <span class="math inline">\(s^0 =
-(1,\, 1,\, 1)^\top\)</span>, multipliers <span
-class="math inline">\(\mu^0 = (1,\, 1,\, 1)^\top\)</span>, and barrier
-parameter <span class="math inline">\(\tau = 0.1\)</span>.</p>
-<p>With constraints <span class="math inline">\(g_1 = 1 - x_1 -
-x_2\)</span>, <span class="math inline">\(g_2 = -x_1\)</span>, <span
-class="math inline">\(g_3 = -x_2\)</span>, the slacks are <span
-class="math inline">\(s_1 = x_1 + x_2 - 1 = 1\)</span>, <span
-class="math inline">\(s_2 = x_1 = 1\)</span>, <span
-class="math inline">\(s_3 = x_2 = 1\)</span>.</p>
-<p><strong>KKT residuals at <span class="math inline">\((x^0, s^0,
-\mu^0)\)</span>:</strong></p>
-<p><em>Stationarity:</em> <span class="math display">\[\nabla J + \mu_1
-\nabla g_1 + \mu_2 \nabla g_2 + \mu_3 \nabla g_3
-        = \begin{bmatrix} 2 \\ 2 \end{bmatrix}
-        + 1 \begin{bmatrix} -1 \\ -1 \end{bmatrix}
-        + 1 \begin{bmatrix} -1 \\ 0 \end{bmatrix}
-        + 1 \begin{bmatrix} 0 \\ -1 \end{bmatrix}
-        = \begin{bmatrix} 0 \\ 0 \end{bmatrix}. \;
-\checkmark\]</span></p>
-<p><em>Feasibility:</em> <span class="math inline">\(g(x^0) + s^0 =
-0\)</span>. <span class="math inline">\(\checkmark\)</span></p>
-<p><em>Perturbed complementarity:</em> <span class="math display">\[S\mu
-- \tau \mathbf{1}
-        = \begin{bmatrix} 1 \cdot 1 \\ 1 \cdot 1 \\ 1 \cdot 1
-\end{bmatrix}
-        - \begin{bmatrix} 0.1 \\ 0.1 \\ 0.1 \end{bmatrix}
-        = \begin{bmatrix} 0.9 \\ 0.9 \\ 0.9 \end{bmatrix} \neq
-0.\]</span></p>
-<p>The complementarity residual is large because <span
-class="math inline">\(\mu_i s_i = 1 \gg \tau = 0.1\)</span>. This
-residual drives the Newton step: the linearised system computes <span
-class="math inline">\((\Delta x, \Delta s, \Delta \mu)\)</span> to
-reduce this gap while maintaining feasibility and stationarity.</p>
-<p>After one Newton step with <span class="math inline">\(\tau =
-0.1\)</span>, the iterate moves to approximately <span
-class="math inline">\(x \approx (0.64,\, 0.64)\)</span>. The solver then
-reduces <span class="math inline">\(\tau\)</span> and repeats; within a
-few outer iterations the solution converges to <span
-class="math inline">\(x^* = (0.5,\, 0.5)\)</span>.</p>
-</div>
-<pre class="matlab" data-language="Matlab"
-data-caption="Solving the barrier example QP using MATLAB&#39;s interior-point solver."><code>H = 2*eye(2);    % Hessian of x1^2 + x2^2
-f = [0; 0];      % No linear term
-
-% Inequality: -x1 - x2 &lt;= -1  (i.e., x1 + x2 &gt;= 1)
-A = [-1 -1];     b = -1;
-
-% Lower bounds: x1 &gt;= 0, x2 &gt;= 0
-lb = [0; 0];
-
-% Solve using interior-point method
-opts = optimoptions(&#39;quadprog&#39;, &#39;Algorithm&#39;, &#39;interior-point-convex&#39;, ...
-                    &#39;Display&#39;, &#39;iter&#39;);
-[x_opt, J_opt, ~, ~, dual] = quadprog(H, f, A, b, [], [], lb, [], [], opts);
-
-fprintf(&#39;Optimal: x* = [%.4f, %.4f], J* = %.4f\n&#39;, x_opt, J_opt);
-fprintf(&#39;Dual (ineq): %.4f, Dual (lb): [%.4f, %.4f]\n&#39;, ...
-        dual.ineqlin, dual.lower);</code></pre>
-<div class="notebox">
-<p><span>Why This Matters for MPC</span> The numerical methods
-introduced in this section underpin every MPC implementation:</p>
-<ul>
-<li><p>The standard linear MPC problem (Chapters 5–7) is a convex QP.
-Solvers like <code>quadprog</code> and <code>qpOASES</code> find the
-global optimum by solving the KKT system—the very conditions derived
-above.</p></li>
-<li><p>For Nonlinear MPC (Chapter 10), Sequential Quadratic Programming
-(SQP) applies Newton’s method to the KKT system of the underlying
-nonlinear programme, using Armijo-type line searches for
-globalisation.</p></li>
-<li><p>The primal-dual interior-point method is the backbone of solvers
-like IPOPT, which solve the nonlinear programmes arising in trajectory
-optimisation, rocket landing, and autonomous vehicle control.</p></li>
-<li><p>Understanding these fundamentals allows the MPC practitioner to
-diagnose solver failures (infeasibility, slow convergence, cycling),
-tune algorithmic parameters (tolerances, barrier parameters), and choose
-the right solver for each application.</p></li>
-</ul>
-</div>
-<h2 id="chapter-summary">Chapter Summary</h2>
-<p>This chapter provided the mathematical optimisation foundations
-required for MPC. The key topics covered are:</p>
-<ul>
-<li><p><strong>Problem Formulation:</strong> Every optimisation problem
-consists of decision variables, a cost (objective) function to minimise,
-and constraints that restrict the feasible set.</p></li>
-<li><p><strong>Convexity:</strong> A set is convex if it contains all
-line segments between its points; a function is convex if its Hessian is
-positive semi-definite. Convexity guarantees that any local minimum is
-also the global minimum.</p></li>
-<li><p><strong>Problem Classification:</strong> Optimisation problems
-are classified by the structure of their cost and constraints—Linear
-Programmes (LP), Quadratic Programmes (QP), Mixed-Integer Linear
-Programmes (MILP), and Nonlinear Programmes (NLP)—each with different
-computational properties.</p></li>
-<li><p><strong>Software Tools:</strong> Modelling languages such as
-YALMIP allow the user to specify optimisation problems symbolically;
-solvers such as <code>quadprog</code> and OSQP then solve the resulting
-numerical problem.</p></li>
-<li><p><strong>Unconstrained Numerical Methods:</strong> Bisection and
-Newton–Raphson find roots of nonlinear equations; gradient descent
-iteratively reduces a cost function, with step-size selection governed
-by the Armijo backtracking condition.</p></li>
-<li><p><strong>Constrained Optimisation Theory:</strong> Lagrange
-multipliers characterise optima under equality constraints. The
-Karush–Kuhn–Tucker (KKT) conditions extend this framework to inequality
-constraints, providing necessary (and, for convex problems, sufficient)
-conditions for optimality.</p></li>
-<li><p><strong>Solver Algorithms:</strong> Active-set methods enumerate
-constraint boundaries; interior-point (barrier) methods traverse the
-interior of the feasible set; primal-dual methods solve the KKT system
-directly. These algorithms underpin the QP and NLP solvers used in
-MPC.</p></li>
 </ul>
 <h2 class="unnumbered" id="exercises">Exercises</h2>
 <ol>

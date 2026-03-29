@@ -10,19 +10,20 @@ plan again.”</em><br />
 <p>This chapter extends unconstrained optimal control (LQR) to handle
 physical limits. We define the Linear MPC problem, showing how actuator
 saturation and safety constraints are incorporated directly into the
-optimisation. We then cover the <em>Receding Horizon</em> principle,
-introduce the <em>YALMIP</em> toolbox for implementation, and analyse
-how the prediction horizon <span class="math inline">\(N\)</span> and
-the terminal cost <span class="math inline">\(P\)</span> affect
-closed-loop stability and performance.</p>
+optimisation. We then cover the <strong>Receding Horizon</strong>
+principle, introduce the <strong>YALMIP</strong> toolbox for
+implementation, and analyse how the prediction horizon <span
+class="math inline">\(N\)</span> and the terminal cost <span
+class="math inline">\(P\)</span> affect closed-loop stability and
+performance.</p>
 <h3 id="motivation-the-need-for-constraints">Motivation: The Need for
 Constraints</h3>
 <p>In the previous chapters, we derived the Linear Quadratic Regulator
 (LQR). This method provides a closed-form solution to the optimal
 control problem, yielding a static feedback gain matrix <span
 class="math inline">\(K\)</span>. However, LQR relies on a critical,
-often unrealistic assumption: <em>the system operates in an
-unconstrained linear world.</em></p>
+often unrealistic assumption: <strong>the system operates in an
+unconstrained linear world.</strong></p>
 <p>In physical reality, every engineering system has limits:</p>
 <ul>
 <li><p><strong>Actuator Saturation:</strong> A motor has a maximum
@@ -51,9 +52,9 @@ did not occur.</p>
 <h4 class="unnumbered"
 id="from-offline-gains-to-online-optimisation">From Offline Gains to
 Online Optimisation</h4>
-<p><em>Model Predictive Control (MPC)</em> fundamentally alters this
-approach. Instead of calculating a control law <em>offline</em> (like
-the LQR gain <span class="math inline">\(K\)</span>), MPC solves a
+<p><strong>Model Predictive Control (MPC)</strong> fundamentally alters
+this approach. Instead of calculating a control law <em>offline</em>
+(like the LQR gain <span class="math inline">\(K\)</span>), MPC solves a
 constrained optimisation problem <em>online</em> at every time step.</p>
 <p>By incorporating the constraints directly into the prediction model,
 MPC "knows" about the limits in advance. It does not blindly request
@@ -113,7 +114,7 @@ class="math inline">\(P\)</span>).</p></li>
 </ul>
 <h3 id="the-receding-horizon-principle">The Receding Horizon
 Principle</h3>
-<p>The defining feature of MPC is its <em>Receding Horizon</em>
+<p>The defining feature of MPC is its <strong>Receding Horizon</strong>
 strategy. Rather than computing a single fixed trajectory from start to
 finish, the controller operates in a loop:</p>
 <ol>
@@ -124,20 +125,20 @@ class="math inline">\(\{u_0, u_1, \dots, u_{N-1}\}\)</span> by solving
 the constrained optimisation problem (<a href="#eq:mpc_cost"
 data-reference-type="ref"
 data-reference="eq:mpc_cost">[eq:mpc_cost]</a>).</p></li>
-<li><p><strong>Apply:</strong> Inject <em>only the first input</em>
-<span class="math inline">\(u_0\)</span> into the system. The rest of
-the sequence is discarded.</p></li>
+<li><p><strong>Apply:</strong> Inject <strong>only the first
+input</strong> <span class="math inline">\(u_0\)</span> into the system.
+The rest of the sequence is discarded.</p></li>
 <li><p><strong>Recede:</strong> Wait for the next sampling instant <span
 class="math inline">\(t+1\)</span>, measure the new state <span
 class="math inline">\(x(t+1)\)</span>, and repeat the process.</p></li>
 </ol>
 <p>By re-solving the problem at every time step based on fresh
 measurements, the MPC converts an open-loop optimal plan into a
-<em>closed-loop feedback strategy</em>, capable of rejecting
+<strong>closed-loop feedback strategy</strong>, capable of rejecting
 disturbances and correcting model mismatches.</p>
 <div class="examplebox">
 <p><span>Hand-Worked MPC: Scalar Integrator with Constraints</span> We
-now solve the MPC problem <em>entirely by hand</em> to make the
+now solve the MPC problem <strong>entirely by hand</strong> to make the
 mechanics concrete before moving to MATLAB.</p>
 <p><strong>System:</strong> <span class="math display">\[x_{k+1} = x_k +
 u_k \qquad \text{(pure integrator)}\]</span>
@@ -191,9 +192,9 @@ QP solvers use active-set or interior-point methods to handle
 constraints systematically.</p>
 </div>
 <p><strong>Step 5 — Apply the Receding Horizon:</strong></p>
-<p>We apply <em>only</em> <span class="math inline">\(u_0^\star =
--0.5\)</span> and <em>discard</em> <span class="math inline">\(u_1^\star
-= -0.25\)</span>.</p>
+<p>We apply <strong>only</strong> <span class="math inline">\(u_0^\star
+= -0.5\)</span> and <strong>discard</strong> <span
+class="math inline">\(u_1^\star = -0.25\)</span>.</p>
 <p>The plant advances: <span class="math inline">\(x_1 = 0.5\)</span>.
 We now re-measure and re-solve with <span class="math inline">\(x_0 =
 0.5\)</span>.</p>
@@ -265,6 +266,7 @@ class="math inline">\(x_0\)</span>. This is why the
 class="math inline">\(x_0\)</span> as a parameter.</p></li>
 </ol>
 </div>
+
 <h4>Interactive Demo: MPC Receding Horizon</h4>
 <p>The animation below visualises the receding horizon principle. At each step, the controller plans an optimal trajectory over the full horizon (shown in orange), but only applies the <strong>first input</strong>. Click <strong>Step</strong> to advance one MPC step, or <strong>Auto Play</strong> to watch the full sequence. Notice how the predicted trajectory (orange) is discarded and re-planned at each step.</p>
 <div class="mpc-demo"></div>
@@ -321,26 +323,27 @@ print(f"  Settled (|x1|<0.01) at t = {np.where(np.abs(x_log[:,0])<0.01)[0][0]*Ts
 
 <h3 id="efficient-implementation-via-yalmip">Efficient Implementation
 via YALMIP</h3>
-<p>To implement MPC, we utilise <em>YALMIP</em> <span class="citation"
-data-cites="Lofberg2004"></span>, a MATLAB toolbox that allows us to
-define optimisation problems using high-level symbolic code.</p>
+<p>To implement MPC, we utilise <strong>YALMIP</strong> <span
+class="citation" data-cites="Lofberg2004"></span>, a MATLAB toolbox that
+allows us to define optimisation problems using high-level symbolic
+code.</p>
 <p>A naive implementation would define and solve the problem from
 scratch inside the simulation loop. This is computationally prohibitive
 because YALMIP would need to re-parse the mathematical structure every
-few milliseconds. Instead, we use a technique known as <em>Parametric
-Programming</em>.</p>
-<p>We construct the problem <em>once</em> offline, treating the initial
-state <span class="math inline">\(x_0\)</span> as a symbolic
-<em>parameter</em>. The YALMIP <code>optimizer</code> object then maps
-this parameter to the optimal decision variables, allowing for extremely
-fast execution during the simulation.</p>
+few milliseconds. Instead, we use a technique known as
+<strong>Parametric Programming</strong>.</p>
+<p>We construct the problem <strong>once</strong> offline, treating the
+initial state <span class="math inline">\(x_0\)</span> as a symbolic
+<strong>parameter</strong>. The YALMIP <code>optimizer</code> object
+then maps this parameter to the optimal decision variables, allowing for
+extremely fast execution during the simulation.</p>
 <h3 id="stability-and-the-terminal-cost">Stability and the Terminal
 Cost</h3>
 <p>Before writing the code that solves standard MPC, we must ensure
 stability <span class="citation" data-cites="Mayne2000"></span>. For a
 finite horizon <span class="math inline">\(N\)</span>, MPC is not
 automatically guaranteed to stabilise the system. To address this, we
-include a <em>Terminal Cost</em> weighted by a matrix <span
+include a <strong>Terminal Cost</strong> weighted by a matrix <span
 class="math inline">\(Q_N\)</span>: <span
 class="math display">\[\begin{equation*}
     J_{term} = x_N^\top Q_N x_N
@@ -372,55 +375,55 @@ itself unless the unconstrained LQR tail is known to be feasible.</p>
 MATLAB uses 1-based indexing, so the symbolic variable <code>x{k}</code>
 corresponds to the mathematical state <span
 class="math inline">\(x_{k-1}\)</span>.</p>
-<pre id="lst:yalmip_mpc" class="matlab" data-language="Matlab"
+<div class="sourceCode" id="lst:yalmip_mpc" data-language="Matlab"
 data-caption="Efficient MPC setup using the YALMIP \texttt{optimizer} object."
-data-label="lst:yalmip_mpc"><code>    A = [1.1 1; 0 1]; B = [0; 1]; % Example System
-    nx = 2; nu = 1;
-    N = 10;                       % Prediction Horizon
-    
-    % 2. Weights and Constraints
-    Q = eye(nx); R = 0.1;
-    [P, ~, ~] = dare(A, B, Q, R); % Terminal Weight (Stability)
-    u_max = 1; x_max = 5;
-    u_min = -1; x_min = -5;
-    
-    % 3. Define Symbolic Variables
-    % u(:,k) represents input u_{k-1}
-    % x(:,k) represents state x_{k-1}
-    u = sdpvar(nu, N);    
-    x = sdpvar(nx, N+1);  
-    
-    % 4. Build Objective and Constraints Loop
-    constraints = [];
-    objective = 0;
-    
-    for k = 1:N
-        % Stage Cost
-        objective = objective + x(:,k)&#39;*Q*x(:,k) + u(:,k)&#39;*R*u(:,k);
-        
-        % Dynamics Constraint: x_{k} = A*x_{k-1} + B*u_{k-1}
-        constraints = [constraints, x(:,k+1) == A*x(:,k) + B*u(:,k)];
-        
-        % Physical Constraints
-        constraints = [constraints, u_min &lt;= u(:,k) &lt;= u_max];
-        constraints = [constraints, x_min &lt;= x(:,k) &lt;= x_max];
-    end
-    
-    % Terminal Cost (The &quot;Anchor&quot; for stability)
-    objective = objective + x(:,N+1)&#39;*P*x(:,N+1);
-    
-    % 5. Create the Optimizer Object
-    % We treat the &#39;current state&#39; (x(:,1)) as a PARAMETER.
-    % The solver will return the &#39;first input&#39; (u(:,1)).
-    parameters_in = x(:,1);
-    solutions_out = u(:,1);
-
-    opts = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;quadprog&#39;);
-    controller = optimizer(constraints, objective, opts, parameters_in, solutions_out);
-    
-    % --- SIMULATION USAGE ---
-    % Inside the simulation loop, we simply call:
-    % u_optimal = controller(x_current);</code></pre>
+data-label="lst:yalmip_mpc"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="lst:yalmip_mpc-1"><a href="#lst:yalmip_mpc-1" aria-hidden="true" tabindex="-1"></a>    <span class="va">A</span> <span class="op">=</span> [<span class="fl">1.1</span> <span class="fl">1</span><span class="op">;</span> <span class="fl">0</span> <span class="fl">1</span>]<span class="op">;</span> <span class="va">B</span> <span class="op">=</span> [<span class="fl">0</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span> <span class="co">% Example System</span></span>
+<span id="lst:yalmip_mpc-2"><a href="#lst:yalmip_mpc-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">nx</span> <span class="op">=</span> <span class="fl">2</span><span class="op">;</span> <span class="va">nu</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="lst:yalmip_mpc-3"><a href="#lst:yalmip_mpc-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">N</span> <span class="op">=</span> <span class="fl">10</span><span class="op">;</span>                       <span class="co">% Prediction Horizon</span></span>
+<span id="lst:yalmip_mpc-4"><a href="#lst:yalmip_mpc-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-5"><a href="#lst:yalmip_mpc-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">% 2. Weights and Constraints</span></span>
+<span id="lst:yalmip_mpc-6"><a href="#lst:yalmip_mpc-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="va">nx</span>)<span class="op">;</span> <span class="va">R</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span></span>
+<span id="lst:yalmip_mpc-7"><a href="#lst:yalmip_mpc-7" aria-hidden="true" tabindex="-1"></a>    [<span class="va">P</span><span class="op">,</span> <span class="op">~,</span> <span class="op">~</span>] <span class="op">=</span> <span class="va">dare</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span> <span class="co">% Terminal Weight (Stability)</span></span>
+<span id="lst:yalmip_mpc-8"><a href="#lst:yalmip_mpc-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_max</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span> <span class="va">x_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="lst:yalmip_mpc-9"><a href="#lst:yalmip_mpc-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_min</span> <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">;</span> <span class="va">x_min</span> <span class="op">=</span> <span class="op">-</span><span class="fl">5</span><span class="op">;</span></span>
+<span id="lst:yalmip_mpc-10"><a href="#lst:yalmip_mpc-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-11"><a href="#lst:yalmip_mpc-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">% 3. Define Symbolic Variables</span></span>
+<span id="lst:yalmip_mpc-12"><a href="#lst:yalmip_mpc-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">% u(:,k) represents input u_{k-1}</span></span>
+<span id="lst:yalmip_mpc-13"><a href="#lst:yalmip_mpc-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">% x(:,k) represents state x_{k-1}</span></span>
+<span id="lst:yalmip_mpc-14"><a href="#lst:yalmip_mpc-14" aria-hidden="true" tabindex="-1"></a>    <span class="va">u</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span>    </span>
+<span id="lst:yalmip_mpc-15"><a href="#lst:yalmip_mpc-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">x</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  </span>
+<span id="lst:yalmip_mpc-16"><a href="#lst:yalmip_mpc-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-17"><a href="#lst:yalmip_mpc-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">% 4. Build Objective and Constraints Loop</span></span>
+<span id="lst:yalmip_mpc-18"><a href="#lst:yalmip_mpc-18" aria-hidden="true" tabindex="-1"></a>    <span class="va">constraints</span> <span class="op">=</span> []<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-19"><a href="#lst:yalmip_mpc-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">objective</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="lst:yalmip_mpc-20"><a href="#lst:yalmip_mpc-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-21"><a href="#lst:yalmip_mpc-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="lst:yalmip_mpc-22"><a href="#lst:yalmip_mpc-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Stage Cost</span></span>
+<span id="lst:yalmip_mpc-23"><a href="#lst:yalmip_mpc-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">objective</span> <span class="op">=</span> <span class="va">objective</span> <span class="op">+</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">R</span><span class="op">*</span><span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-24"><a href="#lst:yalmip_mpc-24" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:yalmip_mpc-25"><a href="#lst:yalmip_mpc-25" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Dynamics Constraint: x_{k} = A*x_{k-1} + B*u_{k-1}</span></span>
+<span id="lst:yalmip_mpc-26"><a href="#lst:yalmip_mpc-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">A</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">B</span><span class="op">*</span><span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)]<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-27"><a href="#lst:yalmip_mpc-27" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="lst:yalmip_mpc-28"><a href="#lst:yalmip_mpc-28" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Physical Constraints</span></span>
+<span id="lst:yalmip_mpc-29"><a href="#lst:yalmip_mpc-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="va">u_min</span> <span class="op">&lt;=</span> <span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">u_max</span>]<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-30"><a href="#lst:yalmip_mpc-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">constraints</span> <span class="op">=</span> [<span class="va">constraints</span><span class="op">,</span> <span class="va">x_min</span> <span class="op">&lt;=</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">x_max</span>]<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-31"><a href="#lst:yalmip_mpc-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="lst:yalmip_mpc-32"><a href="#lst:yalmip_mpc-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-33"><a href="#lst:yalmip_mpc-33" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Terminal Cost (The &quot;Anchor&quot; for stability)</span></span>
+<span id="lst:yalmip_mpc-34"><a href="#lst:yalmip_mpc-34" aria-hidden="true" tabindex="-1"></a>    <span class="va">objective</span> <span class="op">=</span> <span class="va">objective</span> <span class="op">+</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">&#39;*</span><span class="va">P</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-35"><a href="#lst:yalmip_mpc-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-36"><a href="#lst:yalmip_mpc-36" aria-hidden="true" tabindex="-1"></a>    <span class="co">% 5. Create the Optimizer Object</span></span>
+<span id="lst:yalmip_mpc-37"><a href="#lst:yalmip_mpc-37" aria-hidden="true" tabindex="-1"></a>    <span class="co">% We treat the &#39;current state&#39; (x(:,1)) as a PARAMETER.</span></span>
+<span id="lst:yalmip_mpc-38"><a href="#lst:yalmip_mpc-38" aria-hidden="true" tabindex="-1"></a>    <span class="co">% The solver will return the &#39;first input&#39; (u(:,1)).</span></span>
+<span id="lst:yalmip_mpc-39"><a href="#lst:yalmip_mpc-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">parameters_in</span> <span class="op">=</span> <span class="va">x</span>(<span class="op">:,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-40"><a href="#lst:yalmip_mpc-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">solutions_out</span> <span class="op">=</span> <span class="va">u</span>(<span class="op">:,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-41"><a href="#lst:yalmip_mpc-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst:yalmip_mpc-42"><a href="#lst:yalmip_mpc-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">opts</span> <span class="op">=</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span> <span class="ss">&#39;solver&#39;</span><span class="op">,</span> <span class="ss">&#39;quadprog&#39;</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-43"><a href="#lst:yalmip_mpc-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">controller</span> <span class="op">=</span> <span class="va">optimizer</span>(<span class="va">constraints</span><span class="op">,</span> <span class="va">objective</span><span class="op">,</span> <span class="va">opts</span><span class="op">,</span> <span class="va">parameters_in</span><span class="op">,</span> <span class="va">solutions_out</span>)<span class="op">;</span></span>
+<span id="lst:yalmip_mpc-44"><a href="#lst:yalmip_mpc-44" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="lst:yalmip_mpc-45"><a href="#lst:yalmip_mpc-45" aria-hidden="true" tabindex="-1"></a>    <span class="co">% --- SIMULATION USAGE ---</span></span>
+<span id="lst:yalmip_mpc-46"><a href="#lst:yalmip_mpc-46" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Inside the simulation loop, we simply call:</span></span>
+<span id="lst:yalmip_mpc-47"><a href="#lst:yalmip_mpc-47" aria-hidden="true" tabindex="-1"></a>    <span class="co">% u_optimal = controller(x_current);</span></span></code></pre></div>
 <div class="notebox">
 <p><span>Indexing Alert</span> Pay close attention to indexing. In
 mathematics, we start at <span class="math inline">\(k=0\)</span>
@@ -479,91 +482,92 @@ solution to the unconstrained LQR Algebraic Riccati Equation.</p></li>
 <p>Figure <a href="#fig:simplempc" data-reference-type="ref"
 data-reference="fig:simplempc">[fig:simplempc]</a> shows the simulation
 result obtained after using the code provided below.</p>
-<pre class="matlab" data-language="Matlab"><code>        A = [1.5 0; 1 -1.5];  B = [1; 0];
-        nx = 2; nu = 1;
-        Q = eye(2); R = 20;
-        
-        [P,~,~] = dare(A,B,Q,R);
-        
-        u_min = -5; u_max = 5;
-        x_min = [-10; -10]; x_max = [10; 10];
-        
-        N = 5;
-        
-        % 2. YALMIP Formulation
-        u = sdpvar(nu, N);
-        x = sdpvar(nx, N+1);
-        x_init = sdpvar(nx, 1);
-        
-        obj = 0; 
-        cons = [x(:,1) == x_init];
-        
-        for k = 1:N
-                obj = obj + x(:,k)&#39;*Q*x(:,k) + u(:,k)&#39;*R*u(:,k);
-                cons = [cons, x(:,k+1) == A*x(:,k) + B*u(:,k)];
-                cons = [cons, u_min &lt;= u(:,k) &lt;= u_max];
-                cons = [cons, x_min &lt;= x(:,k) &lt;= x_max];
-        end
-        
-        obj = obj + x(:,N+1)&#39;*P*x(:,N+1);
-        
-        % 3. Optimizer
-        opts = sdpsettings(&#39;verbose&#39;, 0, &#39;solver&#39;, &#39;quadprog&#39;);
-        mpc_controller = optimizer(cons, obj, opts, x_init, u(:,1));
-        
-        % 4. Simulation Loop
-        T_sim = 30;
-        x_state = [1; -2]; % Initial Condition
-        
-        % Initialize History arrays
-        x_hist = zeros(nx, T_sim+1); 
-        u_hist = zeros(nu, T_sim);
-        
-        % Save the initial state at index 1 (Time 0)
-        x_hist(:,1) = x_state;
-        
-        for t = 1:T_sim
-                % A. Solve MPC
-                [u_opt, errorcode] = mpc_controller(x_state);
-        
-                if errorcode ~= 0, 
-                    warning(&#39;Solver failed!&#39;); 
-                end
-        
-                % B. Log Control (at time k)
-                u_hist(:,t) = u_opt;
-        
-                % C. Apply Control / Plant Physics
-                x_state = A*x_state + B*u_opt;
-        
-                % D. Log Next State (at time k+1)
-                x_hist(:,t+1) = x_state;
-        end
-        
-        % 5. Plotting
-        t_vec_x = 0:T_sim;    % State time vector (0 to 30)
-        t_vec_u = 0:T_sim-1;  % Control time vector (0 to 29)
-        
-        figure;
-        subplot(2,1,1);
-        plot(t_vec_x, x_hist(1,:), &#39;LineWidth&#39;, 2); hold on;
-        plot(t_vec_x, x_hist(2,:), &#39;LineWidth&#39;, 2); 
-        grid on;
-        ylabel(&#39;Position&#39;); title(&#39;State Regulation&#39;);
-        legend(&#39;x_1&#39;, &#39;x_2&#39;);
-        xlim([0 T_sim]);
-        
-        subplot(2,1,2);
-        stairs(t_vec_u, u_hist(1,:), &#39;LineWidth&#39;, 2); hold on; 
-        yline(u_max, &#39;r--&#39;, &#39;Max Limit&#39;, &#39;LineWidth&#39;, 2);
-        yline(u_min, &#39;r--&#39;, &#39;Min Limit&#39;, &#39;LineWidth&#39;, 2);
-        ylabel(&#39;Control Input (u)&#39;); grid on;
-        xlabel(&#39;Time Steps&#39;);
-        xlim([0 T_sim]);</code></pre>
-<div class="center">
-<p><img src="figures/Simple_MPC.png" style="width:70.0%" /> <span
-id="fig:simplempc" data-label="fig:simplempc"></span></p>
-</div>
+<div class="sourceCode" id="cb1" data-language="Matlab"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>        <span class="va">A</span> <span class="op">=</span> [<span class="fl">1.5</span> <span class="fl">0</span><span class="op">;</span> <span class="fl">1</span> <span class="op">-</span><span class="fl">1.5</span>]<span class="op">;</span>  <span class="va">B</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">;</span> <span class="fl">0</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">nx</span> <span class="op">=</span> <span class="fl">2</span><span class="op">;</span> <span class="va">nu</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span> <span class="va">R</span> <span class="op">=</span> <span class="fl">20</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        [<span class="va">P</span><span class="op">,~,~</span>] <span class="op">=</span> <span class="va">dare</span>(<span class="va">A</span><span class="op">,</span><span class="va">B</span><span class="op">,</span><span class="va">Q</span><span class="op">,</span><span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_min</span> <span class="op">=</span> <span class="op">-</span><span class="fl">5</span><span class="op">;</span> <span class="va">u_max</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_min</span> <span class="op">=</span> [<span class="op">-</span><span class="fl">10</span><span class="op">;</span> <span class="op">-</span><span class="fl">10</span>]<span class="op">;</span> <span class="va">x_max</span> <span class="op">=</span> [<span class="fl">10</span><span class="op">;</span> <span class="fl">10</span>]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">N</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 2. YALMIP Formulation</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">u</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">x</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_init</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="va">nx</span><span class="op">,</span> <span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">obj</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span> </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">cons</span> <span class="op">=</span> [<span class="va">x</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x_init</span>]<span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">R</span><span class="op">*</span><span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                <span class="va">cons</span> <span class="op">=</span> [<span class="va">cons</span><span class="op">,</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">A</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">B</span><span class="op">*</span><span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>)]<span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                <span class="va">cons</span> <span class="op">=</span> [<span class="va">cons</span><span class="op">,</span> <span class="va">u_min</span> <span class="op">&lt;=</span> <span class="va">u</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">u_max</span>]<span class="op">;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                <span class="va">cons</span> <span class="op">=</span> [<span class="va">cons</span><span class="op">,</span> <span class="va">x_min</span> <span class="op">&lt;=</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">x_max</span>]<span class="op">;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">x</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">&#39;*</span><span class="va">P</span><span class="op">*</span><span class="va">x</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 3. Optimizer</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">opts</span> <span class="op">=</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span> <span class="ss">&#39;solver&#39;</span><span class="op">,</span> <span class="ss">&#39;quadprog&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">mpc_controller</span> <span class="op">=</span> <span class="va">optimizer</span>(<span class="va">cons</span><span class="op">,</span> <span class="va">obj</span><span class="op">,</span> <span class="va">opts</span><span class="op">,</span> <span class="va">x_init</span><span class="op">,</span> <span class="va">u</span>(<span class="op">:,</span><span class="fl">1</span>))<span class="op">;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 4. Simulation Loop</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">T_sim</span> <span class="op">=</span> <span class="fl">30</span><span class="op">;</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_state</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">;</span> <span class="op">-</span><span class="fl">2</span>]<span class="op">;</span> <span class="co">% Initial Condition</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Initialize History arrays</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nx</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span> </span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">u_hist</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="va">nu</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>        <span class="co">% Save the initial state at index 1 (Time 0)</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>        <span class="va">x_hist</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_state</span><span class="op">;</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> <span class="va">t</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>                <span class="co">% A. Solve MPC</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>                [<span class="va">u_opt</span><span class="op">,</span> <span class="va">errorcode</span>] <span class="op">=</span> <span class="va">mpc_controller</span>(<span class="va">x_state</span>)<span class="op">;</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>                <span class="kw">if</span> <span class="va">errorcode</span> <span class="op">~=</span> <span class="fl">0</span><span class="op">,</span> </span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>                    <span class="va">warning</span>(<span class="ss">&#39;Solver failed!&#39;</span>)<span class="op">;</span> </span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>                <span class="kw">end</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>                <span class="co">% B. Log Control (at time k)</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>                <span class="va">u_hist</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">=</span> <span class="va">u_opt</span><span class="op">;</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>                <span class="co">% C. Apply Control / Plant Physics</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>                <span class="va">x_state</span> <span class="op">=</span> <span class="va">A</span><span class="op">*</span><span class="va">x_state</span> <span class="op">+</span> <span class="va">B</span><span class="op">*</span><span class="va">u_opt</span><span class="op">;</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>                <span class="co">% D. Log Next State (at time k+1)</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>                <span class="va">x_hist</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x_state</span><span class="op">;</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>        <span class="co">% 5. Plotting</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>        <span class="va">t_vec_x</span> <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">;</span>    <span class="co">% State time vector (0 to 30)</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>        <span class="va">t_vec_u</span> <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">-</span><span class="fl">1</span><span class="op">;</span>  <span class="co">% Control time vector (0 to 29)</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>        <span class="va">figure</span><span class="op">;</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>        <span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>        <span class="va">plot</span>(<span class="va">t_vec_x</span><span class="op">,</span> <span class="va">x_hist</span>(<span class="fl">1</span><span class="op">,:</span>)<span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> <span class="va">hold</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>        <span class="va">plot</span>(<span class="va">t_vec_x</span><span class="op">,</span> <span class="va">x_hist</span>(<span class="fl">2</span><span class="op">,:</span>)<span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> </span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>        <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>        <span class="va">ylabel</span>(<span class="ss">&#39;Position&#39;</span>)<span class="op">;</span> <span class="va">title</span>(<span class="ss">&#39;State Regulation&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>        <span class="va">legend</span>(<span class="ss">&#39;x_1&#39;</span><span class="op">,</span> <span class="ss">&#39;x_2&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlim</span>([<span class="fl">0</span> <span class="va">T_sim</span>])<span class="op">;</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>        <span class="va">subplot</span>(<span class="fl">2</span><span class="op">,</span><span class="fl">1</span><span class="op">,</span><span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>        <span class="va">stairs</span>(<span class="va">t_vec_u</span><span class="op">,</span> <span class="va">u_hist</span>(<span class="fl">1</span><span class="op">,:</span>)<span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span> <span class="va">hold</span> <span class="va">on</span><span class="op">;</span> </span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>        <span class="va">yline</span>(<span class="va">u_max</span><span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;Max Limit&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>        <span class="va">yline</span>(<span class="va">u_min</span><span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;Min Limit&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>        <span class="va">ylabel</span>(<span class="ss">&#39;Control Input (u)&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlabel</span>(<span class="ss">&#39;Time Steps&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlim</span>([<span class="fl">0</span> <span class="va">T_sim</span>])<span class="op">;</span></span></code></pre></div>
+<figure id="fig:simplempc">
+<img src="figures/Simple_MPC.png" style="width:70.0%" />
+<figcaption>MPC regulation of an unstable oscillatory system.</figcaption>
+</figure>
 </div>
 <h3 id="sec:effect_of_N">The Effect of Horizon (<span
 class="math inline">\(N\)</span>) and Terminal Cost (<span
@@ -601,19 +605,20 @@ we trick the controller into thinking it plans for eternity, even if
 <span class="math inline">\(N\)</span> is small.</p></li>
 </ol>
 <p>While short horizons can lead to instability, a more common issue in
-practice is <em>Performance Degradation</em>. If the control authority
-is "expensive" (high <span class="math inline">\(R\)</span>) and the
-horizon is short, the controller becomes "lazy."</p>
+practice is <strong>Performance Degradation</strong>. If the control
+authority is "expensive" (high <span class="math inline">\(R\)</span>)
+and the horizon is short, the controller becomes "lazy."</p>
 <figure id="fig:mpc_lazy" data-latex-placement="h">
-<img src="figures/Effect_of_N.png" style="width:90.0%" />
-<figcaption><em>Performance Degradation with Short Horizons.</em> The
-system starts at <span class="math inline">\(x_0=4\)</span> with
-expensive control (<span class="math inline">\(R=10\)</span>). The Short
-Horizon controller (Red) tries to save control effort in the short term
-as it cannot see long enough, leading to extremely slow convergence. The
-Terminal Cost controller (Green) recognises the long-term value of
-aggressive action, matching the performance of the Long Horizon
-controller (Blue).</figcaption>
+<embed src="figures/Effect_of_N.png" style="width:90.0%" />
+<figcaption><strong>Performance Degradation with Short
+Horizons.</strong> The system starts at <span
+class="math inline">\(x_0=4\)</span> with expensive control (<span
+class="math inline">\(R=10\)</span>). The Short Horizon controller (Red)
+tries to save control effort in the short term as it cannot see long
+enough, leading to extremely slow convergence. The Terminal Cost
+controller (Green) recognises the long-term value of aggressive action,
+matching the performance of the Long Horizon controller
+(Blue).</figcaption>
 </figure>
 <div class="examplebox">
 <p><span>MATLAB Benchmark: Stability Analysis</span> To rigorously test
@@ -663,8 +668,8 @@ time.</p></li>
 </ul>
 <p><strong>Conclusion:</strong> The Terminal Cost <span
 class="math inline">\(P\)</span> is not just a stability anchor; it is a
-crucial tuning parameter that restores <em>long-term optimality</em> to
-short-horizon controllers.</p>
+crucial tuning parameter that restores <strong>long-term
+optimality</strong> to short-horizon controllers.</p>
 </div>
 <h3 id="sec:mpc_stability_theory">Recursive Feasibility and Formal
 Stability Guarantees<span class="math inline">\(^{(*)}\)</span></h3>
@@ -682,8 +687,8 @@ the cost of controlling the system from <span
 class="math inline">\(x_N\)</span> to the origin <em>after</em> the
 horizon ends. This representation is exact when the LQR controller <span
 class="math inline">\(u = -Kx\)</span> is applied from step <span
-class="math inline">\(N\)</span> onward <em>and no constraints are
-violated</em> during that infinite tail.</p>
+class="math inline">\(N\)</span> onward <strong>and no constraints are
+violated</strong> during that infinite tail.</p>
 <p>But nothing in the formulation above prevents <span
 class="math inline">\(x_N\)</span> from landing in a region where the
 LQR input <span class="math inline">\(-Kx_N\)</span> would violate the
@@ -698,13 +703,14 @@ class="math inline">\(N\)</span>-step window but leads to constraint
 violations (or solver infeasibility) at the very next time step.</p>
 <p>To close this gap, we need two things:</p>
 <ol>
-<li><p>A <em>terminal set</em> <span
+<li><p>A <strong>terminal set</strong> <span
 class="math inline">\(\mathcal{X}_f\)</span> — a region of the state
 space where the LQR controller can operate indefinitely without
 violating any constraint.</p></li>
-<li><p>A <em>terminal constraint</em> <span class="math inline">\(x_N
-\in \mathcal{X}_f\)</span> added to the MPC optimisation, which forces
-the predicted terminal state to land inside this safe region.</p></li>
+<li><p>A <strong>terminal constraint</strong> <span
+class="math inline">\(x_N \in \mathcal{X}_f\)</span> added to the MPC
+optimisation, which forces the predicted terminal state to land inside
+this safe region.</p></li>
 </ol>
 <h4 id="positive-invariant-sets">Positive Invariant Sets</h4>
 <p>The terminal set <span class="math inline">\(\mathcal{X}_f\)</span>
@@ -716,7 +722,7 @@ invariant</em>.</p>
 <div class="defnbox">
 <p><span>Definition: Positive Invariant Set</span> A set <span
 class="math inline">\(\mathcal{X}_f \subseteq \mathbb{R}^n\)</span> is a
-<em>positive invariant set</em> for the closed-loop system <span
+<strong>positive invariant set</strong> for the closed-loop system <span
 class="math inline">\(x_{k+1} = (A - BK)\,x_k\)</span> under the
 terminal control law <span class="math inline">\(u = -Kx\)</span>,
 subject to constraints <span class="math inline">\(u \in
@@ -800,15 +806,17 @@ MPC Problem with Terminal Constraint</h4>
 href="#sec:mpc_formulation" data-reference-type="ref"
 data-reference="sec:mpc_formulation">1.2</a> by adding the terminal
 constraint. The optimisation becomes:</p>
-<p><span class="math display">\[\begin{align*}
+<p><span class="math display">\[\begin{align}
     \min_{u} \quad &amp; J = x_N^\top P\, x_N + \sum_{k=0}^{N-1}
-\bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) \\
+\bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) \nonumber \\
     \text{s.t.} \quad &amp; x_{k+1} = Ax_k + Bu_k, \quad k = 0, \ldots,
-N-1 \\
-    &amp; u_{\min} \le u_k \le u_{\max}, \quad k = 0, \ldots, N-1 \\
-    &amp; x_{\min} \le x_k \le x_{\max}, \quad k = 1, \ldots, N \\
-    &amp; {x_N \in \mathcal{X}_f}
-\end{align*}\]</span></p>
+N-1 \nonumber \\
+    &amp; u_{\min} \le u_k \le u_{\max}, \quad k = 0, \ldots, N-1
+\nonumber \\
+    &amp; x_{\min} \le x_k \le x_{\max}, \quad k = 1, \ldots, N
+\nonumber \\
+    &amp; \boxed{x_N \in \mathcal{X}_f} \label{eq:mpc_terminal}
+\end{align}\]</span></p>
 <p>The only difference from before is the last line. This extra
 constraint restricts where the prediction horizon is allowed to end. The
 QP becomes slightly more constrained, but in return it provides a formal
@@ -825,17 +833,17 @@ linear inequalities to the QP — so it remains a QP.</p>
 <span class="math inline">\(t\)</span> but not at time <span
 class="math inline">\(t+1\)</span>. We need the guarantee that once the
 MPC problem is feasible, it <em>stays</em> feasible forever. This
-property is called <em>recursive feasibility</em>.</p>
+property is called <strong>recursive feasibility</strong>.</p>
 <div class="defnbox">
 <p><span>Definition: Recursive Feasibility</span> The MPC problem is
-<em>recursively feasible</em> if, whenever a feasible solution exists at
-time <span class="math inline">\(t\)</span>, a feasible solution also
-exists at time <span class="math inline">\(t+1\)</span> after applying
-the optimal input <span class="math inline">\(u_0^\star\)</span> to the
-plant.</p>
+<strong>recursively feasible</strong> if, whenever a feasible solution
+exists at time <span class="math inline">\(t\)</span>, a feasible
+solution also exists at time <span class="math inline">\(t+1\)</span>
+after applying the optimal input <span
+class="math inline">\(u_0^\star\)</span> to the plant.</p>
 </div>
-<p>The proof uses a simple but powerful idea called the <em>shifted
-sequence</em>.</p>
+<p>The proof uses a simple but powerful idea called the <strong>shifted
+sequence</strong>.</p>
 <p><strong>Setup.</strong> Suppose at time <span
 class="math inline">\(t\)</span>, the MPC solver returns the optimal
 input sequence: <span class="math display">\[u^\star = \{u_0^\star,\;
@@ -912,10 +920,10 @@ class="math inline">\((Q^{1/2}, A)\)</span> is detectable — i.e. no
 unstable mode of <span class="math inline">\(A\)</span> is invisible to
 the cost.</p>
 </div>
-<p>We now show that the closed-loop system is <em>asymptotically
-stable</em>: the state converges to the origin. The argument uses the
-optimal cost <span class="math inline">\(J^\star(x_t)\)</span> as a
-<em>Lyapunov function</em>.</p>
+<p>We now show that the closed-loop system is <strong>asymptotically
+stable</strong>: the state converges to the origin. The argument uses
+the optimal cost <span class="math inline">\(J^\star(x_t)\)</span> as a
+<strong>Lyapunov function</strong>.</p>
 <p>A Lyapunov function is any function <span
 class="math inline">\(V(x)\)</span> that satisfies three conditions:</p>
 <ol>
@@ -1072,24 +1080,37 @@ constraint.</p></li>
 </ul>
 <p>The following table summarises the three levels of MPC design, from
 simplest to most rigorous:</p>
-<div class="center">
-<div class="tabular">
-<p><span>L<span>3.5cm</span> C<span>2.5cm</span> C<span>2.5cm</span>
-C<span>3.5cm</span></span> <strong>Design</strong> &amp;
-<strong>Terminal cost</strong> &amp; <strong>Terminal set</strong> &amp;
-<strong>Guarantee</strong><br />
-Basic MPC &amp; <span class="math inline">\(Q_N = Q\)</span> &amp; None
-&amp; No formal guarantee<br />
-MPC with <span class="math inline">\(P\)</span> &amp; <span
-class="math inline">\(Q_N = P\)</span> (DARE) &amp; None &amp; Works in
-practice; no proof<br />
-Rigorous MPC &amp; <span class="math inline">\(Q_N = P\)</span> (DARE)
-&amp; <span class="math inline">\(x_N \in \mathcal{X}_f\)</span> &amp;
-Recursive feasibility + stability<br />
-</p>
-</div>
-</div>
-<p>For most practical applications, using <span
+<table style="width:100%; border-collapse:collapse; margin:1em 0;">
+<thead>
+<tr style="border-bottom:2px solid #333;">
+<th style="text-align:left; padding:8px 12px;">Design</th>
+<th style="text-align:center; padding:8px 12px;">Terminal cost</th>
+<th style="text-align:center; padding:8px 12px;">Terminal set</th>
+<th style="text-align:center; padding:8px 12px;">Guarantee</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">Basic MPC</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = Q\)</span></td>
+<td style="text-align:center; padding:6px 12px;">None</td>
+<td style="text-align:center; padding:6px 12px;">No formal guarantee</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:6px 12px;">MPC with <span class="math inline">\(P\)</span></td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = P\)</span> (DARE)</td>
+<td style="text-align:center; padding:6px 12px;">None</td>
+<td style="text-align:center; padding:6px 12px;">Works in practice; no proof</td>
+</tr>
+<tr style="border-bottom:2px solid #333;">
+<td style="padding:6px 12px;">Rigorous MPC</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(Q_N = P\)</span> (DARE)</td>
+<td style="text-align:center; padding:6px 12px;"><span class="math inline">\(x_N \in \mathcal{X}_f\)</span></td>
+<td style="text-align:center; padding:6px 12px;">Recursive feasibility + stability</td>
+</tr>
+</tbody>
+</table>
+<p>For an MSc-level course and most industrial applications, using <span
 class="math inline">\(Q_N = P\)</span> with a sufficiently long horizon
 is the standard approach. The rigorous formulation with <span
 class="math inline">\(\mathcal{X}_f\)</span> is used when formal
@@ -1102,14 +1123,14 @@ Matters</h4>
 directly controls the set of initial states from which MPC can find a
 feasible solution. Understanding this trade-off is important for
 controller design.</p>
-<p><em>A small terminal set</em> means <span
+<p><strong>A small terminal set</strong> means <span
 class="math inline">\(\mathcal{X}_f\)</span> is a tight region around
 the origin. The MPC must drive <span class="math inline">\(x_N\)</span>
 into this small target within <span class="math inline">\(N\)</span>
 steps, which is harder. The consequence: fewer initial states lead to a
 feasible problem, and a longer horizon <span
 class="math inline">\(N\)</span> may be needed to compensate.</p>
-<p><em>A large terminal set</em> means <span
+<p><strong>A large terminal set</strong> means <span
 class="math inline">\(\mathcal{X}_f\)</span> covers more of the state
 space. The MPC has an easier target for <span
 class="math inline">\(x_N\)</span>, so feasibility is maintained for a
@@ -1157,52 +1178,97 @@ class="math inline">\(\mathcal{X}_f\)</span>.</p></li>
 </ol>
 <p>The iteration is guaranteed to converge in a finite number of steps
 for stable closed-loop systems with polytopic constraints.</p>
-<p>In MATLAB, the <em>Multi-Parametric Toolbox 3 (MPT3)</em> <span
-class="citation" data-cites="Herceg2013"></span> automates this
-computation. MPT3 is a free toolbox available at
+<p>In MATLAB, the <strong>Multi-Parametric Toolbox 3
+(MPT3)</strong> <span class="citation" data-cites="Herceg2013"></span>
+automates this computation. MPT3 is a free toolbox available at
 <code>https://www.mpt3.org</code>. The following code computes <span
 class="math inline">\(\mathcal{X}_f\)</span> for a two-state system:</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Computing $\mathcal{X}_f$ using MPT3"><code>A = [1.2 1; 0 1];
-B = [0.5; 1];
+<div class="sourceCode" id="cb2" data-language="Matlab"
+data-caption="Computing $\mathcal{X}_f$ using MPT3"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">A</span> <span class="op">=</span> [<span class="fl">1.2</span> <span class="fl">1</span><span class="op">;</span> <span class="fl">0</span> <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">% Constraints</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">umax</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">xmax</span> <span class="op">=</span> [<span class="fl">5</span><span class="op">;</span> <span class="fl">5</span>]<span class="op">;</span>  <span class="co">% state bounds: -xmax &lt;= x &lt;= xmax</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">% Step 1: Compute LQR gain and DARE solution</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>[<span class="va">K_lqr</span><span class="op">,</span> <span class="va">P_dare</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">% Closed-loop matrix under LQR</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">Acl</span> <span class="op">=</span> <span class="va">A</span> <span class="op">-</span> <span class="va">B</span><span class="op">*</span><span class="va">K_lqr</span><span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">% Step 2: Define constraint polytopes using MPT3</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="va">X</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> <span class="op">-</span><span class="va">xmax</span><span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> <span class="va">xmax</span>)<span class="op">;</span>   <span class="co">% state constraints</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="va">U</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;lb&#39;</span><span class="op">,</span> <span class="op">-</span><span class="va">umax</span><span class="op">,</span> <span class="ss">&#39;ub&#39;</span><span class="op">,</span> <span class="va">umax</span>)<span class="op">;</span>   <span class="co">% input constraints</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">% Step 3: Build the closed-loop LTI system</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span> <span class="op">=</span> <span class="va">LTISystem</span>(<span class="ss">&#39;A&#39;</span><span class="op">,</span> <span class="va">Acl</span>)<span class="op">;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">min</span> <span class="op">=</span> <span class="op">-</span><span class="va">xmax</span><span class="op">;</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">max</span> <span class="op">=</span> <span class="va">xmax</span><span class="op">;</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">% Map input constraints through K: |K*x| &lt;= umax</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="va">KPoly</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;A&#39;</span><span class="op">,</span> [<span class="va">K_lqr</span><span class="op">;</span> <span class="op">-</span><span class="va">K_lqr</span>]<span class="op">,</span> <span class="ss">&#39;b&#39;</span><span class="op">,</span> [<span class="va">umax</span><span class="op">;</span> <span class="va">umax</span>])<span class="op">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">% Step 4: Include input constraint as state constraint, then compute</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="va">X_combined</span> <span class="op">=</span> <span class="va">Polyhedron</span>(<span class="ss">&#39;A&#39;</span><span class="op">,</span> [<span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span> <span class="op">-</span><span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span> <span class="va">K_lqr</span><span class="op">;</span> <span class="op">-</span><span class="va">K_lqr</span>]<span class="op">,</span> <span class="op">...</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="ss">&#39;b&#39;</span><span class="op">,</span> [<span class="va">xmax</span><span class="op">;</span> <span class="va">xmax</span><span class="op">;</span> <span class="va">umax</span><span class="op">;</span> <span class="va">umax</span>])<span class="op">;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">setDomain</span>(<span class="ss">&#39;x&#39;</span><span class="op">,</span> <span class="va">X_combined</span>)<span class="op">;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="va">Xf</span> <span class="op">=</span> <span class="va">sys</span>.<span class="va">invariantSet</span>()<span class="op">;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">% Step 5: Visualise</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="va">figure</span><span class="op">;</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="va">plot</span>(<span class="va">X</span><span class="op">,</span> <span class="ss">&#39;color&#39;</span><span class="op">,</span> [<span class="fl">0.9</span> <span class="fl">0.9</span> <span class="fl">0.9</span>]<span class="op">,</span> <span class="ss">&#39;alpha&#39;</span><span class="op">,</span> <span class="fl">0.3</span>)<span class="op">;</span> <span class="va">hold</span> <span class="va">on</span><span class="op">;</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="va">plot</span>(<span class="va">Xf</span><span class="op">,</span> <span class="ss">&#39;color&#39;</span><span class="op">,</span> <span class="ss">&#39;blue&#39;</span><span class="op">,</span> <span class="ss">&#39;alpha&#39;</span><span class="op">,</span> <span class="fl">0.5</span>)<span class="op">;</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;x_1&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;x_2&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="va">legend</span>(<span class="ss">&#39;State constraints X&#39;</span><span class="op">,</span> <span class="ss">&#39;Terminal set X_f&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="va">title</span>(<span class="ss">&#39;Maximal Positive Invariant Set&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + scipy)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing the terminal set using mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+import mpt4py as mpt
 
-% Constraints
-umax = 1;
-xmax = [5; 5];  % state bounds: -xmax &lt;= x &lt;= xmax
+# 1. System matrices
+A = np.array([[1.2, 1], [0, 1]])
+B = np.array([[0.5], [1]])
 
-% Step 1: Compute LQR gain and DARE solution
-Q = eye(2);
-R = 1;
-[K_lqr, P_dare] = dlqr(A, B, Q, R);
+# 2. LQR gain from DARE
+Q = np.eye(2);  R = np.array([[1.0]])
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)   # u = -Kx
+Acl = A - B @ K
 
-% Closed-loop matrix under LQR
-Acl = A - B*K_lqr;
+# 3. Constraint polytopes
+xmax = np.array([5.0, 5.0])
+umax = 1.0
+X = mpt.Polyhedron(lb=-xmax, ub=xmax)
 
-% Step 2: Define constraint polytopes using MPT3
-X = Polyhedron(&#39;lb&#39;, -xmax, &#39;ub&#39;, xmax);   % state constraints
-U = Polyhedron(&#39;lb&#39;, -umax, &#39;ub&#39;, umax);   % input constraints
+# Input constraint mapped through K: |Kx| <= umax
+G = np.vstack([K, -K])
+g = np.array([umax, umax])
+KPoly = mpt.Polyhedron(A=G, b=g)
 
-% Step 3: Build the closed-loop LTI system
-sys = LTISystem(&#39;A&#39;, Acl);
-sys.x.min = -xmax;
-sys.x.max = xmax;
+# Combined constraint: state + input-through-K
+X_combined = X & KPoly   # intersection
 
-% Map input constraints through K: |K*x| &lt;= umax
-KPoly = Polyhedron(&#39;A&#39;, [K_lqr; -K_lqr], &#39;b&#39;, [umax; umax]);
+# 4. Maximal positive invariant set (iterative pre-image)
+Omega = X_combined
+for i in range(50):
+    pre_image = mpt.Polyhedron(A=Omega.A @ Acl, b=Omega.b)
+    Omega_new = Omega & pre_image
+    if Omega_new == Omega:
+        print(f"Converged at iteration {i}")
+        break
+    Omega = Omega_new
 
-% Step 4: Include input constraint as state constraint, then compute
-X_combined = Polyhedron(&#39;A&#39;, [eye(2); -eye(2); K_lqr; -K_lqr], ...
-    &#39;b&#39;, [xmax; xmax; umax; umax]);
-sys.setDomain(&#39;x&#39;, X_combined);
-Xf = sys.invariantSet();
-
-% Step 5: Visualise
-figure;
-plot(X, &#39;color&#39;, [0.9 0.9 0.9], &#39;alpha&#39;, 0.3); hold on;
-plot(Xf, &#39;color&#39;, &#39;blue&#39;, &#39;alpha&#39;, 0.5);
-xlabel(&#39;x_1&#39;); ylabel(&#39;x_2&#39;);
-legend(&#39;State constraints X&#39;, &#39;Terminal set X_f&#39;);
-title(&#39;Maximal Positive Invariant Set&#39;);</code></pre>
+Xf = Omega
+print(f"Terminal set has {Xf.A.shape[0]} half-planes")
+print(f"H_f (Xf.A):\n{Xf.A}")
+print(f"h_f (Xf.b):\n{Xf.b}")</code></pre></div>
 <p>The key function is <code>sys.invariantSet()</code>, which performs
 the iterative algorithm described above automatically. For the example
 above, the result is a polytope with several faces (linear inequalities)
@@ -1241,10 +1307,10 @@ class="math inline">\(\mu\)</span>s control period. At these speeds,
 even a fast QP solver may not finish in time.</p>
 <p>Explicit MPC takes a different approach: solve the MPC problem
 <em>once, offline</em>, for every possible initial state <span
-class="math inline">\(x_0\)</span>. The result is a <em>piecewise
-affine</em> (PWA) control law <span class="math display">\[u^*(x_0) =
-K_i\, x_0 + k_i \quad \text{when } x_0 \in \mathcal{R}_i\]</span> where
-<span class="math inline">\(\{\mathcal{R}_1, \mathcal{R}_2, \dots,
+class="math inline">\(x_0\)</span>. The result is a <strong>piecewise
+affine</strong> (PWA) control law <span class="math display">\[u^*(x_0)
+= K_i\, x_0 + k_i \quad \text{when } x_0 \in \mathcal{R}_i\]</span>
+where <span class="math inline">\(\{\mathcal{R}_1, \mathcal{R}_2, \dots,
 \mathcal{R}_M\}\)</span> is a partition of the feasible state space into
 polyhedral regions. At runtime, the controller determines which region
 contains the current state and evaluates the corresponding affine law.
@@ -1259,7 +1325,7 @@ decision variables <span class="math inline">\(u_0, \dots,
 u_{N-1}\)</span>, and all constraints (dynamics, input bounds, state
 bounds) are linear in both <span class="math inline">\(u\)</span> and
 <span class="math inline">\(x_0\)</span>. This makes MPC a
-<em>parametric QP</em>: a QP parameterised by <span
+<strong>parametric QP</strong>: a QP parameterised by <span
 class="math inline">\(x_0\)</span>.</p>
 <p>At any optimal solution, the KKT conditions partition the constraints
 into two groups:</p>
@@ -1282,15 +1348,16 @@ region</em>.</p>
 <p><span>Explicit MPC Solution <span class="citation"
 data-cites="Bemporad2002"></span></span> The optimal control law <span
 class="math inline">\(u^*(x_0)\)</span> of a linear MPC problem with
-quadratic cost is a <em>continuous piecewise affine</em> function of
-<span class="math inline">\(x_0\)</span>. The state space is partitioned
-into <span class="math inline">\(M\)</span> convex polyhedral
-<em>critical regions</em> <span class="math inline">\(\{\mathcal{R}_1,
-\dots, \mathcal{R}_M\}\)</span>, and within each region: <span
-class="math display">\[u^*(x_0) = K_i\, x_0 + k_i, \qquad x_0 \in
-\mathcal{R}_i.\]</span> The gains and regions <span
-class="math inline">\(\{(K_i, k_i, \mathcal{R}_i)\}_{i=1}^M\)</span> are
-computed offline by solving a <em>multi-parametric QP (mpQP)</em>.</p>
+quadratic cost is a <strong>continuous piecewise affine</strong>
+function of <span class="math inline">\(x_0\)</span>. The state space is
+partitioned into <span class="math inline">\(M\)</span> convex
+polyhedral <em>critical regions</em> <span
+class="math inline">\(\{\mathcal{R}_1, \dots, \mathcal{R}_M\}\)</span>,
+and within each region: <span class="math display">\[u^*(x_0) = K_i\,
+x_0 + k_i, \qquad x_0 \in \mathcal{R}_i.\]</span> The gains and regions
+<span class="math inline">\(\{(K_i, k_i,
+\mathcal{R}_i)\}_{i=1}^M\)</span> are computed offline by solving a
+<strong>multi-parametric QP (mpQP)</strong>.</p>
 </div>
 <p>Different active-set combinations produce different affine pieces. In
 one region the input constraint may be active; in an adjacent region, a
@@ -1360,7 +1427,7 @@ class="math inline">\(\mathcal{R}_3\)</span>, the actuator is saturated.
 The breakpoints at <span class="math inline">\(x_0 = \pm 1/K\)</span>
 mark where the input constraint switches from inactive to active.</p>
 <figure id="fig:explicit_scalar_pwa" data-latex-placement="ht">
-<img src="figures/fig_explicit_scalar_pwa.png" style="width:85.0%" />
+<embed src="figures/fig_explicit_scalar_pwa.png" style="width:85.0%" />
 <figcaption>Explicit MPC law <span
 class="math inline">\(u^*(x_0)\)</span> for the scalar system with <span
 class="math inline">\(|u| \le 1\)</span>, <span class="math inline">\(N
@@ -1372,10 +1439,11 @@ active (<span class="math inline">\(\mathcal{R}_3\)</span>). Online
 evaluation requires two comparisons and one multiplication.</figcaption>
 </figure>
 <p>At runtime, the entire controller reduces to:</p>
-<pre class="matlab" data-language="Matlab" data-numbers="none"><code>if x0 &lt;= -1.26,      u = 1;
-elseif x0 &gt;= 1.26,   u = -1;
-else,                 u = -0.79 * x0;
-end</code></pre>
+<div class="sourceCode" id="cb3" data-language="Matlab"
+data-numbers="none"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> <span class="va">x0</span> <span class="op">&lt;=</span> <span class="op">-</span><span class="fl">1.26</span><span class="op">,</span>      <span class="va">u</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">elseif</span> <span class="va">x0</span> <span class="op">&gt;=</span> <span class="fl">1.26</span><span class="op">,</span>   <span class="va">u</span> <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">else</span><span class="op">,</span>                 <span class="va">u</span> <span class="op">=</span> <span class="op">-</span><span class="fl">0.79</span> <span class="op">*</span> <span class="va">x0</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <p>Two comparisons and one multiply. This executes in nanoseconds on any
 microcontroller — no QP solver, no YALMIP, no operating system
 required.</p>
@@ -1394,37 +1462,118 @@ class="math display">\[A = \begin{bmatrix} 1.2 &amp; 1 \\ 0 &amp; 1
 class="math inline">\(Q = I_2\)</span>, <span class="math inline">\(R =
 1\)</span>, <span class="math inline">\(N = 5\)</span>, and the DARE
 terminal cost <span class="math inline">\(P\)</span>.</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Computing Explicit MPC via MPT3"><code>A = [1.2 1; 0 1];  B = [0.5; 1];
-sys = LTISystem(&#39;A&#39;, A, &#39;B&#39;, B);
+<div class="sourceCode" id="cb4" data-language="Matlab"
+data-caption="Computing Explicit MPC via MPT3"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">A</span> <span class="op">=</span> [<span class="fl">1.2</span> <span class="fl">1</span><span class="op">;</span> <span class="fl">0</span> <span class="fl">1</span>]<span class="op">;</span>  <span class="va">B</span> <span class="op">=</span> [<span class="fl">0.5</span><span class="op">;</span> <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span> <span class="op">=</span> <span class="va">LTISystem</span>(<span class="ss">&#39;A&#39;</span><span class="op">,</span> <span class="va">A</span><span class="op">,</span> <span class="ss">&#39;B&#39;</span><span class="op">,</span> <span class="va">B</span>)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">% 2. Constraints</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">min</span> <span class="op">=</span> [<span class="op">-</span><span class="fl">5</span><span class="op">;</span> <span class="op">-</span><span class="fl">5</span>]<span class="op">;</span>   <span class="va">sys</span>.<span class="va">x</span>.<span class="va">max</span> <span class="op">=</span> [<span class="fl">5</span><span class="op">;</span> <span class="fl">5</span>]<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">u</span>.<span class="va">min</span> <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">;</span>          <span class="va">sys</span>.<span class="va">u</span>.<span class="va">max</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">% 3. Cost: Q, R, terminal cost P from DARE</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">eye</span>(<span class="fl">2</span>)<span class="op">;</span>  <span class="va">R</span> <span class="op">=</span> <span class="fl">1</span><span class="op">;</span>  <span class="va">N</span> <span class="op">=</span> <span class="fl">5</span><span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>[<span class="op">~,</span> <span class="va">P</span>] <span class="op">=</span> <span class="va">dlqr</span>(<span class="va">A</span><span class="op">,</span> <span class="va">B</span><span class="op">,</span> <span class="va">Q</span><span class="op">,</span> <span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">penalty</span>  <span class="op">=</span> <span class="va">QuadFunction</span>(<span class="va">Q</span>)<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">u</span>.<span class="va">penalty</span>  <span class="op">=</span> <span class="va">QuadFunction</span>(<span class="va">R</span>)<span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">with</span>(<span class="ss">&#39;terminalPenalty&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="va">sys</span>.<span class="va">x</span>.<span class="va">terminalPenalty</span> <span class="op">=</span> <span class="va">QuadFunction</span>(<span class="va">P</span>)<span class="op">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">% 4. Build online MPC, then convert to explicit</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="va">mpc_online</span> <span class="op">=</span> <span class="va">MPCController</span>(<span class="va">sys</span><span class="op">,</span> <span class="va">N</span>)<span class="op">;</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="va">empc</span> <span class="op">=</span> <span class="va">mpc_online</span>.<span class="va">toExplicit</span>()<span class="op">;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Critical regions: %d\n&#39;</span><span class="op">,</span> <span class="va">empc</span>.<span class="va">nr</span>)<span class="op">;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">% 5. Plot the polyhedral partition</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="va">figure</span><span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="va">empc</span>.<span class="va">partition</span>.<span class="va">plot</span>()<span class="op">;</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;x_1&#39;</span>)<span class="op">;</span>  <span class="va">ylabel</span>(<span class="ss">&#39;x_2&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="va">title</span>(<span class="ss">&#39;Explicit MPC: Critical Regions&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">% 6. Evaluate at runtime --- table lookup, no solver</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="va">x_now</span> <span class="op">=</span> [<span class="fl">3</span><span class="op">;</span> <span class="op">-</span><span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="va">u_star</span> <span class="op">=</span> <span class="va">empc</span>.<span class="va">evaluate</span>(<span class="va">x_now</span>)<span class="op">;</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;u*(x0) = %.4f\n&#39;</span><span class="op">,</span> <span class="va">u_star</span>)<span class="op">;</span></span></code></pre></div>
+<div class="notebox">
+<p><span>Python Equivalent (mpt4py + qpsolvers)</span></p>
+</div>
+<div class="sourceCode" data-language="Python" data-caption="Computing Explicit MPC via mpt4py"><pre class="sourceCode python"><code class="sourceCode python">import numpy as np
+from scipy.linalg import solve_discrete_are
+from qpsolvers import solve_qp
+import mpt4py as mpt
 
-% 2. Constraints
-sys.x.min = [-5; -5];   sys.x.max = [5; 5];
-sys.u.min = -1;          sys.u.max = 1;
+A = np.array([[1.2, 1], [0, 1]])
+B = np.array([[0.5], [1]])
+nx, nu = 2, 1
+N = 5
 
-% 3. Cost: Q, R, terminal cost P from DARE
-Q = eye(2);  R = 1;  N = 5;
-[~, P] = dlqr(A, B, Q, R);
-sys.x.penalty  = QuadFunction(Q);
-sys.u.penalty  = QuadFunction(R);
-sys.x.with(&#39;terminalPenalty&#39;);
-sys.x.terminalPenalty = QuadFunction(P);
+# Cost matrices
+Q = np.eye(nx);  R = np.eye(nu)
+P = solve_discrete_are(A, B, Q, R)
+K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
 
-% 4. Build online MPC, then convert to explicit
-mpc_online = MPCController(sys, N);
-empc = mpc_online.toExplicit();
-fprintf(&#39;Critical regions: %d\n&#39;, empc.nr);
+# Constraints
+x_min, x_max = np.array([-5, -5]), np.array([5, 5])
+u_min, u_max = np.array([-1.0]), np.array([1.0])
 
-% 5. Plot the polyhedral partition
-figure;
-empc.partition.plot();
-xlabel(&#39;x_1&#39;);  ylabel(&#39;x_2&#39;);
-title(&#39;Explicit MPC: Critical Regions&#39;);
+# Build the condensed QP matrices (H, f, G_ineq, h_ineq)
+# Decision variable: U = [u_0, u_1, ..., u_{N-1}]
+# Predict: x_k = A^k x0 + sum_{j=0}^{k-1} A^{k-1-j} B u_j
+S_x = np.zeros((nx*(N+1), nx))        # maps x0 to states
+S_u = np.zeros((nx*(N+1), nu*N))      # maps U to states
+Ak = np.eye(nx)
+for k in range(N+1):
+    S_x[k*nx:(k+1)*nx, :] = Ak
+    for j in range(min(k, N)):
+        S_u[k*nx:(k+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, k-1-j) @ B
+    if k < N:
+        Ak = Ak @ A
 
-% 6. Evaluate at runtime --- table lookup, no solver
-x_now = [3; -1];
-u_star = empc.evaluate(x_now);
-fprintf(&#39;u*(x0) = %.4f\n&#39;, u_star);</code></pre>
+Q_bar = np.block([[np.kron(np.eye(N), Q), np.zeros((nx*N, nx))],
+                   [np.zeros((nx, nx*N)), P]])
+R_bar = np.kron(np.eye(N), R)
+
+H = R_bar + S_u.T @ Q_bar @ S_u
+H = 0.5 * (H + H.T)
+
+def solve_mpc_qp(x0):
+    """Solve the MPC QP for a given initial state."""
+    f = (S_u.T @ Q_bar @ S_x @ x0).astype(np.float64)
+    # Input constraints: u_min <= u_k <= u_max
+    G_u = np.vstack([np.eye(nu*N), -np.eye(nu*N)])
+    h_u = np.hstack([np.tile(u_max, N), np.tile(-u_min, N)])
+    # State constraints: x_min <= x_k <= x_max (k=1..N)
+    G_x = np.vstack([S_u[nx:], -S_u[nx:]])
+    h_x = np.hstack([np.tile(x_max, N) - np.kron(np.ones(N), (S_x[nx:]@x0).reshape(-1)[:nx*N]),
+                      np.tile(-x_min, N) + np.kron(np.ones(N), (S_x[nx:]@x0).reshape(-1)[:nx*N])])
+    # Simpler: rewrite properly
+    G_xs = S_u[nx:]                    # state part of S_u (skip x0)
+    s_xs = S_x[nx:] @ x0              # free response
+    G_x_ub = G_xs
+    h_x_ub = np.tile(x_max, N) - s_xs
+    G_x_lb = -G_xs
+    h_x_lb = np.tile(-x_min, N) + s_xs
+
+    G_ineq = np.vstack([G_u, G_x_ub, G_x_lb])
+    h_ineq = np.hstack([h_u, h_x_ub, h_x_lb])
+
+    U_star = solve_qp(H.astype(np.float64), f, G_ineq.astype(np.float64),
+                       h_ineq.astype(np.float64), solver='clarabel')
+    return U_star
+
+# Simulate closed-loop
+x = np.array([4.0, -1.0])
+T_sim = 25
+x_log, u_log = [x.copy()], []
+for k in range(T_sim):
+    U = solve_mpc_qp(x)
+    u = U[:nu]
+    u_log.append(u[0])
+    x = A @ x + B @ u
+    x_log.append(x.copy())
+
+print(f"Explicit MPC: {N} horizon, solved via condensed QP")
+print(f"Final state: x = [{x_log[-1][0]:.4f}, {x_log[-1][1]:.4f}]")</code></pre></div>
 <p>Figure <a href="#fig:explicit_regions_2d" data-reference-type="ref"
 data-reference="fig:explicit_regions_2d">1.3</a> shows the resulting
 partition. Each coloured polygon is one critical region with its own
@@ -1434,7 +1583,7 @@ runtime, the controller performs a <em>point-location query</em> —
 testing which region contains the current state — and evaluates <span
 class="math inline">\(u^* = K_i x + k_i\)</span>.</p>
 <figure id="fig:explicit_regions_2d" data-latex-placement="ht">
-<img src="figures/fig_explicit_regions_2d.png" style="width:75.0%" />
+<embed src="figures/fig_explicit_regions_2d.png" style="width:75.0%" />
 <figcaption>Polyhedral partition of the state space for the double
 integrator under explicit MPC with <span class="math inline">\(N =
 5\)</span>. Each coloured region has a distinct affine feedback gain.
@@ -1445,21 +1594,22 @@ identifying which region contains the current state.</figcaption>
 results — explicit MPC is not an approximation. To verify, we simulate
 both controllers in closed loop from the same initial condition <span
 class="math inline">\(x_0 = [4,\; -1]^\top\)</span>:</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Verifying explicit vs.\ online MPC equivalence"><code>T_sim = 30;  x0 = [4; -1];
-x_on = zeros(2, T_sim+1);  x_on(:,1) = x0;
-x_ex = x_on;
-u_on = zeros(1, T_sim);    u_ex = u_on;
-
-for t = 1:T_sim
-    u_on(t) = mpc_online.evaluate(x_on(:,t));   % solves QP
-    x_on(:,t+1) = A*x_on(:,t) + B*u_on(t);
-
-    u_ex(t) = empc.evaluate(x_ex(:,t));          % table lookup
-    x_ex(:,t+1) = A*x_ex(:,t) + B*u_ex(t);
-end
-fprintf(&#39;Max |u_online - u_explicit| = %.2e\n&#39;, max(abs(u_on-u_ex)));
-% Output: 1.30e-09 (numerical precision only)</code></pre>
+<div class="sourceCode" id="cb5" data-language="Matlab"
+data-caption="Verifying explicit vs.\ online MPC equivalence"><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">T_sim</span> <span class="op">=</span> <span class="fl">30</span><span class="op">;</span>  <span class="va">x0</span> <span class="op">=</span> [<span class="fl">4</span><span class="op">;</span> <span class="op">-</span><span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">x_on</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">x_on</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span><span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">x_ex</span> <span class="op">=</span> <span class="va">x_on</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">u_on</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span>    <span class="va">u_ex</span> <span class="op">=</span> <span class="va">u_on</span><span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">t</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_on</span>(<span class="va">t</span>) <span class="op">=</span> <span class="va">mpc_online</span>.<span class="va">evaluate</span>(<span class="va">x_on</span>(<span class="op">:,</span><span class="va">t</span>))<span class="op">;</span>   <span class="co">% solves QP</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_on</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">A</span><span class="op">*</span><span class="va">x_on</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">+</span> <span class="va">B</span><span class="op">*</span><span class="va">u_on</span>(<span class="va">t</span>)<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_ex</span>(<span class="va">t</span>) <span class="op">=</span> <span class="va">empc</span>.<span class="va">evaluate</span>(<span class="va">x_ex</span>(<span class="op">:,</span><span class="va">t</span>))<span class="op">;</span>          <span class="co">% table lookup</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_ex</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">A</span><span class="op">*</span><span class="va">x_ex</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">+</span> <span class="va">B</span><span class="op">*</span><span class="va">u_ex</span>(<span class="va">t</span>)<span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Max |u_online - u_explicit| = %.2e\n&#39;</span><span class="op">,</span> <span class="va">max</span>(<span class="va">abs</span>(<span class="va">u_on</span><span class="op">-</span><span class="va">u_ex</span>)))<span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">% Output: 1.30e-09 (numerical precision only)</span></span></code></pre></div>
 <p>Figure <a href="#fig:explicit_online_vs_explicit"
 data-reference-type="ref"
 data-reference="fig:explicit_online_vs_explicit">1.4</a> confirms the
@@ -1469,7 +1619,7 @@ of the blue solid line (online) in all three subplots. The maximum
 difference in control input is <span class="math inline">\(1.3 \times
 10^{-9}\)</span>, i.e. zero to machine precision.</p>
 <figure id="fig:explicit_online_vs_explicit" data-latex-placement="ht">
-<img src="figures/fig_explicit_online_vs_explicit.png"
+<embed src="figures/fig_explicit_online_vs_explicit.png"
 style="width:90.0%" />
 <figcaption>Closed-loop comparison of online MPC (QP solved at each
 step) and explicit MPC (PWA lookup table) for the double integrator with
@@ -1585,7 +1735,7 @@ different problem: the reference changes at every time step, the full
 reference trajectory is assumed known over the prediction horizon, and
 no disturbance estimation is needed.</p>
 </div>
-<p>For a <em>linear time-invariant</em> system <span
+<p>For a <strong>linear time-invariant</strong> system <span
 class="math inline">\(x_{k+1} = Ax_k + Bu_k\)</span> whose reference
 satisfies the same dynamics (<span class="math inline">\(x^r_{k+1} =
 Ax^r_k + Bu^r_k\)</span>), subtracting yields: <span
@@ -1711,50 +1861,51 @@ class="math inline">\(u_t = u^r_t + \delta u_0^*\)</span>.</p>
 Implementation</h5>
 <p>The following code implements the complete tracking MPC loop for the
 unicycle on a circular path.</p>
-<pre class="matlab" data-language="Matlab"
-data-caption="Tracking MPC for a nonholonomic mobile robot following a circular path."><code>Ts = 0.1;  R_c = 3;  w_ref = 0.5;
-v_ref = R_c * w_ref;  N = 15;  T_sim = 150;
-Q = diag([10, 10, 2]);  Rw = diag([0.5, 0.5]);
-v_min = 0;  v_max = 2.5;  w_min = -1.5;  w_max = 1.5;
-
-% 2. Reference trajectory
-t_all = (0:T_sim+N) * Ts;
-xr = [R_c*cos(w_ref*t_all); R_c*sin(w_ref*t_all);
-      w_ref*t_all + pi/2];
-ur = repmat([v_ref; w_ref], 1, T_sim+N);
-
-% 3. Nonlinear dynamics (Forward Euler)
-f_nl = @(x,u) x + Ts*[u(1)*cos(x(3)); u(1)*sin(x(3)); u(2)];
-
-% 4. Closed-loop simulation
-x0 = [R_c+1.5; 1.0; pi/2+0.3];
-x_log = zeros(3, T_sim+1);  x_log(:,1) = x0;
-u_log = zeros(2, T_sim);
-
-for t = 1:T_sim
-    dx = sdpvar(3, N+1, &#39;full&#39;);
-    du = sdpvar(2, N, &#39;full&#39;);
-
-    con = [dx(:,1) == x_log(:,t) - xr(:,t)];
-    obj = 0;
-    for k = 1:N
-        th_r = xr(3, t+k-1);  vr_k = ur(1, t+k-1);
-        Ak = [1, 0, -Ts*vr_k*sin(th_r);
-              0, 1,  Ts*vr_k*cos(th_r);
-              0, 0,  1];
-        Bk = [Ts*cos(th_r), 0; Ts*sin(th_r), 0; 0, Ts];
-
-        con = [con, dx(:,k+1) == Ak*dx(:,k) + Bk*du(:,k)];
-        con = [con, v_min-ur(1,t+k-1) &lt;= du(1,k) &lt;= v_max-ur(1,t+k-1)];
-        con = [con, w_min-ur(2,t+k-1) &lt;= du(2,k) &lt;= w_max-ur(2,t+k-1)];
-        obj = obj + dx(:,k)&#39;*Q*dx(:,k) + du(:,k)&#39;*Rw*du(:,k);
-    end
-    obj = obj + dx(:,N+1)&#39;*Q*dx(:,N+1);
-
-    optimize(con, obj, sdpsettings(&#39;verbose&#39;,0,&#39;solver&#39;,&#39;quadprog&#39;));
-    u_log(:,t) = ur(:,t) + value(du(:,1));
-    x_log(:,t+1) = f_nl(x_log(:,t), u_log(:,t));
-end</code></pre>
+<div class="sourceCode" id="cb6" data-language="Matlab"
+data-caption="Tracking MPC for a nonholonomic mobile robot following a circular path."><pre
+class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">Ts</span> <span class="op">=</span> <span class="fl">0.1</span><span class="op">;</span>  <span class="va">R_c</span> <span class="op">=</span> <span class="fl">3</span><span class="op">;</span>  <span class="va">w_ref</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">v_ref</span> <span class="op">=</span> <span class="va">R_c</span> <span class="op">*</span> <span class="va">w_ref</span><span class="op">;</span>  <span class="va">N</span> <span class="op">=</span> <span class="fl">15</span><span class="op">;</span>  <span class="va">T_sim</span> <span class="op">=</span> <span class="fl">150</span><span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="va">Q</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">10</span><span class="op">,</span> <span class="fl">10</span><span class="op">,</span> <span class="fl">2</span>])<span class="op">;</span>  <span class="va">Rw</span> <span class="op">=</span> <span class="va">diag</span>([<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.5</span>])<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="va">v_min</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span>  <span class="va">v_max</span> <span class="op">=</span> <span class="fl">2.5</span><span class="op">;</span>  <span class="va">w_min</span> <span class="op">=</span> <span class="op">-</span><span class="fl">1.5</span><span class="op">;</span>  <span class="va">w_max</span> <span class="op">=</span> <span class="fl">1.5</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">% 2. Reference trajectory</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="va">t_all</span> <span class="op">=</span> (<span class="fl">0</span><span class="op">:</span><span class="va">T_sim</span><span class="op">+</span><span class="va">N</span>) <span class="op">*</span> <span class="va">Ts</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="va">xr</span> <span class="op">=</span> [<span class="va">R_c</span><span class="op">*</span><span class="va">cos</span>(<span class="va">w_ref</span><span class="op">*</span><span class="va">t_all</span>)<span class="op">;</span> <span class="va">R_c</span><span class="op">*</span><span class="va">sin</span>(<span class="va">w_ref</span><span class="op">*</span><span class="va">t_all</span>)<span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="va">w_ref</span><span class="op">*</span><span class="va">t_all</span> <span class="op">+</span> <span class="va">pi</span><span class="op">/</span><span class="fl">2</span>]<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="va">ur</span> <span class="op">=</span> <span class="va">repmat</span>([<span class="va">v_ref</span><span class="op">;</span> <span class="va">w_ref</span>]<span class="op">,</span> <span class="fl">1</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="va">N</span>)<span class="op">;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">% 3. Nonlinear dynamics (Forward Euler)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="va">f_nl</span> <span class="op">=</span> <span class="op">@</span>(<span class="va">x</span><span class="op">,</span><span class="va">u</span>) <span class="va">x</span> <span class="op">+</span> <span class="va">Ts</span><span class="op">*</span>[<span class="va">u</span>(<span class="fl">1</span>)<span class="op">*</span><span class="va">cos</span>(<span class="va">x</span>(<span class="fl">3</span>))<span class="op">;</span> <span class="va">u</span>(<span class="fl">1</span>)<span class="op">*</span><span class="va">sin</span>(<span class="va">x</span>(<span class="fl">3</span>))<span class="op">;</span> <span class="va">u</span>(<span class="fl">2</span>)]<span class="op">;</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">% 4. Closed-loop simulation</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="va">x0</span> <span class="op">=</span> [<span class="va">R_c</span><span class="op">+</span><span class="fl">1.5</span><span class="op">;</span> <span class="fl">1.0</span><span class="op">;</span> <span class="va">pi</span><span class="op">/</span><span class="fl">2</span><span class="op">+</span><span class="fl">0.3</span>]<span class="op">;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="va">x_log</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">3</span><span class="op">,</span> <span class="va">T_sim</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">x_log</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">x0</span><span class="op">;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="va">u_log</span> <span class="op">=</span> <span class="va">zeros</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">T_sim</span>)<span class="op">;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="kw">for</span> <span class="va">t</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">T_sim</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="va">dx</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">3</span><span class="op">,</span> <span class="va">N</span><span class="op">+</span><span class="fl">1</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="va">du</span> <span class="op">=</span> <span class="va">sdpvar</span>(<span class="fl">2</span><span class="op">,</span> <span class="va">N</span><span class="op">,</span> <span class="ss">&#39;full&#39;</span>)<span class="op">;</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    <span class="va">con</span> <span class="op">=</span> [<span class="va">dx</span>(<span class="op">:,</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">x_log</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">-</span> <span class="va">xr</span>(<span class="op">:,</span><span class="va">t</span>)]<span class="op">;</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="va">obj</span> <span class="op">=</span> <span class="fl">0</span><span class="op">;</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="va">k</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">N</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">th_r</span> <span class="op">=</span> <span class="va">xr</span>(<span class="fl">3</span><span class="op">,</span> <span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>)<span class="op">;</span>  <span class="va">vr_k</span> <span class="op">=</span> <span class="va">ur</span>(<span class="fl">1</span><span class="op">,</span> <span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">Ak</span> <span class="op">=</span> [<span class="fl">1</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span> <span class="op">-</span><span class="va">Ts</span><span class="op">*</span><span class="va">vr_k</span><span class="op">*</span><span class="va">sin</span>(<span class="va">th_r</span>)<span class="op">;</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>              <span class="fl">0</span><span class="op">,</span> <span class="fl">1</span><span class="op">,</span>  <span class="va">Ts</span><span class="op">*</span><span class="va">vr_k</span><span class="op">*</span><span class="va">cos</span>(<span class="va">th_r</span>)<span class="op">;</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>              <span class="fl">0</span><span class="op">,</span> <span class="fl">0</span><span class="op">,</span>  <span class="fl">1</span>]<span class="op">;</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">Bk</span> <span class="op">=</span> [<span class="va">Ts</span><span class="op">*</span><span class="va">cos</span>(<span class="va">th_r</span>)<span class="op">,</span> <span class="fl">0</span><span class="op">;</span> <span class="va">Ts</span><span class="op">*</span><span class="va">sin</span>(<span class="va">th_r</span>)<span class="op">,</span> <span class="fl">0</span><span class="op">;</span> <span class="fl">0</span><span class="op">,</span> <span class="va">Ts</span>]<span class="op">;</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">dx</span>(<span class="op">:,</span><span class="va">k</span><span class="op">+</span><span class="fl">1</span>) <span class="op">==</span> <span class="va">Ak</span><span class="op">*</span><span class="va">dx</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">Bk</span><span class="op">*</span><span class="va">du</span>(<span class="op">:,</span><span class="va">k</span>)]<span class="op">;</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">v_min</span><span class="op">-</span><span class="va">ur</span>(<span class="fl">1</span><span class="op">,</span><span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>) <span class="op">&lt;=</span> <span class="va">du</span>(<span class="fl">1</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">v_max</span><span class="op">-</span><span class="va">ur</span>(<span class="fl">1</span><span class="op">,</span><span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>)]<span class="op">;</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">con</span> <span class="op">=</span> [<span class="va">con</span><span class="op">,</span> <span class="va">w_min</span><span class="op">-</span><span class="va">ur</span>(<span class="fl">2</span><span class="op">,</span><span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>) <span class="op">&lt;=</span> <span class="va">du</span>(<span class="fl">2</span><span class="op">,</span><span class="va">k</span>) <span class="op">&lt;=</span> <span class="va">w_max</span><span class="op">-</span><span class="va">ur</span>(<span class="fl">2</span><span class="op">,</span><span class="va">t</span><span class="op">+</span><span class="va">k</span><span class="op">-</span><span class="fl">1</span>)]<span class="op">;</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">dx</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">dx</span>(<span class="op">:,</span><span class="va">k</span>) <span class="op">+</span> <span class="va">du</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">&#39;*</span><span class="va">Rw</span><span class="op">*</span><span class="va">du</span>(<span class="op">:,</span><span class="va">k</span>)<span class="op">;</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">obj</span> <span class="op">=</span> <span class="va">obj</span> <span class="op">+</span> <span class="va">dx</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">&#39;*</span><span class="va">Q</span><span class="op">*</span><span class="va">dx</span>(<span class="op">:,</span><span class="va">N</span><span class="op">+</span><span class="fl">1</span>)<span class="op">;</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">optimize</span>(<span class="va">con</span><span class="op">,</span> <span class="va">obj</span><span class="op">,</span> <span class="va">sdpsettings</span>(<span class="ss">&#39;verbose&#39;</span><span class="op">,</span><span class="fl">0</span><span class="op">,</span><span class="ss">&#39;solver&#39;</span><span class="op">,</span><span class="ss">&#39;quadprog&#39;</span>))<span class="op">;</span></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">u_log</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">=</span> <span class="va">ur</span>(<span class="op">:,</span><span class="va">t</span>) <span class="op">+</span> <span class="va">value</span>(<span class="va">du</span>(<span class="op">:,</span><span class="fl">1</span>))<span class="op">;</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="va">x_log</span>(<span class="op">:,</span><span class="va">t</span><span class="op">+</span><span class="fl">1</span>) <span class="op">=</span> <span class="va">f_nl</span>(<span class="va">x_log</span>(<span class="op">:,</span><span class="va">t</span>)<span class="op">,</span> <span class="va">u_log</span>(<span class="op">:,</span><span class="va">t</span>))<span class="op">;</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 <div class="alertbox">
 <p><span>Performance Note</span> The code above calls
 <code>optimize</code> inside the simulation loop because the Jacobians
@@ -1789,7 +1940,7 @@ within the actuator limits <span class="math inline">\(v \in [0,\,
 2.5]\)</span> m/s and <span class="math inline">\(\omega \in [-1.5,\,
 1.5]\)</span> rad/s throughout.</p>
 <figure id="fig:tracking_mpc_robot" data-latex-placement="ht">
-<img src="figures/fig_tracking_mpc_robot.png" style="width:95.0%" />
+<embed src="figures/fig_tracking_mpc_robot.png" style="width:95.0%" />
 <figcaption>Tracking MPC for a nonholonomic mobile robot following a
 circular path (<span class="math inline">\(R = 3\)</span> m, <span
 class="math inline">\(\omega_{\text{ref}} = 0.5\)</span> rad/s). Left:
@@ -1821,33 +1972,6 @@ u^r_k\)</span>.</p></li>
 u_0^*\)</span> to the plant. Shift the horizon and repeat.</p></li>
 </ol>
 </div>
-<h3 class="unnumbered" id="chapter-summary">Chapter Summary</h3>
-<ul>
-<li><p>Constrained MPC formulates the control problem as a
-finite-horizon optimisation with explicit inequality constraints on
-states and inputs.</p></li>
-<li><p>The MPC optimisation is cast as a quadratic program (QP) by
-substituting the predicted state trajectory in terms of the initial
-state and the input sequence.</p></li>
-<li><p>YALMIP provides a convenient MATLAB interface for defining
-decision variables, constraints, and objectives, and dispatching the
-resulting QP to a solver.</p></li>
-<li><p>A terminal cost term, chosen as the solution to the discrete
-algebraic Riccati equation (DARE), approximates the infinite-horizon
-cost beyond the prediction window.</p></li>
-<li><p>A terminal constraint set ensures that the state at the end of
-the horizon lies in a controlled-invariant region, guaranteeing
-recursive feasibility.</p></li>
-<li><p>Closed-loop stability is established via a Lyapunov argument
-showing that the optimal cost decreases at each time step under the
-receding-horizon policy.</p></li>
-<li><p>Explicit MPC pre-computes the optimal control law offline as a
-piecewise affine function of the state, enabling real-time
-implementation without online QP solves.</p></li>
-<li><p>Reference tracking MPC reformulates the problem in terms of
-deviation variables around a target steady state, allowing the
-controller to follow time-varying setpoints.</p></li>
-</ul>
 <h3 class="unnumbered" id="exercises">Exercises</h3>
 <ol>
 <li><p>Consider the scalar system <span class="math display">\[x_{k+1} =
@@ -2004,7 +2128,7 @@ state constraint), how many possible active-set combinations exist? Use
 MATLAB to compute and plot <span
 class="math inline">\(u_0^*(x_0)\)</span>. How many critical regions
 arise?</p></li>
-<li><p>If you have MPT3 installed, compute the explicit controller for
+<li><p>Using MPT3 (MATLAB) or <code>mpt4py</code> + <code>qpsolvers</code> (Python), compute the explicit controller for
 the double integrator from Exercise 4 with horizons <span
 class="math inline">\(N = 3, 5, 10\)</span>. Report the number of
 critical regions for each case and comment on the growth rate.</p></li>
