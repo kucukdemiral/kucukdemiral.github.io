@@ -156,6 +156,7 @@
             max-width: 780px;
             margin: 0 auto;
             line-height: 1.8;
+            overflow-x: hidden;
         }
 
         /* Typography inside chapters */
@@ -239,10 +240,22 @@
             background: rgba(241,243,247,0.5);
         }
 
-        /* Math display */
+        /* Math display – responsive for wide equations on mobile */
         .chapter-body .math.display {
             overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
             padding: 0.5rem 0;
+            max-width: 100%;
+        }
+        .chapter-body mjx-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            max-width: 100% !important;
+        }
+        .chapter-body mjx-container[display="true"] {
+            padding: 0.25rem 0;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Code / algorithm blocks */
@@ -936,7 +949,13 @@
             }
             .sidebar.open { max-height: 80vh; overflow-y: auto; }
             .sidebar-toggle { display: block; }
-            .chapter-body { padding: 1.5rem; }
+            .chapter-body { padding: 1.5rem; overflow-x: hidden; }
+            .chapter-body .math.display {
+                margin-left: -0.5rem;
+                margin-right: -0.5rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
             .chapter-nav { padding: 0.5rem 1rem; }
         }
     </style>
