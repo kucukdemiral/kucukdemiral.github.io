@@ -242,20 +242,25 @@
 
         /* Math display – responsive for wide equations on mobile */
         .chapter-body .math.display {
+            display: block;
             overflow-x: auto;
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
             padding: 0.5rem 0;
             max-width: 100%;
+            width: 100%;
         }
         .chapter-body mjx-container {
-            overflow-x: auto;
-            overflow-y: hidden;
-            max-width: 100% !important;
+            max-width: none !important;
+            width: auto !important;
         }
         .chapter-body mjx-container[display="true"] {
-            padding: 0.25rem 0;
+            display: block !important;
+            overflow-x: auto;
+            overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
+            max-width: 100% !important;
+            padding: 0.25rem 0;
         }
 
         /* Code / algorithm blocks */
