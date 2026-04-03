@@ -1168,6 +1168,16 @@ class="math inline">\(\Psi(x) = [x_1,\; x_2,\; x_1^2,\; x_2^2,\; x_1
 x_2]^\top\)</span>, exploits the nonlinearity, and settles faster with
 lower cost.</figcaption>
 </figure>
+<h3 id="sec:koopman_cartpole_demo">Interactive Demo: Koopman MPC for Cart-Pole Swing-Up</h3>
+<p>The demo below applies Koopman MPC to a <strong>cart-pole</strong> (inverted pendulum on a cart) — a classic nonlinear benchmark. The controller is built entirely from data:</p>
+<ol>
+<li><strong>Data collection:</strong> 5000 state-transition pairs are generated from random initial conditions and random inputs.</li>
+<li><strong>EDMD training:</strong> A Koopman model <span class="math inline">\(z_{k+1} = A_K z_k + B_K u_k\)</span> is identified using a 10-dimensional dictionary <span class="math inline">\(\Psi(x) = [x,\;\dot{x},\;\theta,\;\dot{\theta},\;\sin\theta,\;\cos\theta,\;\dot{x}\sin\theta,\;\dot{x}\cos\theta,\;\dot{\theta}\sin\theta,\;\dot{\theta}\cos\theta]^\top\)</span>.</li>
+<li><strong>Linear MPC:</strong> At each time step, a standard QP is solved in lifted coordinates with a 25-step horizon. Because the Koopman model is linear, no nonlinear solver is needed.</li>
+</ol>
+<p>Set the initial angle (180° = hanging down) and click <strong>Run</strong>. Use <strong>Kick</strong> to apply a disturbance mid-simulation.</p>
+<div class="koopman-cartpole-demo"></div>
+
 <h2 id="sec:deepc">Data-Enabled Predictive Control (DeePC)</h2>
 <p>GP-MPC learns a model correction; Koopman MPC learns a linear
 representation. Both require an intermediate modelling step. DeePC
