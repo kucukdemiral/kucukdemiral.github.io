@@ -394,6 +394,149 @@
 <img src="figures/Kalman_Performance.png" style="width:90.0%" />
 <figcaption>Simulation results for the LQG control example. <strong>(a)</strong> Measured State: The Kalman Filter estimate (red) effectively filters the noisy position measurements (blue) to track the true trajectory (black). <strong>(b)</strong> Unmeasured State: Although velocity is not measured directly, the filter successfully reconstructs it using the system model and position data. Note the convergence of the estimate (blue) to the truth (black) after the initial transient. <strong>(c)</strong> Statistical Consistency: The velocity estimation error (blue) remains bounded within the <span class="math inline">\(\pm 3\sigma\)</span> confidence intervals (red dashed lines) derived from the steady-state covariance <span class="math inline">\(P_\infty\)</span>. The large error at <span class="math inline">\(t &lt; 4\)</span>s is due to the incorrect initial guess (<span class="math inline">\(x_{est}=0\)</span> vs <span class="math inline">\(x_{true}=0.5\)</span>), which the filter quickly corrects.</figcaption>
 </figure>
+<h2 id="interactive-python-kf">Interactive Python Demo: LQG Control with Kalman Filter</h2>
+<p>The editable code below is a complete Python translation of the MATLAB example above. It solves the DARE for both the LQR controller and the steady-state Kalman filter, then simulates the closed-loop system. Toggle <code>USE_ONE_STEP</code> between <code>True</code> and <code>False</code> to compare the two-step and one-step observer forms. Click <strong>Run</strong> to execute and generate plots.</p>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are
+</script>
+<pre><code>import matplotlib.pyplot as plt
+
+# ── System: double integrator (mass with position + velocity) ──
+dt = 0.1
+A = np.array([[1, dt], [0, 1]])       # States: [position; velocity]
+B = np.array([[0.5*dt**2], [dt]])     # Input: force
+C = np.array([[1, 0]])                # Output: position only
+
+# ── LQR weights ──
+Q_lqr = np.eye(2)
+R_lqr = np.array([[0.1]])
+
+# ── Kalman filter noise covariances ──
+W = 1e-4 * np.eye(2)   # Process noise (trust in model)
+V = np.array([[1e-2]])  # Measurement noise (trust in sensor)
+
+# ══════════════════════════════════════════════
+#  Compute gains offline
+# ══════════════════════════════════════════════
+
+# A. Controller gain K  (u = -K x)
+P_lqr = solve_discrete_are(A, B, Q_lqr, R_lqr)
+K = np.linalg.solve(R_lqr + B.T @ P_lqr @ B, B.T @ P_lqr @ A)
+
+# B. Estimator gain L  (Kalman)
+#    DARE for estimation uses the dual: (A^T, C^T, W, V)
+P_ss = solve_discrete_are(A.T, C.T, W, V)
+L = P_ss @ C.T @ np.linalg.inv(C @ P_ss @ C.T + V)
+
+# C. Prediction gain for the one-step (Luenberger) form
+L_pred = A @ L
+
+# 3-sigma bounds from steady-state covariance
+sigma_pos = np.sqrt(P_ss[0, 0])
+sigma_vel = np.sqrt(P_ss[1, 1])
+
+print("── Offline Gains ──")
+print(f"LQR gain K        = [{K[0,0]:.4f}, {K[0,1]:.4f}]")
+print(f"Kalman gain L      = [{L[0,0]:.4f}, {L[1,0]:.4f}]")
+print(f"Prediction gain AL = [{L_pred[0,0]:.4f}, {L_pred[1,0]:.4f}]")
+print(f"3σ bounds: position ±{3*sigma_pos:.4f}, velocity ±{3*sigma_vel:.4f}")
+
+# ══════════════════════════════════════════════
+#  Closed-loop simulation
+# ══════════════════════════════════════════════
+USE_ONE_STEP = False   # ← Toggle to True for one-step form
+
+T_final = 10
+N = int(T_final / dt)
+t = np.arange(N) * dt
+
+np.random.seed(42)     # reproducible noise
+
+x_true = np.array([[0.5], [-0.5]])  # true initial state
+x_est  = np.array([[0.0], [0.0]])   # estimator starts at zero
+
+log_true = np.zeros((2, N))
+log_est  = np.zeros((2, N))
+log_y    = np.zeros(N)
+
+for k in range(N):
+    w_k = np.sqrt(1e-4) * np.random.randn(2, 1)
+    v_k = np.sqrt(1e-2) * np.random.randn()
+
+    y_k = (C @ x_true).item() + v_k
+
+    if USE_ONE_STEP:
+        # ── One-step form (Luenberger) ──
+        u_k = -K @ x_est                 # control on prior estimate
+        innovation = y_k - (C @ x_est).item()
+        x_est_next = A @ x_est + B * u_k.item() + L_pred * innovation
+    else:
+        # ── Two-step form (standard) ──
+        innovation = y_k - (C @ x_est).item()
+        x_est = x_est + L * innovation   # correct
+        u_k = -K @ x_est                 # control on corrected estimate
+        x_est_next = A @ x_est + B * u_k.item()  # predict
+
+    x_true_next = A @ x_true + B * u_k.item() + w_k
+
+    log_true[:, k] = x_true.ravel()
+    log_est[:, k]  = x_est.ravel()
+    log_y[k]       = y_k
+
+    x_true = x_true_next
+    x_est  = x_est_next
+
+# ══════════════════════════════════════════════
+#  Plot results (3 subplots, matching the MATLAB figure)
+# ══════════════════════════════════════════════
+mode_label = "One-Step (Luenberger)" if USE_ONE_STEP else "Two-Step (Standard)"
+
+fig, axes = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
+
+# (a) Position — measured state
+ax = axes[0]
+ax.plot(t, log_y, '.', color='#5B9BD5', markersize=3, alpha=0.5, label='Measurements')
+ax.plot(t, log_true[0], 'k-', linewidth=1.5, label='True position')
+ax.plot(t, log_est[0],  'r--', linewidth=1.2, label='KF estimate')
+ax.set_ylabel('Position')
+ax.set_title(f'(a) Measured State — Position  [{mode_label}]')
+ax.legend(loc='upper right', fontsize=8)
+ax.grid(True, alpha=0.3)
+
+# (b) Velocity — unmeasured state
+ax = axes[1]
+ax.plot(t, log_true[1], 'k-', linewidth=1.5, label='True velocity')
+ax.plot(t, log_est[1],  'b-', linewidth=1.2, label='KF estimate')
+ax.set_ylabel('Velocity')
+ax.set_title('(b) Unmeasured State — Velocity')
+ax.legend(loc='upper right', fontsize=8)
+ax.grid(True, alpha=0.3)
+
+# (c) Velocity estimation error with 3-sigma bounds
+ax = axes[2]
+vel_err = log_est[1] - log_true[1]
+ax.plot(t, vel_err, 'b-', linewidth=1, label='Velocity error')
+ax.axhline( 3*sigma_vel, color='r', ls='--', lw=1, label=f'±3σ = ±{3*sigma_vel:.4f}')
+ax.axhline(-3*sigma_vel, color='r', ls='--', lw=1)
+ax.fill_between(t, -3*sigma_vel, 3*sigma_vel, color='r', alpha=0.07)
+ax.set_ylabel('Error')
+ax.set_xlabel('Time (s)')
+ax.set_title('(c) Velocity Estimation Error')
+ax.legend(loc='upper right', fontsize=8)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+
+print(f"\n── Simulation complete ({mode_label}) ──")
+print(f"Final true state:  [{log_true[0,-1]:.4f}, {log_true[1,-1]:.4f}]")
+print(f"Final estimate:    [{log_est[0,-1]:.4f}, {log_est[1,-1]:.4f}]")
+print(f"Final error:       [{log_est[0,-1]-log_true[0,-1]:.4f}, {log_est[1,-1]-log_true[1,-1]:.4f}]")
+print(f"Max |vel error|:   {np.max(np.abs(vel_err)):.4f}")
+print(f"Steady-state 3σ:   {3*sigma_vel:.4f}")</code></pre>
+</div>
+
 <h2 id="interactive-scalar-kf">Interactive Demo: Scalar Kalman Filter Step-by-Step</h2>
 <p>Use the interactive demo below to step through the Kalman filter recursion for a <strong>scalar</strong> random walk system.
 Adjust the noise covariances <span class="math inline">\(W\)</span> and <span class="math inline">\(V\)</span> with the sliders,
