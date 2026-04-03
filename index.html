@@ -8,6 +8,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .profile-links {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .profile-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border, #ddd);
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--navy, #1a2a3a);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .profile-links a:hover {
+            background: #f0f4f8;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .profile-links img {
+            height: 20px;
+            width: auto;
+        }
+        .profile-links .gcu-logo {
+            height: 18px;
+            filter: brightness(0) saturate(100%) invert(15%) sepia(50%) saturate(500%) hue-rotate(180deg);
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -38,6 +71,17 @@
             <div class="profile-text">
                 <h2>Welcome</h2>
                 <p>Dr. Ibrahim Kucukdemiral is a Reader in the Department of Applied Science at the School of Computing, Engineering, and Built Environment at Glasgow Caledonian University. He serves as Chair of the IEEE Control Systems Chapter of the UK &amp; Ireland Section and is a committee member of the IEEE Region 8 Conference Coordination Committee. He chairs the Industrial Advisory Board for the Electrical and Mechanical Engineering departments and leads the <strong>Robotics for the Common Good</strong> research group.</p>
+                <div class="profile-links">
+                    <a href="https://scholar.google.com/citations?user=YWefQu8AAAAJ&hl=tr" target="_blank">
+                        <img src="picture/google-scholar.svg" alt="Google Scholar"> Google Scholar
+                    </a>
+                    <a href="https://orcid.org/0000-0003-0174-5680" target="_blank">
+                        <img src="picture/orcid.svg" alt="ORCID"> ORCID
+                    </a>
+                    <a href="https://researchonline.gcu.ac.uk/en/persons/ibrahim-k%C3%BC%C3%A7%C3%BCkdemiral/" target="_blank">
+                        <img src="picture/gcu-logo.png" alt="GCU" class="gcu-logo"> GCU Research
+                    </a>
+                </div>
             </div>
         </div>
 
