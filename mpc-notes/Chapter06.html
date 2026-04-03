@@ -304,74 +304,91 @@
 <li><p>An <strong>LQR Controller</strong> (<span class="math inline">\(K\)</span>) designed for the ideal system to regulate state to zero.</p></li>
 <li><p>A <strong>Steady-State Kalman Filter</strong> (<span class="math inline">\(L\)</span>) to reconstruct the velocity from the noisy position data.</p></li>
 </ol>
-<p><strong>The Code:</strong> The script below computes the optimal gains using the duality principle (<span class="math inline">\(A \to A^\top\)</span>, <span class="math inline">\(B \to C^\top\)</span>) and simulates the closed-loop system.</p>
+<p><strong>The Code:</strong> The script below computes the optimal gains using the duality principle (<span class="math inline">\(A \to A^\top\)</span>, <span class="math inline">\(B \to C^\top\)</span>) and simulates the closed-loop system. We show both the <strong>two-step</strong> (correct-then-predict) and the <strong>one-step</strong> (Luenberger) implementations side by side.</p>
 <pre id="lst:kalman_code" class="matlab" data-language="Matlab" data-caption="Closed-loop simulation of LQR control using Kalman Filter estimates." data-label="lst:kalman_code"><code>clear; clc; close all;
-        
+
         dt = 0.1;
         A = [1, dt; 0, 1];          % States: [Position; Velocity]
         B = [0.5*dt^2; dt];     % Input: Force
         C = [1, 0];                     % Output: Position only
-        
-        Q_lqr = eye(2);        
-        R_lqr = 0.1;           
-        
+
+        Q_lqr = eye(2);
+        R_lqr = 0.1;
+
         % B. Estimator Covariances (Kalman Filter)
         % W: Process Noise Covariance (Trust in Model)
         % V: Measurement Noise Covariance (Trust in Sensor)
-        W = 1e-4 * eye(2);     
-        V = 1e-2;          
-        
+        W = 1e-4 * eye(2);
+        V = 1e-2;
+
         %% Compute Gains (Offline)
         % A. Controller Gain (K)
         [K, ~, ~] = dlqr(A, B, Q_lqr, R_lqr);
-        
+
         % B. Estimator Gain (L)
         % Solve the dual DARE for the steady-state error covariance P_ss
         [P_ss, ~, ~] = dare(A&#39;, C&#39;, W, V);
 
         % Compute steady-state Kalman gain: L = P*C&#39;*(C*P*C&#39;+V)^{-1}
         L = P_ss * C&#39; / (C * P_ss * C&#39; + V);
-        
+
+        % Prediction gain for the one-step form (see Section 2)
+        L_pred = A * L;
+
         % Calculate theoretical 3-sigma error bounds for plotting
         sigma_pos = sqrt(P_ss(1,1));
         sigma_vel = sqrt(P_ss(2,2));
-        
+
         %% Simulation Setup
         T_final = 10;
         N = floor(T_final/dt);
         t_vec = 0:dt:T_final-dt;
-        
+
         x_true = [0.5; -0.5];   % Physical truth (starts with error)
         x_est  = [0; 0];        % Estimator initial guess (starts at 0)
-        
+
         log_x_true = zeros(2, N);
         log_x_est  = zeros(2, N);
         log_y_meas = zeros(1, N);
-        
+
+        USE_ONE_STEP = false;  % Toggle between two-step and one-step form
 
         for k = 1:N
 
                 w_k = sqrt(1e-4) * randn(2,1); % Process noise
                 v_k = sqrt(1e-2) * randn;      % Measurement noise
-        
+
                 y_k = C * x_true + v_k;
-        
-                y_tilde = y_k - C * x_est;
-                x_est = x_est + L * y_tilde;
-        
-                u_k = -K * x_est;
-        
-                x_est_next = A * x_est + B * u_k;
+
+                if USE_ONE_STEP
+                    %% ---- One-Step Form (Luenberger) ----
+                    % Control acts on the prior (uncorrected) estimate
+                    u_k = -K * x_est;
+                    % Single combined update: x̂⁻_{k+1} = A x̂⁻_k + B u_k + A·L·(y_k - C x̂⁻_k)
+                    x_est_next = A * x_est + B * u_k + L_pred * (y_k - C * x_est);
+                else
+                    %% ---- Two-Step Form (Standard) ----
+                    % Step 1: Correct the prior with the measurement
+                    x_est = x_est + L * (y_k - C * x_est);
+                    % Control acts on the corrected estimate
+                    u_k = -K * x_est;
+                    % Step 2: Predict the next prior
+                    x_est_next = A * x_est + B * u_k;
+                end
+
                 x_true_next = A * x_true + B * u_k + w_k;
-        
+
                 log_x_true(:,k) = x_true;
                 log_x_est(:,k)  = x_est;
                 log_y_meas(k)   = y_k;
-        
+
                 x_true = x_true_next;
                 x_est  = x_est_next;
         end</code></pre>
-<p><strong>Result:</strong> Simulation results (Figure <a href="#fig:kalman_results" data-reference-type="ref" data-reference="fig:kalman_results">1.1</a>) confirm the filter’s performance. Even though the velocity is never measured directly, the Kalman Filter converges to the true velocity within a few seconds, allowing the LQR controller to stabilise the system effectively.</p>
+<div class="notebox">
+<p><span>Two-Step vs One-Step Trade-off</span> In the <strong>two-step form</strong>, the measurement is incorporated <em>before</em> computing the control input, so the controller acts on the best available estimate. In the <strong>one-step form</strong>, the control is computed from the prior (uncorrected) estimate because the correction and prediction are fused into a single equation. Both converge to identical steady-state behaviour, but the two-step form yields a marginally better control action at each sample. The one-step form is simpler to implement on embedded systems (fewer lines, one less intermediate variable).</p>
+</div>
+<p><strong>Result:</strong> Simulation results (Figure <a href="#fig:kalman_results" data-reference-type="ref" data-reference="fig:kalman_results">1.1</a>) confirm the filter’s performance. Even though the velocity is never measured directly, the Kalman Filter converges to the true velocity within a few seconds, allowing the LQR controller to stabilise the system effectively. Toggle <code>USE_ONE_STEP</code> to compare both implementations; both produce virtually identical trajectories.</p>
 </div>
 <figure id="fig:kalman_results" data-latex-placement="h">
 <img src="figures/Kalman_Performance.png" style="width:90.0%" />
