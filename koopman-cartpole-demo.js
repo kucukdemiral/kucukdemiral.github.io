@@ -137,26 +137,6 @@
         return x;
     }
 
-    function transposeSquareColMajor(A, n) {
-        var AT = new Float64Array(n * n);
-        for (var row = 0; row < n; row++)
-            for (var col = 0; col < n; col++)
-                AT[row * n + col] = A[col * n + row];
-        return AT;
-    }
-
-    function matVecMulRowMajor(A, x) {
-        var m = A.length;
-        var n = x.length;
-        var y = new Array(m);
-        for (var i = 0; i < m; i++) {
-            var sum = 0;
-            for (var j = 0; j < n; j++) sum += A[i][j] * x[j];
-            y[i] = sum;
-        }
-        return y;
-    }
-
     function matMulRowMajor(A, B) {
         var m = A.length;
         var n = B.length;
@@ -473,8 +453,6 @@
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
-        var A_K = transposeSquareColMajor(koopman.A, p_lift);
-        var B_K = koopman.B;
         var localQ = [
             [15, 0, 0, 0],
             [0, 2, 0, 0],
@@ -484,23 +462,6 @@
         var localR = [[0.3]];
         var lin = linearizeCartpoleStep();
         var K_lqr = computeDiscreteLQRGain(lin.A, lin.B, localQ, localR);
-
-        var N_mpc = 20;
-        var Q_diag = new Float64Array(p_lift);
-        Q_diag[0] = 4.0;
-        Q_diag[1] = 0.8;
-        Q_diag[2] = 12.0;
-        Q_diag[3] = 1.5;
-        Q_diag[4] = 6.0;
-
-        var Qf_diag = new Float64Array(p_lift);
-        for (var i = 0; i < p_lift; i++) Qf_diag[i] = Q_diag[i] * 6;
-
-        function koopmanAssist(state) {
-            var z0 = new Float64Array(liftState(state));
-            var qp = buildQP(A_K, B_K, z0, N_mpc, Q_diag, 0.05, Qf_diag);
-            return solveBoxQP(qp.H, qp.f, qp.N, -u_max, u_max, 250)[0];
-        }
 
         function lqrControl(state) {
             var e = [state[0], state[1], wrapAngle(state[2]), state[3]];
@@ -520,13 +481,8 @@
 
         return function(state) {
             var th = wrapAngle(state[2]);
-            if (Math.abs(th) < 0.35 && Math.abs(state[3]) < 2.0) {
-                // Near the upright equilibrium, use a reliable local stabiliser
-                // with a small Koopman MPC assist to smooth the handoff.
-                var uLqr = lqrControl(state);
-                var uKoop = koopmanAssist(state);
-                return clamp(0.8 * uLqr + 0.2 * uKoop, -u_max, u_max);
-            }
+            if (Math.abs(th) < 0.35 && Math.abs(state[3]) < 2.0)
+                return lqrControl(state);
             return swingUpControl(state);
         };
     }
