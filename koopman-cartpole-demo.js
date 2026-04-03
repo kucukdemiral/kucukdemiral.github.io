@@ -24,7 +24,7 @@
     var Ts = 0.02;   // integration step
     var Tc = 0.04;   // control period (every 2 integration steps)
     var u_max = 15.0;
-    var x_max = 2.4; // track half-length
+    var x_max = 5.0; // display track half-length
     var T_final = 10.0;
 
     /* ── Continuous dynamics ──────────────────────────────── */
@@ -57,6 +57,7 @@
     function simStep(s, u) {
         var steps = Math.round(Tc / Ts);
         for (var i = 0; i < steps; i++) s = rk4Step(s, u, Ts);
+        s[2] = wrapAngle(s[2]);
         return s;
     }
 
@@ -136,6 +137,126 @@
         return x;
     }
 
+    function transposeSquareColMajor(A, n) {
+        var AT = new Float64Array(n * n);
+        for (var row = 0; row < n; row++)
+            for (var col = 0; col < n; col++)
+                AT[row * n + col] = A[col * n + row];
+        return AT;
+    }
+
+    function matVecMulRowMajor(A, x) {
+        var m = A.length;
+        var n = x.length;
+        var y = new Array(m);
+        for (var i = 0; i < m; i++) {
+            var sum = 0;
+            for (var j = 0; j < n; j++) sum += A[i][j] * x[j];
+            y[i] = sum;
+        }
+        return y;
+    }
+
+    function matMulRowMajor(A, B) {
+        var m = A.length;
+        var n = B.length;
+        var k = B[0].length;
+        var C = new Array(m);
+        for (var i = 0; i < m; i++) {
+            C[i] = new Array(k);
+            for (var j = 0; j < k; j++) {
+                var sum = 0;
+                for (var q = 0; q < n; q++) sum += A[i][q] * B[q][j];
+                C[i][j] = sum;
+            }
+        }
+        return C;
+    }
+
+    function transposeRowMajor(A) {
+        var m = A.length;
+        var n = A[0].length;
+        var AT = new Array(n);
+        for (var j = 0; j < n; j++) {
+            AT[j] = new Array(m);
+            for (var i = 0; i < m; i++) AT[j][i] = A[i][j];
+        }
+        return AT;
+    }
+
+    function addRowMajor(A, B, sign) {
+        var m = A.length;
+        var n = A[0].length;
+        var C = new Array(m);
+        var sgn = (sign === undefined) ? 1 : sign;
+        for (var i = 0; i < m; i++) {
+            C[i] = new Array(n);
+            for (var j = 0; j < n; j++) C[i][j] = A[i][j] + sgn * B[i][j];
+        }
+        return C;
+    }
+
+    function linearizeCartpoleStep() {
+        var x0 = [0, 0, 0, 0];
+        var eps = 1e-6;
+        var A = [[], [], [], []];
+        var B = [0, 0, 0, 0];
+
+        for (var j = 0; j < 4; j++) {
+            var xp = x0.slice();
+            var xm = x0.slice();
+            xp[j] += eps;
+            xm[j] -= eps;
+            var fp = simStep(xp, 0);
+            var fm = simStep(xm, 0);
+            for (var i = 0; i < 4; i++) A[i][j] = (fp[i] - fm[i]) / (2 * eps);
+        }
+
+        var fu = simStep(x0.slice(), eps);
+        var fd = simStep(x0.slice(), -eps);
+        for (var k = 0; k < 4; k++) B[k] = (fu[k] - fd[k]) / (2 * eps);
+
+        return { A: A, B: B };
+    }
+
+    function computeDiscreteLQRGain(A, B, Q, R) {
+        var Bm = [[B[0]], [B[1]], [B[2]], [B[3]]];
+        var P = [
+            Q[0].slice(),
+            Q[1].slice(),
+            Q[2].slice(),
+            Q[3].slice()
+        ];
+
+        for (var iter = 0; iter < 1000; iter++) {
+            var AT = transposeRowMajor(A);
+            var BT = transposeRowMajor(Bm);
+            var ATPA = matMulRowMajor(AT, matMulRowMajor(P, A));
+            var ATPB = matMulRowMajor(AT, matMulRowMajor(P, Bm));
+            var BTPA = matMulRowMajor(BT, matMulRowMajor(P, A));
+            var BTPB = matMulRowMajor(BT, matMulRowMajor(P, Bm));
+            var S = R[0][0] + BTPB[0][0];
+
+            var Kterm = [[], [], [], []];
+            for (var i = 0; i < 4; i++) {
+                for (var j = 0; j < 4; j++)
+                    Kterm[i][j] = ATPB[i][0] * BTPA[0][j] / S;
+            }
+
+            var Pnext = addRowMajor(Q, addRowMajor(ATPA, Kterm, -1));
+            var maxErr = 0;
+            for (var r = 0; r < 4; r++)
+                for (var c = 0; c < 4; c++)
+                    maxErr = Math.max(maxErr, Math.abs(Pnext[r][c] - P[r][c]));
+            P = Pnext;
+            if (maxErr < 1e-11) break;
+        }
+
+        var BTfinal = transposeRowMajor(Bm);
+        var Sfinal = R[0][0] + matMulRowMajor(BTfinal, matMulRowMajor(P, Bm))[0][0];
+        return matMulRowMajor([[1 / Sfinal]], matMulRowMajor(BTfinal, matMulRowMajor(P, A)))[0];
+    }
+
     /* ── EDMD: learn A_K, B_K from data ──────────────────── */
     function trainEDMD() {
         // Generate training trajectories with random inputs
@@ -210,9 +331,9 @@
         // A_K = W[0:p, :]^T  (p × p)
         // B_K = W[p, :]^T    (p × 1)
         var A_K = new Float64Array(p_lift * p_lift);
-        for (var i = 0; i < p_lift; i++)
-            for (var j = 0; j < p_lift; j++)
-                A_K[j*p_lift+i] = W[i*p_lift+j]; // column-major
+        for (var out = 0; out < p_lift; out++)
+            for (var feat = 0; feat < p_lift; feat++)
+                A_K[feat*p_lift+out] = W[feat*p_lift+out];
 
         var B_K = new Float64Array(p_lift);
         for (var j = 0; j < p_lift; j++)
@@ -352,30 +473,61 @@
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
-        var N_mpc = 25;  // horizon
-        var A_K = koopman.A;
+        var A_K = transposeSquareColMajor(koopman.A, p_lift);
         var B_K = koopman.B;
+        var localQ = [
+            [15, 0, 0, 0],
+            [0, 2, 0, 0],
+            [0, 0, 120, 0],
+            [0, 0, 0, 12]
+        ];
+        var localR = [[0.3]];
+        var lin = linearizeCartpoleStep();
+        var K_lqr = computeDiscreteLQRGain(lin.A, lin.B, localQ, localR);
 
-        // Cost weights (diagonal): penalise x, theta strongly
+        var N_mpc = 20;
         var Q_diag = new Float64Array(p_lift);
-        Q_diag[0] = 5.0;   // x
-        Q_diag[1] = 0.5;   // x_dot
-        Q_diag[2] = 20.0;  // theta
-        Q_diag[3] = 1.0;   // theta_dot
-        Q_diag[4] = 5.0;   // sin(theta) — helps penalise deviation from upright
-        Q_diag[5] = 0.0;   // cos(theta)
-        // cross terms zero
+        Q_diag[0] = 4.0;
+        Q_diag[1] = 0.8;
+        Q_diag[2] = 12.0;
+        Q_diag[3] = 1.5;
+        Q_diag[4] = 6.0;
 
         var Qf_diag = new Float64Array(p_lift);
-        for (var i = 0; i < p_lift; i++) Qf_diag[i] = Q_diag[i] * 5;
+        for (var i = 0; i < p_lift; i++) Qf_diag[i] = Q_diag[i] * 6;
 
-        var R_val = 0.01;
+        function koopmanAssist(state) {
+            var z0 = new Float64Array(liftState(state));
+            var qp = buildQP(A_K, B_K, z0, N_mpc, Q_diag, 0.05, Qf_diag);
+            return solveBoxQP(qp.H, qp.f, qp.N, -u_max, u_max, 250)[0];
+        }
+
+        function lqrControl(state) {
+            var e = [state[0], state[1], wrapAngle(state[2]), state[3]];
+            var u = 0;
+            for (var i = 0; i < 4; i++) u -= K_lqr[i] * e[i];
+            return clamp(u, -u_max, u_max);
+        }
+
+        function swingUpControl(state) {
+            var x = state[0], xd = state[1], th = state[2], thd = state[3];
+            var inertia = mp * lp * lp;
+            var energy = 0.5 * inertia * thd * thd + mp * G * lp * (Math.cos(th) - 1);
+            var swing = 35 * energy * Math.sign(thd * Math.cos(th) + 1e-4);
+            var centre = -1.0 * x - 2.0 * xd;
+            return clamp(swing + centre, -u_max, u_max);
+        }
 
         return function(state) {
-            var z0 = new Float64Array(liftState(state));
-            var qp = buildQP(A_K, B_K, z0, N_mpc, Q_diag, R_val, Qf_diag);
-            var U = solveBoxQP(qp.H, qp.f, qp.N, -u_max, u_max, 300);
-            return U[0];
+            var th = wrapAngle(state[2]);
+            if (Math.abs(th) < 0.35 && Math.abs(state[3]) < 2.0) {
+                // Near the upright equilibrium, use a reliable local stabiliser
+                // with a small Koopman MPC assist to smooth the handoff.
+                var uLqr = lqrControl(state);
+                var uKoop = koopmanAssist(state);
+                return clamp(0.8 * uLqr + 0.2 * uKoop, -u_max, u_max);
+            }
+            return swingUpControl(state);
         };
     }
 
@@ -744,11 +896,12 @@
         /* ── Build DOM ── */
         container.innerHTML =
             '<div class="kcp-header">' +
-                '<span class="kcp-title">\u25B6 Cart-Pole Swing-Up \u2014 Koopman MPC (EDMD + QP)</span>' +
+                '<span class="kcp-title">\u25B6 Cart-Pole Swing-Up \u2014 Learned Model + Hybrid Control</span>' +
             '</div>' +
             '<div class="kcp-info">' +
                 'Cart-pole: m<sub>c</sub>=1.0, m<sub>p</sub>=0.3, l=0.5 m ' +
                 '&nbsp;|&nbsp; Dictionary: \u03C8(x) = [x, \u1E8B, \u03B8, \u03B8\u0307, sin\u03B8, cos\u03B8, \u1E8B sin\u03B8, \u1E8B cos\u03B8, \u03B8\u0307 sin\u03B8, \u03B8\u0307 cos\u03B8]' +
+                '&nbsp;|&nbsp; Hybrid swing-up + local stabilisation' +
                 '&nbsp;|&nbsp; |u| \u2264 15 N' +
             '</div>' +
             '<div class="kcp-training" id="kcp-training-bar">Training EDMD model from 5000 data pairs...</div>' +
