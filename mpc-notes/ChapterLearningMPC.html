@@ -1169,12 +1169,55 @@ x_2]^\top\)</span>, exploits the nonlinearity, and settles faster with
 lower cost.</figcaption>
 </figure>
 <h3 id="sec:koopman_cartpole_demo">Interactive Demo: Koopman MPC for Cart-Pole Swing-Up</h3>
-<p>The demo below applies Koopman MPC to a <strong>cart-pole</strong> (inverted pendulum on a cart) — a classic nonlinear benchmark. The controller is built entirely from data:</p>
-<ol>
-<li><strong>Data collection:</strong> 5000 state-transition pairs are generated from random initial conditions and random inputs.</li>
-<li><strong>EDMD training:</strong> A Koopman model <span class="math inline">\(z_{k+1} = A_K z_k + B_K u_k\)</span> is identified using a 10-dimensional dictionary <span class="math inline">\(\Psi(x) = [x,\;\dot{x},\;\theta,\;\dot{\theta},\;\sin\theta,\;\cos\theta,\;\dot{x}\sin\theta,\;\dot{x}\cos\theta,\;\dot{\theta}\sin\theta,\;\dot{\theta}\cos\theta]^\top\)</span>.</li>
-<li><strong>Linear MPC:</strong> At each time step, a standard QP is solved in lifted coordinates with a 25-step horizon. Because the Koopman model is linear, no nonlinear solver is needed.</li>
-</ol>
+<p>The demo below uses the <strong>cart-pole</strong> (an inverted pendulum mounted on a moving cart), which is a standard benchmark because the plant is nonlinear, underactuated, and open-loop unstable around the upright equilibrium. The state is <span class="math inline">\(x = [p,\; \dot{p},\; \theta,\; \dot{\theta}]^\top\)</span>, where <span class="math inline">\(p\)</span> is the cart position and <span class="math inline">\(\theta = 0\)</span> denotes the upright pole. The input <span class="math inline">\(u\)</span> is the horizontal force applied to the cart.</p>
+<p>In the demo, the physical parameters are chosen as cart mass <span class="math inline">\(m_c = 1.0\,\mathrm{kg}\)</span>, pole mass <span class="math inline">\(m_p = 0.3\,\mathrm{kg}\)</span>, pole half-length <span class="math inline">\(l = 0.5\,\mathrm{m}\)</span>, gravity <span class="math inline">\(g = 9.81\,\mathrm{m/s^2}\)</span>, sampling time <span class="math inline">\(T_s = 0.02\,\mathrm{s}\)</span>, control update period <span class="math inline">\(T_c = 0.04\,\mathrm{s}\)</span>, and input bound <span class="math inline">\(|u| \le 15\,\mathrm{N}\)</span>. With these parameters, the nonlinear dynamics are integrated in continuous time and sampled every control step:</p>
+<p><span class="math display">\[
+\dot{p} = \dot{p}, \qquad
+\ddot{p} = \frac{u + m_p l \bigl(\dot{\theta}^2 \sin\theta - \ddot{\theta}\cos\theta\bigr)}{m_c + m_p},
+\]</span></p>
+<p><span class="math display">\[
+\dot{\theta} = \dot{\theta}, \qquad
+\ddot{\theta} =
+\frac{g\sin\theta\,(m_c+m_p) - \cos\theta\bigl(u + m_p l \dot{\theta}^2 \sin\theta\bigr)}
+{l\bigl(m_c + m_p - m_p\cos^2\theta\bigr)}.
+\]</span></p>
+<p>The control objective is twofold: first, swing the pole from the hanging configuration toward the upright position, and second, stabilise the cart close to <span class="math inline">\(p = 0\)</span> with small velocities. This is exactly the regime where a pure linear model in the original coordinates performs poorly, because the swing-up motion explores large angular excursions and strong trigonometric nonlinearities.</p>
+<p>The Koopman idea is to <em>lift</em> the physical state into a richer observable space in which the dynamics are approximately linear. The dictionary used in the demo is</p>
+<p><span class="math display">\[
+\Psi(x) =
+\begin{bmatrix}
+p,\; \dot{p},\; \theta,\; \dot{\theta},\; \sin\theta,\; \cos\theta,\;
+\dot{p}\sin\theta,\; \dot{p}\cos\theta,\; \dot{\theta}\sin\theta,\; \dot{\theta}\cos\theta
+\end{bmatrix}^{\!\top},
+\]</span></p>
+<p>so the lifted state is <span class="math inline">\(z = \Psi(x) \in \mathbb{R}^{10}\)</span>. The role of the lifting is to expose the dominant nonlinear structure explicitly. In particular, the trigonometric terms and their products with velocities allow a linear predictor in <span class="math inline">\(z\)</span> to represent behaviour that is highly nonlinear in the original state <span class="math inline">\(x\)</span>.</p>
+<p><em>Learning</em> enters through model identification. Rather than deriving a linear predictor analytically, we generate data from the nonlinear cart-pole simulator. In the demo, 5000 one-step transition pairs <span class="math inline">\((x_k, u_k, x_{k+1})\)</span> are collected from random initial conditions and random bounded inputs. EDMD then solves a least-squares problem for the matrices <span class="math inline">\((A_K, B_K)\)</span> in</p>
+<p><span class="math display">\[
+z_{k+1} \approx A_K z_k + B_K u_k,
+\qquad z_k = \Psi(x_k).
+\]</span></p>
+<p>Equivalently, if <span class="math inline">\(Z = [z_0,\ldots,z_{M-1}]\)</span>, <span class="math inline">\(Z^+ = [z_1,\ldots,z_M]\)</span>, and <span class="math inline">\(U = [u_0,\ldots,u_{M-1}]\)</span>, then EDMD computes</p>
+<p><span class="math display">\[
+\begin{bmatrix}A_K &amp; B_K\end{bmatrix}
+=
+Z^+
+\begin{bmatrix}
+Z \\ U
+\end{bmatrix}^{\!\dagger},
+\]</span></p>
+<p>where <span class="math inline">\((\cdot)^\dagger\)</span> denotes the pseudoinverse, with a small regularisation added numerically for robustness. This is the precise point at which the method becomes data-driven: the predictor is <em>learned from trajectories</em>, not hand-derived from a local linearisation.</p>
+<p>Once <span class="math inline">\((A_K,B_K)\)</span> are available, we can write a standard lifted MPC problem over a horizon <span class="math inline">\(N\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\min_{u_0,\ldots,u_{N-1}} \;&amp;
+\sum_{k=0}^{N-1}\left(z_k^\top Q_z z_k + u_k^\top R u_k\right) + z_N^\top Q_f z_N \\
+\text{s.t.}\;&amp; z_0 = \Psi(x(t)), \\
+&amp; z_{k+1} = A_K z_k + B_K u_k, \\
+&amp; |u_k| \le u_{\max},
+\end{aligned}
+\]</span></p>
+<p>together with any cart-position constraints written either directly in the physical state or through a projection from the lifted state. The important point is that, after lifting, the prediction model is linear and the optimisation remains a quadratic program, so we retain the algorithmic convenience of linear MPC while using a model learned from nonlinear data.</p>
+<p>For the web demo, there is one additional practical detail. Pure Koopman MPC from the fully hanging-down position can be fragile in a browser-based implementation because the swing-up trajectory explores a large region of state space, whereas the local prediction quality of a finite dictionary is only approximate. The shipped interactive version therefore uses the learned Koopman model as the modelling motivation for the section, but combines the swing-up task with a robust local stabilisation strategy near the upright equilibrium so that the animation behaves reliably for students when started from <span class="math inline">\(\theta_0 = 180^\circ\)</span>.</p>
 <p>Set the initial angle (180° = hanging down) and click <strong>Run</strong>. Use <strong>Kick</strong> to apply a disturbance mid-simulation.</p>
 <div class="koopman-cartpole-demo"></div>
 
