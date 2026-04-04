@@ -2039,6 +2039,285 @@ class="sourceCode MATLAB"><code class="sourceCode matlab"><span id="cb4-1"><a hr
 <span id="cb4-360"><a href="#cb4-360" aria-hidden="true" tabindex="-1"></a>        <span class="va">ddq</span>  <span class="op">=</span> <span class="va">M</span> <span class="op">\</span> (<span class="va">tau</span> <span class="op">+</span> <span class="va">d</span> <span class="op">-</span> <span class="va">Cdq</span> <span class="op">-</span> <span class="va">G</span>)<span class="op">;</span></span>
 <span id="cb4-361"><a href="#cb4-361" aria-hidden="true" tabindex="-1"></a>        <span class="va">xdot</span> <span class="op">=</span> [<span class="va">dq</span><span class="op">;</span> <span class="va">ddq</span>]<span class="op">;</span></span>
 <span id="cb4-362"><a href="#cb4-362" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span> </span></code></pre></div>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import expm, solve_discrete_are, solve, block_diag
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import expm, solve_discrete_are, solve, block_diag
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+
+# ── 1. Robot Physical Parameters ─────────────────────────────────
+Iz1 = 1.50;  m2 = 6.0;  a2 = 0.45;  lc2 = 0.22;  I2 = 0.15
+m3 = 3.50;  a3 = 0.35;  lc3 = 0.17;  I3 = 0.08
+g_acc = 9.81;  Ts = 0.02
+nq = 3;  nx = 2*nq;  nu = nq;  ny = nq;  nd = nu
+
+# ── Robot Dynamics Functions ─────────────────────────────────────
+def inertia_matrix(q):
+    c2, c3 = np.cos(q[1]), np.cos(q[2])
+    c23 = np.cos(q[1] + q[2])
+    h = m3 * a2 * lc3
+    R3 = a2*c2 + lc3*c23
+    M11 = Iz1 + I2 + I3 + m2*(lc2*c2)**2 + m3*R3**2
+    M22 = (I2 + m2*lc2**2) + (I3 + m3*lc3**2) + m3*a2**2 + 2*h*c3
+    M23 = (I3 + m3*lc3**2) + h*c3
+    M33 = I3 + m3*lc3**2
+    return np.array([[M11,0,0],[0,M22,M23],[0,M23,M33]])
+
+def coriolis_matrix(q, dq):
+    s2, c2 = np.sin(q[1]), np.cos(q[1])
+    s3 = np.sin(q[2])
+    s23, c23 = np.sin(q[1]+q[2]), np.cos(q[1]+q[2])
+    h = m3 * a2 * lc3
+    R3 = a2*c2 + lc3*c23
+    A3 = a2*s2 + lc3*s23
+    dM11_dq2 = -2*m2*lc2**2*s2*c2 - 2*m3*R3*A3
+    dM11_dq3 = -2*m3*R3*lc3*s23
+    C = np.zeros((3,3))
+    C[0,0] = 0.5*dM11_dq2*dq[1] + 0.5*dM11_dq3*dq[2]
+    C[0,1] = 0.5*dM11_dq2*dq[0]
+    C[0,2] = 0.5*dM11_dq3*dq[0]
+    C[1,0] = -0.5*dM11_dq2*dq[0]
+    C[1,1] = -h*s3*dq[2]
+    C[1,2] = -h*s3*(dq[1]+dq[2])
+    C[2,0] = -0.5*dM11_dq3*dq[0]
+    C[2,1] = h*s3*dq[1]
+    C[2,2] = 0.0
+    return C
+
+def gravity_vector(q):
+    c2, c23 = np.cos(q[1]), np.cos(q[1]+q[2])
+    G1 = 0.0
+    G2 = m2*g_acc*lc2*c2 + m3*g_acc*(a2*c2 + lc3*c23)
+    G3 = m3*g_acc*lc3*c23
+    return np.array([G1, G2, G3])
+
+def rk4_robot(x, tau, d_nm, dt):
+    def ode(xx):
+        qq, dqq = xx[:nq], xx[nq:]
+        Mm = inertia_matrix(qq)
+        Cdq = coriolis_matrix(qq, dqq) @ dqq
+        Gv = gravity_vector(qq)
+        ddqq = np.linalg.solve(Mm, tau + d_nm - Cdq - Gv)
+        return np.concatenate([dqq, ddqq])
+    k1 = ode(x)
+    k2 = ode(x + dt/2*k1)
+    k3 = ode(x + dt/2*k2)
+    k4 = ode(x + dt*k3)
+    return x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+
+# ── 2. Linearised Plant (ZOH discretisation) ────────────────────
+Ac = np.zeros((nx, nx))
+Ac[:nq, nq:] = np.eye(nq)
+Bc = np.vstack([np.zeros((nq, nq)), np.eye(nq)])
+Cc = np.hstack([np.eye(nq), np.zeros((nq, nq))])
+
+# Exact ZOH
+M_exp = expm(np.block([[Ac, Bc], [np.zeros((nu,nx)), np.zeros((nu,nu))]]) * Ts)
+A = M_exp[:nx, :nx]
+B = M_exp[:nx, nx:]
+C = Cc.copy()
+
+# ── 3. Augmented Observer ────────────────────────────────────────
+A_aug = np.block([[A, B], [np.zeros((nd,nx)), np.eye(nd)]])
+B_aug = np.vstack([B, np.zeros((nd,nu))])
+C_aug = np.hstack([C, np.zeros((ny,nd))])
+
+sigma_enc = np.deg2rad(0.05)
+R_kf = sigma_enc**2 * np.eye(ny)
+Q_kf = block_diag(1e-6*np.eye(nx), 1e-3*np.eye(nd))
+
+P_ss = solve_discrete_are(A_aug.T, C_aug.T, Q_kf, R_kf)
+L = P_ss @ C_aug.T @ np.linalg.inv(C_aug @ P_ss @ C_aug.T + R_kf)
+
+# ── 4. Target Calculator ────────────────────────────────────────
+M_target = np.block([[np.eye(nx)-A, -B], [C, np.zeros((ny,nu))]])
+
+# ── 5. MPC (condensed-form QP) ──────────────────────────────────
+Np = 15;  q_y = 200.0;  R_u = 0.1;  rho = 1e6
+Qy = q_y * np.eye(ny);  Ru = R_u * np.eye(nu)
+Q_mpc = C.T @ Qy @ C
+P_N = solve_discrete_are(A, B, Q_mpc, Ru)
+
+v_min_val = -50.0;  v_max_val = 50.0
+y_min = np.deg2rad(np.array([-170, -90, -135]))
+y_max = np.deg2rad(np.array([170, 90, 135]))
+
+# Build condensed prediction matrices: X = Sx*x0 + Su*U
+Sx = np.zeros((nx*(Np+1), nx))
+Su = np.zeros((nx*(Np+1), nu*Np))
+Ap = np.eye(nx)
+for i in range(Np+1):
+    Sx[i*nx:(i+1)*nx, :] = Ap
+    for j in range(min(i, Np)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    if i < Np+1:
+        Ap = A @ Ap
+
+# Cost: H_qp, f depends on x0
+H_blocks = []
+for i in range(Np):
+    H_blocks.append(Ru)
+H_u = block_diag(*H_blocks)
+
+# Stage cost on states
+Q_bar = block_diag(*([Q_mpc]*Np + [P_N]))
+H_qp = Su.T @ Q_bar @ Su + H_u
+H_qp = 0.5*(H_qp + H_qp.T)
+
+def solve_mpc(dx0, u_ss_k, x_ss_k):
+    f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel()
+
+    n_du = nu * Np
+    du0 = np.zeros(n_du)
+
+    # Bounds: v_min <= du + u_ss <= v_max  =>  v_min - u_ss <= du <= v_max - u_ss
+    lb = np.tile(v_min_val - u_ss_k, Np)
+    ub = np.tile(v_max_val - u_ss_k, Np)
+    bounds = list(zip(lb, ub))
+
+    res = minimize(lambda du: 0.5*du@H_qp@du + f_qp@du, du0,
+                   method='L-BFGS-B', bounds=bounds,
+                   options={'maxiter': 200, 'ftol': 1e-12})
+    return res.x[:nu]
+
+# ── 6. Simulation ───────────────────────────────────────────────
+T_sim = 600
+t_vec = np.arange(T_sim) * Ts
+
+q_true = np.deg2rad(np.array([-15.0, 25.0, -50.0]))
+dq_true = np.zeros(nq)
+z_hat = np.concatenate([q_true, dq_true, np.zeros(nd)])
+v_applied = np.zeros(nu)
+
+# Reference signals
+ref_signal = np.zeros((ny, T_sim))
+ref_signal[0] = np.concatenate([np.full(120,np.deg2rad(0)),
+    np.full(120,np.deg2rad(45)), np.full(120,np.deg2rad(-30)),
+    np.full(120,np.deg2rad(60)), np.full(120,np.deg2rad(0))])
+ref_signal[1] = np.concatenate([np.full(150,np.deg2rad(30)),
+    np.full(150,np.deg2rad(60)), np.full(150,np.deg2rad(20)),
+    np.full(150,np.deg2rad(50))])
+ref_signal[2] = np.concatenate([np.full(100,np.deg2rad(-60)),
+    np.full(150,np.deg2rad(-30)), np.full(150,np.deg2rad(-90)),
+    np.full(200,np.deg2rad(-45))])
+
+# True disturbances [Nm]
+d_true = np.tile(np.array([[0.5],[-0.3],[0.2]]), (1, T_sim))
+d_true[:, 350:] += np.tile(np.array([[2.0],[1.5],[0.8]]), (1, T_sim-350))
+
+sigma_y = np.deg2rad(0.05) * np.ones(ny)
+
+# Logs
+log_q = np.zeros((ny, T_sim));  log_ref = np.zeros((ny, T_sim))
+log_tau = np.zeros((nu, T_sim));  log_v = np.zeros((nu, T_sim))
+log_d_hat = np.zeros((nd, T_sim));  log_d_true_acc = np.zeros((nd, T_sim))
+
+tau_max = np.array([150.0, 120.0, 60.0])
+
+print("Running offset-free MPC simulation (600 steps)...")
+for t in range(T_sim):
+    ref = ref_signal[:, t]
+
+    # A. Measurement
+    y_true = q_true.copy()
+    y_meas = y_true + sigma_y * np.random.randn(ny)
+
+    # B. Augmented Kalman Filter
+    z_pred = A_aug @ z_hat + B_aug @ v_applied
+    z_hat = z_pred + L @ (y_meas - C_aug @ z_pred)
+    x_hat_k = z_hat[:nx]
+    d_hat_k = z_hat[nx:]
+
+    # C. Target Calculator
+    rhs = np.concatenate([B @ d_hat_k, ref])
+    targets = np.linalg.solve(M_target, rhs)
+    x_ss_k = targets[:nx]
+    u_ss_k = targets[nx:]
+
+    # D. MPC
+    dx0 = x_hat_k - x_ss_k
+    dv_opt = solve_mpc(dx0, u_ss_k, x_ss_k)
+    v_opt = dv_opt + u_ss_k
+
+    # E. Computed-Torque Law
+    M_mat = inertia_matrix(q_true)
+    C_vec = coriolis_matrix(q_true, dq_true) @ dq_true
+    G_vec = gravity_vector(q_true)
+    tau_cmd = M_mat @ v_opt + C_vec + G_vec
+    tau_cmd = np.clip(tau_cmd, -tau_max, tau_max)
+    v_applied = np.linalg.solve(M_mat, tau_cmd - C_vec - G_vec)
+
+    # F. Plant Integration (RK4)
+    x_rob = np.concatenate([q_true, dq_true])
+    x_next = rk4_robot(x_rob, tau_cmd, d_true[:, t], Ts)
+    q_true = x_next[:nq]
+    dq_true = x_next[nq:]
+
+    # G. Logging
+    log_q[:, t] = y_true
+    log_ref[:, t] = ref
+    log_tau[:, t] = tau_cmd
+    log_v[:, t] = v_opt
+    log_d_hat[:, t] = d_hat_k
+    log_d_true_acc[:, t] = np.linalg.solve(M_mat, d_true[:, t])
+
+print("Simulation complete.")
+
+# ── 7. Plotting ─────────────────────────────────────────────────
+fig, axes = plt.subplots(4, 1, figsize=(10, 12))
+labels = ['Joint 1 (yaw)', 'Joint 2 (shoulder)', 'Joint 3 (elbow)']
+colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
+
+# (a) Joint angles vs references
+ax = axes[0]
+for i in range(nq):
+    ax.plot(t_vec, np.rad2deg(log_q[i]), color=colors[i], lw=1.2, label=labels[i])
+    ax.plot(t_vec, np.rad2deg(log_ref[i]), '--', color=colors[i], lw=0.8, alpha=0.7)
+ax.axvline(x=350*Ts, color='#FFD93D', ls=':', lw=1, alpha=0.7, label='Payload step')
+ax.set_ylabel('Angle [deg]');  ax.set_title('Joint Angles (solid) vs Reference (dashed)')
+ax.legend(loc='upper right', fontsize=8);  ax.grid(True)
+
+# (b) Applied torques
+ax = axes[1]
+for i in range(nq):
+    ax.plot(t_vec, log_tau[i], color=colors[i], lw=0.8, label=labels[i])
+ax.axhline(y=0, color='gray', lw=0.5)
+ax.axvline(x=350*Ts, color='#FFD93D', ls=':', lw=1, alpha=0.7)
+ax.set_ylabel('Torque [Nm]');  ax.set_title('Applied Joint Torques')
+ax.legend(loc='upper right', fontsize=8);  ax.grid(True)
+
+# (c) Virtual accelerations
+ax = axes[2]
+for i in range(nq):
+    ax.plot(t_vec, log_v[i], color=colors[i], lw=0.8, label=labels[i])
+ax.axhline(y=v_min_val, color='#FF4444', ls='--', lw=0.8, alpha=0.5, label='v bounds')
+ax.axhline(y=v_max_val, color='#FF4444', ls='--', lw=0.8, alpha=0.5)
+ax.axvline(x=350*Ts, color='#FFD93D', ls=':', lw=1, alpha=0.7)
+ax.set_ylabel('Accel [rad/s²]');  ax.set_title('Virtual Accelerations')
+ax.legend(loc='upper right', fontsize=8);  ax.grid(True)
+
+# (d) Disturbance estimates
+ax = axes[3]
+for i in range(nq):
+    ax.plot(t_vec, log_d_hat[i], color=colors[i], lw=1.2, label=f'd_hat {i+1}')
+    ax.plot(t_vec, log_d_true_acc[i], '--', color=colors[i], lw=0.8, alpha=0.6)
+ax.axvline(x=350*Ts, color='#FFD93D', ls=':', lw=1, alpha=0.7, label='Payload step')
+ax.set_xlabel('Time [s]');  ax.set_ylabel('Disturbance [rad/s²]')
+ax.set_title('Disturbance Estimates (solid) vs True (dashed)')
+ax.legend(loc='upper right', fontsize=8);  ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <figure id="fig:robot">
 <img src="figures/Robot.png" style="width:100.0%" />
 <figcaption>Robot manipulator offset-free MPC results.</figcaption>
