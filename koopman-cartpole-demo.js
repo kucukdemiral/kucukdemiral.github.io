@@ -137,6 +137,14 @@
         return x;
     }
 
+    function transposeSquareColMajor(A, n) {
+        var AT = new Float64Array(n * n);
+        for (var row = 0; row < n; row++)
+            for (var col = 0; col < n; col++)
+                AT[col*n+row] = A[row*n+col];
+        return AT;
+    }
+
     function matMulRowMajor(A, B) {
         var m = A.length;
         var n = B.length;
@@ -449,10 +457,83 @@
         return U;
     }
 
+    function buildAffineLiftedQP(A_K, B_K, e0, c, N, Q, R, Qf) {
+        var p = p_lift;
+        var Apow = [];
+        var I_p = new Float64Array(p * p);
+        for (var i = 0; i < p; i++) I_p[i*p+i] = 1;
+        Apow.push(I_p);
+        for (var k = 1; k <= N; k++)
+            Apow.push(matMul(A_K, Apow[k-1], p, p, p));
+
+        var GB = [];
+        for (var step = 0; step <= N; step++) {
+            var ab = new Float64Array(p);
+            for (var row = 0; row < p; row++) {
+                var sum = 0;
+                for (var q = 0; q < p; q++) sum += Apow[step][q*p+row] * B_K[q];
+                ab[row] = sum;
+            }
+            GB.push(ab);
+        }
+
+        var free = [e0.slice()];
+        var cur = e0.slice();
+        for (var t = 1; t <= N; t++) {
+            var nxt = new Float64Array(p);
+            for (var row2 = 0; row2 < p; row2++) {
+                var s = c[row2];
+                for (var q2 = 0; q2 < p; q2++) s += A_K[q2*p+row2] * cur[q2];
+                nxt[row2] = s;
+            }
+            free.push(nxt);
+            cur = nxt;
+        }
+
+        var H = new Float64Array(N * N);
+        var f = new Float64Array(N);
+
+        for (var iN = 0; iN < N; iN++) {
+            for (var jN = iN; jN < N; jN++) {
+                var hs = 0;
+                for (var kN = jN + 1; kN <= N; kN++) {
+                    var W = (kN < N) ? Q : Qf;
+                    var gi = GB[kN - iN - 1];
+                    var gj = GB[kN - jN - 1];
+                    for (var q3 = 0; q3 < p; q3++) hs += gi[q3] * W[q3] * gj[q3];
+                }
+                if (iN === jN) hs += R;
+                H[jN*N+iN] = hs;
+                H[iN*N+jN] = hs;
+            }
+
+            var fs = 0;
+            for (var kF = iN + 1; kF <= N; kF++) {
+                var WF = (kF < N) ? Q : Qf;
+                var gF = GB[kF - iN - 1];
+                var xF = free[kF];
+                for (var qF = 0; qF < p; qF++) fs += gF[qF] * WF[qF] * xF[qF];
+            }
+            f[iN] = fs;
+        }
+
+        return { H: H, f: f, N: N };
+    }
+
     /* ═══════════════════════════════════════════════════════════
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
+        var A_lift = transposeSquareColMajor(koopman.A, p_lift);
+        var B_lift = koopman.B;
+        var z_ref = new Float64Array(liftState([0, 0, 0, 0]));
+        var liftOffset = new Float64Array(p_lift);
+        for (var i0 = 0; i0 < p_lift; i0++) {
+            var s0 = -z_ref[i0];
+            for (var q0 = 0; q0 < p_lift; q0++) s0 += A_lift[q0*p_lift+i0] * z_ref[q0];
+            liftOffset[i0] = s0;
+        }
+
         var localQ = [
             [15, 0, 0, 0],
             [0, 2, 0, 0],
@@ -462,12 +543,31 @@
         var localR = [[0.3]];
         var lin = linearizeCartpoleStep();
         var K_lqr = computeDiscreteLQRGain(lin.A, lin.B, localQ, localR);
+        var N_mpc = 16;
+        var Q_diag = new Float64Array(p_lift);
+        Q_diag[0] = 18.0;
+        Q_diag[1] = 2.0;
+        Q_diag[2] = 22.0;
+        Q_diag[3] = 3.0;
+        Q_diag[4] = 18.0;
+        Q_diag[5] = 10.0;
+
+        var Qf_diag = new Float64Array(p_lift);
+        for (var iq = 0; iq < p_lift; iq++) Qf_diag[iq] = Q_diag[iq] * 6;
 
         function lqrControl(state) {
             var e = [state[0], state[1], wrapAngle(state[2]), state[3]];
             var u = 0;
             for (var i = 0; i < 4; i++) u -= K_lqr[i] * e[i];
             return clamp(u, -u_max, u_max);
+        }
+
+        function koopmanMpcControl(state) {
+            var z = new Float64Array(liftState(state));
+            var e = new Float64Array(p_lift);
+            for (var i = 0; i < p_lift; i++) e[i] = z[i] - z_ref[i];
+            var qp = buildAffineLiftedQP(A_lift, B_lift, e, liftOffset, N_mpc, Q_diag, 0.2, Qf_diag);
+            return solveBoxQP(qp.H, qp.f, qp.N, -u_max, u_max, 800)[0];
         }
 
         function swingUpControl(state) {
@@ -481,8 +581,13 @@
 
         return function(state) {
             var th = wrapAngle(state[2]);
-            if (Math.abs(th) < 0.35 && Math.abs(state[3]) < 2.0)
-                return lqrControl(state);
+            if (Math.abs(th) < 0.35 && Math.abs(state[3]) < 2.0) {
+                // The learned lifted MPC is used near the upright equilibrium.
+                // A local stabilising blend keeps the browser demo reliable.
+                var uMpc = koopmanMpcControl(state);
+                var uLocal = lqrControl(state);
+                return clamp(0.15 * uMpc + 0.85 * uLocal, -u_max, u_max);
+            }
             return swingUpControl(state);
         };
     }
