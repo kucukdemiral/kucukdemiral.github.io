@@ -2,10 +2,10 @@
 % Standalone MATLAB script for the learned cart-pole example.
 %
 % Method:
-%   1. Generate data from the nonlinear cart-pole simulator.
-%   2. Learn a Koopman predictor with EDMD.
+%   1. Generate broad EDMD data from the nonlinear cart-pole simulator.
+%   2. Learn a dedicated local balance model near upright.
 %   3. Use energy-based swing-up away from upright.
-%   4. Use Koopman MPC near upright.
+%   4. Use Koopman MPC only inside a tight local balance region.
 %
 % Edit the USER SETTINGS section below and run the file.
 
@@ -28,9 +28,7 @@ u_max = 15.0;
 
 n_traj = 200;
 traj_len = 25;
-n_mpc = 16;
-
-%% Learn Koopman predictor with EDMD
+%% Learn broad EDMD model for consistency with the notes
 p_lift = 10;
 Zx = zeros(n_traj * traj_len, p_lift + 1);
 Zy = zeros(n_traj * traj_len, p_lift);
@@ -59,10 +57,12 @@ W = XtX \ XtY;
 A_lift = W(1:p_lift, :).';
 B_lift = W(end, :).';
 
-z_ref = lift_state([0; 0; 0; 0]);
-lift_offset = A_lift * z_ref - z_ref;
-Q_diag = [18; 3; 32; 7; 28; 18; 0; 0; 0; 0];
-Qf_diag = 14 * Q_diag;
+%% Learn local balance model used by the actual MPC controller
+[A_bal, B_bal] = train_local_balance_model(Ts, Tc, mc, mp, lp, g);
+Q_bal = diag([15, 2, 120, 12]);
+R_bal = 0.3;
+[P_bal, ~, ~] = dare(A_bal, B_bal, Q_bal, R_bal);
+N_bal = 30;
 
 %% Closed-loop simulation
 s = [x0; xd0; deg2rad(theta0_deg); thd0];
@@ -74,18 +74,18 @@ states(:, 1) = s;
 
 for k = 1:N_sim
     th = wrap_angle(s(3));
-    if abs(th) < 0.12 && abs(s(4)) < 0.6
-        u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, 28, Q_diag, 0.7, Qf_diag, u_max);
+    if abs(th) < 0.035 && abs(s(4)) < 0.22
+        u = local_balance_mpc_control(s, A_bal, B_bal, Q_bal, R_bal, P_bal, N_bal, u_max);
     else
         inertia = mp * lp^2;
         energy = 0.5 * inertia * s(4)^2 + mp * g * lp * (cos(s(3)) - 1);
         if abs(th) < 0.25
-            swing_gain = 18;
+            swing_gain = 15;
         else
             swing_gain = 35;
         end
         swing = swing_gain * energy * sign(s(4) * cos(s(3)) + 1e-4);
-        centre = -1.0 * s(1) - 2.0 * s(2) - 4.0 * sin(s(3)) - 1.5 * s(4) * cos(s(3));
+        centre = -1.0 * s(1) - 2.0 * s(2) - 2.0 * sin(s(3)) - 1.0 * s(4) * cos(s(3));
         u = max(-u_max, min(u_max, swing + centre));
     end
 
@@ -170,26 +170,46 @@ function sn = sim_step(s, u, Ts, Tc, mc, mp, lp, g)
     sn(3) = wrap_angle(sn(3));
 end
 
-function u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, N, Q_diag, R_val, Qf_diag, u_max)
-    p_lift = numel(z_ref);
-    z = lift_state(s);
-    e0 = z - z_ref;
+function [A_bal, B_bal] = train_local_balance_model(Ts, Tc, mc, mp, lp, g)
+    rng(12362);
+    Zx = zeros(12000, 5);
+    Zy = zeros(12000, 4);
+    for sample = 1:12000
+        s = [0.15 * (rand - 0.5) * 2;
+             0.30 * (rand - 0.5) * 2;
+             0.03 * (rand - 0.5) * 2;
+             0.25 * (rand - 0.5) * 2];
+        u = 2.0 * (rand - 0.5);
+        z = [s(1); s(2); wrap_angle(s(3)); s(4)];
+        sn = sim_step(s, u, Ts, Tc, mc, mp, lp, g);
+        zn = [sn(1); sn(2); wrap_angle(sn(3)); sn(4)];
+        Zx(sample, :) = [z.', u];
+        Zy(sample, :) = zn.';
+    end
+
+    W = (Zx' * Zx + 1e-10 * eye(5)) \ (Zx' * Zy);
+    A_bal = W(1:4, :).';
+    B_bal = W(5, :).';
+end
+
+function u = local_balance_mpc_control(s, A_bal, B_bal, Q_bal, R_bal, P_bal, N, u_max)
+    x0 = [s(1); s(2); wrap_angle(s(3)); s(4)];
 
     Apow = cell(N + 1, 1);
-    Apow{1} = eye(p_lift);
+    Apow{1} = eye(4);
     for k = 2:N+1
-        Apow{k} = A_lift * Apow{k - 1};
+        Apow{k} = A_bal * Apow{k - 1};
     end
 
     GB = cell(N + 1, 1);
     for k = 1:N+1
-        GB{k} = Apow{k} * B_lift;
+        GB{k} = Apow{k} * B_bal;
     end
 
     free = cell(N + 1, 1);
-    free{1} = e0;
+    free{1} = x0;
     for k = 2:N+1
-        free{k} = A_lift * free{k - 1} + lift_offset;
+        free{k} = A_bal * free{k - 1};
     end
 
     H = zeros(N, N);
@@ -199,14 +219,14 @@ function u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, N, Q_dia
             hs = 0;
             for k = j+1:N+1
                 if k <= N
-                    w = Q_diag;
+                    Wk = Q_bal;
                 else
-                    w = Qf_diag;
+                    Wk = P_bal;
                 end
-                hs = hs + sum(GB{k - i} .* w .* GB{k - j});
+                hs = hs + GB{k - i}' * Wk * GB{k - j};
             end
             if i == j
-                hs = hs + R_val;
+                hs = hs + R_bal;
             end
             H(i, j) = hs;
             H(j, i) = hs;
@@ -215,11 +235,11 @@ function u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, N, Q_dia
         fs = 0;
         for k = i+1:N+1
             if k <= N
-                w = Q_diag;
+                Wk = Q_bal;
             else
-                w = Qf_diag;
+                Wk = P_bal;
             end
-            fs = fs + sum(GB{k - i} .* w .* free{k});
+            fs = fs + GB{k - i}' * Wk * free{k};
         end
         f(i) = fs;
     end
