@@ -1035,7 +1035,7 @@ x_hist = np.zeros((N, 2))
 u_hist = np.zeros(N)
 
 for k in range(N):
-    u_val = u_target - float(K @ (x - x_target))
+    u_val = u_target - (K @ (x - x_target)).item()
     x_hist[k] = x
     u_hist[k] = u_val
 
