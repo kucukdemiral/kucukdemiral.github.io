@@ -211,6 +211,8 @@
             .then(function (py) {
                 /* Redirect stdout/stderr */
                 py.runPython(
+                    'import warnings as _w\n' +
+                    '_w.filterwarnings("ignore", message=".*FigureCanvasAgg is non-interactive.*")\n' +
                     '_pyodide_stdout = io.StringIO()\n' +
                     '_pyodide_stderr = io.StringIO()\n' +
                     'sys.stdout = _pyodide_stdout\n' +
