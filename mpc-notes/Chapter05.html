@@ -1021,7 +1021,7 @@ K = np.linalg.solve(R + B.T @ P_inf @ B, B.T @ P_inf @ A)
 
 # --- Setpoint ---
 y_target = 0.012       # Target gap (12 mm)
-u_target = y_target * np.sqrt(m * g / C)
+u_target = float(y_target * np.sqrt(m * g / C))
 x_target = np.array([y_target, 0.0])
 
 # --- Nonlinear Simulation (RK4) ---
@@ -1035,7 +1035,7 @@ x_hist = np.zeros((N, 2))
 u_hist = np.zeros(N)
 
 for k in range(N):
-    u_val = float(u_target - K @ (x - x_target))
+    u_val = u_target - float(K @ (x - x_target))
     x_hist[k] = x
     u_hist[k] = u_val
 
