@@ -250,6 +250,62 @@
         return { A: A_K, B: B_K };
     }
 
+    function trainLocalBalanceModel() {
+        var rng = mulberry32(12362);
+        var Zx = [];
+        var Zy = [];
+
+        for (var sample = 0; sample < 12000; sample++) {
+            var s = [
+                0.15 * (rng() - 0.5) * 2.0,
+                0.30 * (rng() - 0.5) * 2.0,
+                0.03 * (rng() - 0.5) * 2.0,
+                0.25 * (rng() - 0.5) * 2.0
+            ];
+            var u = 2.0 * (rng() - 0.5);
+            var z = [s[0], s[1], wrapAngle(s[2]), s[3]];
+            var sn = simStep(s, u);
+            var zn = [sn[0], sn[1], wrapAngle(sn[2]), sn[3]];
+            Zx.push([z[0], z[1], z[2], z[3], u]);
+            Zy.push(zn);
+        }
+
+        var XtX = new Float64Array(25);
+        var XtY = new Float64Array(20);
+        for (var i = 0; i < 5; i++) {
+            for (var j = 0; j <= i; j++) {
+                var sxx = 0;
+                for (var k = 0; k < Zx.length; k++) sxx += Zx[k][i] * Zx[k][j];
+                XtX[i*5+j] = sxx;
+                XtX[j*5+i] = sxx;
+            }
+            XtX[i*5+i] += 1e-10;
+        }
+        for (var row = 0; row < 5; row++) {
+            for (var col = 0; col < 4; col++) {
+                var sxy = 0;
+                for (var m = 0; m < Zx.length; m++) sxy += Zx[m][row] * Zy[m][col];
+                XtY[row*4+col] = sxy;
+            }
+        }
+
+        var A = [
+            new Float64Array(4),
+            new Float64Array(4),
+            new Float64Array(4),
+            new Float64Array(4)
+        ];
+        var B = new Float64Array(4);
+        for (var out = 0; out < 4; out++) {
+            var rhs = new Float64Array(5);
+            for (var rr = 0; rr < 5; rr++) rhs[rr] = XtY[rr*4+out];
+            var sol = cholSolve(XtX, rhs, 5);
+            for (var feat = 0; feat < 4; feat++) A[out][feat] = sol[feat];
+            B[out] = sol[4];
+        }
+        return { A: A, B: B };
+    }
+
     /* Simple seeded PRNG */
     function mulberry32(seed) {
         return function() {
@@ -349,14 +405,34 @@
 
     /* ── Solve box-constrained QP via projected gradient ── */
     function solveBoxQP(H, f, N, umin, umax, maxIter) {
-        var U = new Float64Array(N);
+        var rhs = new Float64Array(N);
+        for (var i = 0; i < N; i++) rhs[i] = -f[i];
+
+        var U;
+        try {
+            U = cholSolve(H, rhs, N);
+            var feasible = true;
+            for (var k = 0; k < N; k++) {
+                if (U[k] < umin - 1e-9 || U[k] > umax + 1e-9) {
+                    feasible = false;
+                    break;
+                }
+            }
+            if (feasible) return U;
+            for (var c = 0; c < N; c++) U[c] = clamp(U[c], umin, umax);
+        } catch (err) {
+            U = new Float64Array(N);
+        }
+
         var grad = new Float64Array(N);
         var alpha = 0;
-
-        // Estimate step size from H diagonal
-        var maxDiag = 0;
-        for (var i = 0; i < N; i++) if (H[i*N+i] > maxDiag) maxDiag = H[i*N+i];
-        alpha = 1.0 / (maxDiag + 1e-8);
+        var maxRowSum = 0;
+        for (var row = 0; row < N; row++) {
+            var rowSum = 0;
+            for (var col = 0; col < N; col++) rowSum += Math.abs(H[col*N+row]);
+            if (rowSum > maxRowSum) maxRowSum = rowSum;
+        }
+        alpha = 1.0 / (maxRowSum + 1e-8);
 
         for (var iter = 0; iter < (maxIter || 200); iter++) {
             // grad = H*U + f
@@ -444,35 +520,137 @@
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
-        var A_lift = koopman.A;
-        var B_lift = koopman.B;
-        var z_ref = new Float64Array(liftState([0, 0, 0, 0]));
-        var liftOffset = new Float64Array(p_lift);
-        for (var i0 = 0; i0 < p_lift; i0++) {
-            var s0 = -z_ref[i0];
-            for (var q0 = 0; q0 < p_lift; q0++) s0 += A_lift[q0*p_lift+i0] * z_ref[q0];
-            liftOffset[i0] = s0;
+        void koopman;
+        var balance = trainLocalBalanceModel();
+        var A_bal = balance.A;
+        var B_bal = balance.B;
+        var Q_bal = [
+            [15, 0, 0, 0],
+            [0, 2, 0, 0],
+            [0, 0, 120, 0],
+            [0, 0, 0, 12]
+        ];
+        var R_bal = 0.3;
+        var P_bal = [
+            [15, 0, 0, 0],
+            [0, 2, 0, 0],
+            [0, 0, 120, 0],
+            [0, 0, 0, 12]
+        ];
+
+        for (var it = 0; it < 5000; it++) {
+            var btPb = 0;
+            for (var r0 = 0; r0 < 4; r0++)
+                for (var c0 = 0; c0 < 4; c0++)
+                    btPb += B_bal[r0] * P_bal[r0][c0] * B_bal[c0];
+            var Sbal = R_bal + btPb;
+
+            var Pnext = [
+                new Float64Array(4),
+                new Float64Array(4),
+                new Float64Array(4),
+                new Float64Array(4)
+            ];
+            var maxErr = 0;
+            for (var i0 = 0; i0 < 4; i0++) {
+                for (var j0 = 0; j0 < 4; j0++) {
+                    var ata = 0;
+                    var atpb = 0;
+                    var btpa = 0;
+                    for (var q0 = 0; q0 < 4; q0++) {
+                        for (var t0 = 0; t0 < 4; t0++)
+                            ata += A_bal[q0][i0] * P_bal[q0][t0] * A_bal[t0][j0];
+                        for (var t1 = 0; t1 < 4; t1++) {
+                            atpb += A_bal[q0][i0] * P_bal[q0][t1] * B_bal[t1];
+                            btpa += B_bal[q0] * P_bal[q0][t1] * A_bal[t1][j0];
+                        }
+                    }
+                    var val = Q_bal[i0][j0] + ata - (atpb * btpa) / Sbal;
+                    Pnext[i0][j0] = val;
+                    maxErr = Math.max(maxErr, Math.abs(val - P_bal[i0][j0]));
+                }
+            }
+            P_bal = Pnext;
+            if (maxErr < 1e-12) break;
         }
 
-        var Q_diag = new Float64Array(p_lift);
-        Q_diag[0] = 18.0;
-        Q_diag[1] = 3.0;
-        Q_diag[2] = 32.0;
-        Q_diag[3] = 7.0;
-        Q_diag[4] = 28.0;
-        Q_diag[5] = 18.0;
+        var N_bal = 30;
+        var ApowBal = [];
+        ApowBal.push([
+            new Float64Array([1, 0, 0, 0]),
+            new Float64Array([0, 1, 0, 0]),
+            new Float64Array([0, 0, 1, 0]),
+            new Float64Array([0, 0, 0, 1])
+        ]);
+        for (var step = 0; step < N_bal; step++) {
+            var prev = ApowBal[step];
+            var next = [
+                new Float64Array(4),
+                new Float64Array(4),
+                new Float64Array(4),
+                new Float64Array(4)
+            ];
+            for (var iA = 0; iA < 4; iA++)
+                for (var jA = 0; jA < 4; jA++)
+                    for (var qA = 0; qA < 4; qA++)
+                        next[iA][jA] += A_bal[iA][qA] * prev[qA][jA];
+            ApowBal.push(next);
+        }
 
-        var Qf_diag = new Float64Array(p_lift);
-        for (var iq = 0; iq < p_lift; iq++) Qf_diag[iq] = Q_diag[iq] * 14;
-        var N_mpc = 28;
-        var R_mpc = 0.7;
+        var GBal = [];
+        for (var gk = 0; gk <= N_bal; gk++) {
+            var gv = new Float64Array(4);
+            for (var gi = 0; gi < 4; gi++)
+                for (var gj = 0; gj < 4; gj++)
+                    gv[gi] += ApowBal[gk][gi][gj] * B_bal[gj];
+            GBal.push(gv);
+        }
 
         function koopmanMpcControl(state) {
-            var z = new Float64Array(liftState(state));
-            var e = new Float64Array(p_lift);
-            for (var i = 0; i < p_lift; i++) e[i] = z[i] - z_ref[i];
-            var qp = buildAffineLiftedQP(A_lift, B_lift, e, liftOffset, N_mpc, Q_diag, R_mpc, Qf_diag);
-            return solveBoxQP(qp.H, qp.f, qp.N, -u_max, u_max, 1000)[0];
+            var x0 = new Float64Array([state[0], state[1], wrapAngle(state[2]), state[3]]);
+            var H = new Float64Array(N_bal * N_bal);
+            var f = new Float64Array(N_bal);
+            var free = [x0];
+            var cur = x0;
+
+            for (var t = 0; t < N_bal; t++) {
+                var nxt = new Float64Array(4);
+                for (var r1 = 0; r1 < 4; r1++)
+                    for (var c1 = 0; c1 < 4; c1++)
+                        nxt[r1] += A_bal[r1][c1] * cur[c1];
+                free.push(nxt);
+                cur = nxt;
+            }
+
+            for (var iN = 0; iN < N_bal; iN++) {
+                for (var jN = iN; jN < N_bal; jN++) {
+                    var hs = 0;
+                    for (var kN = jN + 1; kN <= N_bal; kN++) {
+                        var Wk = (kN < N_bal) ? Q_bal : P_bal;
+                        var gi2 = GBal[kN - iN - 1];
+                        var gj2 = GBal[kN - jN - 1];
+                        for (var rr2 = 0; rr2 < 4; rr2++)
+                            for (var cc2 = 0; cc2 < 4; cc2++)
+                                hs += gi2[rr2] * Wk[rr2][cc2] * gj2[cc2];
+                    }
+                    if (iN === jN) hs += R_bal;
+                    H[iN*N_bal+jN] = hs;
+                    H[jN*N_bal+iN] = hs;
+                }
+
+                var fs = 0;
+                for (var kF = iN + 1; kF <= N_bal; kF++) {
+                    var WF = (kF < N_bal) ? Q_bal : P_bal;
+                    var gF = GBal[kF - iN - 1];
+                    var xF = free[kF];
+                    for (var rrF = 0; rrF < 4; rrF++)
+                        for (var ccF = 0; ccF < 4; ccF++)
+                            fs += gF[rrF] * WF[rrF][ccF] * xF[ccF];
+                }
+                f[iN] = fs;
+            }
+
+            return solveBoxQP(H, f, N_bal, -u_max, u_max, 1000)[0];
         }
 
         function swingUpControl(state) {
@@ -480,15 +658,15 @@
             var inertia = mp * lp * lp;
             var energy = 0.5 * inertia * thd * thd + mp * G * lp * (Math.cos(th) - 1);
             var nearUpright = Math.abs(wrapAngle(th)) < 0.25;
-            var swingGain = nearUpright ? 18 : 35;
+            var swingGain = nearUpright ? 15 : 35;
             var swing = swingGain * energy * Math.sign(thd * Math.cos(th) + 1e-4);
-            var centre = -1.0 * x - 2.0 * xd - 4.0 * Math.sin(th) - 1.5 * thd * Math.cos(th);
+            var centre = -1.0 * x - 2.0 * xd - 2.0 * Math.sin(th) - 1.0 * thd * Math.cos(th);
             return clamp(swing + centre, -u_max, u_max);
         }
 
         return function(state) {
             var th = wrapAngle(state[2]);
-            if (Math.abs(th) < 0.12 && Math.abs(state[3]) < 0.6) {
+            if (Math.abs(th) < 0.035 && Math.abs(state[3]) < 0.22) {
                 return clamp(koopmanMpcControl(state), -u_max, u_max);
             }
             return swingUpControl(state);

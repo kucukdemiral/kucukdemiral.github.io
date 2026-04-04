@@ -138,7 +138,7 @@ def train_edmd(cfg: Config) -> tuple[np.ndarray, np.ndarray]:
     xtx = zx_arr.T @ zx_arr + 1e-6 * np.eye(P_LIFT + 1)
     xty = zx_arr.T @ zy_arr
     w = np.linalg.solve(xtx, xty)
-    a_k = w[:P_LIFT, :]
+    a_k = w[:P_LIFT, :].T
     b_k = w[P_LIFT, :]
     return a_k, b_k
 
@@ -190,8 +190,15 @@ def build_affine_lifted_qp(
 
 def solve_box_qp(h: np.ndarray, f: np.ndarray, u_max: float, max_iter: int = 800) -> np.ndarray:
     n = f.shape[0]
-    u = np.zeros(n, dtype=float)
-    alpha = 1.0 / (np.max(np.diag(h)) + 1e-8)
+    try:
+        u_free = np.linalg.solve(h, -f)
+        if np.all(np.abs(u_free) <= u_max + 1e-9):
+            return u_free
+        u = np.clip(u_free, -u_max, u_max)
+    except np.linalg.LinAlgError:
+        u = np.zeros(n, dtype=float)
+
+    alpha = 1.0 / (np.max(np.sum(np.abs(h), axis=1)) + 1e-8)
     for _ in range(max_iter):
         grad = h @ u + f
         u_new = np.clip(u - alpha * grad, -u_max, u_max)
@@ -202,33 +209,99 @@ def solve_box_qp(h: np.ndarray, f: np.ndarray, u_max: float, max_iter: int = 800
     return u
 
 
-def create_controller(a_k: np.ndarray, b_k: np.ndarray, cfg: Config):
-    z_ref = lift_state(np.zeros(4))
-    c_off = a_k @ z_ref - z_ref
+def train_local_balance_model(cfg: Config) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(cfg.seed + 17)
+    zx = []
+    zy = []
+    for _ in range(12000):
+        s = np.array(
+            [
+                0.15 * (rng.random() - 0.5) * 2.0,
+                0.30 * (rng.random() - 0.5) * 2.0,
+                0.03 * (rng.random() - 0.5) * 2.0,
+                0.25 * (rng.random() - 0.5) * 2.0,
+            ],
+            dtype=float,
+        )
+        u = 2.0 * (rng.random() - 0.5)
+        z = np.array([s[0], s[1], wrap_angle(float(s[2])), s[3]], dtype=float)
+        sn = sim_step(s, u, cfg)
+        zn = np.array([sn[0], sn[1], wrap_angle(float(sn[2])), sn[3]], dtype=float)
+        zx.append(np.concatenate([z, [u]]))
+        zy.append(zn)
 
-    q_diag = np.zeros(P_LIFT, dtype=float)
-    q_diag[:6] = np.array([18.0, 3.0, 32.0, 7.0, 28.0, 18.0])
-    qf_diag = 14.0 * q_diag
+    zx_arr = np.asarray(zx)
+    zy_arr = np.asarray(zy)
+    w = np.linalg.solve(zx_arr.T @ zx_arr + 1e-10 * np.eye(5), zx_arr.T @ zy_arr)
+    return w[:4, :].T, w[4, :]
+
+
+def create_controller(a_k: np.ndarray, b_k: np.ndarray, cfg: Config):
+    del a_k, b_k
+    a_bal, b_bal = train_local_balance_model(cfg)
+    q_bal = np.diag([15.0, 2.0, 120.0, 12.0])
+    r_bal = 0.3
+
+    p_bal = q_bal.copy()
+    bcol = b_bal.reshape(-1, 1)
+    for _ in range(5000):
+        s_val = r_bal + float((bcol.T @ p_bal @ bcol).item())
+        p_next = q_bal + a_bal.T @ p_bal @ a_bal - (a_bal.T @ p_bal @ bcol @ bcol.T @ p_bal @ a_bal) / s_val
+        if np.max(np.abs(p_next - p_bal)) < 1e-12:
+            p_bal = p_next
+            break
+        p_bal = p_next
+
+    n_bal = 30
+    apow = [np.eye(4)]
+    for _ in range(n_bal):
+        apow.append(a_bal @ apow[-1])
+    gb = [ap @ b_bal for ap in apow]
 
     def koopman_mpc_control(state: np.ndarray) -> float:
-        z = lift_state(state)
-        e0 = z - z_ref
-        h, f = build_affine_lifted_qp(a_k, b_k, e0, c_off, 28, q_diag, 0.7, qf_diag)
-        return float(solve_box_qp(h, f, cfg.u_max, 1200)[0])
+        x0 = np.array([state[0], state[1], wrap_angle(float(state[2])), state[3]], dtype=float)
+        h = np.zeros((n_bal, n_bal), dtype=float)
+        f = np.zeros(n_bal, dtype=float)
+
+        free = [x0.copy()]
+        cur = x0.copy()
+        for _ in range(n_bal):
+            cur = a_bal @ cur
+            free.append(cur.copy())
+
+        for i in range(n_bal):
+            for j in range(i, n_bal):
+                hs = 0.0
+                for k in range(j + 1, n_bal + 1):
+                    w = q_bal if k < n_bal else p_bal
+                    hs += gb[k - i - 1] @ w @ gb[k - j - 1]
+                if i == j:
+                    hs += r_bal
+                h[i, j] = hs
+                h[j, i] = hs
+
+            fs = 0.0
+            for k in range(i + 1, n_bal + 1):
+                w = q_bal if k < n_bal else p_bal
+                fs += gb[k - i - 1] @ w @ free[k]
+            f[i] = fs
+
+        u = np.linalg.solve(h, -f)
+        return float(clamp(float(u[0]), -cfg.u_max, cfg.u_max))
 
     def swing_up_control(state: np.ndarray) -> float:
         x, xd, th, thd = state
         inertia = cfg.mp * cfg.lp * cfg.lp
         energy = 0.5 * inertia * thd * thd + cfg.mp * cfg.g * cfg.lp * (np.cos(th) - 1.0)
         near_upright = abs(wrap_angle(float(th))) < 0.25
-        swing_gain = 18.0 if near_upright else 35.0
+        swing_gain = 15.0 if near_upright else 35.0
         swing = swing_gain * energy * np.sign(thd * np.cos(th) + 1e-4)
-        center = -1.0 * x - 2.0 * xd - 4.0 * np.sin(th) - 1.5 * thd * np.cos(th)
+        center = -1.0 * x - 2.0 * xd - 2.0 * np.sin(th) - 1.0 * thd * np.cos(th)
         return clamp(float(swing + center), -cfg.u_max, cfg.u_max)
 
     def controller(state: np.ndarray) -> float:
         th = abs(wrap_angle(float(state[2])))
-        if th < 0.12 and abs(float(state[3])) < 0.6:
+        if th < 0.035 and abs(float(state[3])) < 0.22:
             return clamp(koopman_mpc_control(state), -cfg.u_max, cfg.u_max)
         return swing_up_control(state)
 

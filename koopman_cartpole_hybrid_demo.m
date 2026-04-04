@@ -224,8 +224,14 @@ function u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, N, Q_dia
         f(i) = fs;
     end
 
-    U = zeros(N, 1);
-    alpha = 1 / (max(diag(H)) + 1e-8);
+    U_free = -H \ f;
+    if all(abs(U_free) <= u_max + 1e-9)
+        u = U_free(1);
+        return;
+    end
+
+    U = min(max(U_free, -u_max), u_max);
+    alpha = 1 / (max(sum(abs(H), 2)) + 1e-8);
     for iter = 1:800
         grad = H * U + f;
         U_new = min(max(U - alpha * grad, -u_max), u_max);
