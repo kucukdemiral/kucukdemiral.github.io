@@ -1096,6 +1096,19 @@
             }, 50);
         }
 
+        function appendTrajectoryStep() {
+            if (!traj || !traj.states.length) return;
+            var s = traj.states[traj.states.length - 1].slice();
+            s[2] = wrapAngle(s[2]);
+            var u = controller(s);
+            u = clamp(u, -u_max, u_max);
+            var sNext = simStep(s, u);
+            traj.controls.push(u);
+            traj.states.push(sNext.slice());
+            traj.times.push(traj.times[traj.times.length - 1] + Tc);
+            traj.N = traj.controls.length;
+        }
+
         function doRun() {
             if (!trained) return;
             if (running) {
@@ -1117,7 +1130,12 @@
 
                 setTimeout(function() {
                     var s0 = getInitState();
-                    traj = simulateTrajectory(controller, s0);
+                    traj = {
+                        states: [s0.slice()],
+                        controls: [],
+                        times: [0],
+                        N: 0
+                    };
                     elStat.textContent = 'Running';
                     elStat.className = 'kcp-status kcp-running';
                     running = true;
@@ -1141,33 +1159,16 @@
         function doKick() {
             if (!traj || !running) return;
             // Apply a disturbance: add angular velocity
-            var kickIdx = animIdx;
+            var kickIdx = Math.max(0, Math.min(animIdx, traj.states.length - 1));
             if (kickIdx < traj.states.length) {
-                // Re-simulate from current state with a kick
                 var s = traj.states[kickIdx].slice();
                 s[3] += 5.0; // angular velocity kick
                 s[1] += 2.0; // cart velocity kick
-
-                // Re-simulate
-                var newStates = [s.slice()];
-                var newControls = [];
-                var newTimes = [traj.times[kickIdx]];
-                var N_remain = traj.N - kickIdx;
-                for (var k = 0; k < N_remain; k++) {
-                    s[2] = wrapAngle(s[2]);
-                    var u = controller(s);
-                    u = clamp(u, -u_max, u_max);
-                    newControls.push(u);
-                    s = simStep(s, u);
-                    newStates.push(s.slice());
-                    newTimes.push(traj.times[kickIdx] + (k + 1) * Tc);
-                }
-
-                // Splice into trajectory
-                traj.states = traj.states.slice(0, kickIdx).concat(newStates);
-                traj.controls = traj.controls.slice(0, kickIdx).concat(newControls);
-                traj.times = traj.times.slice(0, kickIdx).concat(newTimes);
+                traj.states = traj.states.slice(0, kickIdx).concat([s.slice()]);
+                traj.controls = traj.controls.slice(0, kickIdx);
+                traj.times = traj.times.slice(0, kickIdx + 1);
                 traj.N = traj.controls.length;
+                animIdx = kickIdx;
             }
         }
 
@@ -1176,7 +1177,7 @@
 
             var speed = parseInt(speedSl.value);
             for (var rep = 0; rep < speed; rep++) {
-                if (animIdx >= traj.N) break;
+                if (animIdx >= traj.N) appendTrajectoryStep();
 
                 var s = traj.states[animIdx];
                 var u = traj.controls[animIdx];
@@ -1199,18 +1200,6 @@
                 }
 
                 animIdx++;
-            }
-
-            if (animIdx >= traj.N) {
-                running = false;
-                runBtn.textContent = 'Run';
-                runBtn.classList.remove('kcp-active');
-                runBtn.classList.add('kcp-primary');
-                if (elStat.textContent !== 'Balanced!') {
-                    elStat.textContent = 'Done';
-                    elStat.className = 'kcp-status';
-                }
-                return;
             }
 
             animId = requestAnimationFrame(animate);

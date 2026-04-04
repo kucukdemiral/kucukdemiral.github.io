@@ -1251,6 +1251,11 @@ These weights penalise cart displacement, cart velocity, angular error, angular 
 u = 0.15\,u_{\mathrm{KMPC}} + 0.85\,u_{\mathrm{local}}.
 \]</span>
 This extra blend is not conceptually essential to Koopman MPC; it is included so that the interactive demo behaves robustly from the default hanging-down initial condition and under disturbances, while still using the learned Koopman-MPC law in the regulation phase.</p>
+<p>Standalone reproducible scripts are also provided:
+<a href="../koopman_cartpole_hybrid_demo.m" target="_blank"><strong>MATLAB code</strong></a>
+and
+<a href="../koopman_cartpole_hybrid_demo.py" target="_blank"><strong>Python code</strong></a>.
+The Python script exposes command-line options such as the initial angle, training size, horizon, and output filename, and generates plots automatically when executed.</p>
 <p>Set the initial angle (180° = hanging down) and click <strong>Run</strong>. Use <strong>Kick</strong> to apply a disturbance mid-simulation.</p>
 <div class="koopman-cartpole-demo"></div>
 
