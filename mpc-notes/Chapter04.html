@@ -63,6 +63,31 @@
     fprintf(&#39;State Dimension n = %d\n&#39;, n);
     fprintf(&#39;Rank of Co      = %d\n&#39;, rank_Co);
 </code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code>import numpy as np
+
+h = 0.1
+A = np.array([[1, h], [0, 1]])
+B = np.array([[0.5*h**2], [h]])
+n = A.shape[0]
+
+# Controllability matrix: Co = [B, AB, A^2*B, ...]
+Co = np.hstack([np.linalg.matrix_power(A, i) @ B for i in range(n)])
+rank_Co = np.linalg.matrix_rank(Co)
+
+print("Double integrator (discrete-time, h=0.1s)")
+print(f"A = {A.tolist()}")
+print(f"B = {B.tolist()}")
+print(f"\nControllability matrix Co =")
+print(f"  {np.array2string(Co, precision=4)}")
+print(f"\nrank(Co) = {rank_Co},  n = {n}")
+print(f"System is {'CONTROLLABLE' if rank_Co == n else 'NOT controllable'}!")</code></pre>
+</div>
+
 <p><strong>Results</strong><br />
 Since the rank of the controllability matrix (2) equals the number of states (2), the system is controllable. This mathematically guarantees that an input sequence exists to drive the robot from any initial position and velocity to any target state (assuming no actuator saturation), satisfying the necessary condition for LQR design which will be covered in the next chapter.</p>
 <h2 id="observability">Observability</h2>
@@ -213,6 +238,39 @@ Since the rank of the controllability matrix (2) equals the number of states (2)
     Ob2 = obsv(A, C2);
     rank_Ob2 = rank(Ob2);
     </code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code>import numpy as np
+
+h = 0.1
+A = np.array([[1, h], [0, 1]])
+n = A.shape[0]
+
+# Case 1: Position sensor (y = x1)
+C1 = np.array([[1, 0]])
+Ob1 = np.vstack([C1 @ np.linalg.matrix_power(A, i) for i in range(n)])
+rank1 = np.linalg.matrix_rank(Ob1)
+
+# Case 2: Velocity sensor (y = x2)
+C2 = np.array([[0, 1]])
+Ob2 = np.vstack([C2 @ np.linalg.matrix_power(A, i) for i in range(n)])
+rank2 = np.linalg.matrix_rank(Ob2)
+
+print("Case 1: Position sensor  C = [1, 0]")
+print(f"  Observability matrix =\n{np.array2string(Ob1, precision=4)}")
+print(f"  rank = {rank1} → {'OBSERVABLE' if rank1 == n else 'NOT observable'}")
+
+print(f"\nCase 2: Velocity sensor  C = [0, 1]")
+print(f"  Observability matrix =\n{np.array2string(Ob2, precision=4)}")
+print(f"  rank = {rank2} → {'OBSERVABLE' if rank2 == n else 'NOT observable'}")
+
+print(f"\nConclusion: Measuring position reveals velocity (rows are independent).")
+print(f"Measuring velocity alone cannot reconstruct position (rows are identical).")</code></pre>
+</div>
+
 <p><strong>Results:</strong><br />
 In Case 1, the matrix <span class="math inline">\(\mathcal{O}\)</span> has rank 2, meaning the rows are linearly independent; information about both states is present in the output history. In Case 2, the matrix has rank 1 (identical rows). The "position" mode is unobservable. If we only measure speed, the robot’s absolute position is mathematically impossible to reconstruct.</p>
 <div class="notebox">

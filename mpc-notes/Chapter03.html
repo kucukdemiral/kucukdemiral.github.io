@@ -876,6 +876,46 @@ data-label="lst:matlab_zoh"><pre class="sourceCode matlab"><code class="sourceCo
 <span id="lst:matlab_zoh-18"><a href="#lst:matlab_zoh-18" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="lst:matlab_zoh-19"><a href="#lst:matlab_zoh-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Ad = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Ad</span>)<span class="op">;</span></span>
 <span id="lst:matlab_zoh-20"><a href="#lst:matlab_zoh-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">disp</span>(<span class="ss">&#39;Bd = &#39;</span>)<span class="op">;</span> <span class="va">disp</span>(<span class="va">Bd</span>)<span class="op">;</span></span></code></pre></div>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import expm
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import expm
+
+# Continuous-time system: dx/dt = A*x + B*u
+A = np.array([[0, 1], [-5, -2]])
+B = np.array([[0], [1]])
+h = 0.1  # sampling period
+
+n = A.shape[0]
+m = B.shape[1]
+
+# Augmented matrix exponential for exact ZOH discretisation
+T = np.block([[A, B],
+              [np.zeros((m, n)), np.zeros((m, m))]])
+M = expm(T * h)
+
+Ad = M[:n, :n]
+Bd = M[:n, n:]
+
+print("Continuous-time system:")
+print(f"  A = {A.tolist()}")
+print(f"  B = {B.tolist()}")
+print(f"\nZOH discretisation (h = {h} s):")
+print(f"  Ad = \n{np.array2string(Ad, precision=6, suppress_small=True)}")
+print(f"  Bd = \n{np.array2string(Bd, precision=6, suppress_small=True)}")
+
+# Verify eigenvalues: continuous vs discrete
+eig_c = np.linalg.eigvals(A)
+eig_d = np.linalg.eigvals(Ad)
+print(f"\nContinuous eigenvalues: {eig_c}")
+print(f"Discrete eigenvalues:  {eig_d}")
+print(f"Expected (e^(lambda*h)): {np.exp(eig_c * h)}")</code></pre>
+</div>
+
 <h2 id="numerical-discretisation-of-nonlinear-systems">Numerical
 Discretisation of Nonlinear Systems</h2>
 <p>In the previous sections, we established that Linear Time-Invariant
@@ -1004,6 +1044,69 @@ class="math inline">\(h &gt; 0\)</span>. In contrast, the
 <strong>RK4</strong> method maintains high accuracy and preserves
 stability even at larger time steps.</p>
 </div>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# Harmonic oscillator: dx/dt = [x2; -x1]
+def f(x):
+    return np.array([x[1], -x[0]])
+
+def euler_step(x, h):
+    return x + h * f(x)
+
+def rk4_step(x, h):
+    k1 = f(x)
+    k2 = f(x + 0.5*h*k1)
+    k3 = f(x + 0.5*h*k2)
+    k4 = f(x + h*k3)
+    return x + (h/6)*(k1 + 2*k2 + 2*k3 + k4)
+
+x0 = np.array([1.0, 0.0])
+T_final = 20.0
+step_sizes = [0.05, 0.10, 0.25, 0.50]
+
+fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+
+for idx, h in enumerate(step_sizes):
+    ax = axes[idx // 2, idx % 2]
+    N = int(T_final / h)
+    t = np.arange(N+1) * h
+
+    # Exact solution
+    x_exact = np.cos(t)
+
+    # Euler
+    x_euler = np.zeros(N+1); x_euler[0] = x0[0]
+    state_e = x0.copy()
+    for k in range(N):
+        state_e = euler_step(state_e, h)
+        x_euler[k+1] = state_e[0]
+
+    # RK4
+    x_rk4 = np.zeros(N+1); x_rk4[0] = x0[0]
+    state_r = x0.copy()
+    for k in range(N):
+        state_r = rk4_step(state_r, h)
+        x_rk4[k+1] = state_r[0]
+
+    ax.plot(t, x_exact, 'gray', lw=2, label='Exact')
+    ax.plot(t, x_euler, '--', color='#FF6B6B', lw=1.2, label='Euler')
+    ax.plot(t, x_rk4, '-.', color='#4ECDC4', lw=1.5, label='RK4')
+    ax.set_title(f'h = {h} s')
+    ax.set_xlabel('Time [s]'); ax.set_ylabel('x₁(t)')
+    ax.legend(fontsize=7); ax.grid(True, alpha=0.3)
+    ax.set_ylim(-3, 3)
+
+plt.suptitle('Euler vs RK4: Harmonic Oscillator', fontsize=13, color='#D4E0ED')
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <figure id="fig:integrator_comparison">
 <img src="figures/RK4_vs_euler.png" style="width:100.0%" />
 <figcaption>Comparison of numerical integration accuracy for an undamped

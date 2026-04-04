@@ -418,6 +418,82 @@ In its simplest form, the controller’s job is to minimise the total thermal en
     yline(-1, &#39;r--&#39;, &#39;LineWidth&#39;, 1.5);
     ylabel(&#39;Input (u)&#39;); xlabel(&#39;Time step (k)&#39;); grid on;</code></pre>
 <p>When you run this script, you should observe that the controller successfully drives the unstable state from <span class="math inline">\(x_0 = 5\)</span> to the origin despite the system being open-loop unstable (<span class="math inline">\(a = 1.2\)</span>). Notice that the control input saturates at <span class="math inline">\(u = -1\)</span> during the first several time steps, when the state is large and the controller must apply maximum effort; once the state is sufficiently small, the input comes off the constraint and the controller smoothly regulates the state to zero.</p>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+# System: x_{k+1} = A*x_k + B*u_k  (scalar, unstable)
+A, B = 1.2, 1.0
+Q, R = 1.0, 0.1
+N = 10  # prediction horizon
+
+# Terminal cost from discrete Riccati equation
+P = solve_discrete_are(np.array([[A]]), np.array([[B]]),
+                       np.array([[Q]]), np.array([[R]])).item()
+
+# Condensed QP matrices
+# X = [x1, x2, ..., x_N], U = [u0, u1, ..., u_{N-1}]
+# x_k = A^k * x0 + sum_{j=0}^{k-1} A^{k-1-j} B u_j
+Su = np.zeros((N+1, N))
+Sx = np.zeros(N+1)
+for i in range(N+1):
+    Sx[i] = A**i
+    for j in range(min(i, N)):
+        Su[i, j] = A**(i-j-1) * B
+
+# Cost: sum Q*x_k^2 + R*u_k^2 + P*x_N^2
+Qbar = np.diag([Q]*N + [P])
+Rbar = R * np.eye(N)
+H = Su.T @ Qbar @ Su + Rbar
+H = 0.5*(H + H.T)
+
+def mpc_step(x0):
+    f = (x0 * Sx) @ Qbar @ Su
+    bounds = [(-1.0, 1.0)] * N
+    res = minimize(lambda u: 0.5*u@H@u + f@u, np.zeros(N),
+                   method='L-BFGS-B', bounds=bounds,
+                   options={'ftol': 1e-14})
+    return res.x[0]
+
+# Closed-loop simulation
+T_sim = 30
+x_state = 5.0
+x_hist = np.zeros(T_sim + 1)
+u_hist = np.zeros(T_sim)
+x_hist[0] = x_state
+
+for t in range(T_sim):
+    u_opt = mpc_step(x_state)
+    u_hist[t] = u_opt
+    x_state = A * x_state + B * u_opt
+    x_hist[t+1] = x_state
+
+print(f"Terminal cost P = {P:.4f}")
+print(f"x0 = {x_hist[0]:.1f} → x_final = {x_hist[-1]:.6f}")
+
+# Plot
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 5))
+ax1.step(range(T_sim+1), x_hist, color='#4ECDC4', lw=2, where='mid')
+ax1.set_ylabel('State (x)'); ax1.set_title('MPC Closed-Loop Response')
+ax1.grid(True)
+
+ax2.step(range(T_sim), u_hist, color='#4ECDC4', lw=2, where='mid')
+ax2.axhline(1, color='#FF6B6B', ls='--', lw=1.5, label='u bounds')
+ax2.axhline(-1, color='#FF6B6B', ls='--', lw=1.5)
+ax2.set_ylabel('Input (u)'); ax2.set_xlabel('Time step (k)')
+ax2.legend(loc='lower right', fontsize=8); ax2.grid(True)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <div class="notebox">
 <p><span>Prerequisites</span> This script requires MATLAB with the YALMIP toolbox and a QP solver such as <code>quadprog</code>. Installation instructions for YALMIP are given in the Foreword.</p>
 </div>
