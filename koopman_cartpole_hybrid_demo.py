@@ -8,7 +8,7 @@ Method:
   1. Generate cart-pole data from the nonlinear simulator.
   2. Learn a lifted Koopman predictor with EDMD.
   3. Use energy-based swing-up away from upright.
-  4. Use local Koopman MPC near upright, blended with a local stabilizer.
+  4. Use Koopman MPC near upright.
 
 Requirements:
     pip install numpy matplotlib
@@ -202,76 +202,34 @@ def solve_box_qp(h: np.ndarray, f: np.ndarray, u_max: float, max_iter: int = 800
     return u
 
 
-def linearize_cartpole_step(cfg: Config) -> tuple[np.ndarray, np.ndarray]:
-    x0 = np.zeros(4)
-    eps = 1e-6
-    a = np.zeros((4, 4), dtype=float)
-    b = np.zeros(4, dtype=float)
-    for j in range(4):
-        xp = x0.copy()
-        xm = x0.copy()
-        xp[j] += eps
-        xm[j] -= eps
-        fp = sim_step(xp, 0.0, cfg)
-        fm = sim_step(xm, 0.0, cfg)
-        a[:, j] = (fp - fm) / (2.0 * eps)
-    fp = sim_step(x0.copy(), eps, cfg)
-    fm = sim_step(x0.copy(), -eps, cfg)
-    b[:] = (fp - fm) / (2.0 * eps)
-    return a, b
-
-
-def solve_dare_iterative(a: np.ndarray, b: np.ndarray, q: np.ndarray, r: float) -> np.ndarray:
-    p = q.copy()
-    bcol = b.reshape(-1, 1)
-    for _ in range(1000):
-        bt_p = bcol.T @ p
-        s = r + float((bt_p @ bcol).item())
-        p_next = q + a.T @ p @ a - (a.T @ p @ bcol @ bt_p @ a) / s
-        if np.max(np.abs(p_next - p)) < 1e-11:
-            p = p_next
-            break
-        p = p_next
-    gain = np.linalg.solve(np.array([[r + float((bcol.T @ p @ bcol).item())]]), bcol.T @ p @ a)
-    return np.asarray(gain).reshape(-1)
-
-
 def create_controller(a_k: np.ndarray, b_k: np.ndarray, cfg: Config):
     z_ref = lift_state(np.zeros(4))
     c_off = a_k @ z_ref - z_ref
 
     q_diag = np.zeros(P_LIFT, dtype=float)
-    q_diag[:6] = np.array([18.0, 2.0, 22.0, 3.0, 18.0, 10.0])
-    qf_diag = 6.0 * q_diag
-
-    a_lin, b_lin = linearize_cartpole_step(cfg)
-    q_local = np.diag([15.0, 2.0, 120.0, 12.0])
-    k_local = solve_dare_iterative(a_lin, b_lin, q_local, 0.3)
-
-    def local_control(state: np.ndarray) -> float:
-        e = np.array([state[0], state[1], wrap_angle(float(state[2])), state[3]])
-        return clamp(float(-k_local @ e), -cfg.u_max, cfg.u_max)
+    q_diag[:6] = np.array([18.0, 3.0, 32.0, 7.0, 28.0, 18.0])
+    qf_diag = 14.0 * q_diag
 
     def koopman_mpc_control(state: np.ndarray) -> float:
         z = lift_state(state)
         e0 = z - z_ref
-        h, f = build_affine_lifted_qp(a_k, b_k, e0, c_off, cfg.n_mpc, q_diag, 0.2, qf_diag)
-        return float(solve_box_qp(h, f, cfg.u_max, 800)[0])
+        h, f = build_affine_lifted_qp(a_k, b_k, e0, c_off, 28, q_diag, 0.7, qf_diag)
+        return float(solve_box_qp(h, f, cfg.u_max, 1200)[0])
 
     def swing_up_control(state: np.ndarray) -> float:
         x, xd, th, thd = state
         inertia = cfg.mp * cfg.lp * cfg.lp
         energy = 0.5 * inertia * thd * thd + cfg.mp * cfg.g * cfg.lp * (np.cos(th) - 1.0)
-        swing = 35.0 * energy * np.sign(thd * np.cos(th) + 1e-4)
-        center = -1.0 * x - 2.0 * xd
+        near_upright = abs(wrap_angle(float(th))) < 0.25
+        swing_gain = 18.0 if near_upright else 35.0
+        swing = swing_gain * energy * np.sign(thd * np.cos(th) + 1e-4)
+        center = -1.0 * x - 2.0 * xd - 4.0 * np.sin(th) - 1.5 * thd * np.cos(th)
         return clamp(float(swing + center), -cfg.u_max, cfg.u_max)
 
     def controller(state: np.ndarray) -> float:
         th = abs(wrap_angle(float(state[2])))
-        if th < 0.35 and abs(float(state[3])) < 2.0:
-            u_mpc = koopman_mpc_control(state)
-            u_local = local_control(state)
-            return clamp(0.15 * u_mpc + 0.85 * u_local, -cfg.u_max, cfg.u_max)
+        if th < 0.12 and abs(float(state[3])) < 0.6:
+            return clamp(koopman_mpc_control(state), -cfg.u_max, cfg.u_max)
         return swing_up_control(state)
 
     return controller

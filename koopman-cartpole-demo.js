@@ -3,8 +3,8 @@
  * Pure JS/Canvas — no external dependencies.
  *
  * Learns a Koopman linear model via EDMD from training data,
- * then runs linear MPC in lifted coordinates to swing up and
- * stabilise an inverted pendulum on a cart.
+ * then uses energy-based swing-up away from upright and
+ * Koopman MPC in lifted coordinates near the upright position.
  *
  * HTML hook:  <div class="koopman-cartpole-demo"></div>
  * Init call:  KoopmanCartpoleDemo.initAll(root)
@@ -444,7 +444,6 @@
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
-        // koopman.A is already A_K = W[0:p,:]^T stored column-major — use directly
         var A_lift = koopman.A;
         var B_lift = koopman.B;
         var z_ref = new Float64Array(liftState([0, 0, 0, 0]));
@@ -455,19 +454,18 @@
             liftOffset[i0] = s0;
         }
 
-        var N_mpc = 20;
         var Q_diag = new Float64Array(p_lift);
-        Q_diag[0] = 25.0;   // x position
-        Q_diag[1] = 5.0;    // x velocity
-        Q_diag[2] = 40.0;   // theta
-        Q_diag[3] = 8.0;    // theta_dot
-        Q_diag[4] = 25.0;   // sin(theta)
-        Q_diag[5] = 15.0;   // cos(theta)
+        Q_diag[0] = 18.0;
+        Q_diag[1] = 3.0;
+        Q_diag[2] = 32.0;
+        Q_diag[3] = 7.0;
+        Q_diag[4] = 28.0;
+        Q_diag[5] = 18.0;
 
         var Qf_diag = new Float64Array(p_lift);
-        for (var iq = 0; iq < p_lift; iq++) Qf_diag[iq] = Q_diag[iq] * 10;
-
-        var R_mpc = 0.15;
+        for (var iq = 0; iq < p_lift; iq++) Qf_diag[iq] = Q_diag[iq] * 14;
+        var N_mpc = 28;
+        var R_mpc = 0.7;
 
         function koopmanMpcControl(state) {
             var z = new Float64Array(liftState(state));
@@ -481,18 +479,18 @@
             var x = state[0], xd = state[1], th = state[2], thd = state[3];
             var inertia = mp * lp * lp;
             var energy = 0.5 * inertia * thd * thd + mp * G * lp * (Math.cos(th) - 1);
-            var swing = 35 * energy * Math.sign(thd * Math.cos(th) + 1e-4);
-            var centre = -1.5 * x - 2.5 * xd;
+            var nearUpright = Math.abs(wrapAngle(th)) < 0.25;
+            var swingGain = nearUpright ? 18 : 35;
+            var swing = swingGain * energy * Math.sign(thd * Math.cos(th) + 1e-4);
+            var centre = -1.0 * x - 2.0 * xd - 4.0 * Math.sin(th) - 1.5 * thd * Math.cos(th);
             return clamp(swing + centre, -u_max, u_max);
         }
 
         return function(state) {
             var th = wrapAngle(state[2]);
-            // Use pure Koopman MPC near upright
-            if (Math.abs(th) < 0.45 && Math.abs(state[3]) < 3.0) {
+            if (Math.abs(th) < 0.12 && Math.abs(state[3]) < 0.6) {
                 return clamp(koopmanMpcControl(state), -u_max, u_max);
             }
-            // Energy-based swing-up when far from upright
             return swingUpControl(state);
         };
     }

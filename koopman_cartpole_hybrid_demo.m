@@ -5,7 +5,7 @@
 %   1. Generate data from the nonlinear cart-pole simulator.
 %   2. Learn a Koopman predictor with EDMD.
 %   3. Use energy-based swing-up away from upright.
-%   4. Use local Koopman MPC near upright, blended with a local stabilizer.
+%   4. Use Koopman MPC near upright.
 %
 % Edit the USER SETTINGS section below and run the file.
 
@@ -59,17 +59,10 @@ W = XtX \ XtY;
 A_lift = W(1:p_lift, :).';
 B_lift = W(end, :).';
 
-%% Local stabilizer near upright
-[A_lin, B_lin] = linearize_cartpole_step(Ts, Tc, mc, mp, lp, g);
-Q_local = diag([15, 2, 120, 12]);
-R_local = 0.3;
-[P_local, ~, ~] = dare(A_lin, B_lin, Q_local, R_local);
-K_local = (R_local + B_lin' * P_local * B_lin) \ (B_lin' * P_local * A_lin);
-
 z_ref = lift_state([0; 0; 0; 0]);
 lift_offset = A_lift * z_ref - z_ref;
-Q_diag = [18; 2; 22; 3; 18; 10; 0; 0; 0; 0];
-Qf_diag = 6 * Q_diag;
+Q_diag = [18; 3; 32; 7; 28; 18; 0; 0; 0; 0];
+Qf_diag = 14 * Q_diag;
 
 %% Closed-loop simulation
 s = [x0; xd0; deg2rad(theta0_deg); thd0];
@@ -81,16 +74,18 @@ states(:, 1) = s;
 
 for k = 1:N_sim
     th = wrap_angle(s(3));
-    if abs(th) < 0.35 && abs(s(4)) < 2.0
-        u_mpc = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, n_mpc, Q_diag, 0.2, Qf_diag, u_max);
-        e = [s(1); s(2); wrap_angle(s(3)); s(4)];
-        u_local = max(-u_max, min(u_max, -K_local * e));
-        u = max(-u_max, min(u_max, 0.15 * u_mpc + 0.85 * u_local));
+    if abs(th) < 0.12 && abs(s(4)) < 0.6
+        u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, 28, Q_diag, 0.7, Qf_diag, u_max);
     else
         inertia = mp * lp^2;
         energy = 0.5 * inertia * s(4)^2 + mp * g * lp * (cos(s(3)) - 1);
-        swing = 35 * energy * sign(s(4) * cos(s(3)) + 1e-4);
-        centre = -1.0 * s(1) - 2.0 * s(2);
+        if abs(th) < 0.25
+            swing_gain = 18;
+        else
+            swing_gain = 35;
+        end
+        swing = swing_gain * energy * sign(s(4) * cos(s(3)) + 1e-4);
+        centre = -1.0 * s(1) - 2.0 * s(2) - 4.0 * sin(s(3)) - 1.5 * s(4) * cos(s(3));
         u = max(-u_max, min(u_max, swing + centre));
     end
 
@@ -173,24 +168,6 @@ function sn = sim_step(s, u, Ts, Tc, mc, mp, lp, g)
         sn = rk4_step(sn, u, Ts, mc, mp, lp, g);
     end
     sn(3) = wrap_angle(sn(3));
-end
-
-function [A, B] = linearize_cartpole_step(Ts, Tc, mc, mp, lp, g)
-    x0 = zeros(4, 1);
-    eps = 1e-6;
-    A = zeros(4, 4);
-    B = zeros(4, 1);
-    for j = 1:4
-        xp = x0; xm = x0;
-        xp(j) = xp(j) + eps;
-        xm(j) = xm(j) - eps;
-        fp = sim_step(xp, 0, Ts, Tc, mc, mp, lp, g);
-        fm = sim_step(xm, 0, Ts, Tc, mc, mp, lp, g);
-        A(:, j) = (fp - fm) / (2 * eps);
-    end
-    fp = sim_step(x0, eps, Ts, Tc, mc, mp, lp, g);
-    fm = sim_step(x0, -eps, Ts, Tc, mc, mp, lp, g);
-    B = (fp - fm) / (2 * eps);
 end
 
 function u = koopman_mpc_control(s, A_lift, B_lift, z_ref, lift_offset, N, Q_diag, R_val, Qf_diag, u_max)
