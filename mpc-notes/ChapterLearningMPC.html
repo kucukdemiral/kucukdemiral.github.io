@@ -1288,53 +1288,43 @@ function dx = cp_deriv(s, u, g, mc, mp, lp)
     dx = [s(2); xdd; thd; thdd];
 end
 
-%% 1. Collect EDMD training data
+%% 1. Learn a broad EDMD model for context in the notes
 rng(12345);
-Zx_data = []; Zy_data = [];
+n_traj = 200;
+traj_len = 25;
+Zx_data = zeros(n_traj * traj_len, p + 1);
+Zy_data = zeros(n_traj * traj_len, p);
+row = 1;
 
-% Wide-range trajectories
-for traj = 1:150
-    s = [(rand-0.5)*2; (rand-0.5)*2; (rand-0.5)*2*pi; (rand-0.5)*4];
-    for k = 1:25
-        u = (rand-0.5)*2*u_max;
+for traj = 1:n_traj
+    s = [2*(rand-0.5); 2*(rand-0.5); 2*pi*(rand-0.5); 4*(rand-0.5)];
+    for k = 1:traj_len
+        u = 2*u_max*(rand-0.5);
         z_now = lift(s);
-        s = cartpole_step(s, u, Tc, Ts_int, g, mc, mp, lp);
-        z_next = lift(s);
-        Zx_data = [Zx_data, [z_now; u]];
-        Zy_data = [Zy_data, z_next];
+        s_next = cartpole_step(s, u, Tc, Ts_int, g, mc, mp, lp);
+        z_next = lift(s_next);
+        Zx_data(row, :) = [z_now.', u];
+        Zy_data(row, :) = z_next.';
+        s = s_next;
+        row = row + 1;
     end
 end
 
-% Dense near upright
-for traj = 1:200
-    s = [(rand-0.5)*1.5; (rand-0.5)*1.5; (rand-0.5)*1.6; (rand-0.5)*3];
-    for k = 1:15
-        u = (rand-0.5)*2*u_max;
-        z_now = lift(s);
-        s = cartpole_step(s, u, Tc, Ts_int, g, mc, mp, lp);
-        z_next = lift(s);
-        Zx_data = [Zx_data, [z_now; u]];
-        Zy_data = [Zy_data, z_next];
-    end
-end
+W = (Zx_data' * Zx_data + 1e-6*eye(p+1)) \ (Zx_data' * Zy_data);
+A_K = W(1:p, :).';
+B_K = W(end, :).';
 
-%% 2. EDMD: solve least squares for [A_K, B_K]
-W = Zy_data * Zx_data' / (Zx_data * Zx_data' + 1e-6*eye(p+1));
-A_K = W(:, 1:p);
-B_K = W(:, p+1);
+fprintf('Global EDMD training complete: %d data pairs\n', size(Zx_data, 1));
+fprintf('Spectral radius of global A_K: %.4f\n', max(abs(eig(A_K))));
 
-fprintf('EDMD training complete: %d data pairs\n', size(Zx_data, 2));
-fprintf('Spectral radius of A_K: %.4f\n', max(abs(eig(A_K))));
+%% 2. Learn the local balance model used by the actual Koopman MPC controller
+[A_bal, B_bal] = train_local_balance_model(Tc, Ts_int, g, mc, mp, lp);
+Q_bal = diag([15, 2, 120, 12]);
+R_bal = 0.3;
+P_bal = dare(A_bal, B_bal, Q_bal, R_bal);
+N_mpc = 30;
 
-%% 3. Koopman MPC setup
-N_mpc = 20;
-Q_z = diag([25, 5, 40, 8, 25, 15, 0, 0, 0, 0]);
-Qf_z = 10 * Q_z;
-R_mpc = 0.15;
-z_ref = lift([0; 0; 0; 0]);  % upright equilibrium in lifted space
-c_off = A_K * z_ref - z_ref;  % affine offset
-
-%% 4. Closed-loop simulation
+%% 3. Closed-loop simulation
 x0 = [0; 0; pi; 0];  % start hanging down
 x = x0;
 x_log = zeros(4, N_sim+1); u_log = zeros(1, N_sim);
@@ -1344,25 +1334,18 @@ for k = 1:N_sim
     th = atan2(sin(x(3)), cos(x(3)));  % wrap angle
     x(3) = th;
 
-    if abs(th) < 0.45 &amp;&amp; abs(x(4)) < 3.0
-        % ── Koopman MPC ──
-        z = lift(x);
-        e = z - z_ref;
-
-        % Build condensed QP via prediction matrices
-        [H, f_qp] = build_condensed_qp(A_K, B_K, e, c_off, N_mpc, Q_z, R_mpc, Qf_z);
-
-        % Solve box-constrained QP
-        U = quadprog(H, f_qp, [], [], [], [], ...
-                     -u_max*ones(N_mpc,1), u_max*ones(N_mpc,1), ...
-                     zeros(N_mpc,1), optimoptions('quadprog','Display','off'));
-        u = U(1);
+    if abs(th) < 0.035 &amp;&amp; abs(x(4)) < 0.22
+        u = local_balance_mpc_control(x, A_bal, B_bal, Q_bal, R_bal, P_bal, N_mpc, u_max);
     else
-        % ── Energy-based swing-up ──
         I_p = mp * lp^2;
         E = 0.5*I_p*x(4)^2 + mp*g*lp*(cos(x(3))-1);
-        swing = 35 * E * sign(x(4)*cos(x(3)) + 1e-4);
-        centre = -1.5*x(1) - 2.5*x(2);
+        if abs(th) < 0.25
+            swing_gain = 15;
+        else
+            swing_gain = 35;
+        end
+        swing = swing_gain * E * sign(x(4)*cos(x(3)) + 1e-4);
+        centre = -1.0*x(1) - 2.0*x(2) - 2.0*sin(x(3)) - 1.0*x(4)*cos(x(3));
         u = max(-u_max, min(u_max, swing + centre));
     end
 
@@ -1371,64 +1354,123 @@ for k = 1:N_sim
     x_log(:, k+1) = x;
 end
 
-%% 5. Plot results
+%% 4. Plot results
 t = (0:N_sim) * Tc;
 figure('Position', [100 100 800 600]);
 
 subplot(4,1,1);
-plot(t, x_log(1,:), 'b-', 'LineWidth', 1.5);
-ylabel('x (m)'); title('Koopman MPC: Cart-Pole Swing-Up');
+plot(t, x_log(1,:), 'Color', [0.90 0.30 0.20], 'LineWidth', 1.8);
+ylabel('x (m)'); title('Cart-Pole Hybrid Swing-Up with Koopman MPC');
 yline(0, 'k--'); grid on;
 
 subplot(4,1,2);
-plot(t, x_log(2,:), 'Color', [0.6 0.3 0.8], 'LineWidth', 1.5);
+plot(t, x_log(2,:), 'Color', [0.60 0.35 0.75], 'LineWidth', 1.8);
 ylabel('$\dot{x}$ (m/s)', 'Interpreter', 'latex');
 yline(0, 'k--'); grid on;
 
 subplot(4,1,3);
-plot(t, rad2deg(atan2(sin(x_log(3,:)), cos(x_log(3,:)))), 'r-', 'LineWidth', 1.5);
+plot(t, rad2deg(atan2(sin(x_log(3,:)), cos(x_log(3,:)))), 'Color', [0.20 0.50 0.90], 'LineWidth', 1.8);
 ylabel('\theta (deg)'); yline(0, 'k--'); grid on;
 
 subplot(4,1,4);
-stairs(t(1:end-1), u_log, 'Color', [0.9 0.6 0.1], 'LineWidth', 1.5);
+stairs(t(1:end-1), u_log, 'Color', [0.95 0.60 0.10], 'LineWidth', 1.8);
 ylabel('u (N)'); xlabel('Time (s)');
-yline(0, 'k--'); grid on;
+yline(u_max, '--', 'Color', 0.7);
+yline(-u_max, '--', 'Color', 0.7);
+grid on;
 
-sgtitle('Illustrative Koopman MPC Cart-Pole Example');
+sgtitle('Cart-Pole Hybrid Swing-Up with Koopman MPC');
 
-%% Helper: build condensed QP
-function [H, f] = build_condensed_qp(A, B, e0, c, N, Q, R, Qf)
-    p = length(e0);
-    % Propagate free response (with affine offset)
-    free = zeros(p, N+1); free(:,1) = e0;
-    for k = 1:N
-        free(:,k+1) = A * free(:,k) + c;
+%% Helper: learn a local linear balance model from simulated perturbations
+function [A_bal, B_bal] = train_local_balance_model(Tc, Ts_int, g, mc, mp, lp)
+    rng(12362);
+    Zx = zeros(12000, 5);
+    Zy = zeros(12000, 4);
+    for sample = 1:12000
+        s = [0.15*(rand-0.5)*2; 0.30*(rand-0.5)*2; 0.03*(rand-0.5)*2; 0.25*(rand-0.5)*2];
+        u = 2.0*(rand-0.5);
+        z = [s(1); s(2); atan2(sin(s(3)), cos(s(3))); s(4)];
+        sn = cartpole_step(s, u, Tc, Ts_int, g, mc, mp, lp);
+        zn = [sn(1); sn(2); atan2(sin(sn(3)), cos(sn(3))); sn(4)];
+        Zx(sample, :) = [z.', u];
+        Zy(sample, :) = zn.';
+    end
+    W = (Zx' * Zx + 1e-10 * eye(5)) \ (Zx' * Zy);
+    A_bal = W(1:4, :).';
+    B_bal = W(5, :).';
+end
+
+%% Helper: local Koopman MPC around upright
+function u = local_balance_mpc_control(x, A_bal, B_bal, Q_bal, R_bal, P_bal, N, u_max)
+    x0 = [x(1); x(2); atan2(sin(x(3)), cos(x(3))); x(4)];
+
+    Apow = cell(N + 1, 1);
+    Apow{1} = eye(4);
+    for k = 2:N+1
+        Apow{k} = A_bal * Apow{k - 1};
     end
 
-    % Impulse response G_k = A^k * B
-    GB = zeros(p, N+1); GB(:,1) = B;
-    for k = 1:N
-        GB(:,k+1) = A * GB(:,k);
+    GB = cell(N + 1, 1);
+    for k = 1:N+1
+        GB{k} = Apow{k} * B_bal;
     end
 
-    H = zeros(N); f = zeros(N,1);
+    free = cell(N + 1, 1);
+    free{1} = x0;
+    for k = 2:N+1
+        free{k} = A_bal * free{k - 1};
+    end
+
+    H = zeros(N, N);
+    f = zeros(N, 1);
     for i = 1:N
         for j = i:N
-            s = 0;
-            for k = max(i,j)+1:N+1
-                Qw = Q; if k == N+1, Qw = Qf; end
-                s = s + GB(:,k-i)' * Qw * GB(:,k-j);
+            hs = 0;
+            for k = j+1:N+1
+                if k <= N
+                    Wk = Q_bal;
+                else
+                    Wk = P_bal;
+                end
+                hs = hs + GB{k - i}' * Wk * GB{k - j};
             end
-            if i == j, s = s + R; end
-            H(i,j) = s; H(j,i) = s;
+            if i == j
+                hs = hs + R_bal;
+            end
+            H(i, j) = hs;
+            H(j, i) = hs;
         end
+
         fs = 0;
         for k = i+1:N+1
-            Qw = Q; if k == N+1, Qw = Qf; end
-            fs = fs + GB(:,k-i)' * Qw * free(:,k);
+            if k <= N
+                Wk = Q_bal;
+            else
+                Wk = P_bal;
+            end
+            fs = fs + GB{k - i}' * Wk * free{k};
         end
         f(i) = fs;
     end
+
+    U_free = -H \ f;
+    if all(abs(U_free) <= u_max + 1e-9)
+        u = U_free(1);
+        return;
+    end
+
+    U = min(max(U_free, -u_max), u_max);
+    alpha = 1 / (max(sum(abs(H), 2)) + 1e-8);
+    for iter = 1:800
+        grad = H * U + f;
+        U_new = min(max(U - alpha * grad, -u_max), u_max);
+        if max(abs(U_new - U)) < 1e-8
+            U = U_new;
+            break;
+        end
+        U = U_new;
+    end
+    u = U(1);
 end</code></pre>
 </div>
 
@@ -1446,6 +1488,7 @@ g, mc, mp, lp = 9.81, 1.0, 0.3, 0.5
 Tc, Ts_int, u_max = 0.04, 0.02, 15.0
 T_final = 10.0
 N_sim = int(T_final / Tc)
+n_traj, traj_len = 200, 25
 
 # ── Cart-pole continuous dynamics ──
 def cp_deriv(s, u):
@@ -1462,12 +1505,15 @@ def rk4_step(s, u, dt):
     k2 = cp_deriv(s + 0.5*dt*k1, u)
     k3 = cp_deriv(s + 0.5*dt*k2, u)
     k4 = cp_deriv(s + dt*k3, u)
-    return s + (dt/6) * (k1 + 2*k2 + 2*k3 + k4)
+    s_next = s + (dt/6) * (k1 + 2*k2 + 2*k3 + k4)
+    s_next[2] = np.arctan2(np.sin(s_next[2]), np.cos(s_next[2]))
+    return s_next
 
 def sim_step(s, u):
     steps = int(round(Tc / Ts_int))
     for _ in range(steps):
         s = rk4_step(s, u, Ts_int)
+    s[2] = np.arctan2(np.sin(s[2]), np.cos(s[2]))
     return s
 
 # ── Lifting dictionary ──
@@ -1479,101 +1525,142 @@ def lift(s):
 
 p_lift = 10  # lifted dimension
 
-# ══════════════════════════════════════════
-#  1. Collect EDMD training data
-# ══════════════════════════════════════════
-np.random.seed(12345)
-Zx_list, Zy_list = [], []
+# ── Learning from data ──
+def train_edmd(seed=12345):
+    rng = np.random.default_rng(seed)
+    zx_list, zy_list = [], []
+    for _ in range(n_traj):
+        s = np.array([
+            2.0 * (rng.random() - 0.5),
+            2.0 * (rng.random() - 0.5),
+            2.0 * np.pi * (rng.random() - 0.5),
+            4.0 * (rng.random() - 0.5),
+        ])
+        for _ in range(traj_len):
+            u = 2.0 * u_max * (rng.random() - 0.5)
+            z_now = lift(s)
+            s = sim_step(s, u)
+            z_next = lift(s)
+            zx_list.append(np.append(z_now, u))
+            zy_list.append(z_next)
 
-# Wide-range trajectories
-for _ in range(150):
-    s = np.array([(np.random.rand()-0.5)*2, (np.random.rand()-0.5)*2,
-                  (np.random.rand()-0.5)*2*np.pi, (np.random.rand()-0.5)*4])
-    for _ in range(25):
-        u = (np.random.rand()-0.5) * 2 * u_max
-        z_now = lift(s)
-        s = sim_step(s, u)
-        z_next = lift(s)
-        Zx_list.append(np.append(z_now, u))
-        Zy_list.append(z_next)
+    zx = np.asarray(zx_list)
+    zy = np.asarray(zy_list)
+    w = np.linalg.solve(zx.T @ zx + 1e-6 * np.eye(p_lift + 1), zx.T @ zy)
+    a_k = w[:p_lift, :].T
+    b_k = w[p_lift, :]
+    return a_k, b_k, zx.shape[0]
 
-# Dense near upright
-for _ in range(200):
-    s = np.array([(np.random.rand()-0.5)*1.5, (np.random.rand()-0.5)*1.5,
-                  (np.random.rand()-0.5)*1.6, (np.random.rand()-0.5)*3])
-    for _ in range(15):
-        u = (np.random.rand()-0.5) * 2 * u_max
-        z_now = lift(s)
-        s = sim_step(s, u)
-        z_next = lift(s)
-        Zx_list.append(np.append(z_now, u))
-        Zy_list.append(z_next)
+def train_local_balance_model(seed=12362):
+    rng = np.random.default_rng(seed)
+    zx_list, zy_list = [], []
+    for _ in range(12000):
+        s = np.array([
+            0.15 * (rng.random() - 0.5) * 2.0,
+            0.30 * (rng.random() - 0.5) * 2.0,
+            0.03 * (rng.random() - 0.5) * 2.0,
+            0.25 * (rng.random() - 0.5) * 2.0,
+        ])
+        u = 2.0 * (rng.random() - 0.5)
+        z_now = np.array([s[0], s[1], np.arctan2(np.sin(s[2]), np.cos(s[2])), s[3]])
+        s_next = sim_step(s, u)
+        z_next = np.array([s_next[0], s_next[1], np.arctan2(np.sin(s_next[2]), np.cos(s_next[2])), s_next[3]])
+        zx_list.append(np.append(z_now, u))
+        zy_list.append(z_next)
 
-Zx = np.array(Zx_list).T  # (p+1) × M
-Zy = np.array(Zy_list).T  # p × M
-M = Zx.shape[1]
+    zx = np.asarray(zx_list)
+    zy = np.asarray(zy_list)
+    w = np.linalg.solve(zx.T @ zx + 1e-10 * np.eye(5), zx.T @ zy)
+    return w[:4, :].T, w[4, :]
 
-# ══════════════════════════════════════════
-#  2. EDMD: learn A_K, B_K
-# ══════════════════════════════════════════
-W = Zy @ Zx.T @ np.linalg.inv(Zx @ Zx.T + 1e-6 * np.eye(p_lift + 1))
-A_K = W[:, :p_lift]
-B_K = W[:, p_lift]
+def solve_box_qp(H, f, u_bound, max_iter=800):
+    try:
+        u_free = np.linalg.solve(H, -f)
+        if np.all(np.abs(u_free) <= u_bound + 1e-9):
+            return u_free
+        u = np.clip(u_free, -u_bound, u_bound)
+    except np.linalg.LinAlgError:
+        u = np.zeros(len(f))
 
-print(f"EDMD training: {M} data pairs")
-print(f"Spectral radius of A_K: {np.max(np.abs(np.linalg.eigvals(A_K))):.4f}")
-
-# ══════════════════════════════════════════
-#  3. Koopman MPC setup
-# ══════════════════════════════════════════
-N_mpc = 20        # ← Try changing this
-Q_diag = np.array([25, 5, 40, 8, 25, 15, 0, 0, 0, 0], dtype=float)
-Qf_diag = 10 * Q_diag
-R_mpc = 0.15      # ← Try changing this
-z_ref = lift(np.zeros(4))
-c_off = A_K @ z_ref - z_ref
-
-def build_qp(A, B, e0, c, N, Q_d, R, Qf_d):
-    p = len(e0)
-    Q = np.diag(Q_d); Qf = np.diag(Qf_d)
-    # Free response with affine offset
-    free = np.zeros((p, N+1)); free[:, 0] = e0
-    for k in range(N):
-        free[:, k+1] = A @ free[:, k] + c
-    # Impulse response
-    GB = np.zeros((p, N+1)); GB[:, 0] = B
-    for k in range(N):
-        GB[:, k+1] = A @ GB[:, k]
-    # Build H and f
-    H = np.zeros((N, N)); f = np.zeros(N)
-    for i in range(N):
-        for j in range(i, N):
-            s = 0.0
-            for k in range(max(i,j)+1, N+1):
-                Qw = Q if k < N else Qf
-                s += GB[:, k-i] @ Qw @ GB[:, k-j]
-            if i == j: s += R
-            H[i, j] = s; H[j, i] = s
-        fs = 0.0
-        for k in range(i+1, N+1):
-            Qw = Q if k < N else Qf
-            fs += GB[:, k-i] @ Qw @ free[:, k]
-        f[i] = fs
-    return H, f
-
-def solve_box_qp(H, f, N, umin, umax, max_iter=1000):
-    U = np.zeros(N)
-    max_diag = np.max(np.diag(H))
-    alpha = 1.0 / (max_diag + 1e-8)
+    alpha = 1.0 / (np.max(np.sum(np.abs(H), axis=1)) + 1e-8)
     for _ in range(max_iter):
-        grad = H @ U + f
-        U_new = np.clip(U - alpha * grad, umin, umax)
-        if np.max(np.abs(U_new - U)) < 1e-10: break
-        U = U_new
-    return U
+        grad = H @ u + f
+        u_new = np.clip(u - alpha * grad, -u_bound, u_bound)
+        if np.max(np.abs(u_new - u)) < 1e-8:
+            u = u_new
+            break
+        u = u_new
+    return u
+
+# Global EDMD model is learned for completeness and for comparison with the notes.
+A_K, B_K, M = train_edmd()
+print(f"Global EDMD training: {M} data pairs")
+print(f"Spectral radius of global A_K: {np.max(np.abs(np.linalg.eigvals(A_K))):.4f}")
+
+# The executed stabilizing MPC uses a dedicated local learned balance model.
+A_bal, B_bal = train_local_balance_model()
+Q_bal = np.diag([15.0, 2.0, 120.0, 12.0])
+R_bal = 0.3      # ← Try changing this
+N_mpc = 30       # ← Try changing this
+
+P_bal = Q_bal.copy()
+B_col = B_bal.reshape(-1, 1)
+for _ in range(5000):
+    s_val = R_bal + float((B_col.T @ P_bal @ B_col).item())
+    P_next = Q_bal + A_bal.T @ P_bal @ A_bal - (A_bal.T @ P_bal @ B_col @ B_col.T @ P_bal @ A_bal) / s_val
+    if np.max(np.abs(P_next - P_bal)) < 1e-12:
+        P_bal = P_next
+        break
+    P_bal = P_next
+
+APow = [np.eye(4)]
+for _ in range(N_mpc):
+    APow.append(A_bal @ APow[-1])
+GB = [Ap @ B_bal for Ap in APow]
+
+def koopman_mpc_control(state):
+    x0 = np.array([state[0], state[1], np.arctan2(np.sin(state[2]), np.cos(state[2])), state[3]])
+    H = np.zeros((N_mpc, N_mpc))
+    f = np.zeros(N_mpc)
+
+    free = [x0.copy()]
+    cur = x0.copy()
+    for _ in range(N_mpc):
+        cur = A_bal @ cur
+        free.append(cur.copy())
+
+    for i in range(N_mpc):
+        for j in range(i, N_mpc):
+            hs = 0.0
+            for k in range(j + 1, N_mpc + 1):
+                w = Q_bal if k < N_mpc else P_bal
+                hs += GB[k - i - 1] @ w @ GB[k - j - 1]
+            if i == j:
+                hs += R_bal
+            H[i, j] = hs
+            H[j, i] = hs
+
+        fs = 0.0
+        for k in range(i + 1, N_mpc + 1):
+            w = Q_bal if k < N_mpc else P_bal
+            fs += GB[k - i - 1] @ w @ free[k]
+        f[i] = fs
+
+    U = solve_box_qp(H, f, u_max)
+    return float(np.clip(U[0], -u_max, u_max))
+
+def swing_up_control(state):
+    x, xd, th, thd = state
+    inertia = mp * lp**2
+    energy = 0.5 * inertia * thd**2 + mp * g * lp * (np.cos(th) - 1.0)
+    near_upright = abs(np.arctan2(np.sin(th), np.cos(th))) < 0.25
+    swing_gain = 15.0 if near_upright else 35.0
+    swing = swing_gain * energy * np.sign(thd * np.cos(th) + 1e-4)
+    center = -1.0 * x - 2.0 * xd - 2.0 * np.sin(th) - 1.0 * thd * np.cos(th)
+    return float(np.clip(swing + center, -u_max, u_max))
 
 # ══════════════════════════════════════════
-#  4. Closed-loop simulation
+#  Closed-loop simulation
 # ══════════════════════════════════════════
 theta0_deg = 180    # ← Try 90, 135, 170, etc.
 x0 = np.array([0.0, 0.0, np.radians(theta0_deg), 0.0])
@@ -1585,20 +1672,10 @@ for k in range(N_sim):
     th = np.arctan2(np.sin(x[2]), np.cos(x[2]))
     x[2] = th
 
-    if abs(th) < 0.45 and abs(x[3]) < 3.0:
-        # Koopman MPC
-        z = lift(x)
-        e = z - z_ref
-        H, f_qp = build_qp(A_K, B_K, e, c_off, N_mpc, Q_diag, R_mpc, Qf_diag)
-        U = solve_box_qp(H, f_qp, N_mpc, -u_max, u_max)
-        u = U[0]
+    if abs(th) < 0.035 and abs(x[3]) < 0.22:
+        u = koopman_mpc_control(x)
     else:
-        # Energy-based swing-up
-        I_p = mp * lp**2
-        E = 0.5*I_p*x[3]**2 + mp*g*lp*(np.cos(x[2]) - 1)
-        swing = 35 * E * np.sign(x[3]*np.cos(x[2]) + 1e-4)
-        centre = -1.5*x[0] - 2.5*x[1]
-        u = np.clip(swing + centre, -u_max, u_max)
+        u = swing_up_control(x)
 
     u_log[k] = u
     x = sim_step(x, u)
@@ -1611,24 +1688,24 @@ t = np.arange(N_sim + 1) * Tc
 
 fig, axes = plt.subplots(4, 1, figsize=(9, 8), sharex=True)
 
-axes[0].plot(t, x_log[0], 'b-', lw=1.5)
+axes[0].plot(t, x_log[0], color='#e74c3c', lw=1.8)
 axes[0].axhline(0, color='k', ls='--', lw=0.5)
 axes[0].set_ylabel('x (m)')
-axes[0].set_title(f'Illustrative Koopman MPC Cart-Pole Example (θ₀={theta0_deg}°)')
+axes[0].set_title(f'Cart-Pole Hybrid Swing-Up with Koopman MPC (θ₀={theta0_deg}°)')
 axes[0].grid(True, alpha=0.3)
 
-axes[1].plot(t, x_log[1], color='#9b59b6', lw=1.5)
+axes[1].plot(t, x_log[1], color='#9b59b6', lw=1.8)
 axes[1].axhline(0, color='k', ls='--', lw=0.5)
 axes[1].set_ylabel('ẋ (m/s)')
 axes[1].grid(True, alpha=0.3)
 
 th_wrapped = np.degrees(np.arctan2(np.sin(x_log[2]), np.cos(x_log[2])))
-axes[2].plot(t, th_wrapped, 'r-', lw=1.5)
+axes[2].plot(t, th_wrapped, color='#3498db', lw=1.8)
 axes[2].axhline(0, color='k', ls='--', lw=0.5)
 axes[2].set_ylabel('θ (deg)')
 axes[2].grid(True, alpha=0.3)
 
-axes[3].step(t[:-1], u_log, where='post', color='#e67e22', lw=1.5)
+axes[3].step(t[:-1], u_log, where='post', color='#f39c12', lw=1.8)
 axes[3].axhline(0, color='k', ls='--', lw=0.5)
 axes[3].set_ylabel('u (N)')
 axes[3].set_xlabel('Time (s)')
@@ -1644,7 +1721,7 @@ print(f"Initial angle: {theta0_deg}°")
 print(f"Settle time (|θ|<5°): {settle_t:.2f} s")
 print(f"Final state: x={x_log[0,-1]:.4f}, θ={th_wrapped[-1]:.2f}°")
 print(f"Max |u|: {np.max(np.abs(u_log)):.1f} N")
-print(f"Total cost: {np.sum(Q_diag[2]*th_wrapped[:-1]**2 + R_mpc*u_log**2) * Tc:.1f}")</code></pre>
+print(f"Total cost: {np.sum(Q_bal[2,2]*np.radians(th_wrapped[:-1])**2 + R_bal*u_log**2) * Tc:.1f}")</code></pre>
 </div>
 
 <h2 id="sec:deepc">Data-Enabled Predictive Control (DeePC)</h2>
