@@ -1246,12 +1246,12 @@ These weights penalise cart displacement, cart velocity, angular error, angular 
 &amp; |u_k| \le u_{\max},
 \end{aligned}
 \]</span></p>
-<p>In the shipped browser demo, <strong>pure Koopman MPC</strong> is used for stabilisation near the upright equilibrium (<span class="math inline">\(|\theta| &lt; 0.45\,\mathrm{rad}\)</span>, <span class="math inline">\(|\dot{\theta}| &lt; 3.0\,\mathrm{rad/s}\)</span>). To achieve reliable convergence to zero, the training data is enriched with dense samples near the upright region, and the MPC horizon is set to <span class="math inline">\(N = 20\)</span> with a high terminal penalty (<span class="math inline">\(Q_f = 10\,Q_z\)</span>). The QP is solved via projected gradient descent with up to 1000 iterations per control step. The swing-up phase uses an energy-based controller to bring the pendulum close enough for the Koopman MPC to take over.</p>
+<p>In the shipped browser demo, a <strong>local learning-based Koopman MPC</strong> is used only in a tight balance region near the upright equilibrium, while an energy-based swing-up controller operates outside that region. The maintained implementations are the standalone files <code>koopman_cartpole_hybrid_demo.py</code>, <code>koopman_cartpole_hybrid_demo.m</code>, and the browser JavaScript demo. The compact snippets below are illustrative and may not reflect the latest tuned controller parameters.</p>
 <p>Set the initial angle (180° = hanging down) and click <strong>Run</strong>. Use <strong>Kick</strong> to apply a disturbance mid-simulation.</p>
 <div class="koopman-cartpole-demo"></div>
 
 <div class="examplebox">
-<p><span>MATLAB: Koopman MPC for Cart-Pole Swing-Up</span></p>
+<p><span>MATLAB: Illustrative Koopman MPC Cart-Pole Sketch</span></p>
 <pre class="matlab" data-language="Matlab" data-caption="Koopman MPC cart-pole: EDMD training + closed-loop simulation."><code>clear; clc; close all;
 
 %% System parameters
@@ -1394,7 +1394,7 @@ stairs(t(1:end-1), u_log, 'Color', [0.9 0.6 0.1], 'LineWidth', 1.5);
 ylabel('u (N)'); xlabel('Time (s)');
 yline(0, 'k--'); grid on;
 
-sgtitle('Koopman MPC Cart-Pole (EDMD, N=20)');
+sgtitle('Illustrative Koopman MPC Cart-Pole Example');
 
 %% Helper: build condensed QP
 function [H, f] = build_condensed_qp(A, B, e0, c, N, Q, R, Qf)
@@ -1614,7 +1614,7 @@ fig, axes = plt.subplots(4, 1, figsize=(9, 8), sharex=True)
 axes[0].plot(t, x_log[0], 'b-', lw=1.5)
 axes[0].axhline(0, color='k', ls='--', lw=0.5)
 axes[0].set_ylabel('x (m)')
-axes[0].set_title(f'Koopman MPC Cart-Pole (θ₀={theta0_deg}°, N={N_mpc}, R={R_mpc})')
+axes[0].set_title(f'Illustrative Koopman MPC Cart-Pole Example (θ₀={theta0_deg}°)')
 axes[0].grid(True, alpha=0.3)
 
 axes[1].plot(t, x_log[1], color='#9b59b6', lw=1.5)
