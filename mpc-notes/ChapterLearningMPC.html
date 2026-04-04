@@ -1206,18 +1206,51 @@ Z \\ U
 \end{bmatrix}^{\!\dagger},
 \]</span></p>
 <p>where <span class="math inline">\((\cdot)^\dagger\)</span> denotes the pseudoinverse, with a small regularisation added numerically for robustness. This is the precise point at which the method becomes data-driven: the predictor is <em>learned from trajectories</em>, not hand-derived from a local linearisation.</p>
-<p>Once <span class="math inline">\((A_K,B_K)\)</span> are available, we can write a standard lifted MPC problem over a horizon <span class="math inline">\(N\)</span>:</p>
+<p>In the current implementation, the executed controller is <em>hybrid</em>. Far from the upright equilibrium, the demo uses an energy-based swing-up law to inject energy into the pendulum and keep the cart from drifting too far. Near upright, it switches to a learned Koopman-MPC regulator built from the EDMD model. Thus, the method used in the demo is not “pure Koopman MPC everywhere”; it is <strong>swing-up control + local Koopman MPC</strong>, with a small local stabilising blend retained near the top for numerical reliability in the browser.</p>
+<p>The swing-up branch uses the pendulum energy
+<span class="math display">\[
+E(\theta,\dot{\theta}) = \tfrac12 m_p l^2 \dot{\theta}^2 + m_p g l(\cos\theta - 1),
+\]</span>
+and applies a heuristic control of the form
+<span class="math display">\[
+u_{\mathrm{swing}} = \mathrm{sat}\!\left(35\,E\,\mathrm{sign}(\dot{\theta}\cos\theta)
+- 1.0\,p - 2.0\,\dot{p}\right),
+\]</span>
+where <span class="math inline">\(\mathrm{sat}(\cdot)\)</span> denotes saturation to the actuator bound <span class="math inline">\(|u|\le 15\)</span>. This branch is active when the pole is not yet close enough to the upright equilibrium.</p>
+<p>The Koopman-MPC branch is activated when <span class="math inline">\(|\theta| &lt; 0.35\,\mathrm{rad}\)</span> and <span class="math inline">\(|\dot{\theta}| &lt; 2.0\,\mathrm{rad/s}\)</span>. In that region, the controller forms the lifted error state <span class="math inline">\(e_k = z_k - z_\star\)</span>, where <span class="math inline">\(z_\star = \Psi([0,0,0,0])\)</span> is the lifted upright equilibrium. Because the learned predictor does not place this equilibrium exactly at the origin, the implementation uses an affine error model
+<span class="math display">\[
+e_{k+1} = A_K e_k + B_K u_k + c,
+\]</span>
+with offset
+<span class="math display">\[
+c = A_K z_\star - z_\star.
+\]</span></p>
+<p>With this affine lifted predictor, the local MPC solves a box-constrained quadratic program over a horizon <span class="math inline">\(N = 16\)</span>. The stage-cost weights used in the code are diagonal and given by
+<span class="math display">\[
+Q_z = \mathrm{diag}(18,\; 2,\; 22,\; 3,\; 18,\; 10,\; 0,\; 0,\; 0,\; 0),
+\qquad
+R = 0.2,
+\]</span>
+and the terminal weight is
+<span class="math display">\[
+Q_f = 6\,Q_z.
+\]</span>
+These weights penalise cart displacement, cart velocity, angular error, angular velocity, and the trigonometric observables <span class="math inline">\(\sin\theta\)</span> and <span class="math inline">\(\cos\theta\)</span> most strongly. The optimisation variable is the future input sequence <span class="math inline">\((u_0,\ldots,u_{N-1})\)</span>, subject to the box constraint <span class="math inline">\(|u_k| \le 15\)</span>.</p>
+<p>Once <span class="math inline">\((A_K,B_K)\)</span> are available, the local lifted MPC problem near upright can therefore be written as</p>
 <p><span class="math display">\[
 \begin{aligned}
 \min_{u_0,\ldots,u_{N-1}} \;&amp;
-\sum_{k=0}^{N-1}\left(z_k^\top Q_z z_k + u_k^\top R u_k\right) + z_N^\top Q_f z_N \\
-\text{s.t.}\;&amp; z_0 = \Psi(x(t)), \\
-&amp; z_{k+1} = A_K z_k + B_K u_k, \\
+\sum_{k=0}^{N-1}\left(e_k^\top Q_z e_k + u_k^\top R u_k\right) + e_N^\top Q_f e_N \\
+\text{s.t.}\;&amp; e_0 = \Psi(x(t)) - z_\star, \\
+&amp; e_{k+1} = A_K e_k + B_K u_k + c, \\
 &amp; |u_k| \le u_{\max},
 \end{aligned}
 \]</span></p>
-<p>together with any cart-position constraints written either directly in the physical state or through a projection from the lifted state. The important point is that, after lifting, the prediction model is linear and the optimisation remains a quadratic program, so we retain the algorithmic convenience of linear MPC while using a model learned from nonlinear data.</p>
-<p>For the web demo, there is one additional practical detail. Pure Koopman MPC from the fully hanging-down position can be fragile in a browser-based implementation because the swing-up trajectory explores a large region of state space, whereas the local prediction quality of a finite dictionary is only approximate. The shipped interactive version therefore uses the learned Koopman model as the modelling motivation for the section, but combines the swing-up task with a robust local stabilisation strategy near the upright equilibrium so that the animation behaves reliably for students when started from <span class="math inline">\(\theta_0 = 180^\circ\)</span>.</p>
+<p>In the shipped browser demo, the final applied local control near upright is a convex blend of the Koopman-MPC action and a local stabilising feedback law:
+<span class="math display">\[
+u = 0.15\,u_{\mathrm{KMPC}} + 0.85\,u_{\mathrm{local}}.
+\]</span>
+This extra blend is not conceptually essential to Koopman MPC; it is included so that the interactive demo behaves robustly from the default hanging-down initial condition and under disturbances, while still using the learned Koopman-MPC law in the regulation phase.</p>
 <p>Set the initial angle (180° = hanging down) and click <strong>Run</strong>. Use <strong>Kick</strong> to apply a disturbance mid-simulation.</p>
 <div class="koopman-cartpole-demo"></div>
 
