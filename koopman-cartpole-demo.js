@@ -444,7 +444,8 @@
        Koopman MPC Controller
        ═══════════════════════════════════════════════════════════ */
     function createController(koopman) {
-        var A_lift = transposeSquareColMajor(koopman.A, p_lift);
+        // koopman.A is already A_K = W[0:p,:]^T stored column-major — use directly
+        var A_lift = koopman.A;
         var B_lift = koopman.B;
         var z_ref = new Float64Array(liftState([0, 0, 0, 0]));
         var liftOffset = new Float64Array(p_lift);
