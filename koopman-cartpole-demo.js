@@ -929,6 +929,8 @@
                 '.kcp-btn.kcp-active{background:rgba(231,76,60,0.3);border-color:rgba(231,76,60,0.5);}' +
                 '.kcp-btn.kcp-disturb{background:rgba(243,156,18,0.25);border-color:rgba(243,156,18,0.45);}' +
                 '.kcp-btn.kcp-disturb:hover{background:rgba(243,156,18,0.45);}' +
+                '.kcp-btn.kcp-stop{background:rgba(192,57,43,0.25);border-color:rgba(192,57,43,0.45);}' +
+                '.kcp-btn.kcp-stop:hover{background:rgba(192,57,43,0.45);}' +
                 '.kcp-slider-label{display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#99AABB;}' +
                 '.kcp-slider{-webkit-appearance:none;appearance:none;width:80px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;outline:none;}' +
                 '.kcp-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#3498db;cursor:pointer;}' +
@@ -969,6 +971,7 @@
             '<div class="kcp-controls">' +
                 '<div style="display:flex;gap:6px;align-items:center;">' +
                     '<button class="kcp-btn kcp-primary" id="kcp-run-btn">Run</button>' +
+                    '<button class="kcp-btn kcp-stop" id="kcp-stop-btn">Stop</button>' +
                     '<button class="kcp-btn" id="kcp-reset-btn">Reset</button>' +
                     '<button class="kcp-btn kcp-disturb" id="kcp-kick-btn">Kick</button>' +
                 '</div>' +
@@ -997,6 +1000,7 @@
         var sceneCanvas = container.querySelector('#kcp-scene');
         var plotCanvas  = container.querySelector('#kcp-plots');
         var runBtn      = container.querySelector('#kcp-run-btn');
+        var stopBtn     = container.querySelector('#kcp-stop-btn');
         var resetBtn    = container.querySelector('#kcp-reset-btn');
         var kickBtn     = container.querySelector('#kcp-kick-btn');
         var theta0Sl    = container.querySelector('#kcp-theta0');
@@ -1049,6 +1053,30 @@
             elTh.textContent = (parseFloat(theta0Sl.value)).toFixed(1);
             elU.textContent = '0.0';
             elStat.textContent = trained ? 'Ready' : 'Training...';
+            elStat.className = 'kcp-status';
+        }
+
+        function doStop() {
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+            running = false;
+            runBtn.textContent = 'Run';
+            runBtn.classList.remove('kcp-active');
+            runBtn.classList.add('kcp-primary');
+            animIdx = 0;
+            trail = [];
+            if (traj && traj.states.length) {
+                var s = traj.states[0];
+                drawCartPole(sceneCanvas, s, 0, trail);
+                drawPlots(plotCanvas, traj, 0);
+                elT.textContent = '0.00';
+                elX.textContent = s[0].toFixed(2);
+                elTh.textContent = (wrapAngle(s[2]) * 180 / Math.PI).toFixed(1);
+                elU.textContent = '0.0';
+            } else {
+                doReset();
+                return;
+            }
+            elStat.textContent = 'Stopped';
             elStat.className = 'kcp-status';
         }
 
@@ -1190,6 +1218,7 @@
 
         /* ── Event handlers ── */
         runBtn.addEventListener('click', doRun);
+        stopBtn.addEventListener('click', doStop);
         resetBtn.addEventListener('click', doReset);
         kickBtn.addEventListener('click', doKick);
 
