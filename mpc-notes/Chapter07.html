@@ -564,6 +564,82 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a hr
 <span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>        <span class="va">ylabel</span>(<span class="ss">&#39;Control Input (u)&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span>
 <span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlabel</span>(<span class="ss">&#39;Time Steps&#39;</span>)<span class="op">;</span></span>
 <span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>        <span class="va">xlim</span>([<span class="fl">0</span> <span class="va">T_sim</span>])<span class="op">;</span></span></code></pre></div>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+# Unstable oscillatory system
+A = np.array([[1.5, 0], [1, -1.5]])
+B = np.array([[1], [0]])
+nx, nu = 2, 1
+N = 5;  T_sim = 30
+
+Q = np.eye(nx);  R_w = 0.1*np.eye(nu)
+P = solve_discrete_are(A, B, Q, R_w)
+
+# Input/state bounds
+u_min, u_max = -1.0, 1.0
+x_min, x_max = -10.0, 10.0
+
+# Condensed prediction matrices
+Sx = np.zeros((nx*(N+1), nx))
+Su = np.zeros((nx*(N+1), nu*N))
+Ap = np.eye(nx)
+for i in range(N+1):
+    Sx[i*nx:(i+1)*nx, :] = Ap
+    for j in range(min(i, N)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    Ap = A @ Ap
+
+from scipy.linalg import block_diag
+Q_bar = block_diag(*([Q]*N + [P]))
+R_bar = block_diag(*([R_w]*N))
+H = Su.T @ Q_bar @ Su + R_bar
+H = 0.5*(H + H.T)
+
+def mpc_step(x0):
+    f_qp = (x0 @ Sx.T @ Q_bar @ Su).ravel()
+    bounds = [(u_min, u_max)] * N
+    res = minimize(lambda u: 0.5*u@H@u + f_qp@u, np.zeros(N),
+                   method='L-BFGS-B', bounds=bounds, options={'ftol': 1e-14})
+    return res.x[0]
+
+# Simulation
+x_hist = np.zeros((nx, T_sim+1));  u_hist = np.zeros(T_sim)
+x_hist[:, 0] = [5, 2]
+
+for t in range(T_sim):
+    u_hist[t] = mpc_step(x_hist[:, t])
+    x_hist[:, t+1] = A @ x_hist[:, t] + B.ravel() * u_hist[t]
+
+# Plot
+fig, axes = plt.subplots(2, 1, figsize=(9, 5))
+ax = axes[0]
+ax.step(range(T_sim+1), x_hist[0], color='#4ECDC4', lw=2, where='mid', label='x₁')
+ax.step(range(T_sim+1), x_hist[1], color='#FF6B6B', lw=2, where='mid', label='x₂')
+ax.axhline(0, color='gray', lw=0.5)
+ax.set_ylabel('States'); ax.set_title('MPC: Unstable Oscillatory System')
+ax.legend(fontsize=8); ax.grid(True)
+
+ax = axes[1]
+ax.step(range(T_sim), u_hist, color='#45B7D1', lw=2, where='mid')
+ax.axhline(u_max, color='#FF6B6B', ls='--', lw=1.5)
+ax.axhline(u_min, color='#FF6B6B', ls='--', lw=1.5)
+ax.set_ylabel('Input (u)'); ax.set_xlabel('Time step')
+ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <figure id="fig:simplempc">
 <img src="figures/Simple_MPC.png" style="width:70.0%" />
 <figcaption>MPC regulation of an unstable oscillatory system.</figcaption>
@@ -1917,6 +1993,130 @@ applications, one should either parameterise the Jacobians as
 <code>sdpvar</code> parameters or use CasADi’s parametric NLP
 interface.</p>
 </div>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.optimize import minimize
+from scipy.linalg import block_diag
+</script>
+<pre><code>import numpy as np
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+Ts = 0.1;  R_c = 3.0;  w_ref = 0.5
+v_ref = R_c * w_ref;  N = 15;  T_sim = 150
+Q = np.diag([10, 10, 2]);  Rw = np.diag([0.5, 0.5])
+v_min, v_max = 0.0, 2.5;  w_min, w_max = -1.5, 1.5
+
+# Reference trajectory (circle)
+t_all = np.arange(T_sim + N + 1) * Ts
+xr = np.vstack([R_c*np.cos(w_ref*t_all), R_c*np.sin(w_ref*t_all),
+                w_ref*t_all + np.pi/2])
+ur = np.tile(np.array([[v_ref], [w_ref]]), (1, T_sim + N))
+
+# Nonlinear dynamics (Forward Euler)
+def f_nl(x, u):
+    return x + Ts * np.array([u[0]*np.cos(x[2]), u[0]*np.sin(x[2]), u[1]])
+
+# Closed-loop simulation
+x0 = np.array([R_c + 1.5, 1.0, np.pi/2 + 0.3])
+x_log = np.zeros((3, T_sim+1));  x_log[:, 0] = x0
+u_log = np.zeros((2, T_sim))
+
+print(f"Running tracking MPC ({T_sim} steps)...")
+for t in range(T_sim):
+    x_cur = x_log[:, t]
+
+    # Build time-varying linearised prediction
+    Ak_list, Bk_list = [], []
+    for k in range(N):
+        th_r = xr[2, t+k];  vr_k = ur[0, t+k]
+        Ak = np.array([[1, 0, -Ts*vr_k*np.sin(th_r)],
+                        [0, 1,  Ts*vr_k*np.cos(th_r)],
+                        [0, 0, 1]])
+        Bk = np.array([[Ts*np.cos(th_r), 0],
+                        [Ts*np.sin(th_r), 0],
+                        [0, Ts]])
+        Ak_list.append(Ak);  Bk_list.append(Bk)
+
+    # Build condensed matrices
+    nx, nu = 3, 2
+    Sx = np.zeros((nx*(N+1), nx))
+    Su = np.zeros((nx*(N+1), nu*N))
+    Sx[:nx, :] = np.eye(nx)
+    for i in range(1, N+1):
+        prod = np.eye(nx)
+        for j in range(i):
+            prod = Ak_list[j] @ prod if j == 0 else prod
+            if j > 0: prod = Ak_list[j] @ prod
+        # Recompute properly
+        Sx[i*nx:(i+1)*nx, :] = np.eye(nx)
+        for j in range(i):
+            Sx[i*nx:(i+1)*nx, :] = Ak_list[i-1-j] @ Sx[i*nx:(i+1)*nx, :]
+            if j == i-1: break
+            # Accumulate
+        # Simpler: direct product
+        prod = np.eye(nx)
+        for j in range(i):
+            prod = Ak_list[j] @ prod
+        Sx[i*nx:(i+1)*nx, :] = prod
+
+        for j in range(i):
+            prod_b = np.eye(nx)
+            for m in range(j+1, i):
+                prod_b = Ak_list[m] @ prod_b
+            Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = prod_b @ Bk_list[j]
+
+    from scipy.linalg import block_diag
+    Q_bar = block_diag(*([Q]*(N+1)))
+    R_bar = block_diag(*([Rw]*N))
+    H = Su.T @ Q_bar @ Su + R_bar
+    H = 0.5*(H + H.T)
+
+    dx0 = x_cur - xr[:, t]
+    f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel()
+
+    # Bounds on du
+    lb = np.zeros(nu*N); ub = np.zeros(nu*N)
+    for k in range(N):
+        lb[k*nu] = v_min - ur[0, t+k];  ub[k*nu] = v_max - ur[0, t+k]
+        lb[k*nu+1] = w_min - ur[1, t+k];  ub[k*nu+1] = w_max - ur[1, t+k]
+    bounds = list(zip(lb, ub))
+
+    res = minimize(lambda du: 0.5*du@H@du + f_qp@du, np.zeros(nu*N),
+                   method='L-BFGS-B', bounds=bounds, options={'ftol': 1e-12})
+    du_opt = res.x[:nu]
+
+    u_log[:, t] = ur[:, t] + du_opt
+    x_log[:, t+1] = f_nl(x_log[:, t], u_log[:, t])
+
+print("Done!")
+
+# Plot
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+ax = axes[0]
+ax.plot(xr[0, :T_sim+1], xr[1, :T_sim+1], '--', color='gray', lw=1.5, label='Reference')
+ax.plot(x_log[0], x_log[1], color='#4ECDC4', lw=2, label='Robot path')
+ax.plot(x_log[0, 0], x_log[1, 0], 'o', color='#FFD93D', ms=8, label='Start')
+ax.set_xlabel('x [m]'); ax.set_ylabel('y [m]')
+ax.set_title('XY Trajectory'); ax.legend(fontsize=8)
+ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
+
+ax = axes[1]
+t_vec = np.arange(T_sim) * Ts
+ax.plot(t_vec, u_log[0], color='#4ECDC4', lw=1.5, label='v [m/s]')
+ax.plot(t_vec, u_log[1], color='#FF6B6B', lw=1.5, label='ω [rad/s]')
+ax.axhline(v_max, color='#4ECDC4', ls='--', lw=0.8, alpha=0.5)
+ax.axhline(w_max, color='#FF6B6B', ls='--', lw=0.8, alpha=0.5)
+ax.axhline(w_min, color='#FF6B6B', ls='--', lw=0.8, alpha=0.5)
+ax.set_xlabel('Time [s]'); ax.set_ylabel('Input')
+ax.set_title('Control Inputs'); ax.legend(fontsize=8); ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <h5 class="unnumbered" id="results">Results</h5>
 <p>Figure <a href="#fig:tracking_mpc_robot" data-reference-type="ref"
 data-reference="fig:tracking_mpc_robot">1.5</a> shows the simulation

@@ -629,6 +629,131 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb1-1"><a hr
 <span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a>    <span class="co">%% Visualisation omitted for brevity.</span></span>
 <span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a>    </span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag, expm
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# System: 2nd-order with output y = Cx
+A = np.array([[0.9, 0.1], [0, 0.8]])
+B = np.array([[0], [1.0]])
+C = np.array([[1, 0]])
+nx, nu, ny, nd = 2, 1, 1, 1
+
+# Augmented system: z = [x; d], d_{k+1} = d_k
+Bw = B  # disturbance enters through input channel
+A_aug = np.block([[A, Bw], [np.zeros((nd,nx)), np.eye(nd)]])
+B_aug = np.vstack([B, np.zeros((nd,nu))])
+C_aug = np.hstack([C, np.zeros((ny,nd))])
+
+# Kalman filter
+W = np.diag([1e-4, 1e-4, 1e-4]);  V = 1e-3*np.eye(ny)
+P_kf = solve_discrete_are(A_aug.T, C_aug.T, W, V)
+L = P_kf @ C_aug.T @ np.linalg.inv(C_aug @ P_kf @ C_aug.T + V)
+
+# Target calculator
+M_target = np.block([[np.eye(nx)-A, -B], [C, np.zeros((ny,nu))]])
+
+# MPC parameters
+N = 20; q_y = 10.0; R_u = 0.1; rho = 1e5
+u_min, u_max = -5.0, 5.0
+y_min_val, y_max_val = -0.5, 0.5
+Q_mpc = C.T @ (q_y*np.eye(ny)) @ C
+P_N = solve_discrete_are(A, B, Q_mpc, R_u*np.eye(nu))
+
+# Condensed matrices
+Sx = np.zeros((nx*(N+1), nx))
+Su = np.zeros((nx*(N+1), nu*N))
+Ap = np.eye(nx)
+for i in range(N+1):
+    Sx[i*nx:(i+1)*nx, :] = Ap
+    for j in range(min(i, N)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    Ap = A @ Ap
+
+Q_bar = block_diag(*([Q_mpc]*N + [P_N]))
+R_bar = R_u * np.eye(nu*N)
+H = Su.T @ Q_bar @ Su + R_bar
+H = 0.5*(H + H.T)
+
+def solve_mpc(dx0, u_ss_k):
+    f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel()
+    lb = np.full(nu*N, u_min - u_ss_k.item())
+    ub = np.full(nu*N, u_max - u_ss_k.item())
+    bounds = list(zip(lb, ub))
+    res = minimize(lambda du: 0.5*du@H@du + f_qp@du, np.zeros(nu*N),
+                   method='L-BFGS-B', bounds=bounds, options={'ftol':1e-14})
+    return res.x[:nu]
+
+# Simulation
+T_sim = 300; t_vec = np.arange(T_sim) * 1.0
+ref = np.zeros(T_sim)
+ref[:100] = 0.4; ref[100:200] = -0.4; ref[200:] = 0.4
+d_true = np.zeros(T_sim)
+d_true[50:] = 0.3  # step disturbance
+
+x_true = np.array([0.0, 0.0])
+z_hat = np.zeros(nx + nd)
+v_applied = np.zeros(nu)
+
+log_y = np.zeros(T_sim); log_u = np.zeros(T_sim)
+log_ref = ref.copy(); log_d_hat = np.zeros(T_sim)
+
+sigma_y = np.sqrt(1e-3)
+
+for t in range(T_sim):
+    y_true = (C @ x_true).item()
+    y_meas = y_true + sigma_y * np.random.randn()
+
+    z_pred = A_aug @ z_hat + B_aug.ravel() * v_applied.item()
+    z_hat = z_pred + L.ravel() * (y_meas - (C_aug @ z_pred).item())
+
+    x_hat_k = z_hat[:nx]; d_hat_k = z_hat[nx:]
+    rhs = np.concatenate([Bw.ravel() * d_hat_k, [ref[t]]])
+    targets = np.linalg.solve(M_target, rhs)
+    x_ss_k = targets[:nx]; u_ss_k = targets[nx:]
+
+    dv = solve_mpc(x_hat_k - x_ss_k, u_ss_k)
+    v_applied = dv + u_ss_k
+
+    log_y[t] = y_true; log_u[t] = v_applied.item()
+    log_d_hat[t] = d_hat_k.item()
+
+    x_true = A @ x_true + B.ravel() * v_applied.item() + Bw.ravel() * d_true[t]
+
+print("Offset-free MPC simulation complete.")
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 7))
+ax = axes[0]
+ax.plot(t_vec, log_y, color='#4ECDC4', lw=1.5, label='y (true)')
+ax.plot(t_vec, log_ref, '--', color='#FFD93D', lw=1.5, label='Reference')
+ax.axhline(y_max_val, color='#FF6B6B', ls=':', lw=1); ax.axhline(y_min_val, color='#FF6B6B', ls=':', lw=1)
+ax.set_ylabel('Output'); ax.set_title('Offset-Free MPC: Output Tracking')
+ax.legend(fontsize=8); ax.grid(True)
+
+ax = axes[1]
+ax.plot(t_vec, log_u, color='#45B7D1', lw=1)
+ax.axhline(u_max, color='#FF6B6B', ls='--', lw=0.8); ax.axhline(u_min, color='#FF6B6B', ls='--', lw=0.8)
+ax.set_ylabel('Input u'); ax.set_title('Control Input'); ax.grid(True)
+
+ax = axes[2]
+ax.plot(t_vec, log_d_hat, color='#4ECDC4', lw=1.5, label='d_hat')
+ax.plot(t_vec, d_true, '--', color='#FF6B6B', lw=1, label='d_true')
+ax.set_xlabel('Step'); ax.set_ylabel('Disturbance')
+ax.set_title('Disturbance Estimate vs True'); ax.legend(fontsize=8); ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <p>Figure <a href="#fig:offset_free_results" data-reference-type="ref"
 data-reference="fig:offset_free_results">1.3</a> shows the closed-loop
 output, the control signals, the disturbance estimate and the activity
@@ -1026,6 +1151,157 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb2-1"><a hr
 <span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a>    <span class="va">az</span>  <span class="op">=</span> (<span class="va">Fz</span> <span class="op">+</span> <span class="va">w</span>(<span class="fl">3</span>))<span class="op">/</span><span class="va">m</span> <span class="op">-</span> <span class="va">g</span><span class="op">;</span></span>
 <span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a>    <span class="va">dxdt</span> <span class="op">=</span> [<span class="va">x</span>(<span class="fl">4</span><span class="op">:</span><span class="fl">6</span>)<span class="op">;</span> <span class="va">ax</span><span class="op">;</span> <span class="va">ay</span><span class="op">;</span> <span class="va">az</span>]<span class="op">;</span></span>
 <span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag, expm
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag, expm
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+dt = 0.1; g = 9.81; m_q = 1.0
+nx, nu, ny, nd = 6, 3, 3, 3
+
+# Linear model: double integrator in 3D
+Ac = np.zeros((6,6)); Ac[:3, 3:] = np.eye(3)
+Bc = np.vstack([np.zeros((3,3)), np.eye(3)])
+Cc = np.hstack([np.eye(3), np.zeros((3,3))])
+
+M_exp = expm(np.block([[Ac, Bc],[np.zeros((3,6)), np.zeros((3,3))]]) * dt)
+A = M_exp[:6,:6]; B = M_exp[:6,6:]
+C = Cc
+
+# Augmented observer
+A_aug = np.block([[A, B],[np.zeros((nd,nx)), np.eye(nd)]])
+B_aug = np.vstack([B, np.zeros((nd,nu))])
+C_aug = np.hstack([C, np.zeros((ny,nd))])
+
+W = block_diag(1e-3*np.eye(nx), 5e-3*np.eye(nd))
+V = 1e-2*np.eye(ny)
+P_kf = solve_discrete_are(A_aug.T, C_aug.T, W, V)
+L = P_kf @ C_aug.T @ np.linalg.inv(C_aug @ P_kf @ C_aug.T + V)
+
+# Target calculator
+M_tgt = np.block([[np.eye(nx)-A, -B],[C, np.zeros((ny,nu))]])
+
+# MPC
+N = 50
+Q = np.diag([20,20,40,1,1,1]); R_u = 2*np.eye(nu)
+P_N = solve_discrete_are(A, B, Q, R_u)
+
+# Condensed
+Sx = np.zeros((nx*(N+1), nx))
+Su = np.zeros((nx*(N+1), nu*N))
+Ap = np.eye(nx)
+for i in range(N+1):
+    Sx[i*nx:(i+1)*nx,:] = Ap
+    for j in range(min(i,N)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    Ap = A @ Ap
+
+Q_bar = block_diag(*([Q]*N + [P_N]))
+R_bar = block_diag(*([R_u]*N))
+H = Su.T @ Q_bar @ Su + R_bar; H = 0.5*(H+H.T)
+
+a_max = np.array([3, 3, 5])
+
+def solve_mpc(dx0, u_ss):
+    f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel()
+    lb = np.tile(-a_max - u_ss, N)
+    ub = np.tile( a_max - u_ss, N)
+    bounds = list(zip(lb, ub))
+    res = minimize(lambda du: 0.5*du@H@du + f_qp@du, np.zeros(nu*N),
+                   method='L-BFGS-B', bounds=bounds, options={'ftol':1e-14})
+    return res.x[:nu]
+
+# Quadrotor nonlinear dynamics (simplified: roll/pitch → acceleration)
+def quad_rk4(state, u_cmd, d_wind, dt):
+    def ode(s):
+        p, v = s[:3], s[3:]
+        ax = g * np.tan(u_cmd[0])  # roll → lateral accel
+        ay = g * np.tan(u_cmd[1])  # pitch → forward accel  
+        az = u_cmd[2]              # thrust accel
+        a = np.array([ax, ay, az - g]) + d_wind
+        return np.concatenate([v, a])
+    k1 = ode(state); k2 = ode(state + dt/2*k1)
+    k3 = ode(state + dt/2*k2); k4 = ode(state + dt*k3)
+    return state + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+
+# Simulation
+T_sim = 200; ref = np.array([5, 5, 10])
+x_true = np.zeros(6); z_hat = np.zeros(nx+nd)
+v_prev = np.zeros(nu)
+
+log_pos = np.zeros((3, T_sim)); log_d_hat = np.zeros((3, T_sim))
+log_v = np.zeros((3, T_sim))
+d_wind = np.zeros(3)
+
+print("Running quadrotor MPC (200 steps)...")
+for t in range(T_sim):
+    if t >= 50: d_wind = np.array([1.5, -0.5, 0])
+
+    y_meas = x_true[:3] + 0.01*np.random.randn(3)
+    z_pred = A_aug @ z_hat + B_aug @ v_prev
+    z_hat = z_pred + L @ (y_meas - C_aug @ z_pred)
+    x_hat = z_hat[:nx]; d_hat = z_hat[nx:]
+
+    rhs = np.concatenate([B @ d_hat, ref])
+    tgt = np.linalg.solve(M_tgt, rhs)
+    x_ss, u_ss = tgt[:nx], tgt[nx:]
+
+    dv = solve_mpc(x_hat - x_ss, u_ss)
+    v_opt = dv + u_ss
+    v_opt = np.clip(v_opt, -a_max, a_max)
+
+    # Map virtual accel to roll/pitch/thrust
+    phi = np.arctan2(v_opt[0], g)
+    theta = np.arctan2(v_opt[1], g)
+    thrust = v_opt[2] + g
+    u_cmd = np.array([phi, theta, thrust])
+
+    log_pos[:, t] = x_true[:3]; log_d_hat[:, t] = d_hat; log_v[:, t] = v_opt
+    x_true = quad_rk4(x_true, u_cmd, d_wind, dt)
+    v_prev = v_opt
+
+print("Done!")
+
+t_vec = np.arange(T_sim) * dt
+fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+labels = ['x', 'y', 'z']; colors = ['#FF6B6B','#4ECDC4','#45B7D1']
+
+ax = axes[0]
+for i in range(3):
+    ax.plot(t_vec, log_pos[i], color=colors[i], lw=1.5, label=f'{labels[i]} (ref={ref[i]})')
+    ax.axhline(ref[i], color=colors[i], ls='--', lw=0.8, alpha=0.5)
+ax.axvline(5.0, color='#FFD93D', ls=':', label='Wind step')
+ax.set_ylabel('Position [m]'); ax.set_title('Quadrotor Position Tracking')
+ax.legend(fontsize=7); ax.grid(True)
+
+ax = axes[1]
+d_true_plot = np.zeros((3, T_sim))
+d_true_plot[:, 50:] = np.array([[1.5],[-0.5],[0]])
+for i in range(3):
+    ax.plot(t_vec, log_d_hat[i], color=colors[i], lw=1.5, label=f'd_hat_{labels[i]}')
+    ax.plot(t_vec, d_true_plot[i], '--', color=colors[i], lw=0.8, alpha=0.6)
+ax.axvline(5.0, color='#FFD93D', ls=':')
+ax.set_ylabel('Disturbance [m/s²]'); ax.set_title('Wind Disturbance Estimates')
+ax.legend(fontsize=7); ax.grid(True)
+
+ax = axes[2]
+for i in range(3):
+    ax.plot(t_vec, log_v[i], color=colors[i], lw=0.8, label=f'v_{labels[i]}')
+ax.axvline(5.0, color='#FFD93D', ls=':')
+ax.set_xlabel('Time [s]'); ax.set_ylabel('Accel [m/s²]')
+ax.set_title('Virtual Acceleration Commands'); ax.legend(fontsize=7); ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 </div>
 <div class="examplebox">
 <p><span>Single-zone building heating with economic offset-free
@@ -1327,6 +1603,150 @@ class="sourceCode MATLAB"><code class="sourceCode matlab"><span id="cb3-1"><a hr
 <span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>    <span class="va">fprintf</span>(<span class="ss">&#39;Total heating cost: GBP %.3f\n&#39;</span><span class="op">,</span> <span class="va">sum</span>(<span class="va">log_cost</span>))<span class="op">;</span></span>
 <span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>    <span class="co">% Visualisation is omitted for brevity</span></span></code></pre></div>
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize, linprog
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+Ts = 1800; nx, nu, ny, nd = 3, 1, 1, 1; N_hrs = 48; N_steps = int(N_hrs*3600/Ts)
+
+# Pre-computed discrete 3R2C thermal model
+A = np.array([[0.85, 0.12, 0.03],
+              [0.08, 0.88, 0.04],
+              [0.02, 0.03, 0.90]])
+B = np.array([[0.0006], [0.0002], [0.0]])  # heater input
+B_amb = np.array([[0.03], [0.01], [0.05]]) # ambient temp
+B_sol = np.array([[0.002], [0.001], [0.003]]) # solar
+B_occ = np.array([[0.191], [0.05], [0.0]])  # occupancy (unknown)
+C = np.array([[0.56, 0.44, 0.0]])
+
+# Augmented observer (constant occupancy disturbance)
+A_aug = np.block([[A, B_occ], [np.zeros((nd,nx)), np.eye(nd)]])
+B_aug = np.vstack([B, np.zeros((nd,nu))])
+C_aug = np.hstack([C, np.zeros((ny,nd))])
+W = block_diag(1e-3*np.eye(nx), 0.01**2*np.eye(nd))
+V = 0.1**2*np.eye(ny)
+P_kf = solve_discrete_are(A_aug.T, C_aug.T, W, V)
+L = P_kf @ C_aug.T @ np.linalg.inv(C_aug @ P_kf @ C_aug.T + V)
+
+# MPC tuning
+Np = 24; Q = np.diag([5,2,1]); R_u = 1e-3; rho = 1e7; beta = 6
+u_min_val, u_max_val = 0.0, 2000.0
+
+# Condensed matrices
+Sx = np.zeros((nx*(Np+1), nx))
+Su = np.zeros((nx*(Np+1), nu*Np))
+Ap = np.eye(nx)
+for i in range(Np+1):
+    Sx[i*nx:(i+1)*nx,:] = Ap
+    for j in range(min(i,Np)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    Ap = A @ Ap
+P_N = solve_discrete_are(A, B, Q, R_u*np.eye(nu))
+Q_bar = block_diag(*([Q]*Np + [P_N]))
+R_bar = R_u*np.eye(nu*Np)
+H_base = Su.T @ Q_bar @ Su + R_bar; H_base = 0.5*(H_base + H_base.T)
+
+# Exogenous profiles (48 hours)
+t_hrs = np.arange(N_steps) * Ts / 3600
+T_amb = 5 + 6*np.sin(2*np.pi*(t_hrs-6)/24) + 0.5*np.random.randn(N_steps)
+Solar = np.maximum(0, 600*np.sin(np.pi*np.mod(t_hrs-6, 24)/12))
+Solar[np.mod(t_hrs, 24) > 18] = 0; Solar[np.mod(t_hrs, 24) < 6] = 0
+
+Price = np.where((np.mod(t_hrs, 24) >= 7) & (np.mod(t_hrs, 24) < 22), 0.28, 0.05)
+T_min = np.where((np.mod(t_hrs, 24) >= 7) & (np.mod(t_hrs, 24) < 22), 20.0, 15.0)
+T_max = np.where((np.mod(t_hrs, 24) >= 7) & (np.mod(t_hrs, 24) < 22), 23.0, 26.0)
+Occ = np.where((np.mod(t_hrs, 24) >= 8) & (np.mod(t_hrs, 24) < 18), 1.0, 0.0)
+
+# Simulation
+x_true = np.array([18.0, 17.0, 8.0])
+z_hat = np.concatenate([x_true, [0.0]])
+u_prev = np.zeros(nu)
+
+log_T = np.zeros(N_steps); log_u = np.zeros(N_steps)
+log_d_hat = np.zeros(N_steps); log_cost = np.zeros(N_steps)
+
+print("Running economic building MPC (48 hours)...")
+for t in range(N_steps):
+    y_meas = (C @ x_true).item() + 0.1*np.random.randn()
+
+    # Kalman filter
+    x_pred = A @ z_hat[:nx] + B.ravel()*u_prev.item() + B_amb.ravel()*T_amb[t] + B_sol.ravel()*Solar[t]
+    d_pred = z_hat[nx:]
+    z_pred = np.concatenate([x_pred, d_pred])
+    z_hat = z_pred + L.ravel() * (y_meas - (C_aug @ z_pred).item())
+    x_hat = z_hat[:nx]; d_hat = z_hat[nx:]
+
+    # Simple target: reference = midpoint of comfort band
+    T_ref = 0.5*(T_min[t] + T_max[t])
+
+    # Solve MPC
+    Np_eff = min(Np, N_steps - t)
+    if Np_eff < 2:
+        u_opt = 0.0
+    else:
+        # Add economic term: beta * price * u * (Ts/3600)
+        price_vec = np.zeros(nu*Np)
+        for k in range(Np):
+            idx = min(t+k, N_steps-1)
+            price_vec[k] = beta * Price[idx] * (Ts/3600)
+
+        dx0 = x_hat - np.array([T_ref, T_ref, T_amb[t]])
+        f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel() + price_vec
+        bounds = [(u_min_val, u_max_val)] * (nu*Np)
+        res = minimize(lambda u: 0.5*u@H_base@u + f_qp@u, np.zeros(nu*Np),
+                       method='L-BFGS-B', bounds=bounds, options={'ftol':1e-14})
+        u_opt = res.x[0]
+
+    u_opt = np.clip(u_opt, u_min_val, u_max_val)
+    u_prev = np.array([u_opt])
+
+    log_T[t] = (C @ x_true).item()
+    log_u[t] = u_opt
+    log_d_hat[t] = d_hat.item()
+    log_cost[t] = Price[t] * u_opt * (Ts/3600) / 1000  # kWh cost
+
+    x_true = A @ x_true + B.ravel()*u_opt + B_amb.ravel()*T_amb[t] + B_sol.ravel()*Solar[t] + B_occ.ravel()*Occ[t]
+
+total_cost = np.sum(log_cost)
+print(f"Total heating cost: £{total_cost:.2f}")
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+
+ax = axes[0]
+ax.plot(t_hrs, log_T, color='#4ECDC4', lw=1.5, label='T_indoor')
+ax.plot(t_hrs, T_min, '--', color='#FF6B6B', lw=1, label='T_min')
+ax.plot(t_hrs, T_max, '--', color='#FFD93D', lw=1, label='T_max')
+ax.fill_between(t_hrs, T_min, T_max, alpha=0.1, color='#4ECDC4')
+ax.set_ylabel('Temperature [°C]'); ax.set_title('Building Temperature & Comfort Bounds')
+ax.legend(fontsize=8); ax.grid(True)
+
+ax = axes[1]
+ax.fill_between(t_hrs, 0, log_u/1000, alpha=0.6, color='#45B7D1', label='Heater [kW]')
+ax2 = ax.twinx()
+ax2.plot(t_hrs, Price, color='#FFD93D', lw=1.5, label='Price [£/kWh]')
+ax2.set_ylabel('Price [£/kWh]', color='#FFD93D')
+ax.set_ylabel('Heater Power [kW]'); ax.set_title('Heating Power & Electricity Price')
+ax.legend(loc='upper left', fontsize=8); ax2.legend(loc='upper right', fontsize=8)
+ax.grid(True)
+
+ax = axes[2]
+ax.plot(t_hrs, log_d_hat, color='#4ECDC4', lw=1.5, label='d_hat (occupancy)')
+ax.plot(t_hrs, Occ, '--', color='#FF6B6B', lw=1, label='True occupancy')
+ax.set_xlabel('Time [hours]'); ax.set_ylabel('Disturbance')
+ax.set_title('Occupancy Estimate vs True'); ax.legend(fontsize=8); ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <figure id="fig:singlezone2">
 <img src="figures/hvac.png" style="width:90.0%" />
 <figcaption>Single-zone building heating results over a 48-hour simulation.</figcaption>
