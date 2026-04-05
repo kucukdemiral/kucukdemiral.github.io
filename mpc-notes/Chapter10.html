@@ -1,80 +1,146 @@
-<h1 id="chap:conclusion">Course Conclusion and Further Topics<span
+<h1 id="chap:conclusion">Course Conclusion<span
 class="math inline">\(^{(*)}\)</span></h1>
-<p>The course progressed from the <em>Linear Quadratic Regulator
-(LQR)</em> through <em>Model Predictive Control (MPC)</em> with explicit
-constraint handling, to <em>State Estimation</em> and <em>Disturbance
-Modelling</em> for offset-free tracking in the presence of noise and
-uncertainty.</p>
-<p>The structure presented here—<strong>MPC + Estimator + Target
-Calculator</strong>—is the standard architecture for linear MPC in
-process control. We omitted several advanced topics; this chapter
-provides pointers for further study.</p>
-<h2 id="rigorous-stability-analysis">Rigorous Stability Analysis</h2>
-<p>In the basic MPC formulation without a terminal set constraint, the
-<em>Terminal Cost</em> (<span class="math inline">\(x_N^\top P
-x_N\)</span>) encourages stability but does not mathematically
-<em>guarantee</em> it for constrained systems. (Chapter <a
-href="#chap:linear_mpc" data-reference-type="ref"
-data-reference="chap:linear_mpc">[chap:linear_mpc]</a>, Section <a
-href="#sec:mpc_stability_theory" data-reference-type="ref"
-data-reference="sec:mpc_stability_theory">[sec:mpc_stability_theory]</a>
-provides the rigorous proof when the terminal set <em>is</em>
-included.)</p>
-<p>Rigorous MPC theory relies on Lyapunov analysis. To prove stability,
-one must often include a <strong>Terminal Set Constraint</strong> (<span
-class="math inline">\(x_N \in \mathcal{X}_f\)</span>) in the
-optimisation. This forces the state to land in a <em>safe haven</em> (a
-Positive Invariant Set, meaning that once the trajectory enters the
-terminal set, it remains inside) at the end of the horizon, ensuring
-recursive feasibility.</p>
-<p>The fundamental reference for this topic is Mayne et al. <span
-class="citation" data-cites="Mayne2000"></span>.</p>
-<h2 id="robust-mpc">Robust MPC</h2>
-<p>Robust MPC, specifically the Tube MPC approach, is covered in detail
-in Chapter <a href="#chap:tube_mpc" data-reference-type="ref"
-data-reference="chap:tube_mpc">[chap:tube_mpc]</a>. The reader is
-referred there for the full development including Minkowski sums,
-Pontryagin differences, minimal robust positively invariant sets, and
-constraint tightening.</p>
-<h2 id="nonlinear-mpc-nmpc">Nonlinear MPC (NMPC)</h2>
-<p>Nonlinear MPC is covered in detail in Chapter <a href="#chap:nmpc"
-data-reference-type="ref" data-reference="chap:nmpc">[chap:nmpc]</a>.
-The reader is referred there for direct transcription methods, the
-CasADi/IPOPT workflow, successive convexification (SCvx), GuSTO, a
-powered rocket landing application, and Real-Time Iteration.</p>
-<h2 id="real-time-implementation-and-embedded-mpc">Real-Time
-Implementation and Embedded MPC</h2>
-<p>In our examples, we used solvers such as MATLAB’s
-<code>quadprog</code> or the open-source solver IPOPT (accessed via
-CasADi or other interfaces), which are sufficient for offline
-simulations but insufficient for millisecond-level control on
-microcontrollers or DSPs. Deploying MPC on embedded hardware requires
-specialised techniques:</p>
+<p>These notes have developed Model Predictive Control from first
+principles through to advanced topics, building a complete toolkit for
+constrained control design. This chapter summarises the arc of the
+material and highlights the connections between the chapters.</p>
+
+<h2 id="what-we-covered">What We Covered</h2>
+<p>The course began with the <strong>foundations</strong>: Chapter 1
+introduced MPC as optimisation-based control with explicit constraint
+handling, contrasting it with classical PID and LQR. Chapters 2–4 then
+developed the mathematical prerequisites—quadratic and linear
+programming (Chapter 2), continuous-to-discrete conversion (Chapter 3),
+and controllability/observability (Chapter 4)—that underpin every MPC
+formulation.</p>
+
+<p>Chapter 5 derived the <strong>Linear Quadratic Regulator (LQR)</strong>
+as the unconstrained baseline, establishing the Riccati equation and
+showing how its solution provides the terminal cost <span
+class="math inline">\(P\)</span> used in MPC. Chapter 6 introduced
+<strong>state estimation</strong> via the Kalman filter, completing the
+observer side of the separation principle.</p>
+
+<p>The core of the course is Chapter 7, which presented <strong>constrained
+linear MPC</strong>: the condensed QP formulation, the receding horizon
+algorithm, and the rigorous stability theory based on terminal cost and
+terminal set constraints. Chapter 8 extended this to practical
+architectures—<strong>offset-free tracking</strong> with augmented
+disturbance models and target calculators, and <strong>economic
+MPC</strong> with time-varying price signals—demonstrated on
+applications including quadrotor control and building energy management.
+Chapter 9 implemented these ideas in a full <strong>closed-loop
+simulation</strong> combining plant model, Kalman observer, target
+calculator, and economic MPC controller.</p>
+
+<p>The supplementary chapters covered three frontiers of modern MPC:</p>
 <ul>
-<li><p><strong>Explicit MPC (Multiparametric Programming) <span
+<li><p><strong>Tube MPC</strong> (Chapter on Robust MPC) developed the
+theory of robust constraint satisfaction under bounded disturbances,
+including minimal robust positively invariant (mRPI) sets, Pontryagin
+constraint tightening, and the tube control law <span
+class="math inline">\(u_k = v_0^\star - K(x_k - z_0^\star)\)</span>.
+The key insight is that robustness is achieved at no additional
+online computational cost—the extra work is entirely offline.</p></li>
+
+<li><p><strong>Nonlinear MPC</strong> (Chapter on NMPC) treated direct
+transcription methods (single shooting, multiple shooting, collocation),
+the CasADi/IPOPT workflow for general NLP-based MPC, and successive
+convexification (SCvx/GuSTO) for real-time nonlinear trajectory
+optimisation. The powered rocket landing and nonholonomic robot tracking
+applications demonstrated these methods on challenging engineering
+problems.</p></li>
+
+<li><p><strong>Learning-Based MPC</strong> (Chapter on MPC with Learning)
+presented four data-driven paradigms: Gaussian Process MPC for
+uncertainty-aware control with probabilistic constraint tightening,
+Koopman MPC for lifting nonlinear dynamics into linear prediction
+models, DeePC for model-free predictive control via Willems'
+Fundamental Lemma and Hankel matrices, and Learning MPC (LMPC) for
+iterative cost improvement using safe sets and data-driven terminal
+costs. The chapter also covered neural network dynamics models and
+the connections between MPC and reinforcement learning.</p></li>
+</ul>
+
+<h2 id="the-unifying-theme">The Unifying Theme</h2>
+<p>Despite the breadth of topics, a single idea runs through every
+chapter: <em>MPC is optimisation-based control with constraints</em>.
+Whether the model is linear or nonlinear, known or learned from data,
+deterministic or uncertain, the controller at each time step solves an
+optimisation problem that encodes performance objectives and physical
+limits. The differences between MPC variants lie in <em>how</em> that
+optimisation problem is constructed and solved:</p>
+<ul>
+<li><p>Linear MPC (Chapter 7) solves a QP.</p></li>
+<li><p>Tube MPC tightens the QP constraints offline and adds a feedback
+correction online.</p></li>
+<li><p>Nonlinear MPC solves an NLP, possibly via sequential
+convexification to exploit QP/SOCP structure.</p></li>
+<li><p>GP-MPC and Koopman MPC learn a model and then solve a
+(modified) QP.</p></li>
+<li><p>DeePC bypasses the model entirely, replacing it with data
+matrices in the optimisation.</p></li>
+</ul>
+
+<h2 id="real-time-implementation">Real-Time Implementation and Embedded MPC</h2>
+<p>Throughout these notes, we used solvers such as MATLAB's
+<code>quadprog</code>, YALMIP, scipy's L-BFGS-B, and CasADi/IPOPT.
+These are sufficient for simulation and prototyping but may be
+insufficient for millisecond-level control on microcontrollers or DSPs.
+Deploying MPC on embedded hardware requires specialised techniques:</p>
+<ul>
+<li><p><strong>Explicit MPC (Multiparametric Programming) <span
 class="citation" data-cites="Bemporad2002"></span>:</strong> For small
-systems, we can pre-calculate the solution offline. The result is a
-lookup table of affine gains, one per polyhedral region of the state
-space. On the chip, the “optimisation” reduces to <code>if-else</code>
-checks to find the correct region, requiring microseconds to execute.
-Section <a href="#sec:explicit_mpc" data-reference-type="ref"
-data-reference="sec:explicit_mpc">[sec:explicit_mpc]</a> develops this
-approach with worked examples and MPT3 code.</p></li>
+systems, the solution can be pre-calculated offline as a piecewise
+affine function of the state. On the chip, the "optimisation" reduces
+to <code>if-else</code> checks to find the correct polyhedral region,
+requiring microseconds to execute.</p></li>
 <li><p><strong>Code Generation:</strong> Tools like <a
 href="https://acado.github.io/">ACADO</a>, <a
 href="https://cvxgen.com/">CVXGEN</a>, or <a
 href="https://osqp.org/">OSQP</a> generate highly optimised,
-library-free C-code specifically tailored to the structure of the MPC
-problem, allowing convex MPC to run on standard automotive
-ECUs.</p></li>
+library-free C code tailored to the MPC problem structure, enabling
+convex MPC on standard automotive ECUs.</p></li>
+<li><p><strong>Real-Time Iteration (RTI):</strong> As discussed in the
+NMPC chapter, the RTI scheme performs a single SQP step per sampling
+interval, trading optimality for guaranteed timing. This is the basis
+of the <a href="https://github.com/acados/acados">acados</a>
+framework used in automotive and aerospace applications.</p></li>
 </ul>
-<p>The fundamental reference for explicit MPC is Bemporad et al. <span
-class="citation" data-cites="Bemporad2002"></span>.</p>
-<h2 id="data-driven-and-learning-based-mpc">Data-Driven and
-Learning-Based MPC</h2>
-<p>Data-driven and learning-based MPC methods are covered in detail in
-Chapter <a href="#chap:learning_mpc" data-reference-type="ref"
-data-reference="chap:learning_mpc">[chap:learning_mpc]</a>. The reader
-is referred there for GP-MPC, Koopman MPC, DeePC (including Willems’
-Fundamental Lemma), and Learning MPC, with full derivations, worked
-examples, and MATLAB/YALMIP implementations.</p>
+
+<h2 id="where-to-go-from-here">Where to Go from Here</h2>
+<p>These notes provide the foundations and several advanced extensions,
+but MPC is a vast and active research field. Directions not covered here
+include:</p>
+<ul>
+<li><p><strong>Stochastic MPC:</strong> When disturbances follow known
+probability distributions, chance constraints (<span
+class="math inline">\(\Pr(x_k \in \mathcal{X}) \ge 1 -
+\epsilon\)</span>) can replace the worst-case guarantees of Tube MPC,
+often yielding less conservative behaviour. See Mesbah <span
+class="citation" data-cites="Mesbah2016"></span>.</p></li>
+<li><p><strong>Distributed and Multi-Agent MPC:</strong> Large-scale
+systems (power grids, traffic networks, multi-robot teams) require
+decomposing the centralised MPC problem into smaller, coupled
+subproblems solved in parallel by local agents. See Christofides et al.
+<span class="citation" data-cites="Christofides2013"></span>.</p></li>
+<li><p><strong>Mixed-Integer MPC:</strong> Systems with discrete
+decisions (on/off actuators, gear selection, logical constraints) lead
+to mixed-integer programmes (MIPs) that are NP-hard but increasingly
+tractable with modern solvers like Gurobi.</p></li>
+<li><p><strong>Adaptive MPC:</strong> When the plant model changes over
+time (e.g., varying mass, ageing components), the controller must
+simultaneously identify the model and control the system. Adaptive MPC
+combines online system identification with robust or cautious MPC
+formulations.</p></li>
+</ul>
+
+<h2 id="final-remarks">Final Remarks</h2>
+<p>MPC has evolved from a niche technique in petrochemical process
+control to a universal framework for constrained optimal control. The
+combination of principled optimisation, explicit constraint handling,
+and the ability to incorporate models of arbitrary complexity makes it
+the method of choice for an ever-growing range of applications—from
+autonomous vehicles and rockets to buildings and biological systems.
+We hope these notes provide a solid foundation for both understanding
+the theory and applying it to real engineering problems.</p>
