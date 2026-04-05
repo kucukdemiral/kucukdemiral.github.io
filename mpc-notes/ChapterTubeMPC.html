@@ -889,6 +889,128 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a hr
 <span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a><span class="va">yline</span>(<span class="va">u_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span> <span class="va">yline</span>(<span class="op">-</span><span class="va">u_max</span><span class="op">,</span> <span class="ss">&#39;g--&#39;</span>)<span class="op">;</span></span>
 <span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;Time step k&#39;</span>)<span class="op">;</span> <span class="va">ylabel</span>(<span class="ss">&#39;Input u_k&#39;</span>)<span class="op">;</span></span>
 <span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a><span class="va">legend</span>(<span class="ss">&#39;Applied input&#39;</span><span class="op">,</span> <span class="ss">&#39;Constraint&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span></code></pre></div>
+
+<!-- ── Pyodide: Scalar Tube MPC ────────────────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+</script>
+<pre><code>
+# ── Tube MPC: Scalar Unstable System ────────────────────────
+# x_{k+1} = a*x_k + b*u_k + w_k,   |w_k| <= w_max
+a, b = 1.2, 1.0
+Q, R, N = 1.0, 1.0, 5
+x_max, u_max, w_max = 5.0, 1.0, 0.1
+
+# Step 1: LQR gain and DARE terminal cost
+P_dare = solve_discrete_are(
+    np.array([[a]]), np.array([[b]]),
+    np.array([[Q]]), np.array([[R]])
+).item()
+K = (R + b**2 * P_dare)**(-1) * b * a * P_dare   # K > 0, u = -K*x
+a_cl = a - b * K
+print(f"K = {K:.4f},  a_cl = {a_cl:.4f}")
+
+# Step 2: mRPI half-width (geometric series for scalar)
+e_bar = w_max / (1 - abs(a_cl))
+print(f"mRPI half-width e_bar = {e_bar:.4f}")
+
+# Step 3: Tighten constraints
+x_max_t = x_max - e_bar
+u_max_t = u_max - abs(K) * e_bar
+print(f"Tightened:  |z| <= {x_max_t:.3f},  |v| <= {u_max_t:.3f}")
+
+# Step 4 & 5: Condensed nominal MPC + tube law simulation
+# Build condensed matrices: Z = Phi*z0 + Gamma*V
+Phi = np.array([a**i for i in range(1, N+1)])
+Gamma = np.zeros((N, N))
+for i in range(N):
+    for j in range(i+1):
+        Gamma[i, j] = a**(i - j) * b
+Q_bar = np.diag([Q]*N)
+R_bar = np.diag([R]*N)
+H = Gamma.T @ Q_bar @ Gamma + R_bar
+F = Gamma.T @ Q_bar @ Phi
+
+# Simulate
+T_sim = 30
+x_hist = np.zeros(T_sim + 1)
+z_hist = np.zeros(T_sim + 1)
+u_hist = np.zeros(T_sim)
+x_hist[0] = 2.0
+np.random.seed(42)
+
+for k in range(T_sim):
+    xk = x_hist[k]
+
+    # Solve nominal MPC: min over [z0, v0,...,vN-1]
+    def tube_cost(dec):
+        z0 = dec[0]
+        V  = dec[1:]
+        Z  = Phi * z0 + Gamma @ V
+        cost  = np.sum(Q * Z**2) + np.sum(R * V**2)
+        cost += P_dare * (a * Z[-1] + b * V[-1] - 0)**2  # approximate terminal
+        return cost
+
+    # Bounds: |z_i| <= x_max_t, |v_i| <= u_max_t, |xk - z0| <= e_bar
+    z0_lo = max(-x_max_t, xk - e_bar)
+    z0_hi = min( x_max_t, xk + e_bar)
+    bnds = [(z0_lo, z0_hi)] + [(-u_max_t, u_max_t)] * N
+    x0_guess = np.zeros(N + 1)
+    x0_guess[0] = np.clip(xk, z0_lo, z0_hi)
+    res = minimize(tube_cost, x0_guess, method='L-BFGS-B', bounds=bnds)
+    z0_opt = res.x[0]
+    v0_opt = res.x[1]
+
+    # Tube law: u = v0 - K*(x - z0)
+    uk = v0_opt - K * (xk - z0_opt)
+    uk = np.clip(uk, -u_max, u_max)
+    u_hist[k] = uk
+    z_hist[k] = z0_opt
+
+    # True dynamics with disturbance
+    wk = w_max * (2 * np.random.rand() - 1)
+    x_hist[k+1] = a * xk + b * uk + wk
+
+z_hist[-1] = a * z_hist[-2] + b * res.x[1]  # last nominal step
+
+# ── Plot ────────────────────────────────────────────────────
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
+t = np.arange(T_sim + 1)
+
+ax1.plot(t, x_hist, '-o', color='#4ECDC4', ms=3, lw=1.5, label='Actual $x_k$')
+ax1.plot(t, z_hist, '--s', color='#FF6B6B', ms=3, lw=1.2, label='Nominal $z_k$')
+ax1.fill_between(t, z_hist - e_bar, z_hist + e_bar,
+                 color='#FF6B6B', alpha=0.15, label='Tube $z_k \pm \bar{e}$')
+ax1.axhline( x_max, color='#FFD93D', ls='--', lw=1, label='Constraint')
+ax1.axhline(-x_max, color='#FFD93D', ls='--', lw=1)
+ax1.set_ylabel('State'); ax1.legend(fontsize=8); ax1.set_title('Tube MPC — Scalar Unstable System')
+ax1.grid(True, alpha=0.3)
+
+ax2.step(t[:-1], u_hist, where='post', color='#45B7D1', lw=1.5, label='Applied $u_k$')
+ax2.axhline( u_max, color='#FFD93D', ls='--', lw=1, label='Constraint')
+ax2.axhline(-u_max, color='#FFD93D', ls='--', lw=1)
+ax2.set_ylabel('Input'); ax2.legend(fontsize=8)
+ax2.grid(True, alpha=0.3)
+
+error = x_hist - z_hist
+ax3.plot(t, error, '-o', color='#FF6B6B', ms=3, lw=1.5, label='$e_k = x_k - z_k$')
+ax3.axhline( e_bar, color='#FFD93D', ls='--', lw=1, label=f'$\pm \bar{{e}} = {e_bar:.3f}$')
+ax3.axhline(-e_bar, color='#FFD93D', ls='--', lw=1)
+ax3.set_xlabel('Time step $k$'); ax3.set_ylabel('Tube error')
+ax3.legend(fontsize=8); ax3.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/dev/null')   # trigger render
+plt.show()
+print(f"\nMax |e_k| = {np.max(np.abs(error)):.4f}  (bound = {e_bar:.4f})")
+print(f"All constraints satisfied: {np.all(np.abs(x_hist) <= x_max + 1e-9)}")
+</code></pre>
+</div>
+
 <h2 id="sec:tube_mpt3">Computing the mRPI Set with MPT3</h2>
 <p>For multi-state systems, computing the mRPI set by hand is
 impractical. The MPT3 toolbox <span class="citation"

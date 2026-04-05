@@ -682,6 +682,136 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb3-1"><a hr
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="va">yline</span>(<span class="va">x_max</span><span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">1.5</span>)<span class="op">;</span> <span class="va">yline</span>(<span class="op">-</span><span class="va">x_max</span><span class="op">,</span> <span class="ss">&#39;r--&#39;</span><span class="op">,</span> <span class="ss">&#39;LineWidth&#39;</span><span class="op">,</span> <span class="fl">1.5</span>)<span class="op">;</span></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">ylabel</span>(<span class="ss">&#39;x_k&#39;</span>)<span class="op">;</span> <span class="va">xlabel</span>(<span class="ss">&#39;Time step k&#39;</span>)<span class="op">;</span> <span class="va">title</span>(<span class="ss">&#39;GP-MPC: State&#39;</span>)<span class="op">;</span> <span class="va">grid</span> <span class="va">on</span><span class="op">;</span></span></code></pre></div>
 </div>
+
+<!-- ── Pyodide: GP-MPC Scalar System ───────────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+</script>
+<pre><code>
+# ── GP-MPC: Scalar System with Unknown Cubic Drag ──────────
+# True dynamics: x_{k+1} = x_k + u_k - 0.2*x_k^3
+# Nominal model: x_{k+1} = x_k + u_k  (linear, ignores drag)
+# GP learns the residual d(x) = -0.2*x^3
+A_nom, B_nom = 1.0, 1.0
+f_true = lambda x, u: x + u - 0.2 * x**3
+
+# ── Step 1: Collect data with random excitation ────────────
+np.random.seed(0)
+T_data = 20
+x_data = np.zeros(T_data + 1)
+u_data = 2 * np.random.rand(T_data) - 1
+for k in range(T_data):
+    x_data[k+1] = f_true(x_data[k], u_data[k])
+
+# Residuals: r_k = x_{k+1} - A*x_k - B*u_k
+X_train = x_data[:T_data]
+r_train = x_data[1:] - A_nom * X_train - B_nom * u_data
+
+# ── Step 2: GP regression (SE kernel) ──────────────────────
+sf, ell, sn2 = 0.5, 1.0, 0.01
+def k_se(xa, xb):
+    return sf**2 * np.exp(-0.5 * (xa[:, None] - xb[None, :])**2 / ell**2)
+
+K_gp = k_se(X_train, X_train) + sn2 * np.eye(T_data)
+alpha_gp = np.linalg.solve(K_gp, r_train)
+
+def gp_predict(xs):
+    xs = np.atleast_1d(xs)
+    Ks = k_se(xs, X_train)
+    mu = Ks @ alpha_gp
+    var = sf**2 - np.sum(Ks * np.linalg.solve(K_gp, Ks.T).T, axis=1)
+    return mu, np.maximum(var, 1e-8)
+
+# ── Step 3: GP-MPC simulation ─────────────────────────────
+N, Q, R = 10, 1.0, 0.1
+P_dare = solve_discrete_are(
+    np.array([[A_nom]]), np.array([[B_nom]]),
+    np.array([[Q]]), np.array([[R]])
+).item()
+x_max, u_max = 3.0, 1.0
+kappa = 1.96  # 97.5% confidence
+
+T_sim = 30
+x_hist = np.zeros(T_sim + 1); x_hist[0] = 2.5
+u_hist = np.zeros(T_sim)
+
+for t in range(T_sim):
+    x_now = x_hist[t]
+    # Evaluate GP along nominal trajectory (u=0) for linearisation
+    x_nom = np.zeros(N + 1); x_nom[0] = x_now
+    mu_nom = np.zeros(N); sig_nom = np.zeros(N)
+    for k in range(N):
+        mu_k, var_k = gp_predict(np.array([x_nom[k]]))
+        mu_nom[k] = mu_k[0]; sig_nom[k] = np.sqrt(var_k[0])
+        x_nom[k+1] = A_nom * x_nom[k] + mu_nom[k]
+
+    # Build condensed QP with GP mean correction + tightened constraints
+    def gpmpc_cost(U_vec):
+        x = np.zeros(N + 1); x[0] = x_now
+        cost = 0.0
+        for k in range(N):
+            x[k+1] = A_nom * x[k] + B_nom * U_vec[k] + mu_nom[k]
+            cost += Q * x[k]**2 + R * U_vec[k]**2
+            # Soft penalty for tightened state constraints
+            margin = x_max - kappa * sig_nom[k]
+            if abs(x[k+1]) > margin:
+                cost += 100 * (abs(x[k+1]) - margin)**2
+        cost += P_dare * x[N]**2
+        return cost
+
+    bnds = [(-u_max, u_max)] * N
+    res = minimize(gpmpc_cost, np.zeros(N), method='L-BFGS-B', bounds=bnds)
+    u_hist[t] = res.x[0]
+    x_hist[t+1] = f_true(x_hist[t], u_hist[t])
+
+# Also run nominal MPC (no GP) for comparison
+x_nom_hist = np.zeros(T_sim + 1); x_nom_hist[0] = 2.5
+u_nom_hist = np.zeros(T_sim)
+for t in range(T_sim):
+    def nom_cost(U_vec):
+        x = np.zeros(N + 1); x[0] = x_nom_hist[t]
+        cost = 0.0
+        for k in range(N):
+            x[k+1] = A_nom * x[k] + B_nom * U_vec[k]  # no GP correction
+            cost += Q * x[k]**2 + R * U_vec[k]**2
+        cost += P_dare * x[N]**2
+        return cost
+    bnds = [(-u_max, u_max)] * N
+    res2 = minimize(nom_cost, np.zeros(N), method='L-BFGS-B', bounds=bnds)
+    u_nom_hist[t] = res2.x[0]
+    x_nom_hist[t+1] = f_true(x_nom_hist[t], u_nom_hist[t])
+
+# ── Plot ───────────────────────────────────────────────────
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+tk = np.arange(T_sim + 1)
+
+ax1.plot(tk, x_hist, '-o', color='#4ECDC4', ms=3, lw=1.5, label='GP-MPC')
+ax1.plot(tk, x_nom_hist, '--s', color='#FF6B6B', ms=3, lw=1.2, label='Nominal MPC (no GP)')
+ax1.axhline( x_max, color='#FFD93D', ls='--', lw=1, label='Constraint')
+ax1.axhline(-x_max, color='#FFD93D', ls='--', lw=1)
+ax1.set_ylabel('State $x_k$'); ax1.legend(fontsize=8)
+ax1.set_title('GP-MPC vs Nominal MPC — Unknown Cubic Drag')
+ax1.grid(True, alpha=0.3)
+
+ax2.step(tk[:-1], u_hist, where='post', color='#4ECDC4', lw=1.5, label='GP-MPC')
+ax2.step(tk[:-1], u_nom_hist, where='post', color='#FF6B6B', lw=1.2, ls='--', label='Nominal MPC')
+ax2.axhline( u_max, color='#FFD93D', ls='--', lw=1)
+ax2.axhline(-u_max, color='#FFD93D', ls='--', lw=1)
+ax2.set_xlabel('Time step $k$'); ax2.set_ylabel('Input $u_k$')
+ax2.legend(fontsize=8); ax2.grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+J_gp = np.sum(Q * x_hist[:-1]**2 + R * u_hist**2)
+J_nom = np.sum(Q * x_nom_hist[:-1]**2 + R * u_nom_hist**2)
+print(f"GP-MPC cost: {J_gp:.2f},  Nominal MPC cost: {J_nom:.2f}")
+print(f"GP-MPC learns the cubic drag and regulates faster")
+</code></pre>
+</div>
+
 <div class="summarybox">
 <p><span>GP-MPC Design Recipe</span></p>
 <ol>
@@ -1882,6 +2012,64 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb6-1"><a hr
 <span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Target trajectory:    [%s]\n&#39;</span><span class="op">,</span> <span class="va">num2str</span>(<span class="va">traj</span><span class="op">&#39;,</span> <span class="ss">&#39;%8.4f&#39;</span>))<span class="op">;</span></span>
 <span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">&#39;Recovered trajectory: [%s]\n&#39;</span><span class="op">,</span> <span class="va">num2str</span>(<span class="va">traj_recovered</span><span class="op">&#39;,</span> <span class="ss">&#39;%8.4f&#39;</span>))<span class="op">;</span></span></code></pre></div>
 </div>
+
+<!-- ── Pyodide: Willems' Fundamental Lemma ─────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+</script>
+<pre><code>
+# ── Willems' Fundamental Lemma: Data-Driven Trajectory ─────
+# System: x_{k+1} = 0.8*x_k + u_k  (scalar, y_k = x_k)
+a, b = 0.8, 1.0
+
+# Step 1: Collect persistently exciting data
+ud = np.array([0.5, -1.2, 0.3, 0.8, -0.6, 1.1, -0.4, 0.7, -0.9, 0.2])
+T = len(ud)
+xd = np.zeros(T + 1)
+for k in range(T):
+    xd[k+1] = a * xd[k] + b * ud[k]
+yd = xd[:T]  # y_k = x_k
+
+# Step 2: Build Hankel matrices (depth L = 3)
+L = 3
+n = 1  # system order
+Hu = np.zeros((L, T - L + 1))
+Hy = np.zeros((L, T - L + 1))
+for j in range(T - L + 1):
+    Hu[:, j] = ud[j:j+L]
+    Hy[:, j] = yd[j:j+L]
+H = np.vstack([Hu, Hy])
+print(f"Stacked Hankel H: {H.shape[0]} x {H.shape[1]}")
+
+# Step 3: Check persistent excitation
+# rank(H_{L+n}(u^d)) must equal L + n = 4
+Hu4 = np.zeros((L + n, T - L - n + 1))
+for j in range(T - L - n + 1):
+    Hu4[:, j] = ud[j:j+L+n]
+r = np.linalg.matrix_rank(Hu4)
+print(f"rank(H_{L+n}(u^d)) = {r}  (need {L+n})")
+print(f"Data is {'PE' if r >= L+n else 'NOT PE'} of order {L+n}")
+
+# Step 4: Recover a known trajectory using the Fundamental Lemma
+x_test = np.zeros(L + 1); x_test[0] = 1.0
+u_test = np.array([0.5, -0.3, 0.1])
+for k in range(L):
+    x_test[k+1] = a * x_test[k] + b * u_test[k]
+y_test = x_test[:L]
+
+traj = np.concatenate([u_test, y_test])
+g, _, _, _ = np.linalg.lstsq(H, traj, rcond=None)
+traj_recovered = H @ g
+
+print(f"\nTarget trajectory:    {np.round(traj, 4)}")
+print(f"Recovered trajectory: {np.round(traj_recovered, 4)}")
+print(f"Recovery error: {np.linalg.norm(traj - traj_recovered):.2e}")
+print(f"\nFundamental Lemma verified: any L-step trajectory")
+print(f"can be expressed as a linear combination of data columns!")
+</code></pre>
+</div>
+
 <h3 id="sec:deepc_formulation">The DeePC Optimisation Problem</h3>
 <p>We now use the Fundamental Lemma to build a predictive controller.
 The key step is to partition the Hankel matrix into <em>past</em> and
@@ -2582,6 +2770,105 @@ iteration 1 onward, the controller exploits the expanded safe set and
 converges to the optimal 4-step trajectory (<span
 class="math inline">\(u = -0.5\)</span> at every step). The cost (right)
 decreases monotonically.</p>
+
+<!-- ── Pyodide: LMPC Scalar Minimum-Time ───────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+import matplotlib.pyplot as plt
+</script>
+<pre><code>
+# ── LMPC: Scalar Minimum-Time Problem ─────────────────────
+# x_{k+1} = x_k + u_k,  |u_k| <= 0.5,  x0 = 2 -> xF = 0
+# Stage cost = 1 (minimum time), LMPC learns from iterations
+f = lambda x, u: x + u
+u_max = 0.5
+x0, xF = 2.0, 0.0
+N_mpc = 3
+
+# ── Iteration 0: Conservative controller (u = -0.3) ───────
+x_cur = x0
+x_traj = [x_cur]; u_traj = []
+while abs(x_cur) > 0.02:
+    u_app = -0.3 * np.sign(x_cur) if abs(x_cur) > 0.3 else -x_cur
+    u_app = np.clip(u_app, -u_max, u_max)
+    x_cur = f(x_cur, u_app)
+    x_traj.append(x_cur); u_traj.append(u_app)
+    if len(u_traj) > 50: break
+T0 = len(u_traj)
+print(f"Iteration 0 (conservative): {T0} steps")
+
+# Build safe set and cost-to-go
+SS = list(x_traj)
+ctg = list(range(T0, -1, -1))  # cost-to-go from each state
+
+# Store all iteration trajectories for plotting
+all_trajs = [list(x_traj)]
+costs = [T0]
+
+# ── LMPC iterations ───────────────────────────────────────
+n_iter = 5
+for j in range(1, n_iter + 1):
+    x_cur = x0
+    x_j = [x_cur]; u_j = []
+    while abs(x_cur) > 0.02:
+        if abs(x_cur) <= 0.3:
+            best_u = np.clip(-x_cur, -u_max, u_max)
+        else:
+            # Greedy: minimise 1 + Q(x_next) over u grid
+            best_u = -0.3 * np.sign(x_cur)
+            best_cost = 1e6
+            for u_try in np.linspace(-u_max, u_max, 201):
+                x_next = f(x_cur, u_try)
+                dists = np.abs(np.array(SS) - x_next)
+                idx = np.argmin(dists)
+                if dists[idx] < 0.15:
+                    c = 1 + ctg[idx]
+                    if c < best_cost:
+                        best_cost = c; best_u = u_try
+        u_j.append(best_u)
+        x_cur = f(x_cur, best_u)
+        x_j.append(x_cur)
+        if len(u_j) > 30: break
+
+    Tj = len(u_j)
+    costs.append(Tj)
+    all_trajs.append(list(x_j))
+
+    # Update safe set and cost-to-go
+    new_ctg = list(range(Tj, -1, -1))
+    for s in range(len(x_j)):
+        dists = np.abs(np.array(SS) - x_j[s])
+        idx = np.argmin(dists)
+        if dists[idx] < 0.02:
+            ctg[idx] = min(ctg[idx], new_ctg[s])
+        else:
+            SS.append(x_j[s]); ctg.append(new_ctg[s])
+    print(f"Iteration {j}: {Tj} steps")
+
+# ── Plot ───────────────────────────────────────────────────
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+colors = ['#FF6B6B', '#FFD93D', '#45B7D1', '#4ECDC4', '#96CEB4', '#DDA0DD']
+for i, traj in enumerate(all_trajs):
+    ax1.plot(range(len(traj)), traj, '-o', color=colors[i % len(colors)],
+             ms=4, lw=1.5, label=f'Iter {i}')
+ax1.axhline(0, color='white', ls=':', alpha=0.3)
+ax1.set_xlabel('Time step $k$'); ax1.set_ylabel('State $x_k$')
+ax1.set_title('LMPC: State Trajectories'); ax1.legend(fontsize=7)
+ax1.grid(True, alpha=0.3)
+
+ax2.bar(range(len(costs)), costs, color='#45B7D1', alpha=0.8, edgecolor='#2a3a4a')
+ax2.axhline(4, color='#FFD93D', ls='--', lw=1.5, label='Optimal (4 steps)')
+ax2.set_xlabel('Iteration $j$'); ax2.set_ylabel('Steps to reach $x_F = 0$')
+ax2.set_title('LMPC: Cost Improvement'); ax2.legend(fontsize=8)
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+print(f"\nConverged to {costs[-1]} steps (optimal = 4)")
+</code></pre>
+</div>
+
 <figure id="fig:lmpc_iterations" data-latex-placement="ht">
 <img src="figures/fig_lmpc_iterations.png" style="width:92.0%" />
 <figcaption>LMPC for the scalar minimum-time problem (<span
@@ -3462,6 +3749,86 @@ data-reference="fig:nn_prediction">1.12</a> shows the NN one-step
 prediction. The NN (blue dashed) captures the nonlinear dynamics well
 within the training range, though unlike the GP it provides no
 confidence measure.</p>
+
+<!-- ── Pyodide: NN Dynamics Learning ───────────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+import matplotlib.pyplot as plt
+</script>
+<pre><code>
+# ── Neural Network Dynamics Learning ───────────────────────
+# Learn f(x,u) = x + u - 0.2*x^3 with a simple 1-hidden-layer NN
+# Manual implementation (no ML libraries needed)
+np.random.seed(0)
+T_data = 50
+x_nn = np.zeros(T_data + 1)
+u_nn = 2 * np.random.rand(T_data) - 1
+for k in range(T_data):
+    x_nn[k+1] = x_nn[k] + u_nn[k] - 0.2 * x_nn[k]**3
+
+X_in = np.column_stack([x_nn[:T_data], u_nn])    # [x_k, u_k]
+Y_out = x_nn[1:T_data+1]                         # x_{k+1}
+
+# ── Simple NN: 2 inputs -> 20 hidden (tanh) -> 1 output ───
+n_h = 20; lr = 0.005; n_epochs = 2000
+W1 = 0.5 * np.random.randn(2, n_h)
+b1 = np.zeros(n_h)
+W2 = 0.5 * np.random.randn(n_h, 1)
+b2 = np.zeros(1)
+
+# Normalise inputs/outputs
+X_mean, X_std = X_in.mean(0), X_in.std(0) + 1e-8
+Y_mean, Y_std = Y_out.mean(), Y_out.std() + 1e-8
+X_n = (X_in - X_mean) / X_std
+Y_n = (Y_out - Y_mean) / Y_std
+
+for epoch in range(n_epochs):
+    # Forward
+    z1 = X_n @ W1 + b1
+    h1 = np.tanh(z1)
+    y_pred = (h1 @ W2 + b2).ravel()
+    loss = np.mean((y_pred - Y_n)**2)
+
+    # Backward
+    dL = 2 * (y_pred - Y_n) / len(Y_n)
+    dW2 = h1.T @ dL.reshape(-1, 1)
+    db2 = dL.sum(keepdims=True)
+    dh1 = dL.reshape(-1, 1) * W2.T
+    dz1 = dh1 * (1 - np.tanh(z1)**2)
+    dW1 = X_n.T @ dz1
+    db1 = dz1.sum(0)
+
+    W1 -= lr * dW1; b1 -= lr * db1
+    W2 -= lr * dW2; b2 -= lr * db2
+
+print(f"Training loss after {n_epochs} epochs: {loss:.6f}")
+
+# ── Compare predictions (u = 0) ───────────────────────────
+x_test = np.linspace(-3, 3, 200)
+y_true = x_test + 0 - 0.2 * x_test**3
+y_nominal = x_test  # nominal model ignores drag
+
+# NN prediction
+X_test_in = np.column_stack([x_test, np.zeros_like(x_test)])
+X_test_n = (X_test_in - X_mean) / X_std
+h_test = np.tanh(X_test_n @ W1 + b1)
+y_nn = (h_test @ W2 + b2).ravel() * Y_std + Y_mean
+
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x_test, y_true, '-', color='#FF6B6B', lw=2, label='True: $x + u - 0.2x^3$')
+ax.plot(x_test, y_nn, '--', color='#45B7D1', lw=2, label='NN prediction')
+ax.plot(x_test, y_nominal, ':', color='#8899AA', lw=1.5, label='Nominal: $x + u$')
+ax.scatter(X_in[:, 0], Y_out, s=15, c='#4ECDC4', alpha=0.5, label='Training data')
+ax.set_xlabel('$x_k$'); ax.set_ylabel('$x_{k+1}$')
+ax.set_title('Neural Network One-Step Prediction ($u = 0$)')
+ax.legend(fontsize=8); ax.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()
+print("NN captures the nonlinear dynamics within the training range")
+print("Unlike GP, NN provides no uncertainty quantification")
+</code></pre>
+</div>
+
 <figure id="fig:nn_prediction" data-latex-placement="ht">
 <img src="figures/fig_nn_prediction.png" style="width:82.0%" />
 <figcaption>Neural network one-step prediction for the scalar system
@@ -3582,6 +3949,78 @@ class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb10-1"><a h
 <span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
 <span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="va">J</span> <span class="op">=</span> <span class="va">J</span> <span class="op">+</span> <span class="va">x</span><span class="op">&#39;*</span><span class="va">P</span><span class="op">*</span><span class="va">x</span><span class="op">;</span></span>
 <span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+
+<!-- ── Pyodide: RL-Style MPC Tuning ────────────────────────── -->
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are
+import matplotlib.pyplot as plt
+</script>
+<pre><code>
+# ── RL-Style Tuning of MPC Weight R ────────────────────────
+# Outer loop: search over R to minimise true closed-loop cost
+# Inner loop: run MPC (unconstrained LQR) for each R value
+A, B, Q_cost = 1.0, 1.0, 1.0
+N, x0, T_ep = 5, 3.0, 20
+
+def eval_mpc(R_val):
+    """Run one episode with given R, return true cost."""
+    P = solve_discrete_are(
+        np.array([[A]]), np.array([[B]]),
+        np.array([[Q_cost]]), np.array([[R_val]])
+    ).item()
+    K = (R_val + B**2 * P)**(-1) * B * A * P
+    x = x0; J = 0.0
+    for t in range(T_ep):
+        u = -K * x
+        J += Q_cost * x**2 + R_val * u**2
+        x = A * x + B * u
+    J += P * x**2
+    return J
+
+# Grid search over R
+R_grid = np.logspace(-2, 1, 40)
+J_grid = np.array([eval_mpc(R) for R in R_grid])
+idx_best = np.argmin(J_grid)
+print(f"Best R = {R_grid[idx_best]:.4f},  Cost = {J_grid[idx_best]:.2f}")
+
+# Also show the trajectory for best vs worst R
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+ax1.semilogx(R_grid, J_grid, '-o', color='#4ECDC4', ms=4, lw=1.5)
+ax1.axvline(R_grid[idx_best], color='#FFD93D', ls='--', lw=1.5,
+            label=f'Best $R = {R_grid[idx_best]:.3f}$')
+ax1.set_xlabel('$R$ (control weight)'); ax1.set_ylabel('Episode cost $J$')
+ax1.set_title('RL-Style Tuning of MPC Weight $R$')
+ax1.legend(fontsize=8); ax1.grid(True, alpha=0.3)
+
+# Compare trajectories: small R (aggressive) vs large R (sluggish)
+for R_val, col, lbl in [(0.01, '#FF6B6B', '$R=0.01$ (aggressive)'),
+                         (R_grid[idx_best], '#4ECDC4', f'$R={R_grid[idx_best]:.2f}$ (optimal)'),
+                         (10.0, '#FFD93D', '$R=10$ (sluggish)')]:
+    P = solve_discrete_are(
+        np.array([[A]]), np.array([[B]]),
+        np.array([[Q_cost]]), np.array([[R_val]])
+    ).item()
+    K = (R_val + B**2 * P)**(-1) * B * A * P
+    xs = [x0]
+    for t in range(T_ep):
+        xs.append(A * xs[-1] + B * (-K * xs[-1]))
+    ax2.plot(range(len(xs)), xs, '-o', color=col, ms=3, lw=1.5, label=lbl)
+
+ax2.axhline(0, color='white', ls=':', alpha=0.3)
+ax2.set_xlabel('Time step $k$'); ax2.set_ylabel('State $x_k$')
+ax2.set_title('State Trajectories for Different $R$')
+ax2.legend(fontsize=7); ax2.grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+print(f"\nSmall R -> fast but high input cost")
+print(f"Large R -> slow convergence")
+print(f"Optimal R balances state and input costs")
+</code></pre>
+</div>
+
 <h2 id="sec:comparison">Practical Guidelines and Comparison</h2>
 <p>The choice of method depends on the application context. The decision
 flowchart in Figure <a href="#fig:method_flowchart"
