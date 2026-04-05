@@ -591,6 +591,165 @@
     title(sprintf(&#39;Cumulative heating cost  (total: £ %.3f)&#39;, sum(log_cost)));
     
     set(findall(gcf,&#39;-property&#39;,&#39;FontSize&#39;),&#39;FontSize&#39;,13);</code></pre>
+
+<div class="pyodide-runner">
+<script type="pyodide-setup">
+import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize
+</script>
+<pre><code>import numpy as np
+from scipy.linalg import solve_discrete_are, block_diag
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# ── 3R2C Building Thermal Model ─────────────────────────────────
+Ts = 1800  # 30 min sampling
+nx, nu, ny, nd = 3, 1, 1, 1
+
+# Discrete-time matrices (pre-computed from 3R2C model)
+A = np.array([[0.852, 0.120, 0.028],
+              [0.080, 0.882, 0.038],
+              [0.018, 0.032, 0.900]])
+B   = np.array([[5.89e-4], [1.96e-4], [0.0]])       # heater [W]
+E   = np.array([[0.028], [0.008], [0.050]])           # ambient [°C]
+Bsol= np.array([[2.0e-3], [1.0e-3], [3.0e-3]])       # solar [W/m²]
+Bw  = np.array([[0.191], [0.050], [0.0]])             # occupancy [300 W equiv]
+C   = np.array([[0.56, 0.44, 0.0]])                   # operative temp
+
+# ── Augmented Kalman Observer ────────────────────────────────────
+A_aug = np.block([[A, Bw], [np.zeros((nd,nx)), np.eye(nd)]])
+B_aug = np.vstack([B, np.zeros((nd,nu))])
+C_aug = np.hstack([C, np.zeros((ny,nd))])
+W = block_diag(1e-3*np.eye(nx), 0.01**2*np.eye(nd))
+V = 0.1**2*np.eye(ny)
+P_kf = solve_discrete_are(A_aug.T, C_aug.T, W, V)
+L_kf = P_kf @ C_aug.T @ np.linalg.inv(C_aug @ P_kf @ C_aug.T + V)
+
+# ── MPC Setup ───────────────────────────────────────────────────
+Np = 24; Q = np.diag([5.0, 2.0, 1.0]); R_u = 1e-3
+P_N = solve_discrete_are(A, B, Q, R_u*np.eye(nu))
+beta = 6.0; rho = 1e7
+u_min, u_max = 0.0, 2000.0
+
+# Condensed prediction matrices
+Sx = np.zeros((nx*(Np+1), nx))
+Su = np.zeros((nx*(Np+1), nu*Np))
+Ap = np.eye(nx)
+for i in range(Np+1):
+    Sx[i*nx:(i+1)*nx,:] = Ap
+    for j in range(min(i,Np)):
+        Su[i*nx:(i+1)*nx, j*nu:(j+1)*nu] = np.linalg.matrix_power(A, i-j-1) @ B
+    Ap = A @ Ap
+Q_bar = block_diag(*([Q]*Np + [P_N]))
+R_bar = R_u * np.eye(nu*Np)
+H_qp = Su.T @ Q_bar @ Su + R_bar
+H_qp = 0.5*(H_qp + H_qp.T)
+
+# ── 48-Hour Exogenous Profiles ──────────────────────────────────
+N_steps = int(48*3600/Ts)  # 96 steps
+t_hrs = np.arange(N_steps) * Ts / 3600
+
+T_amb = 5 + 6*np.sin(2*np.pi*(t_hrs - 6)/24) + 0.3*np.random.randn(N_steps)
+Solar = np.maximum(0, 600*np.sin(np.pi*np.mod(t_hrs - 6, 24)/12))
+Solar[np.mod(t_hrs, 24) > 18] = 0
+Solar[np.mod(t_hrs, 24) < 6] = 0
+
+Price = np.where((np.mod(t_hrs,24) >= 7) & (np.mod(t_hrs,24) < 22), 0.28, 0.05)
+T_min_c = np.where((np.mod(t_hrs,24) >= 7) & (np.mod(t_hrs,24) < 22), 20.0, 15.0)
+T_max_c = np.where((np.mod(t_hrs,24) >= 7) & (np.mod(t_hrs,24) < 22), 23.0, 26.0)
+Occ_true = np.where((np.mod(t_hrs,24) >= 8) & (np.mod(t_hrs,24) < 18), 1.0, 0.0)
+
+# ── Closed-Loop Simulation ──────────────────────────────────────
+x_true = np.array([18.0, 17.0, 8.0])
+z_hat = np.concatenate([x_true, [0.0]])
+u_prev = 0.0
+
+log_y = np.zeros(N_steps); log_ymeas = np.zeros(N_steps)
+log_u = np.zeros(N_steps); log_d_hat = np.zeros(N_steps)
+log_cost = np.zeros(N_steps)
+
+print("Running economic building MPC (48 hours, 96 steps)...")
+for t in range(N_steps):
+    # Measurement
+    y_true = (C @ x_true).item()
+    y_meas = y_true + 0.1*np.random.randn()
+
+    # Kalman predict
+    x_pred = A @ z_hat[:nx] + B.ravel()*u_prev + E.ravel()*T_amb[t] + Bsol.ravel()*Solar[t]
+    d_pred = z_hat[nx:]
+    z_pred = np.concatenate([x_pred, d_pred])
+    z_hat = z_pred + L_kf.ravel() * (y_meas - (C_aug @ z_pred).item())
+    x_hat = z_hat[:nx]; d_hat = z_hat[nx:].item()
+
+    # Target: midpoint of comfort band
+    T_ref = 0.5*(T_min_c[t] + T_max_c[t])
+
+    # MPC with economic cost + price preview
+    price_vec = np.zeros(nu*Np)
+    for k in range(Np):
+        idx = min(t+k, N_steps-1)
+        price_vec[k] = beta * Price[idx] * (Ts/3600)
+
+    x_target = np.array([T_ref, T_ref, T_amb[t]])
+    dx0 = x_hat - x_target
+    f_qp = (dx0 @ Sx.T @ Q_bar @ Su).ravel() + price_vec
+    bounds = [(u_min, u_max)] * (nu*Np)
+    res = minimize(lambda u: 0.5*u@H_qp@u + f_qp@u, np.zeros(nu*Np),
+                   method='L-BFGS-B', bounds=bounds, options={'ftol': 1e-14})
+    u_opt = np.clip(res.x[0], u_min, u_max)
+    u_prev = u_opt
+
+    # Log
+    log_y[t] = y_true; log_ymeas[t] = y_meas
+    log_u[t] = u_opt; log_d_hat[t] = d_hat
+    log_cost[t] = Price[t] * u_opt * (Ts/3600) / 1000  # £ per step
+
+    # Plant update (true dynamics with unknown occupancy)
+    x_true = (A @ x_true + B.ravel()*u_opt + E.ravel()*T_amb[t]
+              + Bsol.ravel()*Solar[t] + Bw.ravel()*Occ_true[t])
+
+total = np.sum(log_cost)
+print(f"Total heating cost: £{total:.3f}")
+
+# ── Plotting ────────────────────────────────────────────────────
+fig, axes = plt.subplots(4, 1, figsize=(10, 10))
+
+ax = axes[0]
+ax.plot(t_hrs, log_y, color='#4ECDC4', lw=1.5, label='T_operative')
+ax.plot(t_hrs, T_min_c, '--', color='#FF6B6B', lw=1, label='T_min')
+ax.plot(t_hrs, T_max_c, '--', color='#FFD93D', lw=1, label='T_max')
+ax.fill_between(t_hrs, T_min_c, T_max_c, alpha=0.08, color='#4ECDC4')
+ax.set_ylabel('Temperature [°C]'); ax.set_title('Indoor Temperature & Comfort Bounds')
+ax.legend(fontsize=7); ax.grid(True)
+
+ax = axes[1]
+ax.fill_between(t_hrs, 0, log_u/1000, alpha=0.6, color='#45B7D1', step='mid', label='Heater [kW]')
+ax2 = ax.twinx()
+ax2.step(t_hrs, Price, color='#FFD93D', lw=1.5, where='mid', label='Price [£/kWh]')
+ax2.set_ylabel('Price', color='#FFD93D')
+ax.set_ylabel('Power [kW]'); ax.set_title('Heater Power & Electricity Price')
+ax.legend(loc='upper left', fontsize=7); ax2.legend(loc='upper right', fontsize=7)
+ax.grid(True)
+
+ax = axes[2]
+ax.plot(t_hrs, log_d_hat, color='#4ECDC4', lw=1.5, label='Estimated')
+ax.step(t_hrs, Occ_true, '--', color='#FF6B6B', lw=1, where='mid', label='True')
+ax.set_ylabel('Occupancy'); ax.set_title('Occupancy Disturbance Estimate')
+ax.legend(fontsize=7); ax.grid(True)
+
+ax = axes[3]
+ax.plot(t_hrs, np.cumsum(log_cost), color='#4ECDC4', lw=2)
+ax.set_xlabel('Time [hours]'); ax.set_ylabel('Cost [£]')
+ax.set_title(f'Cumulative Heating Cost (total: £{total:.3f})')
+ax.grid(True)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
 <figure id="fig:simulinkbuilding">
 <img src="figures/Simulink_Building.png" style="width:100.0%" />
 <figcaption>HVAC Simulation using SIMULINK.</figcaption>
