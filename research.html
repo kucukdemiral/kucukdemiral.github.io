@@ -364,9 +364,9 @@
                 {
                     title: "Model Predictive Control: From Foundations to Advanced Topics",
                     authors: "\u0130.B. K\u00fc\u00e7\u00fckdemiral",
-                    venue: "Zenodo, 2026",
+                    venue: "Book, 2026",
                     abstract: "A comprehensive monograph covering the foundations and advanced topics of model predictive control, including robust MPC, stochastic MPC, learning-based MPC, and tube-based formulations. Intended as both a graduate-level textbook and a reference for researchers in control engineering.",
-                    doi: null,
+                    doi: "https://amzn.eu/d/03YGNjQN",
                     year: 2026
                 }
             ]
@@ -538,6 +538,7 @@
                 if (paper.doi.indexOf('arxiv.org') !== -1) linkLabel = 'View Preprint';
                 else if (paper.doi.indexOf('researchonline.gcu') !== -1) linkLabel = 'View Record';
                 else if (paper.doi.indexOf('upec2025') !== -1) linkLabel = 'Conference Site';
+                else if (paper.doi.indexOf('amzn.') !== -1 || paper.doi.indexOf('amazon.') !== -1 || paper.doi.indexOf('a.co/') !== -1) linkLabel = 'View Book';
                 html += '<a href="' + paper.doi + '" target="_blank" rel="noopener" class="modal-paper-doi">' + linkLabel + ' &rarr;</a>';
             }
             html += '</div></div>';
