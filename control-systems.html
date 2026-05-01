@@ -37,10 +37,23 @@
         <h2>Control Systems</h2>
         <p>Explore the interactive tools below to experiment with classical control system analysis and design techniques.</p>
 
+        <div class="tool-selector">
+            <button class="tool-btn active" data-tool="pid">
+                <span class="btn-icon">&#9881;</span> PID Simulator
+            </button>
+            <button class="tool-btn" data-tool="bode">
+                <span class="btn-icon">&#8767;</span> Bode Sketch Studio
+            </button>
+        </div>
+
         <div class="applet applet-full" id="tool-pid">
-            <h3>PID Simulator</h3>
             <p class="tool-description">Experiment with PID controller tuning and observe system response characteristics in real time.</p>
             <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
+        </div>
+
+        <div class="applet applet-full" id="tool-bode" style="display:none;">
+            <p class="tool-description">Interactive Bode plot sketcher with asymptotic and exact magnitude/phase responses, pole-zero analysis, stability metrics, and time delay support.</p>
+            <iframe src="bode-plotter/index.html" title="Bode Sketch Studio"></iframe>
         </div>
     </div>
 
@@ -49,6 +62,15 @@
     </footer>
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
+        document.querySelectorAll('.tool-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tool-btn').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                var tool = btn.getAttribute('data-tool');
+                document.getElementById('tool-pid').style.display = tool === 'pid' ? '' : 'none';
+                document.getElementById('tool-bode').style.display = tool === 'bode' ? '' : 'none';
+            });
+        });
     </script>
 </body>
 </html>

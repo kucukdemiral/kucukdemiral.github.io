@@ -1,3 +1,47 @@
+.tool-selector {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+
+.tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.8rem;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow);
+    user-select: none;
+}
+
+.tool-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.tool-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px rgba(46, 80, 144, 0.35);
+}
+
+.tool-btn .btn-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
 .tool-description {
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -13,12 +57,30 @@
 }
 
 @media (max-width: 768px) {
+    .tool-selector {
+        gap: 0.5rem;
+    }
+
+    .tool-btn {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.88rem;
+    }
+
     .applet-full iframe {
         height: 1800px;
     }
 }
 
 @media (max-width: 480px) {
+    .tool-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tool-btn {
+        justify-content: center;
+    }
+
     .applet-full iframe {
         height: 1400px;
     }
