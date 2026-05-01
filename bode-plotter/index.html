@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bode Sketch Studio</title>
+    <meta
+      name="description"
+      content="Interactive Bode plot sketcher with asymptotic and exact responses, pole-zero markers, and delay support."
+    />
+    <link rel="stylesheet" href="styles.css?v=20260501-3" />
+    <script src="app.js?v=20260501-3" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Interactive Bode Tool</p>
+          <h1>Bode Sketch Studio</h1>
+        </div>
+        <div id="status-badge" class="status-badge status-valid">Ready</div>
+      </header>
+
+      <main class="app-grid">
+        <section class="control-panel panel">
+          <div class="panel-header">
+            <h2>Inputs</h2>
+            <p>Use spaces, commas, or semicolons. The response updates while you type.</p>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>Numerator coefficients</span>
+              <input id="num-input" type="text" value="1 4 5" autocomplete="off" spellcheck="false" />
+              <small>Descending powers of <span class="mono">s</span></small>
+            </label>
+
+            <label class="field">
+              <span>Denominator coefficients</span>
+              <input id="den-input" type="text" value="2 3 6" autocomplete="off" spellcheck="false" />
+              <small>Descending powers of <span class="mono">s</span></small>
+            </label>
+
+            <label class="field">
+              <span>Delay T (seconds)</span>
+              <input id="delay-input" type="text" value="0" autocomplete="off" spellcheck="false" />
+              <small>Applies the factor <span class="mono">e<sup>-sT</sup></span></small>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="example-btn" type="button">Load Example</button>
+            <button id="clear-btn" type="button">Clear</button>
+          </div>
+
+          <div id="message-box" class="message-box" aria-live="polite"></div>
+
+          <div class="tf-card">
+            <div class="formula-label">Transfer Function</div>
+            <div id="tf-display" class="tf-display"></div>
+          </div>
+        </section>
+
+        <section class="metrics-panel panel">
+          <div class="panel-header">
+            <h2>System Data</h2>
+            <p>Pole and zero locations, DC gain, phase margin, and gain margin.</p>
+          </div>
+          <div id="metrics-content" class="metrics-content"></div>
+        </section>
+
+        <div class="plots-grid panel-full">
+          <section class="plot-panel panel">
+            <div class="panel-header">
+              <h2>Magnitude</h2>
+              <p>Exact and total asymptotic gain, with faint colored traces for each normalized factor.</p>
+            </div>
+            <div id="magnitude-readout" class="plot-readout" aria-live="polite"></div>
+            <div id="magnitude-plot" class="plot"></div>
+          </section>
+
+          <section class="plot-panel panel">
+            <div class="panel-header">
+              <h2>Phase</h2>
+              <p>Exact and total asymptotic phase, with each normalized factor and any delay shown separately.</p>
+            </div>
+            <div id="phase-readout" class="plot-readout" aria-live="polite"></div>
+            <div id="phase-plot" class="plot"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

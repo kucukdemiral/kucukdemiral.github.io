@@ -35,10 +35,22 @@
 
     <div class="container">
         <h2>Control Systems</h2>
-        <p>Explore the interactive PID simulator below to experiment with controller tuning and observe system response characteristics.</p>
+        <p>Explore the interactive tools below to experiment with classical control system analysis and design techniques.</p>
 
-        <div class="applet applet-full">
+        <div class="tool-selector">
+            <button class="tool-tab active" data-tool="bode">Bode Sketch Studio</button>
+            <button class="tool-tab" data-tool="pid">PID Simulator</button>
+        </div>
+
+        <div class="applet applet-full" id="tool-bode">
+            <h3>Bode Sketch Studio</h3>
+            <p class="tool-description">Interactive Bode plot sketcher with asymptotic and exact magnitude/phase responses, pole-zero analysis, stability metrics, and time delay support.</p>
+            <iframe src="bode-plotter/index.html" title="Bode Sketch Studio"></iframe>
+        </div>
+
+        <div class="applet applet-full" id="tool-pid" style="display:none;">
             <h3>PID Simulator</h3>
+            <p class="tool-description">Experiment with PID controller tuning and observe system response characteristics in real time.</p>
             <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
         </div>
     </div>
@@ -46,6 +58,17 @@
     <footer>
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
-    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+        document.querySelectorAll('.tool-tab').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tool-tab').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                var tool = btn.getAttribute('data-tool');
+                document.getElementById('tool-bode').style.display = tool === 'bode' ? '' : 'none';
+                document.getElementById('tool-pid').style.display = tool === 'pid' ? '' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>
