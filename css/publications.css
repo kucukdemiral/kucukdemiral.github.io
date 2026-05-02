@@ -1,0 +1,384 @@
+/* === Publications Page === */
+
+.pub-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.pub-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pub-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.2rem;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow);
+    user-select: none;
+}
+
+.pub-filter-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.pub-filter-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px rgba(46, 80, 144, 0.35);
+}
+
+.pub-search-wrap {
+    margin-left: auto;
+    position: relative;
+}
+
+.pub-search-wrap input {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.88rem;
+    padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+    border: 2px solid var(--border);
+    border-radius: 50px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    width: 220px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.pub-search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(46, 80, 144, 0.12);
+}
+
+.pub-search-wrap::before {
+    content: "\1F50D";
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.85rem;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.pub-summary {
+    width: 100%;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+/* Year headers */
+.pub-year-header {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 2rem 0 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid var(--bg-subtle);
+}
+
+.pub-year-header:first-child {
+    margin-top: 0.5rem;
+}
+
+/* Publication cards */
+.pub-card {
+    padding: 1.1rem 1.35rem;
+    margin-bottom: 0.65rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.pub-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.pub-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.pub-badge {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 0.2rem 0.65rem;
+    border-radius: 50px;
+    color: #fff;
+}
+
+.pub-badge-journal { background: var(--accent); }
+.pub-badge-conference { background: #5a7d3a; }
+.pub-badge-book { background: #8b5e3c; }
+.pub-badge-other { background: var(--text-light); }
+
+.pub-year {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.pub-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 0.3rem;
+    color: var(--navy);
+}
+
+.pub-title a {
+    color: var(--navy);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.pub-title a:hover {
+    color: var(--accent);
+}
+
+.pub-under-review {
+    display: inline-block;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: #e8b339;
+    color: #fff;
+    padding: 0.12rem 0.5rem;
+    border-radius: 50px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+}
+
+.pub-authors {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.2rem;
+    line-height: 1.5;
+}
+
+.pub-venue {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: 0 0 0.5rem;
+    line-height: 1.45;
+}
+
+/* Action buttons */
+.pub-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.pub-action-btn {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.4;
+}
+
+.pub-action-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #f0f4fb;
+}
+
+.pub-btn-abstract { border-color: var(--accent); color: var(--accent); }
+.pub-btn-bibtex { border-color: #5a7d3a; color: #5a7d3a; }
+.pub-btn-doi { border-color: #8b5e3c; color: #8b5e3c; }
+.pub-btn-link { border-color: var(--text-light); color: var(--text-light); }
+
+.pub-btn-abstract:hover { background: #eef2fa; }
+.pub-btn-bibtex:hover { background: #f0f5ec; color: #5a7d3a; border-color: #5a7d3a; }
+.pub-btn-doi:hover { background: #f7f1ec; color: #8b5e3c; border-color: #8b5e3c; }
+.pub-btn-link:hover { background: #f5f5f5; color: var(--text-light); border-color: var(--text-light); }
+
+/* === Modal === */
+.pub-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    padding: 1.5rem;
+}
+
+.pub-modal-overlay.visible {
+    opacity: 1;
+}
+
+.pub-modal {
+    background: var(--bg-card);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    max-width: 700px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(12px);
+    transition: transform 0.25s ease;
+}
+
+.pub-modal-overlay.visible .pub-modal {
+    transform: translateY(0);
+}
+
+.pub-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.pub-modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--navy);
+}
+
+.pub-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0 0.3rem;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.pub-modal-close:hover {
+    color: var(--text-primary);
+}
+
+.pub-modal-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.modal-pub-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--navy);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-bibtex {
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    font-size: 0.8rem;
+    background: var(--bg-subtle);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+}
+
+.pub-copy-btn {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 1.1rem;
+    border: 2px solid var(--accent);
+    border-radius: 50px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pub-copy-btn:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .pub-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pub-search-wrap {
+        margin-left: 0;
+    }
+
+    .pub-search-wrap input {
+        width: 100%;
+    }
+
+    .pub-card {
+        padding: 0.9rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pub-filters {
+        flex-direction: column;
+    }
+
+    .pub-filter-btn {
+        justify-content: center;
+    }
+
+    .pub-modal {
+        max-height: 90vh;
+    }
+}

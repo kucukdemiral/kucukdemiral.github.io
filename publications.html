@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/publications.css">
 </head>
 <body>
     <header>
@@ -34,13 +35,27 @@
 
     <div class="container">
         <h2>Publications</h2>
-        <div id="bibbase"></div>
+
+        <div class="pub-controls">
+            <div class="pub-filters">
+                <button class="pub-filter-btn active" data-filter="all">All</button>
+                <button class="pub-filter-btn" data-filter="journal">Journal Articles</button>
+                <button class="pub-filter-btn" data-filter="conference">Conference Papers</button>
+                <button class="pub-filter-btn" data-filter="book">Books</button>
+            </div>
+            <div class="pub-search-wrap">
+                <input type="text" id="pub-search" placeholder="Search publications...">
+            </div>
+            <div class="pub-summary" id="pub-count"></div>
+        </div>
+
+        <div id="pub-list"></div>
     </div>
-    <script src="https://bibbase.org/show?bib=https%3A%2F%2Fbibbase.org%2Fnetwork%2Ffiles%2FJ44AvW8QX86xEjAyD&noBootstrap=1&jsonp=1"></script>
 
     <footer>
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <script src="js/publications.js"></script>
 </body>
 </html>

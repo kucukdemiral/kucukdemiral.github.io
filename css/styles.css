@@ -328,36 +328,6 @@ nav ul li ul li a:hover {
     height: 2400px;
 }
 
-/* === Publications === */
-.bibbase-readmore {
-    color: var(--accent);
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.bibbase-entry {
-    margin: 0.75em 0;
-    padding: 1em 1.25em;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg-subtle);
-}
-
-.bibbase-author {
-    font-weight: 600;
-}
-
-.bibbase-title {
-    font-style: italic;
-}
-
-.bibbase-journal,
-.bibbase-year {
-    font-style: italic;
-    color: var(--text-light);
-    font-size: 0.9em;
-}
-
 /* === Footer === */
 footer {
     background: var(--navy);
