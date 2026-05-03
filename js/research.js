@@ -18,24 +18,22 @@
             'fault-tolerant', 'fault tolerant',
             'observer design', 'observer-based',
             'output feedback', 'state feedback',
-            'pid', 'self-tuning', 'self tuning'
+            'pid control', 'pid controller', 'self-tuning', 'self tuning',
+            'ell_', 'h sonsuz', 'position feedback'
         ],
         mpc: [
             'model predictive', 'predictive control', 'mpc',
-            'receding horizon', 'event-triggered', 'event triggered',
-            'tube-based', 'tube based',
-            'ship roll', 'ship motion', 'roll motion', 'fin control',
-            'offset-free', 'offset free',
-            'vertical motion'
+            'receding horizon',
+            'offset-free', 'offset free'
         ],
         datadriven: [
             'data-driven', 'data driven', 'data-enabled', 'data enabled',
             'deepc', 'deep reinforcement',
             'learning-based', 'learning based',
             'neural network', 'radial basis',
-            'q-learning', 'firefly algorithm', 'optimization algorithm',
+            'q-learning', 'firefly algorithm',
             'whale optimization', 'metaheuristic',
-            'generative ai', 'large language model', 'llm',
+            'generative ai', 'large language model',
             'deep learning', 'load forecasting',
             'pseudo-data', 'fault identifiab'
         ],
@@ -47,30 +45,38 @@
             'manipulator', 'pendulum', 'inverted pendulum',
             'teleoperation', 'bilateral',
             'autonomous vehicle', 'motion sickness',
-            'linear motor', 'motor drive', 'positioning',
+            'linear motor', 'motor drive', 'position control',
             'stewart platform', 'space vehicle',
             'trajectory tracking'
         ],
         energy: [
             'wind energy', 'wind turbine', 'dfig',
-            'solar energy', 'solar', 'photovoltaic',
+            'solar energy', 'photovoltaic',
             'renewable energy', 'smart grid', 'power system',
             'energy conversion', 'load forecasting',
             'demand response', 'energy transition',
             'microgrid', 'dc microgrid',
             'voltage-source inverter', 'false-data injection',
             'electric vehicle', 'ev charging', 'mobile charging',
-            'bayesian network', 'condition monitoring', 'reliability assessment',
-            'cyber-resilient', 'cyber security',
+            'condition monitoring', 'reliability assessment',
             'power engineering'
         ],
         biomedical: [
             'prosthetic', 'prosthesis', 'gait',
-            'cancer', 'carcinoma', 'therapy', 'tumor', 'tumour',
-            'biomedical', 'biomedical signal',
-            'suspension system', 'active suspension', 'vehicle suspension'
+            'cancer', 'carcinoma', 'tumor', 'tumour',
+            'biomedical', 'biomedical signal'
         ]
     };
+
+    var wordBoundaryKeywords = ['mpc', 'pid', 'llm', 'solar'];
+
+    function matchesKeyword(blob, kw) {
+        if (wordBoundaryKeywords.indexOf(kw) !== -1) {
+            var re = new RegExp('(?:^|[^a-z])' + kw + '(?:[^a-z]|$)');
+            return re.test(blob);
+        }
+        return blob.indexOf(kw) !== -1;
+    }
 
     function classifyEntry(entry) {
         var blob = [
@@ -82,7 +88,7 @@
         for (var theme in themeKeywords) {
             var kws = themeKeywords[theme];
             for (var i = 0; i < kws.length; i++) {
-                if (blob.indexOf(kws[i]) !== -1) {
+                if (matchesKeyword(blob, kws[i])) {
                     themes.push(theme);
                     break;
                 }
