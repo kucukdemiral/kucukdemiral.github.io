@@ -286,6 +286,65 @@
     color: #fff;
 }
 
+.modal-under-review {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #856404;
+    background: #fff3cd;
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+}
+
+.modal-abstract-details {
+    margin: 0.4rem 0;
+}
+
+.modal-abstract-details summary {
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.modal-abstract-details summary:hover {
+    text-decoration: underline;
+}
+
+.modal-paper-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.modal-paper-link {
+    background: var(--navy, #2c3e50);
+}
+
+.modal-paper-link:hover {
+    background: #1a252f;
+}
+
+.modal-bib-btn {
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: inherit;
+}
+
+.modal-bib-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.latex-math {
+    font-style: italic;
+    white-space: nowrap;
+}
+
 /* === Scrollbar styling for modal === */
 .modal-body::-webkit-scrollbar {
     width: 6px;
