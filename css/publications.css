@@ -135,6 +135,11 @@
     color: #fff;
 }
 
+.latex-math {
+    font-style: italic;
+    white-space: nowrap;
+}
+
 .pub-badge-journal { background: var(--accent); }
 .pub-badge-conference { background: #5a7d3a; }
 .pub-badge-book { background: #8b5e3c; }
