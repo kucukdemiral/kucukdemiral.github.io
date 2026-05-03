@@ -15,16 +15,17 @@
 }
 
 @article{MOUSAVI2026108933,
-	title = {Energy-aware hierarchical fractional-order terminal sliding mode control with hybrid learning observer for enhanced gait comfort in active prosthetics},
-	journal = {Biomedical Signal Processing and Control},
-	volume = {113},
-	pages = {108933},
-	year = {2026},
-	issn = {1746-8094},
-	doi = {https://doi.org/10.1016/j.bspc.2025.108933},
-	author = {Arash Mousavi and Rashin Mousavi and Yashar Mousavi and Mahsa Tavasoli and Sara Shahnazinia and Ibrahim Beklan Küçükdemiral and Afef Fekih and Ümit Çalı},
-	abstract = {Recent advances in biomedical engineering have transformed prosthetic devices from simple mechanical constructs into intelligent active systems capable of complex movements such as stair climbing and slope walking. However, the highly nonlinear dynamics of lower-limb prostheses pose significant challenges in protecting residual limb tissues from impact-induced vibrations, particularly during the critical 150ms neurological delay following heel-strike. This paper proposes an energy-aware hierarchical learning-based disturbance observer fractional-order terminal sliding mode control (EAH-DO-FDTSMC) framework featuring a novel three-layer sliding surface structure to mitigate impact vibrations from the prosthetic foot and pylon. The method introduces a novel integration of adaptive fractional-order dynamics with hierarchical sliding surfaces for prosthetic control, integrating bio-inspired constraints from healthy gait patterns and dynamically optimizing power consumption using an energy-aware control allocation. Furthermore, a hybrid disturbance observer with progressive learning capabilities compensates for actuator non-idealities, including hysteresis, dead-zone, and temperature-dependent variations, demonstrating substantial reductions in estimation error and significant improvements in hysteresis compensation over multiple gait cycles. Rigorous Lyapunov-based stability analysis confirms finite-time convergence and robustness through adaptive fractional calculus. Extensive simulation results demonstrate exceptional improvements over advanced control methods, achieving substantial reductions in peak tissue displacement, significant chattering amplitude suppression, enhanced battery life extension, and superior robustness under parameter variations. The obtained results validate the practical potential of the proposed approach for improving comfort, efficiency, and mobility in active prosthetic applications.},
-	keywords = {J},
+title = {Energy-aware hierarchical fractional-order terminal sliding mode control with hybrid learning observer for enhanced gait comfort in active prosthetics},
+journal = {Biomedical Signal Processing and Control},
+volume = {113},
+pages = {108933},
+year = {2026},
+issn = {1746-8094},
+doi = {https://doi.org/10.1016/j.bspc.2025.108933},
+url = {https://www.sciencedirect.com/science/article/pii/S1746809425014442},
+author = {Arash Mousavi and Rashin Mousavi and Yashar Mousavi and Mahsa Tavasoli and Sara Shahnazinia and Ibrahim Beklan Küçükdemiral and Afef Fekih and Umit Cali},
+keywords = {Prosthetic control, Fractional-order sliding mode, Hierarchical control, Disturbance observer, Vibration isolation, Active prosthesis},
+abstract = {Recent advances in biomedical engineering have transformed prosthetic devices from simple mechanical constructs into intelligent active systems capable of complex movements such as stair climbing and slope walking. However, the highly nonlinear dynamics of lower-limb prostheses pose significant challenges in protecting residual limb tissues from impact-induced vibrations, particularly during the critical ~150ms neurological delay following heel-strike. This paper proposes an energy-aware hierarchical learning-based disturbance observer fractional-order terminal sliding mode control (EAH-DO-FDTSMC) framework featuring a novel three-layer sliding surface structure to mitigate impact vibrations from the prosthetic foot and pylon. The method introduces a novel integration of adaptive fractional-order dynamics with hierarchical sliding surfaces for prosthetic control, integrating bio-inspired constraints from healthy gait patterns and dynamically optimizing power consumption using an energy-aware control allocation. Furthermore, a hybrid disturbance observer with progressive learning capabilities compensates for actuator non-idealities, including hysteresis, dead-zone, and temperature-dependent variations, demonstrating substantial reductions in estimation error and significant improvements in hysteresis compensation over multiple gait cycles. Rigorous Lyapunov-based stability analysis confirms finite-time convergence and robustness through adaptive fractional calculus. Extensive simulation results demonstrate exceptional improvements over advanced control methods, achieving substantial reductions in peak tissue displacement, significant chattering amplitude suppression, enhanced battery life extension, and superior robustness under parameter variations. The obtained results validate the practical potential of the proposed approach for improving comfort, efficiency, and mobility in active prosthetic applications.}
 }
 
 @article{Mousavi2026FracTrace,
@@ -32,6 +33,9 @@
 	title   = {FracTrace: Long-Horizon Credit Assignment in Deep Reinforcement Learning via Fractional Eligibility Traces},
 	journal = {IEEE Transactions on Neural Networks and Learning Systems},
 	note    = {Under review},
+	abstract = {Temporal credit assignment becomes intractable when reward signals are displaced hundreds of steps from causal actions, limiting learning in robotic manipulation, autonomous navigation, and long-horizon planning. Conventional exponentially-decaying eligibility traces allocate negligible credit beyond moderate horizons. This paper proposes FracTrace, a Fractional Trace Actor Critic framework that addresses long horizon credit assignment using power law memory kernels derived from fractional calculus. FracTrace incorporates variable order Mittag Leffler functions at two levels. Hierarchical traces capture multi timescale state representations across fast, medium, and slow dynamics, while fractional eligibility traces induce algebraic decay that extends effective memory horizons to 500 to 800 steps. A critical design maintains the standard distributional Bellman operator for the critic—preserving convergence guarantees—while fractionalizing policy-side advantages. We establish
+	almost-sure convergence under two-timescale stochastic approximation with sample complexity $\tilde O(R_{max}^2/((1-\gamma)^4$\epsilon$^2))$, matching classical actor-critic rates while capturing longer dependencies. Empirical evaluation shows substantial improvements over PPO, R2D2, and GTrXL, with FracTrace uniquely solving extreme-horizon tasks (800 steps) while maintaining computational efficiency and superior sample efficiency.},
+	keywords = {Reinforcement learning, credit assignment, fractional calculus, eligibility traces, actor-critic, long-horizon tasks},
 	year    = {2026}
 }
 
@@ -45,7 +49,6 @@
 	author = {Ali Can Erüst and Fatma Yıldız Taşcıkaraoğlu and İbrahim Beklan Küçükdemiral},
 	abstract = {This paper addresses the real-world, safety-critical planning problem for a wheeled mobile robot with an unknown model, focusing on obstacle avoidance in complex environments. Data-enabled predictive control (DeePC) is a renowned optimal control framework for unknown linear time-invariant systems, offering the ability to predict future system trajectories using only past input/output measurements, without requiring explicit system identification. To enable its application to nonlinear systems, a local linear approximation technique with online data updates is adopted. To further improve robustness, a novel adaptive Lasso-based regularization term is incorporated into the cost function. Safety is a critical challenge for data-enabled control of nonlinear systems, which is addressed by incorporating discrete-time control barrier functions into a quadratic programming-based safety filter operating alongside the DeePC. We provide a formal proof of the practical stability of the closed-loop system, ensuring bounded trajectory tracking. Real-time simulations in the ROS-Gazebo environment show that adaptive regularization reduces the trajectory tracking error by about 20.2\%.},
 	keywords = {Data-enabled predictive control, Discrete time control barrier functions, Adaptive regularization, Wheeled mobile robot},
-	keywords = {J},
 }
 
 @article{CANERUST2026RAS,
@@ -68,10 +71,12 @@
 @article{ArtificialIntellegence2025_yashar,
 author = {Yashar Mousavi and Mahsa Tavasoli and Ibrahim Beklan Kucukdemiral and Aliasghar Arab and Afef Fekih and Ümit Çalı},
 title = {SAFE-WECS-LLM: A Multi-Layered Safety Validation Framework for Large Language Models in Critical Wind Energy Applications},
-journal = {Artificial Intelligence Review},
+journal = {Reliability Engineering & System Safety},
 year = {2026},
 note = {Under Review},
-keywords = {J},
+abstract = {While large language models (LLMs) offer significant opportunities for intelligent
+maintenance and diagnostics in wind energy conversion systems (WECSs), their deployment in safety-critical environments raises concerns regarding factual reliability and operational safety. This paper proposes SAFE-WECS-LLM, a domain-constrained framework that enhances the safety, reliability, and contextual relevance of LLM-generated outputs in WECS applications. The framework employs a multi-layered validation architecture combining semantic similarity analysis, statistical uncertainty estimation, and domain knowledge graph verification to detect and filter unsafe or hallucinated content. Real-time contextual validation aligns LLM recommendations with supervisory control and data acquisition (SCADA) signals and environmental constraints, while adaptive intervention strategies include filtering, regeneration, and prompt augmentation customized to different LLM behaviors. Experimental validation across three state-of-the-art LLMs demonstrates substantial improvements in safety compliance, factual accuracy, and operational usefulness with minimal computational overhead. The proposed approach establishes a principled foundation for deploying LLMs in safety-critical industrial settings, advancing trustworthy artificial intelligence in critical infrastructure applications.},
+keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs), Safety Filtering, Hallucination Detection, Domain-Constrained AI, Safety-Critical Systems}
 }
 
 @article{https://doi.org/10.1002/rnc.70351,
@@ -89,7 +94,6 @@ keywords = {J},
 }
 
 
-
 @article{HAN2026108259,
 	title = {Using time delayed disturbance compensation for sliding mode control},
 	journal = {Journal of the Franklin Institute},
@@ -102,7 +106,7 @@ keywords = {J},
 	url = {https://www.sciencedirect.com/science/article/pii/S0016003225007513},
 	author = {Xiaoran Han and İbrahim Küçükdemiral and Emilia Fridman and Wouter B J Hakvoort and James Jamieson and Mustafa {Suphi Erden}},
 	abstract = {Under the framework of using Time Delay Control (TDC) for disturbance compensation in Sliding Mode Control (SMC), we address two practical problems. The first problem involves mitigating chattering in SMC caused by input delay, while the second problem focuses on designing TDC under conditions of limited measurements. Our research demonstrates that incorporating TDC as a phase lead compensator in the first problem can effectively accommodate larger input delays. To reduce the chattering, we propose a switching gain design, consisting of reference signals rather than measured states, resulting in an ultimately bounded solution. In the second problem, when acceleration measurements are unavailable, we provide stability conditions under which TDC can be designed with acceleration construction using delayed velocity signals. By constructing a modified sliding surface that incorporates the integral error remainder associated with the acceleration construction, our approach ensures switching gain are kept at minimal, with robust disturbance compensation at higher frequencies. We perform a simulation investigation of an autonomous underwater vehicle under input delay and disturbance to demonstrate the efficiency of the approach.},
-	keywords = {J},
+	keywords = {Sliding mode control, Input delay, Time delay disturbance compensation, Chattering reduction, Using delays for control},
 }
 
 @article{TIV2025,
@@ -111,7 +115,10 @@ keywords = {J},
 	journal = {IEEE Trans. Control Systems Technology},
 	year = {2025},
 	note = {Under Review},
-	keywords = {J},
+	abstract = {Autonomous vehicles operating over networked control architectures face a critical unsolved challenge: existing secure control methods either require precise physics-based models that are unavailable in practice, or address cybersecurity and communication efficiency as separate concerns, leaving a gap in frameworks that simultaneously guarantee attack resilience, bandwidth efficiency, and stability under model uncertainty. This paper addresses this gap through a cyber-resilient data-driven event-triggered secure control framework for autonomous vehicles subject to false data injection attacks on steering actuators. The key innovation is a unified architecture in which dynamic mode decomposition identifies lateral dynamics directly from experimental data without physical parameter knowledge, an event-triggered scheme reduces communication overhead while provably preventing the transmission threshold from serving as an attack-masking channel, and a fractional-order sliding mode controller coupled with an extended state observer simultaneously estimates and compensates actuator attacks in real time. Lyapunov-Krasovskii stability analysis with linear matrix inequality formulations provides a unified data-driven
+	stability certificate encoding identification uncertainty, network delay bounds, and attack magnitude constraints within a single feasibility condition. Simulation results show that the framework effectively counteracts actuator attacks while optimizing
+	communication-resource utilization, producing three emergent, formally proven theoretical guarantees - attack-resilient stability under imperfect estimation, stealthy attack detectability independent of transmission suppression, and a unified data-driven stability certificate — that are unachievable by any proper subset of the framework, making it highly suitable for safety-critical AV applications.},
+	keywords = {Autonomous vehicles, data-driven modeling, event-triggered control, secure control, extended state observer.},
 }
 
 @article{ArtificialReview25,
@@ -121,7 +128,7 @@ keywords = {J},
 	year = {2026},
 	volume = {117},
 	doi = {https://doi.org/10.1007/s10462-026-11511-y},
-	keywords = {J},
+	keywords = {Fractional calculus, Firefly algorithm, Reinforcement learning, Q-learning, Large-scale optimization, Dynamic multiobjective optimization, Adaptive parameter control, Maximum entropy reinforcement learning},
 	abstract = {This paper introduces QRL-AFOFA, a Q-learning-enhanced adaptive fractional-order firefly algorithm developed to address the challenges of large-scale and dynamic multiobjective optimization problems. While fractional-order metaheuristics provide memory-driven search dynamics and reinforcement learning (RL) offers adaptive policy control, existing hybrid methods often face critical limitations such as parameter sensitivity, premature convergence, and poor diversity preservation. To overcome these challenges, QRL-AFOFA integrates five synergistic innovations: real-time adaptive tuning of fractional-order parameters, entropy-regularized Q-value updates, stagnation-aware restart strategies, reflection-based boundary handling, and dual-phase learning rate scheduling. The Q-learning framework autonomously adapts critical parameters while entropy regularization maintains the exploration-exploitation balance, and stagnation-aware mechanisms ensure the preservation of population diversity. Extensive experiments on the IEEE Congress on Evolutionary Computation (CEC2021) benchmark functions demonstrate that QRL-AFOFA consistently outperforms state-of-the-art algorithms across diverse problem categories. Statistical validation further confirmed its superior performance across multiobjective, large-scale, and dynamic optimization scenarios. The algorithm achieves exceptional performance in high-dimensional settings while eliminating manual parameter tuning requirements, positioning it as an intelligent, scalable optimization framework for complex real-world applications.},
 }
 
@@ -131,17 +138,14 @@ keywords = {J},
 	title = {Dynamic Pricing and Scheduling of Mobile Charging Systems in Competitive Electric Vehicle Charging Networks},
 	journal = {IEEE Transactions on Transportation Electrification},
 	year = {2026},
-	abstract = {
-	The rapid expansion of electric vehicle (EV) adoption has led to growing demand on charging infrastructure, resulting in congestion, extended waiting times, and increased stress on distribution networks. Mobile charging systems (MCSs) provide a flexible, grid-independent complement to stationary charging stations; however, their large-scale deployment is constrained by pricing trade-offs, as high tariffs discourage EV users from adopting MCS services, while low tariffs weaken operator profitability and investment incentives. This paper proposes a dynamic optimization-based pricing framework in which MCS charging prices are explicitly determined as a key decision variable. The framework incorporates spatiotemporal EV demand, MCS mobility constraints, electricity procurement costs, battery degradation costs, and travel costs, while modeling EV user choice behavior through a unit value of time (VoT) parameter to reflect heterogeneous time sensitivity under different pricing conditions. The resulting mixed-integer linear programming model is evaluated on the Sioux Falls transportation network over a 24-hour horizon. Numerical results show that the proposed framework reduces average EV charging station (EVCS) waiting times by 38.8\%, with peak-hour reductions of up to 56.3\%. Compared to fixed-price benchmarks, operator profit increases by more than twofold while maintaining coordinated and feasible MCS energy management.},
+	abstract = {The rapid expansion of electric vehicle (EV) adoption has led to growing demand on charging infrastructure, resulting in congestion, extended waiting times, and increased stress on distribution networks. Mobile charging systems (MCSs) provide a flexible, grid-independent complement to stationary charging stations; however, their large-scale deployment is constrained by pricing trade-offs, as high tariffs discourage EV users from adopting MCS services, while low tariffs weaken operator profitability and investment incentives. This paper proposes a dynamic optimization-based pricing framework in which MCS charging prices are explicitly determined as a key decision variable. The framework incorporates spatiotemporal EV demand, MCS mobility constraints, electricity procurement costs, battery degradation costs, and travel costs, while modeling EV user choice behavior through a unit value of time (VoT) parameter to reflect heterogeneous time sensitivity under different pricing conditions. The resulting mixed-integer linear programming model is evaluated on the Sioux Falls transportation network over a 24-hour horizon. Numerical results show that the proposed framework reduces average EV charging station (EVCS) waiting times by 38.8\%, with peak-hour reductions of up to 56.3\%. Compared to fixed-price benchmarks, operator profit increases by more than twofold while maintaining coordinated and feasible MCS energy management.},
 	note = {Under Review},
-	keywords = {J},
+	keywords = {Charging infrastructure, charging service economics, dynamic pricing, electric vehicles, mobile charging systems.},
 }
 
-
-
-
 @inproceedings{4cae6555c88044efbb82ad23dff34044,  
-	title     = "Mobil robotlar için model-bağımsız, güvenli ve olay-tetiklemeli öngürülü kontrol yaklaşımı",    author    = "Erüst, Ali Can and Yildiz Taşcıkaraoğlu, Fatma and Küçükdemiral, ibrahim Beklan",  
+	title     = "Mobil robotlar için model-bağımsız, güvenli ve olay-tetiklemeli öngürülü kontrol yaklaşımı",    
+	author    = "Erüst, Ali Can and Yildiz Taşcıkaraoğlu, Fatma and Küçükdemiral, ibrahim Beklan",  
 	year      = "2025",  
 	month     = sep,  
 	day       = "7", 
