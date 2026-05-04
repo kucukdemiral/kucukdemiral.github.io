@@ -209,7 +209,7 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 	year={2025},
 	volume={1},
 	number={},
-	abstract={This paper presents a data-driven H-infinity controller for active vibration control in structural systems having saturated actuators. The data-driven approach addresses parameter uncertainties by eliminating the need for system identification. The full-block S-procedure is used to formulate a convex optimization problem in the form of linear matrix inequalities (LMIs), though additional constraints may introduce conservatism. To mitigate this, the dilation technique with non-common Lyapunov matrices is employed, reducing conservatism and achieving a 12.7% lower H-infinity norm compared to common Lyapunov matrices. A seismically excited three-storey structure is used to validate the method. Simulations based on real-time data from the Kobe earthquake show that the proposed synthesis effectively reduces vibrations while control inputs never become saturated.},
+	abstract={This paper presents a data-driven $H_\infty$ controller for active vibration control in structural systems having saturated actuators. The data-driven approach addresses parameter uncertainties by eliminating the need for system identification. The full-block S-procedure is used to formulate a convex optimization problem in the form of linear matrix inequalities (LMIs), though additional constraints may introduce conservatism. To mitigate this, the dilation technique with non-common Lyapunov matrices is employed, reducing conservatism and achieving a 12.7% lower H-infinity norm compared to common Lyapunov matrices. A seismically excited three-storey structure is used to validate the method. Simulations based on real-time data from the Kobe earthquake show that the proposed synthesis effectively reduces vibrations while control inputs never become saturated.},
 	pages={1911-1916},
 	keywords={Vibrations;Actuators;Uncertain systems;Earthquakes;H infinity control;Vibration control;Real-time systems;Linear matrix inequalities;System identification;Information technology;data-driven control;active structural control;non-common Lyapunov matrix;linear matrix inequalities;saturated actuators},
 	doi={10.1109/CoDIT66093.2025.11321596}}
@@ -780,7 +780,7 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 @INPROCEEDINGS{7394643,
 	author={Haq, Md. Aminul and Beklan Küçükdemiral, Ibrahim},
 	booktitle={9th International Conference on Electrical and Electronics Engineering (ELECO)}, 
-	title={H∞ observer design for linear time-delay systems}, 
+	title={$H_\infty$ observer design for linear time-delay systems}, 
 	year={2015},
 	volume={},
 	number={},
@@ -797,7 +797,7 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 @INPROCEEDINGS{7394566,
 	author={Sever, Mert and Göktas, Gūlay and Yazıcı, Hakan and Beklan Küçükdemiral, Ibrahim},
 	booktitle={2015 9th International Conference on Electrical and Electronics Engineering (ELECO)}, 
-	title={Linear matrix inequalities based state feedback and reference feedforward actuator saturated H-infinity control of small-scale unmanned helicopter}, 
+	title={Linear matrix inequalities based state feedback and reference feedforward actuator saturated $H_\infty$ control of small-scale unmanned helicopter}, 
 	year={2015},
 	volume={},
 	number={},
@@ -877,16 +877,68 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 }
 
 
-@article{65e8e34a113e4de4973dc137e88e6a7a,  title     = "Robust moving horizon $H_\infty$ control of discrete time-delayed systems with interval time-varying delays",    author    = "Yıldız Taşcıkaraoğlu, F. and Küçükdemiral, I. B. and J. Imura",  year      = "2014",  month     = aug,  day       = "27",  doi       = "10.1155/2014/462983",     volume    = "2014",  journal   = "Mathematical Problems in Engineering",  issn      = "1024-123X",  publisher = "John Wiley and Sons Ltd",}
+@article{https://doi.org/10.1155/2014/462983,
+author = {Tascikaraoglu, F. Yıldız and Kucukdemiral, I. B. and Imura, J.},
+title = {Robust Moving Horizon $H_\infty$ Control of Discrete Time-Delayed Systems with Interval Time-Varying Delays},
+journal = {Mathematical Problems in Engineering},
+volume = {2014},
+number = {1},
+pages = {462983},
+doi = {https://doi.org/10.1155/2014/462983},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1155/2014/462983},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1155/2014/462983},
+abstract = {In this study, design of a delay-dependent type moving horizon state-feedback control (MHHC) is considered for a class of linear discrete-time system subject to time-varying state delays, norm-bounded uncertainties, and disturbances with bounded energies. The closed-loop robust stability and robust performance problems are considered to overcome the instability and poor disturbance rejection performance due to the existence of parametric uncertainties and time-delay appeared in the system dynamics. Utilizing a discrete-time Lyapunov-Krasovskii functional, some delay-dependent linear matrix inequality (LMI) based conditions are provided. It is shown that if one can find a feasible solution set for these LMI conditions iteratively at each step of run-time, then we can construct a control law which guarantees the closed-loop asymptotic stability, maximum disturbance rejection performance, and closed-loop dissipativity in view of the actuator limitations. Two numerical examples with simulations on a nominal and uncertain discrete-time, time-delayed systems, are presented at the end, in order to demonstrate the efficiency of the proposed method.},
+year = {2014}
+}
 
 
-@article{640c93308cbd41089f0ad0f90f141fbc,  title     = "Robust delay-dependent feedforward control of neutral time-delay systems via dynamic IQCs",    author    = "L. Ucun and Küçükdemiral, I. B.",  year      = "2014",  month     = may,  doi       = "10.1080/00207721.2012.740094",     volume    = "45",  pages     = "858--872",  journal   = "International Journal of Systems Science",  issn      = "0020-7721",  publisher = "Taylor and Francis Ltd.",  number    = "5",}
+
+@article{640c93308cbd41089f0ad0f90f141fbc,  
+title     = "Robust delay-dependent feedforward control of neutral time-delay systems via dynamic IQCs",    
+author    = "L. Ucun and Küçükdemiral, I. B.",  
+year      = "2014",  
+month     = may,  
+doi       = "10.1080/00207721.2012.740094",     
+volume    = "45",  
+pages     = "858--872",  
+journal   = "International Journal of Systems Science", 
+abstract = "This paper studies the design problem of delay-dependent $H_\\infty$-based robust and optimal feedforward controller design for a class of time-delay control systems having state, control and neutral type delays which are subject to norm-bounded uncertainties and $L_2$-type measurable or observable disturbance signals. Two independent loops which include state-feedback and dynamic feedforward controller form the basis of the proposed control scheme in this study. State-feedback controller is generally used in stabilisation of the nominal delay-free system, whereas the feedforward controller is used for improving disturbance attenuation performance of the overall system. In order to obtain less conservative results, the delay and parametric uncertainty effects are treated in operator view point and represented by frequency-dependent (dynamic) integral quadratic constraints (IQCs). Moreover, sufficient delay-dependent criterion is developed in terms of linear matrix inequalities (LMIs) such that the time-delay system having parametric uncertainties is guaranteed to be asymptotically stable with minimum achievable disturbance attenuation level. Plenty of numerical examples are provided at the end, in order to illustrate the efficiency of the proposed technique. The achieved results on minimum achievable disturbance attenuation level and maximum allowable delay bounds are exhibited to be less conservative in comparison to those of controllers having only feedback loop.", 
+issn      = "0020-7721",  
+publisher = "Taylor and Francis Ltd.",  
+number    = "5",
+keywords = "neutral time-delay, $H_\infty$ control, feedforward controller design, dynamic integral quadratic constraints (IQCs)"
+}
 
 
-@article{232915bbca604f3590e29913d876c726,  title     = "Delay-dependent feedforward control of time-delay systems with parametric uncertainties via dynamic IQCs",  author    = "Levent Ucun and Küçükdemiral, Ibrahim B.",  year      = "2014",  month     = apr,  doi       = "10.1002/oca.2053",     volume    = "35",  pages     = "127--144",  journal   = "Optimal Control Applications and Methods",  issn      = "1099-1514",  publisher = "John Wiley and Sons Ltd",  number    = "2",}
+@article{https://doi.org/10.1002/oca.2053,
+author = {Ucun, Levent and Küçükdemiral, İbrahim B.},
+title = {Delay-dependent feedforward control of time-delay systems with parametric uncertainties via dynamic IQCs},
+journal = {Optimal Control Applications and Methods},
+volume = {35},
+number = {2},
+pages = {127-144},
+keywords = {time-delay systems, feedforward control, dynamic integral quadratic constraints, controller synthesis},
+doi = {https://doi.org/10.1002/oca.2053},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/oca.2053},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/oca.2053},
+abstract = {This paper studies the design problem of a robust delay-dependent $H_\infty$ feedforward controller design for a class of linear uncertain time-delay system having state and control delays when the system is subject to $L_2$-type disturbances. The proposed controller scheme involves two main controllers, which are static state-feedback and dynamic feedforward controllers. The state-feedback controller is used for stabilizing the delay and uncertainty-free system, whereas the feedforward controller performs disturbance attenuation. Dynamic type integral quadratic constraints (IQCs), which consist of frequency-dependent multipliers, have been introduced to represent the delays and parametric uncertainties in the system where the degree of the multiplier used in IQC representation is in an adjustable nature. This scheme allows the designer to obtain less conservative controllers with increasing precision. Sufficient delay-dependent criteria in terms of linear matrix inequalities are obtained such that the uncertain linear time-delay system is guaranteed to be globally, uniformly, asymptotically stable with a minimum disturbance attenuation level. Several numerical examples together with the simulation studies provided at the end illustrate the usefulness of the proposed design.},
+year = {2014}
+}
 
 
-@inproceedings{e792c6df56434a7fa1a00f47d5727ac3,  title     = "Doyumlu eyleyiciye sahip durum geri-beslemeli $H_\infty$ kontrol{\"o}r ile otonom bir helikopterin askıda kalma kontrol{\"u}",  author    = "Olcay Karadeniz and Hakan Yazıcı and Küçükdemiral, Ibrahim Beklan",  year      = "2013",  month     = sep,  day       = "28",  language  = "Turkish",  pages     = "290--295",  booktitle = "TOK 2013 Otomatik Kontrol Ulusal Toplantısı",  url       = "https://www.tok.itu.edu.tr/tok13/",}
+
+
+@inproceedings{e792c6df56434a7fa1a00f47d5727ac3,  
+title     = "Doyumlu eyleyiciye sahip durum geri-beslemeli $H_\infty$ kontrol{\"o}r ile otonom bir helikopterin askıda kalma kontrol{\"u}",  
+author    = "Olcay Karadeniz and Hakan Yazıcı and Küçükdemiral, Ibrahim Beklan",  
+year      = "2013",  
+month     = sep,  
+day       = "28",  
+language  = "Turkish",  
+pages     = "290--295",  
+booktitle = "TOK 2013 Otomatik Kontrol Ulusal Toplantısı",  
+url       = "https://www.tok.itu.edu.tr/tok13/",
+}
 
 
 @inproceedings{8c3e2eaad3b2411aa12c304c2259b679,  title     = "Zaman gecikmeli sistemlerin model ong{\"o}r{\"u}l{\"u} $H_\infty$ kontrol{\"u}",    author    = "Y\i ld\i z Tas\c c\i karao\u glu, Fatma and Levent Ucun and Küçükdemiral, Ibrahim Beklan",  note      = "Conference date: 26-09-2013 -- 28-09-2013",  year      = "2013",  month     = sep,  day       = "28",  language  = "Turkish",  pages     = "1029--1034",  booktitle = "TOK 2013 Otomatik Kontrol Ulusal Toplantısı",  url       = "https://www.tok.itu.edu.tr/tok13/",}
@@ -895,7 +947,21 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 @inproceedings{ae0ecaf02be54f4fa35e68f3dacce537,  title     = "Yeni bir doyumlu eyleyiciye sahip gecikmeye bağlı dayanıklı $H_\infty$ denetleyici ile aktif titre{\c s}im kontrol{\"u}",   author    = "Hakan Yazıcı and Rahmi Güçlü and Küçükdemiral, Ibrahim B.",    year      = "2013",  month     = sep,  day       = "13",  language  = "Other",  pages     = "192--201",  booktitle = "16. Ulusal Makina Teorisi Sempozyumu",  url       = "http://umts2013.atauni.edu.tr/",}
 
 
-@article{99d69a55edcc4356b75001fa708f5157,  title     = "$L_2$ control of {LPV} systems with saturating actuators: P{\'o}lya approach",   author    = "Akin Delibaşı and Küçükdemiral, Ibrahim B. and Galip Cansever",  year      = "2013",  month     = jan,  doi       = "10.1002/oca.1025",     volume    = "34",  pages     = "17--34",  journal   = "Optimal Control Applications and Methods",  issn      = "1099-1514",  publisher = "John Wiley and Sons Ltd",  number    = "1",}
+@article{https://doi.org/10.1002/oca.1025,
+author = {Delibaşı, Akın and Küçükdemiral, Ibrahim B. and Cansever, Galip},
+title = {$L_2$ control of LPV systems with saturating actuators: Pólya approach},
+journal = {Optimal Control Applications and Methods},
+volume = {34},
+number = {1},
+pages = {17-34},
+keywords = {homogeneous polynomial parameter-dependent Lyapunov functions, input to state stability, LMIs, actuator saturation, inverted pendulum, real-time control},
+doi = {https://doi.org/10.1002/oca.1025},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/oca.1025},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/oca.1025},
+abstract = {This paper addresses the design problem of $L_2$ gain-scheduling non-linear state-feedback controller for linear parameter varying (LPV) systems, subjected to actuator saturations and bounded energy disturbances, by using parameter-dependent type Lyapunov functions. The paper provides a systematic procedure to generate a sequence of linear matrix inequality (LMI) type conditions of increasing precision for obtaining a suboptimal $L_2$ state-feedback controller. The presented method utilizes the modified sector condition for formalization of actuator saturation and homogeneous polynomial parameter-dependent representation of LPV systems. Both simulations and experimental studies on an inverted pendulum on a cart system illustrate the benefits of the approach.},
+year = {2013}
+}
+
 
 
 @inproceedings{2c53d9b17e6941d890f07010ee4a622d,  title     = "Delay-dependent feedforward control of uncertain neutral time-delay systems via dynamic IQCs",    author    = "Levent Ucun and Küçükdemiral, Ibrahim Beklan",  year      = "2012",  month     = dec,  doi       = "10.3182/20120620-3-DK-2025.00059",  series    = "IFAC Proceedings",  publisher = "Elsevier B.V.",  number    = "13",  pages     = "213--218",  booktitle = "Proceedings of the 7th IFAC Symposium on Robust Control Design ",}
@@ -928,64 +994,291 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 }
 
 
-@inproceedings{f396200b90bf425c8c82f2cad61f8ba2,  title     = "Delay-dependent H-infinity controller design for seismic-excited structures with actuator delay under consideration of actuator saturation",  author    = "Hakan Yazıcı and Rahmi Güçlü and Küçükdemiral, Ibrahim B.",  year      = "2011",  month     = jan,  doi       = "10.3182/20110828-6-IT-1002.01990",   pages     = "11036 -- 11041",  booktitle = "Proceedings of the 18th World Congress The International Federation of Automatic Control (IFAC) Milano (Italy)",  note      = "Conference date: 28-08-2011 -- 02-09-2011",}
+@article{YAZICI201111036,
+title = {Delay-Dependent H∞ Controller Design for Seismic-Excited Structures with Actuator Delay under Consideration of Actuator Saturation},
+journal = {IFAC Proceedings Volumes},
+volume = {44},
+number = {1},
+pages = {11036-11041},
+year = {2011},
+note = {18th IFAC World Congress},
+issn = {1474-6670},
+doi = {https://doi.org/10.3182/20110828-6-IT-1002.01990},
+url = {https://www.sciencedirect.com/science/article/pii/S1474667016453875},
+author = {Hakan Yazıcı and Rahmi Güçlü and İbrahim B. Küçükdemiral},
+abstract = {This paper studies the design of a state-feedback delay-dependent $H_\infty$ controller for vibration attenuation problem of a seismic-excited structural system having time-varying actuator delay, $L_2$ disturbances and actuator saturation. First, sufficient delay-dependent stability criteria are derived by choosing a Lyapunov-Krasovskii functional candidate based on matrix inequalities for a stabilizing H∞ synthesis. To overcome the bilinear matrix inequality problems involved in the delay dependent conditions; a cone complementary linearization method is used to find a feasible solution set. The proposed method utilizes convex description of nonlinear saturation phenomenon by means of convex hull of some linear feedback which leads to a few additional ellipsoidal conditions in terms of linear matrix inequalities (LMIs). By use of the proposed method, a suboptimal controller with maximum allowable delay bound and minimum allowable disturbance attenuation level can be easily obtained by a convex optimization technique. The effectiveness of the proposed controller is illustrated through simulations of the responses of a-four-degree-of-freedom structural system under seismic excitations. Simulation results show that, in spite of the actuator saturation, the designed controller is all effective in reducing vibration amplitudes of storeys and guarantees stability at maximum actuator delay.}
+}
 
+@article{PARLAKCI20113867,
+title = {Further Stability Criteria for Time-Delay Systems with Interval Time-Varying Delays},
+journal = {IFAC Proceedings Volumes},
+volume = {44},
+number = {1},
+pages = {3867-3872},
+year = {2011},
+note = {18th IFAC World Congress},
+issn = {1474-6670},
+doi = {https://doi.org/10.3182/20110828-6-IT-1002.00111},
+url = {https://www.sciencedirect.com/science/article/pii/S147466701644214X},
+author = {M.N. Alpaslan Parlakçı and İ. Beklan Küçükdemiral},
+keywords = {Time-Delay, Interval Delays, Lyapunov-Krasovskii Functional, Stability, LMIs},
+abstract = {In this paper, a novel stability criterion is developed for time-delay systems having time-varying delays that belong to a given range. Based on a choice of different type of Lyapunov-Krasovskii functional in an extensively augmented form, some new delay-range dependent stability criteria are proposed. This developed stability result has advantages over some previous ones. First, the method is based on the selection of a new, extensively augmented Lyapunov-Krasovskii functional which does not only take the delay range into account but also the weighted version of it. Second it estimates the upper bound of the derivative of the Lyapunov functional without ignoring some useful integral terms. Finally, we have introduced several free slack variables in relation with Newton-Leibniz formula to provide some kind of relaxation for the proposed stability criteria. In addition to this, we have also employed the method of completing to squares which has enabled to provide further relaxation with some additional decision variables.}
+}
 
-@inproceedings{64fe505efa3246558743d11ea06a87f9,  title     = "Further stability criteria for time-delay systems with interval time-varying delays",    author    = "Parlakçı, M.N. Alpaslan and Küçükdemiral, I. Beklan",  year      = "2011",  month     = jan,  doi       = "10.3182/20110828-6-IT-1002.00111",     series    = "IFAC Proceedings",  publisher = "Elsevier B.V.",  number    = "1",  pages     = "3867--3872",  booktitle = "Proceedings of the 18th World Congress The International Federation of Automatic Control Milano (Italy) August 28 - September 2, 2011",  note      = " Conference date: 28-08-2011 -- 02-09-2011",}
-
-
-@article{5723b1f4f065495a92ec3efec1e5de7c,  title     = "Ellipsoid based $L_2$ controller design for LPV systems with saturating actuators",   author    = "Küçükdemiral, Ibrahim Beklan and Levent Ucun and Yavuz Eren and Haluk Gorgun and Galip Cansever",  year      = "2011",     volume    = "19",  pages     = "775--785",  journal   = "Turkish Journal of Electrical Engineering and Computer Sciences",  issn      = "1300-0632",  publisher = "TUBITAK",  doi = "https://doi.org/10.3906/elk-1007-568", number    = "5", abstract = "This paper addresses the L2 gain control problem for disturbance attenuation in Linear Parameter Varying (LPV) Systems having saturating actuators when the system is subjected to L2 disturbances. In the presented method, saturating actuator is expressed analytically with a convex hull of some linear feedback which let us construct L2 control problem via Linear Matrix Inequalities (LMIs) which are obtained by some ellipsoids. It is shown that the stability and disturbance rejection capabilities of the control system are all measured by means of these nested ellipsoids where the inner ellipsoid covers the initial conditions for states whereas the outer ellipsoid designates the L2 gain of the system. It is shown that the performance of the controller is highly related by the topology of these ellipsoids. Finally, the efficiency of the proposed method is successfully demonstrated through simulation studies on a single-track vehicle dynamics having some linear time-varying parameters.",}
+@article{5723b1f4f065495a92ec3efec1e5de7c,  
+title     = "Ellipsoid based $L_2$ controller design for LPV systems with saturating actuators",  
+ author    = "Küçükdemiral, Ibrahim Beklan and Levent Ucun and Yavuz Eren and Haluk Gorgun and Galip Cansever",  
+ year      = "2011",     
+ volume    = "19",  
+ pages     = "775--785",  
+ journal   = "Turkish Journal of Electrical Engineering and Computer Sciences",  
+ issn      = "1300-0632",  
+ publisher = "TUBITAK",  
+ doi = "https://doi.org/10.3906/elk-1007-568", 
+ number    = "5", 
+ abstract = "This paper addresses the $L_2$ gain control problem for disturbance attenuation in Linear Parameter Varying (LPV) Systems having saturating actuators when the system is subjected to $L_2$ disturbances. In the presented method, saturating actuator is expressed analytically with a convex hull of some linear feedback which let us construct $L_2$ control problem via Linear Matrix Inequalities (LMIs) which are obtained by some ellipsoids. It is shown that the stability and disturbance rejection capabilities of the control system are all measured by means of these nested ellipsoids where the inner ellipsoid covers the initial conditions for states whereas the outer ellipsoid designates the $L_2$ gain of the system. It is shown that the performance of the controller is highly related by the topology of these ellipsoids. Finally, the efficiency of the proposed method is successfully demonstrated through simulation studies on a single-track vehicle dynamics having some linear time-varying parameters.",
+ keywords = {$L_2$ gain control, Linear Parameter Varying systems, Saturating actuators, Ellipsoids, Linear Matrix Inequalities}
+ }
 
 
 @inproceedings{dd795c484870470c8ee8ba4b34c657e2,  title     = "Gecikmeye bağlı $H_\infty$ denetleyici ile eyleyici gecikmeli yapısal sistemlerin aktif titre{\c s}im denetimi",   author    = "Hakan Yazıcı and Rahmi Güçlü and Küçükdemiral, Ibrahim B.",  note      = " Conference date: 21-09-2010 -- 23-09-2010",  year      = "2010",  month     = sep,  day       = "23",  language  = "Turkish",  pages     = "25--30",  booktitle = "TOK 2010 Otomatik Kontrol Ulusal Toplantısı",  url       = "https://www.tok.itu.edu.tr/tok10/",}
 
 
-@article{9ed721ed37a442ccbb5e40802083ce22,  title = "Adaptive self tuning control of robot manipulators with periodic disturbance estimation",  author    = "A. Delibaşı and E. Zergeroğlu and Küçükdemiral, I. B. and G. Cansever",  year      = "2010",  doi       = "10.2316/Journal.206.2010.1.206-3298",   volume    = "25",  pages     = "48--56",  journal   = "International Journal of Robotics and Automation",  issn      = "1925-7090",  publisher = "ACTA Press",  number    = "1",}
+@article{9ed721ed37a442ccbb5e40802083ce22,  
+title = "Adaptive self tuning control of robot manipulators with periodic disturbance estimation",  
+author    = "A. Delibaşı and E. Zergeroğlu and Küçükdemiral, İ. B. and G. Cansever",  
+year      = "2010",  
+doi       = "10.2316/Journal.206.2010.1.206-3298",   
+volume    = "25",  
+pages     = "48--56",  
+journal   = "International Journal of Robotics and Automation",  
+issn      = "1925-7090",  
+abstract = "This paper addresses the problem of position tracking control of robot manipulators in the presence of parametric uncertainty and additive periodic disturbances. Speciﬁcally, a self tuning, Lyapunov- based adaptive controller with desired dynamics compensation term and a disturbance estimator has been designed to ensure that the link position tracking error converges to zero asymptotically, despite the partially linearly parametrizable robot dynamics. Extensive experimental results are provided to illustrate the viability and performance of the proposed controller.",
+publisher = "ACTA Press",  
+number    = "1",}
 
 
-@inproceedings{de5d4321dc6547ae879cfce1e759de96,  title     = "${H}_\infty$ control of systems with time-delayed actuators",    author    = "A. Parlakçı and Küçükdemiral, I. B.",  note      = "Conference date: 22-11-2010 -- 24-11-2010",  year      = "2010",     booktitle = "Mechatronics Congress 2010",  url       = "http://eam2010.sd.keio.ac.jp/",}
+@inproceedings{de5d4321dc6547ae879cfce1e759de96,  
+title     = "${H}_\infty$ control of systems with time-delayed actuators",    
+author    = "A. Parlakçı and Küçükdemiral, I. B.",  
+note      = "Conference date: 22-11-2010 -- 24-11-2010",  
+year      = "2010",    
+ booktitle = "Mechatronics Congress 2010",  
+ url       = "http://eam2010.sd.keio.ac.jp/",
+ }
 
 
-@inproceedings{75caab7e5b3a40bdb62a60d0de887a0e,  title     = "${L}_2$ gain control of time-delay systems with actuator saturation", author    = "M. N. Alpaslan Parlakçı and Küçükdemiral, Ibrahim B.",  year      = "2010",  doi       = "10.1109/ICSSE.2010.5551777",   isbn      = "9781424464722",  pages     = "263--268",  booktitle = "2010 International Conference on System Science and Engineering",  publisher = "IEEE",   note      = " Conference date: 01-07-2010 -- 03-07-2010",}
+@INPROCEEDINGS{5551777,
+  author={Alpaslan Parlakçı, M. N. and Küçükdemiral, İbrahim B.},
+  booktitle={2010 International Conference on System Science and Engineering}, 
+  title={ℒ2- gain control of time-delay systems with actuator saturation}, 
+  year={2010},
+  volume={},
+  number={},
+  pages={263-268},
+  abstract={Disturbance attenuation problem in terms of $\mathcal{L}_2$-gain for continuous linear time-delay (LTD) systems with nonzero initial conditions, time-varying delays and saturating control is addressed where the disturbances acting on the system are with bounded energy. First, a group of sufficient conditions in terms of bilinear matrix inequalities (BMIs) are obtained. Then, to solve this problem, cone complementary linearization method is adopted to the problem. The proposed method utilizes convex description of nonlinear saturation phenomenon by means of convex hull of some linear feedback which leads to a few additional ellipsoidal conditions in terms of linear matrix inequalities (LMIs). The validity of the method is illustrated through some examples at the end.},
+  keywords={Artificial neural networks;Nickel;time-delay systems;$\mathcal{L}_2$ gain control;actuator saturation;LMIs},
+  doi={10.1109/ICSSE.2010.5551777},
+  url={https://ieeexplore.ieee.org/document/5551777},
+  ISSN={2325-0925},
+  month={July},
+  }
 
+@article{KUCUKDEMIRAL2010589,
+title = {LPV Control of Actuator Saturated Systems: A Case Study on Single-Track Vehicle Control},
+journal = {IFAC Proceedings Volumes},
+volume = {43},
+number = {18},
+pages = {589-594},
+year = {2010},
+note = {5th IFAC Symposium on Mechatronic Systems},
+issn = {1474-6670},
+doi = {https://doi.org/10.3182/20100913-3-US-2015.00003},
+url = {https://www.sciencedirect.com/science/article/pii/S1474667015375406},
+author = {I.B. Küçükdemiral and L. Ucun and Y. Eren and H. Görgön and A. Delibaşı and G. Cansever},
+keywords = { $L2$ gain control, Linear Matrix Inequalities, Actuator Saturation Nonlinearity, Single Track Vehicle Model},
+abstract = {The $L2$ gain control problem for disturbance attenuation in Linear Parameter Varying (LPV) Systems with saturating actuators has been addressed where the systems handled in the study are subjected to $L2$ disturbances. The aim in the presented method is to express saturating actuator analytically with a convex hull of some linear feedback. This point of view allows us to construct $H_\infty$ control problem via Linear Matrix Inequalities (LMIs). Nested ellipsoids have been used to measure the stability and disturbance rejection capabilities of the control system. At the end, the proposed controller scheme has been simulated on a single-track vehicle dynamics with some linear time-varying parameters and a wind disturbance.}
+}
 
-@inproceedings{1e42caa22f4549ee92e958370070510e,  title     = "{LPV} Control of actuator saturated systems: a case study on single-track vehicle control",   author    = "Küçükdemiral, I. B. and L. Ucun and Y. Eren and H. Görgün and A. Delibaşı and G. Cansever",  year      = "2010",  doi       = "10.3182/20100913-3-US-2015.00003",     volume    = "43",  series    = "IFAC Proceedings Volumes",   pages     = "589--594",   booktitle = "Proceedings of the 5th IFAC Symposium on Mechatronic Systems",  edition   = "18",  note      = " Conference date: 13-09-2010 -- 15-09-2010",  url       = "https://engineering.purdue.edu/IFACMech10/",}
+@article{PARLAKC2010212,
+title = {Robust Delay-Dependent Stabilizing Control of Time-Delay Systems with State and Input Delays: Augmented L.K. Functional Approach},
+journal = {IFAC Proceedings Volumes},
+volume = {43},
+number = {2},
+pages = {212-217},
+year = {2010},
+note = {9th IFAC Workshop on Time Delay Systems},
+issn = {1474-6670},
+doi = {https://doi.org/10.3182/20100607-3-CZ-4010.00039},
+url = {https://www.sciencedirect.com/science/article/pii/S1474667016325307},
+author = {M.N.A. Parlakçι and I.B. Küçükdemiral},
+keywords = {Input delay, state delay, norm-bounded uncertainty, stability, stabilization},
+abstract = {In this paper, we investigate the design problem of a stabilizing control for a class of linear uncertain time-delay systems with time-varying state and input delays. The control law is selected to be a state-feedback controller. Adopting to employ an augmented type of Lyapunov-Krasovskii functional, for the nominal case, we first derive some sufficient delay-dependent stabilization criteria which can be solved using a convex optimization technique with interior-point algorithms. The stabilization synthesis is then extended to the case when the time-delay system is subject to the norm-bounded uncertainties which affect state and input matrices. Several numerical examples are presented to demonstrate the application of the proposed synthesis of a stabilizing controller. The numerical results on the maximum allowable delay bound and the uncertainty bound seem to be quite less conservative in comparison to the existing methods from the literature.}
+}
 
-
-@inproceedings{962a5fbf9df5492480e1f8e3010f48b1,  title     = "Robust delay-dependent stabilizing control of time-delay systems with state and input delays: augmented L.K. functional approach",    author    = "M.N.A. Parlakçı and I.B. Küçükdemiral",  year      = "2010",  doi       = "10.3182/20100607-3-CZ-4010.00039",     volume    = "43",  pages     = "212--217",  booktitle = "9th IFAC Workshop on Time Delay Systems",  note      = " Conference date: 07-06-2010 -- 09-06-2010",  url       = "http://tds2010.fs.cvut.cz/",}
-
-
-@inproceedings{171d2ac552214a0fb7c2f470182d5fbc,  title     = "A stewart platform as a FBW flight control unit for space vehicles",   author    = "Ömürlü, Vasfi Emre and Utku Büyükşahin and İbrahim Yıldız and Ahmet Ünsal and Ahmet Sağırlı and Engin, Şeref Naci and Küçükdemiral, İbrahim Beklan",  year      = "2009",  month     = jul,  day       = "7",  doi       = "10.1109/RAST.2009.5158285",  isbn      = "9781424436262",  pages     = "716--721",  booktitle = "4th International Conference on Recent Advances in Space Technologies (RAST)",    note      = " Conference date: 11-06-2009 -- 13-06-2009",}
+@INPROCEEDINGS{5158285,
+  author={Omürlü, Vasfi Emre and Büyükşahin, Utku and Yıldız, İbrahim and Ünsal, Ahmet and Sağırlı, Ahmet and Engin, Şeref Naci and Küçükdemiral, İbrahim Beklan},
+  booktitle={2009 4th International Conference on Recent Advances in Space Technologies}, 
+  title={A stewart platform as a FBW flight control unit for space vehicles}, 
+  year={2009},
+  volume={},
+  number={},
+  pages={716-721},
+  abstract={A variety of flight control units have been put into realization for navigational purposes of spatially moving vehicles, which is mostly manipulated by 2-3 degrees-of-freedom (DOF) joysticks. Since motion in space consists of three translational motions in forward, side and vertical directions and three rotational motions about these axis; with present joystick interfaces, spatial vehicles has to employ more than one navigational control unit to be able to navigate on all required directions. In this study, a 3times3 Stewart-Platform-based FBW (fly-by-wire) flight control unit with force feedback is presented which will provide single point manipulation of any space vehicle performing spatial motions along three translational and three rotational axis. Within the frame of this paper, design, capability and the advantages of the novel system is mentioned. Kinematics of the Stewart Platform (SP) mechanism employed and its motion potentials is presented by simulations and workspace of the system is evaluated. Dynamic analysis by Bond-Graph approach will be mentioned. Mechatronic design of the complete structure is discussed and force reflection capability of the system with simulations is pointed out using stiffness control. Finally, the possible future work of the subject is discussed which may include the feasible solutions of the SP in terms of size and safety when implementing inside a cockpit.},
+  keywords={Aerospace control;Space vehicles;Navigation; Motion control; Force feedback;Kinematics; Vehicle dynamics; Bonding; Mechatronics; Reflection; Flight Control; Stewart Platform; Spatial Motion; Force Feedback; Bond-Graph Modeling; Workspace Analysis},
+  doi={10.1109/RAST.2009.5158285},
+  url ={https://ieeexplore.ieee.org/document/5158285},
+  ISSN={},
+  month={June},
+  }
 
 
 @inproceedings{bf2d10f43884430dbd70e6e1e26758a8,  title     = "LMI tabanli {\c c}iki{\c s} geri-beslemeli $H_\infty$ kontrolör ile yapısal bir sistemin aktif titreşim kontrolü",  author    = "Hakan Yazıcı and Küçükdemiral, Ibrahim B. and Rahmi Güçlü",  note      = " Conference date: 02-07-2009 -- 04-07-2009",  year      = "2009",  month     = jul,  day       = "4",  language  = "Turkish",  pages     = "7--13",  booktitle = "14. Ulusal Makina Teorisi Sempozyumu, UMTS2009",  url       = "http://makted.org.tr/index.php/dernegimizin-duzenledigi-etkinlikler/ulusal-etkinlikler/?lang=en",}
 
 
-@article{df47c9b80aab4f199228ae7c3f261e68,  title     = "LPV gain-scheduling controller design for a nonlinear quarter-vehicle active suspension system",  author    = "C. Onat and Küçükdemiral, I. B. and S. Sivrioğlu and I. Yüksek and G. Cansever",  year      = "2009",  month     = feb,  doi       = "10.1177/0142331208090630",  volume    = "31",  pages     = "71--95",  journal   = "Transactions of the Institute of Measurement and Control",  issn      = "0142-3312",  publisher = "SAGE Publications Ltd",  number    = "1",}
+@article{df47c9b80aab4f199228ae7c3f261e68,  
+title     = "LPV gain-scheduling controller design for a nonlinear quarter-vehicle active suspension system", 
+author    = "C. Onat and Küçükdemiral, I. B. and S. Sivrioğlu and I. Yüksek and G. Cansever",  
+year      = "2009",  
+month     = feb,  
+doi       = "10.1177/0142331208090630",  
+volume    = "31",  
+pages     = "71--95",  
+journal   = "Transactions of the Institute of Measurement and Control",  
+issn      = "0142-3312",  
+publisher = "SAGE Publications Ltd",  
+number    = "1",
+url = "https://doi.org/10.1177/0142331208090630",
+abstract = "There always exists a conflict between ride comfort and suspension deflection performances during the vibration control of suspension systems. Active suspension control systems, which are designed by linear methods, can only serve as a trade-off between these conflicting performance criteria. Both performance objectives can only be accomplished at the same time by using a nonlinear controller. This paper addresses the non-linear induced L2 control of an active suspension system, which contains non-linear spring and damper elements. The design method is based on the linear parameter varying (LPV) model of the system. The proposed method utilizes the bilinear damping characteristic, stiffening spring characteristic when the suspension deflection approaches the structural limits, mass variations and parameter-dependent weighting filters. Simulation studies both in time and frequency domain demonstrate that the active suspension system controlled by the proposed method always guarantees an agreement between acceleration (comfort) and suspension deflection magnitudes together with a high ride performance.",
+}
+
+@article{https://doi.org/10.1002/oca.829,
+author = {Küçükdemiral, İ. B.},
+title = {Delay-dependent guaranteed cost gain-scheduling control of LPV state-delayed systems},
+journal = {Optimal Control Applications and Methods},
+volume = {29},
+number = {4},
+pages = {313-331},
+keywords = {time-delayed systems, guaranteed cost control, gain-scheduling control, linear matrix inequalities},
+doi = {https://doi.org/10.1002/oca.829},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/oca.829},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/oca.829},
+abstract = {Delay-dependent gain-scheduling controller design problem is addressed for the linear parameter-varying state-delayed systems with time-varying delays. By choosing a Lyapunov–Krakovskii functional, delay-dependent conditions for the existence of guaranteed cost gain-scheduling controller are obtained. Besides, an algorithm is also presented to solve resultant nonconvex matrix inequalities in terms of linear matrix inequalities. Finally, three numerical examples with simulations are illustrated in order to demonstrate the validity of the proposed method.},
+year = {2008}
+}
 
 
-@article{8e9932def0b54393bf3903e916e268a3,  title     = "Delay-dependent guaranteed cost gain-scheduling control of LPV state-delayed systems",   author    = "Küçükdemiral, I. B.",  year      = "2008",  month     = oct,  day       = "8",  doi       = "10.1002/oca.829",     volume    = "29",  pages     = "313--331",  journal   = "Optimal Control Applications and Methods",  issn      = "1099-1514",  publisher = "John Wiley and Sons Ltd",}
+
+@INPROCEEDINGS{4602220,
+  author={Delibașı, Akın and Küçükdemiral, İ. B. and Cansever, Galip},
+  booktitle={2008 16th Mediterranean Conference on Control and Automation}, 
+  title={$L_2$, $H_2$ guaranteed-cost control of LPV systems with saturating actuators}, 
+  year={2008},
+  volume={},
+  number={},
+  pages={152-157},
+  abstract={The design problem of mixed $L_2$, $H_2$ gain scheduling nonlinear state feedback controller for Linear Parameter Varying {(LPV)} systems subjected to actuator saturations and $L_2$ bounded disturbances is considered. First, a new formulation of $H_2$ controllers has been presented based on the homogeneous polynomial parameter dependent (HPPD) representation. Then a systematic procedure to generate a sequence of LMI conditions of increasing precision for obtaining a sub-optimal $L_2$, $H_2$ state-feedback controller for LPV systems subject to actuator saturations and $L_2$-bounded disturbances, has been presented. The presented method utilizes the modified sector condition for actuator saturation formalization and HPPD representation of LPV systems.},
+  keywords={Linear Parameter Varying Systems, Gain Scheduling Control, Nonlinear Control, Sequence Of Conditions, Nonlinear Feedback, Actuator Saturation, Nonlinear Feedback Control, Closed-loop System, Lyapunov Function, Polytope, Mathematical Preliminaries}	,
+  doi={10.1109/MED.2008.4602220},
+  url={https://ieeexplore.ieee.org/document/4602220},
+  ISSN={},
+  month={June},
+}
 
 
-@inproceedings{6e8d23861e7643c999d9b402f4275009,  title     = "${L}_2$, ${H}_2$ guaranteed-cost control of {LPV} Systems with saturating actuators",    author    = "Akın Delibaşı and Ibrahim Küçükdemiral and Galip Cansever",  year      = "2008",  month     = aug,  day       = "19",  doi       = "10.1109/MED.2008.4602220",   isbn      = "9781424425051",  pages     = "152--157",  booktitle = "Proceedings of the 16th Mediterranean Conference on Control and Automation",    note      = " Conference date: 25-06-2008 -- 27-06-2008",}
+@article{0078f2f8d6784d0394099c50c47cc8bf,  
+title     = "{LPV} model based gain-scheduling controller for full vehicle active suspension system",   
+author    = "Cem Onat and Küçükdemiral, İbrahim B. and Selim Sivrioğlu and Ismail Yüksek",  
+year      = "2007",  
+month     = nov,  
+day       = "1",  
+doi       = "10.1177/1077546307078784",  
+volume    = "13",  
+pages     = "1629--1666",  
+journal   = "Journal of Vibration and Control",  
+issn      = "1741-2986",  
+publisher = "SAGE Publications Inc.",  
+number    = "11",
+url = "https://doi.org/10.1177/1077546307078784",
+abstract = { This article addresses the design of a gain-scheduling type nonlinear controller for a full-vehicle active suspension system. The proposed method is based on a Linear Parameter Varying {(LPV)} model of the system. In this model, the variations in suspension deflection and mass are chosen as the scheduling parameters. During the simulations, the full-vehicle system that is controlled by the proposed method is tested with different road profiles, having high and low bumps, hollows and combinations of the two. The simulation results demonstrate that the proposed method successfully maximizes the ride comfort when suspension deflection is far away from the structural limits and minimizes the suspension deflection by changing its behavior when the suspension limits are reached.},
+}
+
+@INPROCEEDINGS{4269838,
+  author={Delibaşı, Akın and Küçükdemiral, İbrahim B. and Cansever, Galip},
+  booktitle={2007 International Symposium on Computational Intelligence in Robotics and Automation}, 
+  title={A robust PID like state-feedback control via {LMI} approach: An application on a Double Inverted Pendulum System}, 
+  year={2007},
+  volume={},
+  number={},
+  pages={374-379},
+  abstract={This paper addresses the design method for robust PID like controllers which guarantee the quadratic stability, performance in terms of H2 and Hinfin specifications, pole locations and maximum output control. The approach is based on the transformation of the PID controller design problem to that of state feedback controller design thereby the convex optimization approaches can be adapted. Real time experimental results on a double inverted pendulum system demonstrates the validity and applicability of the proposed approach.},
+  keywords={Robust control;Three-term control;Control systems;Nonlinear control systems;Symmetric matrices;Robust stability;Optimal control;Proportional control;State feedback;Time varying systems},
+  doi={10.1109/CIRA.2007.382838},
+  ISSN={},
+  month={June},}
 
 
-@article{0078f2f8d6784d0394099c50c47cc8bf,  title     = "{LPV} model based gain-scheduling controller for full vehicle active suspension system",   author    = "Cem Onat and Küçükdemiral, Ibrahim B. and Selim Sivrioğlu and Ismail Yuksek",  year      = "2007",  month     = nov,  day       = "1",  doi       = "10.1177/1077546307078784",  volume    = "13",  pages     = "1629--1666",  journal   = "Journal of Vibration and Control",  issn      = "1741-2986",  publisher = "SAGE Publications Inc.",  number    = "11",}
+@article{2be2c8adb3cc4fe1bb0f7218d48b8d71,  
+title     = "A new approach to supervisor design with sequential control {Petri-net} using minimization technique for discrete event system",    
+author    = "G. Cansever and Küçükdemiral, İ. B.",  
+year      = "2006",  
+month     = aug,     
+volume    = "29",  
+pages     = "1267--1277",  
+journal   = "International Journal of Advanced Manufacturing Technology",  
+issn      = "0268-3768",  doi = "https://doi.org/10.1007/s00170-005-0010-4", 
+publisher = "Springer London",  
+number    = "11-12", 
+abstract = "This paper proposes a systematic approach for the design of a supervisory controller for discrete event systems (DES) and their ladder logic diagrams (LLD). The method is based on Petri nets, which is used for modeling the systems. It involves, defining the control policy and simplifying it by using Espresso software to form the compiled controller by adding inhibiting and enabling arcs to the original model and then the method is used to drive structured ladder logic code. A design example is presented to clarify the full procedure.",
+}
 
 
-@inproceedings{3f3d1236b7264ee5a0edfd15fb092029,  title     = "A Robust PID like state-feedback control via LMI approach: an application on a double inverted pendulum system",   author    = "Akın Delibaşı and Ibrahim Küçükdemiral and Galip Cansever",  year      = "2007",  month     = jul,  day       = "16",  doi       = "10.1109/CIRA.2007.382831",  isbn      = "1424407893",  pages     = "374--379",  booktitle = "Proceedings of the 2007 IEEE International Symposium on Computational Intelligence in Robotics and Automation (CIRA 2007)",   note      = " Conference date: 20-06-2007 -- 23-06-2007",}
+@INPROCEEDINGS{1657477,
+  author={Delibașı, A. and Küçükdemiral, I.B. and Cansever, G.},
+  booktitle={2006 Proceedings of the American Control Conference}, 
+  title={A novel variable structure based adaptive control with disturbance estimation}, 
+  year={2006},
+  volume={},
+  number={},
+  pages={4782--4787},
+  abstract={A novel, improved adaptive control methodology equipped with variable structure controller which utilizes the disturbance estimate is proposed for the control of robot manipulators. The main property of the method is that, it does not requires for any information about the disturbances that act on the system such as bounds or limits. On the other hand, the proposed control method eliminates the drawbacks of the classical adaptive controllers such as poor transient responses and poor disturbance rejection capabilities by online disturbance estimation subsystem. Simulation results on an anthropomorphic robot manipulator which is assumed to have nine unknown parameters demonstrate that, the proposed control system can achieve favorable tracking and high disturbance rejection performance when compared with its counterparts},
+  keywords={Adaptive control; Sliding mode control;Robots;Manipulator dynamics; Control systems; Linear feedback control systems; Nonlinear control systems; Programmable control; Torque control;Fuzzy systems},
+  doi={10.1109/ACC.2006.1657477},
+  url={https://ieeexplore.ieee.org/document/1657477},
+  ISSN={2378-5861},
+  month={June},
+  }
 
 
-@article{2be2c8adb3cc4fe1bb0f7218d48b8d71,  title     = "A new approach to supervisor design with sequential control Petri-net using minimization technique for discrete event system",    author    = "G. Cansever and Küçükdemiral, I. B.",  year      = "2006",  month     = aug,     volume    = "29",  pages     = "1267--1277",  journal   = "International Journal of Advanced Manufacturing Technology",  issn      = "0268-3768",  doi = "https://doi.org/10.1007/s00170-005-0010-4", publisher = "Springer London",  number    = "11-12", abstract = "This paper proposes a systematic approach for the design of a supervisory controller for discrete event systems (DES) and their ladder logic diagrams (LLD). The method is based on Petri nets, which is used for modeling the systems. It involves, defining the control policy and simplifying it by using Espresso software to form the compiled controller by adding inhibiting and enabling arcs to the original model and then the method is used to drive structured ladder logic code. A design example is presented to clarify the full procedure.",}
 
+@article{2cf380f5bd764ed58b26c4325c5c10d3,  
+title     = "Sugeno based robust adaptive fuzzy sliding-mode controller for {SISO} nonlinear systems",   
+author    = "Küçükdemiral, Ibrahim B. and Galip Cansever",  
+year      = "2006",  
+volume    = "17",  
+pages     = "113--124",  
+journal   = "Journal of Intelligent and Fuzzy Systems",  
+doi = "https://doi.org/10.3233/IFS-2006-00284", 
+publisher = "SAGE Publications Ltd",  
+number    = "2", 
+abstract = "A robust adaptive Sugeno based fuzzy sliding mode controller equipped with a supervisory controller is considered for the control of nonlinear systems which significantly reduce computation via reducing the size of fuzzy rule base. Besides, all the system parameters such as control and state signals can be confined to a predefined bounded region by use of proposed control method. Also the proposed method does not need any information of the controlled plant. Tracking and regulation simulations on an inverted pendulum system highlights that the proposed method is superior than the classical Sugeno based fuzzy controllers for the control of ill-defined nonlinear systems.",
+}
 
-@inproceedings{c5d926084032488d971b27648652899d,  title     = "A novel variable structure based adaptive control with disturbance estimation",    author    = "A. Delibaşı and Küçükdemiral, I. B. and G. Cansever",  year      = "2006",  month     = jul,  day       = "24",  doi       = "10.1109/ACC.2006.1657477",     isbn      = "1424402093",  booktitle = "2006 American Control Conference",  note      = "Conference date: 14-06-2006 -- 16-06-2006",}
+@INPROCEEDINGS{1529349,
+  author={Kucukdemiral, I.B. and Cansever, G.},
+  booktitle={IEEE International Conference on Mechatronics, 2005. ICM '05.}, 
+  title={Formalization of a novel {Sugeno} type adaptive fuzzy sliding mode controller for a class of nonlinear systems}, 
+  year={2005},
+  volume={},
+  number={},
+  pages={717--720},
+  abstract={Formalization of a novel robust adaptive Sugeno based fuzzy sliding mode controller equipped with a supervisory controller is considered for the control of a class of nonlinear systems which significantly reduce computation via reducing the size of fuzzy rule base. Besides, all the system parameters such as control and state signals can be confined in a predefined bounded region by use of proposed control method. The proposed method does not need any information of the controlled plant and expertise},
+  keywords={Programmable control; Adaptive control; Fuzzy control; Fuzzy systems; Nonlinear control systems; Sliding mode control; Control systems; Nonlinear systems; Size control; Robust control},
+  doi={10.1109/ICMECH.2005.1529349},
+  url={https://ieeexplore.ieee.org/document/1529349},
+  ISSN={},
+  month={July},}
 
-
-@article{2cf380f5bd764ed58b26c4325c5c10d3,  title     = "Sugeno based robust adaptive fuzzy sliding-mode controller for SISO nonlinear systems",   author    = "Küçükdemiral, Ibrahim B. and Galip Cansever",  year      = "2006",  volume    = "17",  pages     = "113--124",  journal   = "Journal of Intelligent and Fuzzy Systems",  doi = "https://doi.org/10.3233/IFS-2006-00284", publisher = "SAGE Publications Ltd",  number    = "2", abstract = "A robust adaptive Sugeno based fuzzy sliding mode controller equipped with a supervisory controller is considered for the control of nonlinear systems which significantly reduce computation via reducing the size of fuzzy rule base. Besides, all the system parameters such as control and state signals can be confined to a predefined bounded region by use of proposed control method. Also the proposed method does not need any information of the controlled plant. Tracking and regulation simulations on an inverted pendulum system highlights that the proposed method is superior than the classical Sugeno based fuzzy controllers for the control of ill-defined nonlinear systems.",}
-
-
-@inproceedings{bf2ad201c67241c99ad6c8a84c3ccc87,  title     = "Formalization of a novel sugeno type adaptive fuzzy sliding mode controller for a class of nonlinear systems",   author    = "Küçükdemiral, Ibrahim Beklan and G. Cansever",  year      = "2005",  month     = jul,  day       = "14",  doi       = "10.1109/ICMECH.2005.1529349",  isbn      = "0-7803-8998-0 ",  pages     = "717--720",  booktitle = "IEEE International Conference on Mechatronics", note      = " Conference date: 10-07-2005 -- 12-07-2005",}
 
 
 @inproceedings{46f0772ab24a40768abdf86a6fc1640d,  title     = "A comparison study of robust control strategies for automotive active suspension systems",   author    = "C. Onat and Küçükdemiral, I. B. and S. Çetin and I. Yüksek",  year      = "2005",    isbn      = "9754614008",  pages     = "291--294",   booktitle = "International Symposium on Innovations in Intelligent Systems and Applications (INISTA 2005 ): 15th-18th June, 2005, Istambul, Turkey",}
@@ -994,22 +1287,82 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 @inproceedings{1abc61cd7b67420281b1c461d13a5e78,  title     = "An ANN based electronic glove for human-machine interaction",   author    = "T. Ulu and G. Cansever and Küçükdemiral, I. B.",  year      = "2005",     isbn      = "9754614008",  pages     = "191--194",  booktitle = "International Symposium on Innovations in Intelligent Systems and Applications (INISTA 2005 ): 15th-18th June, 2005, Istambul, Turkey",}
 
 
-@article{f4e7f3ba4861464d96cdf3c98c38542b,  title     = "A robust single-input adaptive sliding mode fuzzy logic controller for automotive active suspension system",    author    = "Küçükdemiral, Ibrahim B. and Engin, Şeref N. and Ömürlü, Vasfi E. and Galip Cansever",  year      = "2005",  doi       = "10.1007/11539506\_122",   volume    = "3613",  pages     = "981--986",  journal   = "Lecture Notes in Artificial Intelligence",  publisher = "Springer Science and Business Media Deutschland GmbH",}
+@InProceedings{10.1007/11539506_122,
+author="Küçükdemiral, Ibrahim B.
+and Engin, Şeref N.
+and Omürlü, Vasfi E.
+and Cansever, Galip",
+title="A Robust Single Input Adaptive Sliding Mode Fuzzy Logic Controller for Automotive Active Suspension System",
+booktitle="Fuzzy Systems and Knowledge Discovery",
+year="2005",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="981--986",
+abstract="The proposed controller in this paper, which combines the capability of fuzzy logic with the robustness of sliding mode controller, presents prevailing results with its adaptive architecture and proves to overcome the global stability problem of the control of nonlinear systems. Effectiveness of the controller and the performance comparison are demonstrated with chosen control techniques including PID and PD type self-tuning fuzzy controller on a quarter car model which consists of component-wise nonlinearities.",
+isbn="978-3-540-31830-9",
+url="https://rdcu.be/fgN1X"
+}
+
+@INPROCEEDINGS{1359508,
+  author={Eroglu, E. and Cansever, G. and Kucukdemiral, L.B. and Dalci, B.},
+  booktitle={Proceedings of the Fourth International Workshop on Robot Motion and Control (IEEE Cat. No.04EX891)}, 
+  title={{PD}, {PID} and fuzzy logic control of three link planar arm}, 
+  year={2004},
+  volume={},
+  number={},
+  pages={191-196},
+  abstract={In this study we consider the control of a three link planar robot manipulator. Specifically we use {PD}, {PID} and fuzzy type controllers. We then illustrate how {PD}, {PID} controllers can be designed. We also illustrate how to design a fuzzy logic controller for the robot manipulator. We follow the computed torque method strategy to develop our controllers. We try to find advantages of each control law by simulations. Simulation results are included to illustrate the performance of the controllers.},
+  keywords={Three-term control; Fuzzy logic; Robot kinematics; Manipulator dynamics; Robot control; Motion control; Service robots; Torque control; Friction; Control systems},
+  doi={10.1109/ROMOCO.2004.240644},
+  url={https://ieeexplore.ieee.org/document/1359508},
+  ISSN={},
+  month={June},}
 
 
-@inproceedings{b46147180742415bbcb9c282ee7f8960,  title     = "PD, PID and fuzzy logic control of three link planar arm",    author    = "E. Eroğlu and G. Cansever and Küçükdemiral, I. B. and B. Dalci",  year      = "2004",  month     = jun,  day       = "1",  doi       = "10.1109/ROMOCO.2004.240644",   isbn      = "83-7143-272-0 ",  pages     = "191--196",  booktitle = "Proceedings of the 4th International Workshop on Robot Motion and Control, Puszczykowo, Poland",}
+@article{8ca7b7858a45494395a77e8b4635b0f7,  
+title     = "Genetic algorithm based optimal self-tuning fuzzy logic power system {VAR} stabilizer",   
+author    = "Dalcı, K. Burak and Mehmet Uzunoğlu and Küçükdemiral, Ibrahim B.",  
+year      = "2004", 
+month     = jan,  
+day       = "1",  
+doi       = "10.7227/IJEEE.41.1.7",   
+url = "https://doi.org/10.7227/IJEEE.41.1.7",
+volume    = "41",  
+pages     = "71--89",  
+journal   = "International Journal of Electrical Engineering Education",  
+issn      = "0020-7209",  
+publisher = "SAGE Publications Inc.",  
+abstract = "In this study, a novel method is proposed for the compensation of loads that vary frequently in time. The proposed scheme is based on the fuzzy logic controller (FLC) that is widely used in control of nonlinear processes. {FLC} architecture is used for regulating the gains of the basis Proportional-Integral (PI) as a self-tuning controller. On the other hand, the constant gains of the basis: {PI} controller are optimised by a genetic algorithm. Experimental results demonstrate that the proposed method shows better performance than that of the conventional {PI} controller. ",
+number    = "1",
+}
 
 
-@article{8ca7b7858a45494395a77e8b4635b0f7,  title     = "Genetic algorithm based optimal self-tuning fuzzy logic power system VAR stabilizer",   author    = "Dalcı, K. Burak and Mehmet Uzunoğlu and Küçükdemiral, Ibrahim B.",  year      = "2004",  month     = jan,  day       = "1",  doi       = "10.7227/IJEEE.41.1.7",   volume    = "41",  pages     = "71--89",  journal   = "International Journal of Electrical Engineering Education",  issn      = "0020-7209",  publisher = "SAGE Publications Inc.",  number    = "1",}
+@inproceedings{6ac00c70326c4a41a64074f4f02ab7d5,  
+title     = "A robust single input adaptive sliding mode fuzzy logic controller for a nonlinear active suspension system",    
+author    = "Ömürlü, Vasfi Emre and Engin, Şeref Naci and Küçükdemiral, I. B.",  
+year      = "2004",    
+booktitle = "Proc. 12th Mediterranean Control Conference (MED'04), Kuşadası, Aydın, Türkiye",  
+note      = "Conference date: 06-06-2004 -- 06-09-2004", 
+}
 
 
-@inproceedings{6ac00c70326c4a41a64074f4f02ab7d5,  title     = "A robust single input adaptive sliding mode fuzzy logic controller for a nonlinear active suspension system",    author    = "Ömürlü, Vasfi Emre and Engin, Şeref Naci and Küçükdemiral, I. B.",  year      = "2004",    booktitle = "Proc. 12th Mediterranean Control Conference (MED'04), Kuşadası, Aydın, Türkiye",  note      = "Conference date: 06-06-2004 -- 06-09-2004", }
+@inproceedings{2843e3ec86614f0b98478db4776afacd,  
+title     = "Direct adaptive fuzzy logic controller with self-tuning input scaling factors",   
+author    = "Küçükdemiral, Ibrahim Beklan and Galip Cansever and Gülderen Yıldırmaz",  
+year      = "2002",   
+pages     = "396--401",  
+booktitle = "4th Asian Control Conference: September 25-27, 2002, Singapore : conference proceedings",   
+note      = " Conference date: 25-09-2002 -- 27-09-2002",}
 
 
-@inproceedings{2843e3ec86614f0b98478db4776afacd,  title     = "Direct adaptive fuzzy logic controller with self-tuning input scaling factors",   author    = "Küçükdemiral, Ibrahim Beklan and Galip Cansever and Gülderen Yıldırmaz",  year      = "2002",   pages     = "396--401",  booktitle = "4th Asian Control Conference : September 25-27, 2002, Singapore : conference proceedings",   note      = " Conference date: 25-09-2002 -- 27-09-2002",}
-
-
-@inproceedings{8b3df3c8aede4baea39463f0d126cc25,  title     = "Direct adaptive fuzzy PI controller with resetting type self-tuning mechanism",  author    = "Küçükdemiral, Ibrahim B. and Galip Cansever and Gulderen Yildirmaz",  year      = "2002",  pages     = "1--6",  booktitle = "Proceedings of the 5th Portuguese Conference on Automatic Control",  publisher = "Associacao Portuguesa de Controlo Automatico (APCA)",  note      = "Conference date: 05-09-2002 -- 07-09-2002",}
+@inproceedings{8b3df3c8aede4baea39463f0d126cc25,  
+title     = "Direct adaptive fuzzy PI controller with resetting type self-tuning mechanism",  
+author    = "Küçükdemiral, Ibrahim B. and Galip Cansever and Gulderen Yildirmaz",  
+year      = "2002",  pages     = "1--6",  
+booktitle = "Proceedings of the 5th Portuguese Conference on Automatic Control (Controlo 2002), Lisbon, Portugal", 
+ publisher = "Associacao Portuguesa de Controlo Automatico (APCA)",  
+ note      = "Conference date: 05-09-2002 -- 07-09-2002",
+ }
 
 
 @inproceedings{31c2e09552f845a1a3146e4ed6e39318,  title     = "Neuro-genetic based fuzzy sliding mode controller and PMDC motor control application",   author    = "Küçükdemiral, I. B. and G. Cansever",  year      = "2002",    pages     = "302--306",  booktitle = "Proc 2nd Int. Conf. on Responsive Manufacturing, Gaziantep, Türkiye",  note      = " Conference date: 26-06-2002 -- 28-06-2002",}
