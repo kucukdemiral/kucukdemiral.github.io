@@ -68,7 +68,7 @@ abstract = {Recent advances in biomedical engineering have transformed prostheti
 }
 
 
-@article{Reliability Engineering2026_yashar,
+@article{ReliabilityEngineering2026_yashar,
 author = {Yashar Mousavi and Mahsa Tavasoli and Ibrahim Beklan Kucukdemiral and Aliasghar Arab and Afef Fekih and Ümit Çalı},
 title = {SAFE-WECS-LLM: A Multi-Layered Safety Validation Framework for Large Language Models in Critical Wind Energy Applications},
 journal = {Reliability Engineering and System Safety},
@@ -164,8 +164,7 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 	author    = "Bilal Görmüş and Hakan Yazıcı and Küçükdemiral, Ibrahim Beklan",  
 	year      = "2026",   
 	journal   = "Journal of Systems Science",  
-	abstract = "
-	This paper proposes a novel data-driven pole placement-based $\mathcal{H}_{\infty}$ controller synthesis framework for discrete-time systems, with a particular focus on structural vibration control under bounded disturbances. The proposed method integrates circular and ellipsoidal regional pole placement constraints with $\mathcal{H}_{\infty}$ performance specifications by employing dilated linear matrix inequalities (LMIs). Unlike conventional model-based approaches, the framework does not require explicit knowledge of the system matrices $A$ and $B_u$, and relies solely on input--state measurement data together with prescribed bounds on disturbances and system states. A dilation technique in the LMI formulation is adopted to reduce conservatism in the multi-objective control problem, allowing the use of non-common Lyapunov matrices across different control objectives. Moreover, the full-block S-procedure and nested attractive ellipsoids methods are employed to account for unknown but bounded disturbances within the data-driven formulation. The effectiveness of the proposed controllers is validated through numerical studies, including benchmark examples and simulations on a four-storey structural system for active vibration control. The results show that the proposed approach yields less conservative solutions, improved transient performance, and mathematically guaranteed closed-loop stability and performance even for unstable systems."
+	abstract = {This paper proposes a novel data-driven pole placement-based $\mathcal{H}_{\infty}$ controller synthesis framework for discrete-time systems, with a particular focus on structural vibration control under bounded disturbances. The proposed method integrates circular and ellipsoidal regional pole placement constraints with $\mathcal{H}_{\infty}$ performance specifications by employing dilated linear matrix inequalities (LMIs). Unlike conventional model-based approaches, the framework does not require explicit knowledge of the system matrices $A$ and $B_u$, and relies solely on input--state measurement data together with prescribed bounds on disturbances and system states. A dilation technique in the LMI formulation is adopted to reduce conservatism in the multi-objective control problem, allowing the use of non-common Lyapunov matrices across different control objectives. Moreover, the full-block S-procedure and nested attractive ellipsoids methods are employed to account for unknown but bounded disturbances within the data-driven formulation. The effectiveness of the proposed controllers is validated through numerical studies, including benchmark examples and simulations on a four-storey structural system for active vibration control. The results show that the proposed approach yields less conservative solutions, improved transient performance, and mathematically guaranteed closed-loop stability and performance even for unstable systems.},
 	publisher = "Taylor and Francis",  
 	note = "Under Review",
 	keywords = "Data-driven pole placement–based $H_\infty$ controller; LMI regions; dilated LMIs; structural vibration control; multi-objective control",
@@ -674,37 +673,175 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 }
 
 
-@inproceedings{69782b1539654a309aa9cd83020c7663,  title     = "Offset-free model predictive control: a study of different formulations with further results",    author    = "Isah Jimoh and Küçükdemiral, ibrahim Beklan and Geraint Bevan and Patience Orukpe",   year      = "2020",  month     = sep,  day       = "1",  doi       = "10.1109/MED48518.2020.9183056",     isbn      = "9781728157436",    pages     = "671--676",  booktitle = "2020 28th Mediterranean Conference on Control and Automation (MED)",  url       = "http://med2020.cran.univ-lorraine.fr/",}
+@INPROCEEDINGS{9183056,
+	author={Jimoh, Isah A. and Küçükdemiral, Ibrahim B. and Bevan, Geraint and Orukpe, Patience E.},
+	booktitle={2020 28th Mediterranean Conference on Control and Automation (MED)}, 
+	title={Offset-free Model Predictive Control: A Study of Different Formulations with Further Results}, 
+	year={2020},
+	volume={},
+	number={},
+	pages={671-676},
+	abstract={This paper presents discussions on offset-free model predictive control (MPC) methods for linear discrete-time systems in the presence of deterministic system disturbances. The general approach is based on the use of a disturbance model and an observer to estimate the disturbance states. The recent development in offset-free MPC has established the equivalence of the velocity form (without output delay) to a specific choice of the disturbance model and observer. In this note, it was shown that this particular disturbance model and observer is not necessarily equivalent to the velocity form with output delay. Nevertheless, it was shown that the velocity form with output delay is equivalent to a different choice of the disturbance model and observer. An import of this result is that the velocity forms (with and without delayed output) belong to the same general approach - disturbance model and observer. Furthermore, areas that may be considered in future researches are also highlighted.},
+	keywords={Observers;Steady-state;Mathematical model;Delays;Linear programming;Predictive control;Control systems;Model predictive control;disturbance rejection;linear discrete-time systems;offset-free control},
+	doi={10.1109/MED48518.2020.9183056},
+	ISSN={2473-3504},
+	month={Sep.},}
 
 
-@article{89841e707eee4692b22cbf6635b2a254,  title     = "Robust disturbance rejection for discrete-time systems having magnitude and rate bounded inputs",    author    = "Küçükdemiral, Ibrahim B.",    year      = "2020",  month     = aug,  doi       = "10.1016/j.jfranklin.2020.06.001",  volume    = "357",  pages     = "8252--8276",  journal   = "Journal of the Franklin Institute",  issn      = "0016-0032",  publisher = "Elsevier Ltd",  number    = "12",}
+@article{KUCUKDEMIRAL20208252,
+	title = {Robust disturbance rejection for discrete-time systems having Magnitude and rate bounded inputs},
+	journal = {Journal of the Franklin Institute},
+	volume = {357},
+	number = {12},
+	pages = {8252-8276},
+	year = {2020},
+	issn = {0016-0032},
+	doi = {https://doi.org/10.1016/j.jfranklin.2020.06.001},
+	url = {https://www.sciencedirect.com/science/article/pii/S001600322030418X},
+	author = {İbrahim B. Küçükdemiral},
+	abstract = {The design of a robust controller for uncertain discrete-time systems subject to bounded disturbances and having magnitude and rate bounded actuators is considered. To tackle the problem, the proposed method utilises nested ellipsoids and employs an incremental (velocity) form of the state-space model of the system. By using modified full block S-procedure, the proposed robust control design approach is applicable to any uncertain system with rational parameter dependence which cannot be managed by the existing approaches without introducing some extra conservatism. Finally, an algorithm that allows the method to be used as a gain-scheduling controller is also noted in the study.}
+}
+
+@ARTICLE{9151887,
+	author={Mousavi, Yashar and Alfi, Alireza and Küçükdemiral, Ibrahim Beklan},
+	journal={IEEE Access}, 
+	title={Enhanced Fractional Chaotic Whale Optimization Algorithm for Parameter Identification of Isolated Wind-Diesel Power Systems}, 
+	year={2020},
+	volume={8},
+	number={},
+	pages={140862-140875},
+	abstract={Parameters identification of isolated wind-diesel power systems (WDPS) is a significant issue in stability analysis of the power system as well as guaranteeing the power generation through the control system. In this article, enhanced whale optimization algorithms (EWOA) are proposed to deal with the parameter identification problem of a WDPS system. The proposed EWOA effectively tackles the premature convergence problem of WOA by splitting the population into two subpopulations and updating the position of each whale according to the position of the best agent in its current subpopulation, the position of the other subpopulation's best agent, and the position of the best neighboring agent. Furthermore, fractional chaotic maps are embedded in the search process of EWOA to increase its performance in terms of accuracy. For validation purposes, the proposed algorithms are applied to identify the unknown parameters of WDPS, where different statistical analyzes and comparisons are carried out with other recent state-of-the-art algorithms. Simulation results confirm that the algorithms have less deviation in parameter estimation, more convergence speed, and higher precision in comparison with other algorithms.},
+	keywords={Optimization;Static VAr compensators; Parameter estimation; Whales;Convergence; Reactive power; Power system stability; Optimization; parameter identification; whale optimization algorithm;wind-diesel power system},
+	doi={10.1109/ACCESS.2020.3012686},
+	ISSN={2169-3536},
+	month={},
+}
+
+@article{KUCUKDEMIRAL2019106100,
+	title = {A model predictive vertical motion control of a passenger ship},
+	journal = {Ocean Engineering},
+	volume = {186},
+	pages = {106100},
+	year = {2019},
+	issn = {0029-8018},
+	doi = {https://doi.org/10.1016/j.oceaneng.2019.06.005},
+	url = {https://www.sciencedirect.com/science/article/pii/S0029801819303026},
+	author = {Ibrahim Beklan Küçükdemiral and Ferdi Çakıcı and Hakan Yazıcı},
+	keywords = {Model predictive control,  control, Magnitude and rate saturated actuators, Vertical motion of ship, Irregular sea waves, Seasickness},
+	abstract = {In this study, the design problem of a Model Predictive Controller (MPC) for attenuation of vertical motions of a passenger ship which is subject to irregular wave excitations is investigated. The proposed design considers actuator amplitude and rate saturation phenomenon. The motion control system of the ship utilises a pair of active stabilizing fins mounted to the head and tail. First, irregular long crested head waves are implemented by a well-established randomization theory in order to find heave force and pitch moment at $F_n=0.40$ and $F_n=0.50$ in the time domain. Then, a two-degree-of-freedom mathematical model, in which pitch and heave motions are coupled with the approximation of convolution integrals is solved to obtain the uncontrolled motions and accelerations of the ship. Finally, considering the physical amplitude and rate limitations of the active fin mechanism, an MPC design is proposed to obtain a practically applicable state-feedback control law for attenuating vertical motion of a passenger ship. The performance of the MPC is also compared with an elipsoid based H∞ controller. An extensive amount of simulation studies are presented at the end to illustrate the effectiveness of the proposed approach.}
+}
+
+@incollection{EREN201727,
+	title = {Chapter 2 - Introduction to Optimization},
+	editor = {Ozan Erdinç},
+	booktitle = {Optimization in Renewable Energy Systems},
+	publisher = {Butterworth-Heinemann},
+	address = {Boston},
+	pages = {27-74},
+	year = {2017},
+	isbn = {978-0-08-101041-9},
+	doi = {https://doi.org/10.1016/B978-0-08-101041-9.00002-8},
+	url = {https://www.sciencedirect.com/science/article/pii/B9780081010419000028},
+	author = {Yavuz Eren and İbrahim B. Küçükdemiral and İlker Üstoğlu},
+	keywords = {Constrained optimization, linear optimization, nonlinear optimization, solving techniques, unconstrained optimization},
+	abstract = {In this chapter, the basic principles of optimization and the mathematical formulation of the optimization problem have been provided. Besides, the categorization of the optimization problems has been presented in terms of the number of constraints, the structure of the variables, and linearity of the formulation elements. Considering the most familiar type of optimization problem, linear optimization approach has been examined in details. Then, some remarkable optimization techniques under the classification of unconstrained and constrained techniques have been investigated. Moreover, as regarding the increasing trend in the utilization of intelligent constrained optimization methods for the implementation and operational problems of renewable energy technologies, the literature have been reviewed.}
+}
+
+@inproceedings{Tok2016,  
+	title     = "Kısa D{\"o}nem Uzam-Zamansal Trafik Tahmini",  
+	author    = "Akın Taşcıkaraoğlu and Taşcıkaraoğlu, Fatma Yıldız and Küçükdemiral, ibrahim Beklan",  
+	year      = "2016",  
+	month     = oct,  
+	day       = "1",  
+	language  = "Turkish",  
+	pages     = "522--527",  
+	booktitle = "TOK 2016 Otomatik Kontrol Ulusal Toplantısı",  
+	url       = "http://tok2016.ogu.edu.tr",
+	abstract = "The studies carried out with the objective of minimizing the effects of congestion, delay and environment problems on the transportation network have gained increasing importance in the last years. Among these studies, short-term traffic flow
+	and average vehicle speed forecasting methods have come into prominence due to their easy implementations, efficient usage on different areas and cost-effectiveness. A large number of stu- dies have reported that these methods, in which the expected future values of link flows and average speeds are forecasted in desired points, can reduce the traffic congestion by anticipating the problems in traffic management. In this paper, a spatio-temporal approach accounted for historical traffic characteristics data collected from a large number of points is presented for average speed forecasts in a given link. The proposed approach includes an algorithm that enables to take into account the most informative data in an input set by determining them for each stage. It is aimed to increase the forecasting accuracy by using \emph{sparse} matrices in the algorithm while decreasing the calculation times significantly compared to the similar methods presented in the literature."
+}
 
 
-@article{9f5ef0987a9e468db3bfbdf325a60325,  title     = "Enhanced fractional chaotic whale optimization algorithm for parameter identification of isolated wind-diesel power systems",    author    = "Yashar Mousavi and Alireza Alfi and Küçükdemiral, Ibrahim Beklan",  year      = "2020",  month     = jul,  day       = "29",  doi       = "10.1109/ACCESS.2020.3012686",     volume    = "8",  pages     = "140862--140875",  journal   = "IEEE Access",  issn      = "2169-3536",  publisher = "IEEE",}
+@book{fa6f7a907ccd45aeb237ea5d7f14df82,  
+	title     = "13th IFAC Workshop on Time Delay Systems TDS 2016",   
+	author    = "Küçükdemiral, ibrahim Beklan",  
+	year      = "2016",  
+	month     = jun,  
+	doi       = "10.1016/S2405-8963(16)30789-3",  
+	isbn      = "9781510827554",  
+	series    = "IFAC PapersOnline",  
+	publisher = "Elsevier B.V.",  
+	number    = "10",  
+	address   = "Netherlands",  
+	note      = "Joint IFAC Meeting 6th Symposium on System Structure and Control (SSSC2016) and 13th Workshop on Time Delay Systems (TDS2016), SSSC2016-TDS2016 ; Conference date: 22-06-2016 -- 24-06-2016",
+}
 
 
-@article{6191c4030c67478f8f3be1464576228c,  title     = "A model predictive vertical motion control of a passenger ship",   author    = "Küçükdemiral, Ibrahim Beklan and Ferdi Çakıcı  and Hakan Yazıcı",  year      = "2019",  month     = aug,  day       = "15",  doi       = "10.1016/j.oceaneng.2019.06.005",     volume    = "186",  journal   = "Ocean Engineering",  issn      = "0029-8018",  publisher = "Elsevier B.V.",}
+@INPROCEEDINGS{7394643,
+	author={Haq, Md. Aminul and Beklan Küçükdemiral, Ibrahim},
+	booktitle={9th International Conference on Electrical and Electronics Engineering (ELECO)}, 
+	title={H∞ observer design for linear time-delay systems}, 
+	year={2015},
+	volume={},
+	number={},
+	pages={848-853},
+	abstract={The paper present the design of an observer for a general class of systems with delays in states. A state space model of observer with delays is proposed. The novelty of the study is to include the state derivatives in the design. The stability of the observer is proved by Lyapunov approach. Linear Matrix Inequality (LMI) approach is used in the analysis of the problem. Numerical examples are studied to see the validity of the approach.},
+	keywords={Observers;Delays;Mathematical model;Linear matrix inequalities;Delay effects;Riccati equations;Automation},
+	doi={10.1109/ELECO.2015.7394643},
+	link={https://doi.org/10.1109/ELECO.2015.7394643},
+	ISSN={},
+	month={Nov},
+	}
 
 
-@inbook{d99a31dd716e476fbeecbecfad6488bc,  title     = "Introduction to optimization",   author    = "Yavuz Eren and Küçükdemiral, Ibrahim Beklan and Ilker Üstoğlu",  year      = "2017",  month     = mar,  doi       = "10.1016/B978-0-08-101041-9.00002-8",   isbn      = "9780081010419",  pages     = "27--74",  editor    = "Ozan  Erdinç",  booktitle = "Optimization in Renewable Energy Systems: Recent Perspectives",  publisher = "Butterworth-Heinemann",}
+@INPROCEEDINGS{7394566,
+	author={Sever, Mert and Göktas, Gūlay and Yazıcı, Hakan and Beklan Küçükdemiral, Ibrahim},
+	booktitle={2015 9th International Conference on Electrical and Electronics Engineering (ELECO)}, 
+	title={Linear matrix inequalities based state feedback and reference feedforward actuator saturated H-infinity control of small-scale unmanned helicopter}, 
+	year={2015},
+	volume={},
+	number={},
+	pages={801-805},
+	abstract={In this study, systematic procedure of the flight controller design for a small-scale unmanned helicopter is presented. The procedure is based on a linear dynamical model. The proposed controller is composed of state feedback and reference feedforward. Reference tracking performance is formulated in terms of L2 gain from reference inputs to tracking errors and respective integral terms. Solution of the optimal controller with minimum L2 gain is cast to the semi definite programming problem with a set of Linear Matrix Inequality (LMI) constraints. Six degree-of-freedom linear helicopter model with two degree of freedom rotor dynamics is used to illustrate the effectiveness of approach through simulations. Numerical simulations show that the stability of controlled system and boundedness of control signals against reference trajectories with bounded magnitudes are guaranteed by the proposed controller.},
+	keywords={Trajectory;Actuators;State feedback;Feedforward neural networks;Helicopters;Numerical models;Ellipsoids},
+	doi={10.1109/ELECO.2015.7394566},
+	link={https://doi.org/10.1109/ELECO.2015.7394566},
+	ISSN={},
+	month={Nov},
+}
 
 
-@inproceedings{Tok2016,  title     = "Kısa D{\"o}nem Uzam-Zamansal Trafik Tahmini",  author    = "Akın Taşcıkaraoğlu and Taşcıkaraoğlu, Fatma Yıldız and Küçükdemiral, ibrahim Beklan",  year      = "2016",  month     = oct,  day       = "1",  language  = "Other",  pages     = "522--527",  booktitle = "TOK 2016 Otomatik Kontrol Ulusal Toplantısı",  url       = "http://tok2016.ogu.edu.tr",}
+@INPROCEEDINGS{7152262,
+	author={Sever, Mert and Yazıcı, Hakan and Göktaş, Gülay and Küçükdemiral, Ibrahim Beklan},
+	booktitle={6th International Conference on Modeling, Simulation, and Applied Optimization (ICMSAO)}, 
+	title={Disturbance attenuation of asymmetric structure by LMI based optimal state feedback controller with saturated actuators}, 
+	year={2015},
+	volume={},
+	number={},
+	pages={1-6},
+	abstract={This paper is concerned with the design of linear matrix inequalities (LMIs) based optimal state-feedback controller design for seismically excited asymmetric structures (AS) having stiffness irregularities. The system is modelled in terms of mass, natural frequencies, damping ratio and eccentricities to easily obtain torsionally flexible (TF) model. A one storey, two-way asymmetric structural system is used to illustrate the effectiveness of the approach through simulations. The modelled system has bi-lateral and rotational degrees of freedom. Frequency responses show the effectiveness of proposed controller by means of a decrease in the peak values of translation at each resonance frequency. Moreover, the time domain simulation results, acquired by using real time-history data of San Francisco and El Centro Earthquakes also show that proposed controller is very effective in reducing vibration amplitudes of each direction by applicable control signals and guaranteeing the stability of the closed loop system.},
+	keywords={Earthquakes; Damping;Actuators; State feedback; Ellipsoids; Resonant frequency; Acceleration; asymmetric structure; active vibration control; earthquake induced vibration; actuator saturation; linear matrix inequalities},
+	doi={10.1109/ICMSAO.2015.7152262},
+	link={https://doi.org/10.1109/ICMSAO.2015.7152262},
+	ISSN={},
+	month={May},
+}
 
 
-@book{fa6f7a907ccd45aeb237ea5d7f14df82,  title     = "13th IFAC Workshop on Time Delay Systems TDS 2016",   author    = "Küçükdemiral, ibrahim Beklan",  year      = "2016",  month     = jun,  doi       = "10.1016/S2405-8963(16)30789-3",  isbn      = "9781510827554",  series    = "IFAC PapersOnline",  publisher = "Elsevier B.V.",  number    = "10",  address   = "Netherlands",  note      = "Joint IFAC Meeting 6th Symposium on System Structure and Control (SSSC2016) and 13th Workshop on Time Delay Systems (TDS2016), SSSC2016-TDS2016 ; Conference date: 22-06-2016 -- 24-06-2016",}
-
-
-@inproceedings{36aa015b47c54c90b07b22c0b5f826bb,  title     = "${H}_\infty$ observer design for linear time-delay systems",  author    = "Haq, Md. Aminul and Küçükdemiral, Ibrahim Beklan",  year      = "2016",  month     = feb,  day       = "1",  doi       = "10.1109/ELECO.2015.7394643",  pages     = "848--853",  booktitle = "2015 9th International Conference on Electrical and Electronics Engineering (ELECO)",  url       = "http://www.eleco.org.tr/ELECO2015/index.htm",}
-
-
-@inproceedings{ba219276782d4fc182d96687b82d11b8,  title     = "Linear matrix inequalities based state feedback and reference feedforward actuator saturated H-infinity control of small-scale unmanned helicopter",   author    = "Mert Sever and Gülay Göktaş and Hakan Yazıcı and Beklan Küçükdemiral, Ibrahim",  year      = "2016",  month     = feb,  day       = "1",  doi       = "10.1109/ELECO.2015.7394566",     pages     = "801--805",  booktitle = "2015 9th International Conference on Electrical and Electronics Engineering (ELECO)",  publisher = "Institute of Electrical and Electronics Engineers Inc.",   url       = "http://www.eleco.org.tr/ELECO2015/index.htm",}
-
-
-@inproceedings{f626bddd7ece4229a54b53437b52f0c2,  title     = "Disturbance attenuation of asymmetric structure by LMI based optimal state feedback controller with saturated actuators",    author    = "Mert Sever and Hakan Yazıcı and Gülay Göktaş and Küçükdemiral, Ibrahim Beklan",  year      = "2015",  month     = jul,  day       = "9",  doi       = "10.1109/ICMSAO.2015.7152262",  isbn      = "9781467366014",  pages     = "1--6",  booktitle = "2015 6th International Conference on Modeling, Simulation, and Applied Optimization (ICMSAO)",  publisher = "IEEE",}
-
-
-@article{2513f50cb8604614b6c93292cf006e90,  title     = "Receding horizon $H_\infty$ control of time-delay systems",   author    = "Taşcıkaraoğlu, Fatma Yıldız and Levent Ucun and Küçükdemiral, Ibrahim B.",  year      = "2015",  month     = may,  day       = "1",  doi       = "10.1177/0142331214538089",  volume    = "37",  pages     = "596--605",  journal   = "Transactions of the Institute of Measurement and Control",  issn      = "0142-3312",   number    = "5",}
+@article{2513f50cb8604614b6c93292cf006e90,  
+	title     = "Receding horizon $H_\infty$ control of time-delay systems",   
+	author    = "Taşcıkaraoğlu, Fatma Yıldız and Levent Ucun and Küçükdemiral, Ibrahim B.",  
+	year      = "2015",  
+	month     = may,  
+	day       = "1",  
+	doi       = "10.1177/0142331214538089",  
+	volume    = "37",  
+	pages     = "596--605",  
+	journal   = "Transactions of the Institute of Measurement and Control",  
+	issn      = "0142-3312",   
+	abstract = "This paper deals with the disturbance rejection problem for discrete-time linear systems having time-varying state delays and control constraints. The study proposes a novel receding horizon $H_\infty$ control method utilizing a linear matrix inequality based optimization algorithm which is solved in each step of run-time. The proposed controller attenuates disturbances having bounded energies on controlled output and ensures the closed-loop stability and dissipation while meeting the physical control input constraints. The originality of the work lies on the extension of the idea of the well-known $H_\infty$ receding horizon control technique developed for linear discrete-time systems to interval time-delay systems having time-varying delays. The efficiency of the proposed method is illustrated through simulation studies that are carried out on a couple of benchmark problems. ",
+	number    = "5",
+}
 
 
 @inproceedings{cc53beb489dd4a8e9337ab45174d4e65,  title     = "Active Vibration Control of an Asymmetric Structure by Linear Matrix Inequalities Based $H_2 / H_\infty$ Mixed State Feedback Controller",   author    = "Mert Sever and Gülay Göktaş and Hakan Yazıcı and Küçükdemiral, Ibrahim Beklan",  year      = "2015",  language  = "Turkish",  isbn      = "9789756992609",  pages     = "806--811",  booktitle = "TOK{\textquoteright}2015 Otomatik Kontrol T{\"u}rk Milli Komitesi Ulusal Toplantisi",  publisher = "Pamukkale {\"U}niversitesi",  note      = "TOK 2015 ; Conference date: 10-09-2015 -- 12-09-2015",}
@@ -722,7 +859,22 @@ keywords = {Large Language Models (LLMs), Wind Energy Conversion Systems (WECSs)
 @inproceedings{fdbe6d40a22d457a84c36224c10cc4b3,  title     = "Durum Geri Beslemeli Doğrusal Parametreleri Değişen H sonsuz Kontrolör ile Dogrusal Olmayan Bir Süspansiyon Sisteminin Aktif Kontrolü",  author    = "Mert Sever and Hakan Yazıcı and IbrahimKüçükdemiral",  year      = "2014",  month     = sep,  day       = "13",  language  = "Turkish",  pages     = "280--286",  booktitle = "TOK 2014, 11--13 Sep 2014, Kocaeli, Türkiye",}
 
 
-@article{08cacfd4b8974741a226bf889992e7e3,  title     = "Active vibration control of container cranes against earthquake by the use of delay-dependent $H_\infty$ controller under consideration of actuator saturation",    author    = "Hakan Yazıcı and Azeloğlu, C. Oktay and Küçükdemiral, Ibrahim Beklan",  year      = "2014",  month     = sep,  day       = "1",  doi       = "10.1260/0263-0923.33.3.289",     volume    = "33",  pages     = "289--316",  journal   = "Journal of Low Frequency Noise, Vibration and Active Control",  issn      = "0263-0923",  publisher = "Multi-Science Publishing Co. Ltd",  number    = "3",}
+@article{08cacfd4b8974741a226bf889992e7e3,  
+	title     = "Active vibration control of container cranes against earthquake by the use of delay-dependent $H_\infty$ controller under consideration of actuator saturation",    
+	author    = "Hakan Yazıcı and Azeloğlu, C. Oktay and Küçükdemiral, Ibrahim Beklan",  
+	year      = "2014",  
+	month     = sep,  
+	day       = "1",  
+	doi       = "10.1260/0263-0923.33.3.289",     
+	volume    = "33",  
+	pages     = "289--316",  
+	abstract = "This paper studies the design of a state-feedback delay-dependent $H_\infty$ controller for vibration attenuation problem of a seismic-excited container crane subject to having time-varying actuator delay, L2 type disturbances and actuator saturation. First, a sufficient delay-dependent stability criterion is developed by choosing a Lyapunov-Krasovskii functional candidate based on matrix inequalities for a stabilizing H∞ synthesis. To convexify the Bilinear Matrix Inequality (BMI) based optimization problem involved in the delay dependent conditions; a cone complementary linearization method is adopted to find a sub-optimal solution. The proposed method also utilizes convex description of nonlinear saturation phenomenon by means of convex hull of some linear feedback which leads to a few additional ellipsoidal conditions in terms of Linear Matrix Inequalities (LMIs). By use of the proposed method, a suboptimal controller with maximum allowable delay bound and minimum allowable disturbance attenuation level can be easily obtained by a convex optimization technique. In order to show effectiveness of the proposed approach, a five Degrees-of-Freedom (DOF) container crane structure is modeled using a spring-mass-damper subsystem. The system is then simulated against the real ground motions of Kobe and Northridge earthquakes. Finally, the time history of the crane parts displacements, accelerations, control forces and frequency responses of the both uncontrolled and controlled cases are presented. Additionally, the performance of the proposed controller is also compared with a nominal state-feedback $H_\infty$ controller performance. Simulation results show that, in spite of the actuator saturation, the designed controller is all effective in reducing vibration amplitudes of crane parts and guarantees stability at maximum actuator delay. ",
+	journal   = "Journal of Low Frequency Noise, Vibration and Active Control",  
+	issn      = "0263-0923",  
+	URL = "https://doi.org/10.1260/0263-0923.33.3.289",
+	publisher = "Multi-Science Publishing Co. Ltd",  
+	number    = "3",
+}
 
 
 @article{65e8e34a113e4de4973dc137e88e6a7a,  title     = "Robust moving horizon $H_\infty$ control of discrete time-delayed systems with interval time-varying delays",    author    = "Yıldız Taşcıkaraoğlu, F. and Küçükdemiral, I. B. and J. Imura",  year      = "2014",  month     = aug,  day       = "27",  doi       = "10.1155/2014/462983",     volume    = "2014",  journal   = "Mathematical Problems in Engineering",  issn      = "1024-123X",  publisher = "John Wiley and Sons Ltd",}
