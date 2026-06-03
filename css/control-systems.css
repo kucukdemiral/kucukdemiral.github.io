@@ -239,12 +239,28 @@
     text-align: left;
 }
 .chapter-body th {
-    background: var(--bg-subtle);
+    background: var(--accent);
     font-weight: 600;
-    color: var(--navy);
+    color: #fff;
 }
 .chapter-body tr:nth-child(even) {
     background: rgba(241,243,247,0.5);
+}
+
+/* Laplace Transform Table */
+.chapter-body .lt-table {
+    font-size: 0.85rem;
+}
+.chapter-body .lt-table td {
+    vertical-align: middle;
+    padding: 0.5rem 0.6rem;
+}
+.chapter-body .lt-table img {
+    max-height: 52px;
+    width: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 2px;
 }
 
 /* ========== Math ========== */
