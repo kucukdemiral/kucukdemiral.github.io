@@ -112,6 +112,14 @@
                     .then(function (py) {
                         py.runPython(
                             'import numpy as np\n' +
+                            'if not hasattr(np, "NaN"): np.NaN = np.nan\n' +
+                            'if not hasattr(np, "Inf"): np.Inf = np.inf\n' +
+                            'if not hasattr(np, "complex"): np.complex = complex\n' +
+                            'if not hasattr(np, "float"): np.float = float\n' +
+                            'if not hasattr(np, "int"): np.int = int\n' +
+                            'if not hasattr(np, "bool"): np.bool = bool\n' +
+                            'if not hasattr(np, "str"): np.str = str\n' +
+                            'if not hasattr(np, "object"): np.object = object\n' +
                             'from scipy.optimize import minimize, minimize_scalar, linprog\n' +
                             'import io, sys, base64'
                         );
@@ -196,6 +204,46 @@
         btnEl.textContent = '\u25B6 Run';
     }
 
+    var controlInstalled = false;
+    var sympyInstalled = false;
+
+    function ensureControlLib(py, code) {
+        if (controlInstalled) return Promise.resolve(py);
+        if (!/\bimport control\b|\bfrom control\b/.test(code)) return Promise.resolve(py);
+        controlInstalled = true;
+        showGlobalStatus('Installing control library...');
+        return py.loadPackage(['micropip']).then(function () {
+            return py.runPythonAsync(
+                'import micropip\nawait micropip.install("control==0.9.4")\nimport control\n'
+            );
+        }).then(function () {
+            hideGlobalStatus();
+            console.log('[pyodide] python-control installed ✓');
+            return py;
+        }).catch(function (err) {
+            hideGlobalStatus();
+            console.warn('[pyodide] python-control install failed:', err);
+            return py;
+        });
+    }
+
+    function ensureSympy(py, code) {
+        if (sympyInstalled) return Promise.resolve(py);
+        if (!/\bimport sympy\b|\bfrom sympy\b/.test(code)) return Promise.resolve(py);
+        sympyInstalled = true;
+        showGlobalStatus('Loading SymPy...');
+        return py.loadPackage(['sympy']).then(function () {
+            py.runPython('import sympy');
+            hideGlobalStatus();
+            console.log('[pyodide] sympy loaded ✓');
+            return py;
+        }).catch(function (err) {
+            hideGlobalStatus();
+            console.warn('[pyodide] sympy load failed:', err);
+            return py;
+        });
+    }
+
     function runCode(setup, userCode, textEl, figsEl, btnEl) {
         btnEl.disabled = true;
         btnEl.textContent = 'Running...';
@@ -209,22 +257,41 @@
 
         ensurePyodide()
             .then(function (py) {
-                /* Redirect stdout/stderr */
+                return ensureSympy(py, fullCode);
+            })
+            .then(function (py) {
+                return ensureControlLib(py, fullCode);
+            })
+            .then(function (py) {
+                /* Capture stdout/stderr inline with execution */
                 py.runPython(
-                    'import warnings as _w\n' +
+                    'import io as _io, sys as _sys, warnings as _w\n' +
                     '_w.filterwarnings("ignore", message=".*FigureCanvasAgg is non-interactive.*")\n' +
-                    '_pyodide_stdout = io.StringIO()\n' +
-                    '_pyodide_stderr = io.StringIO()\n' +
-                    'sys.stdout = _pyodide_stdout\n' +
-                    'sys.stderr = _pyodide_stderr'
+                    '_pyodide_stdout = _io.StringIO()\n' +
+                    '_pyodide_stderr = _io.StringIO()\n' +
+                    '_pyodide_saved_stdout = _sys.stdout\n' +
+                    '_pyodide_saved_stderr = _sys.stderr\n'
                 );
 
                 var hasError = false;
 
                 try {
-                    py.runPython(fullCode);
+                    /* Redirect, run, restore — all in one py.runPython so
+                       import control cannot slip between redirect and exec */
+                    py.runPython(
+                        '_sys.stdout = _pyodide_stdout\n' +
+                        '_sys.stderr = _pyodide_stderr\n' +
+                        'try:\n' +
+                        '    exec(compile(' + JSON.stringify(fullCode) + ', "<exec>", "exec"))\n' +
+                        'finally:\n' +
+                        '    _sys.stdout = _pyodide_saved_stdout\n' +
+                        '    _sys.stderr = _pyodide_saved_stderr\n'
+                    );
                 } catch (e) {
                     hasError = true;
+                    try {
+                        py.runPython('_sys.stdout = _pyodide_saved_stdout\n_sys.stderr = _pyodide_saved_stderr');
+                    } catch (_) {}
                     try {
                         var stderr = py.runPython('_pyodide_stderr.getvalue()');
                         textEl.textContent = stderr || e.message;
@@ -237,7 +304,15 @@
                 if (!hasError) {
                     /* Flush any open matplotlib figures into stdout */
                     if (wantsPlots) {
+                        py.runPython(
+                            '_sys.stdout = _pyodide_stdout\n' +
+                            '_sys.stderr = _pyodide_stderr\n'
+                        );
                         flushFiguresToStdout(py);
+                        py.runPython(
+                            '_sys.stdout = _pyodide_saved_stdout\n' +
+                            '_sys.stderr = _pyodide_saved_stderr\n'
+                        );
                     }
 
                     /* Collect all output */
@@ -257,11 +332,6 @@
                         figsEl.appendChild(img);
                     }
                 }
-
-                /* Restore streams */
-                try {
-                    py.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
-                } catch (_) {}
 
                 finishRun(btnEl);
             })

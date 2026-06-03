@@ -1,0 +1,468 @@
+<h1 id="chap:ctrl_obs">Controllability and Observability</h1>
+<blockquote>
+<p><em>“Before you try to control a system, first ask: can you actually control it? And before you try to estimate its state, ask: can you actually observe it?”</em></p>
+</blockquote>
+<p>State feedback control (Chapter 9) places closed-loop poles by feeding back the full state vector. But two fundamental questions must be answered first: <em>is it even possible to steer every state of the system using the available input?</em> And <em>can we determine all the internal states from the output measurements?</em></p>
+<p>These questions lead to <strong>controllability</strong> and <strong>observability</strong> — structural properties that determine whether a control or estimation design is feasible at all.</p>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Explain what controllability and observability mean physically.</p></li>
+<li><p>Construct the controllability matrix and apply the rank test.</p></li>
+<li><p>Construct the observability matrix and apply the rank test.</p></li>
+<li><p>Recognise uncontrollable and unobservable modes from block diagrams.</p></li>
+<li><p>Convert a transfer function to controllable and observable canonical forms.</p></li>
+<li><p>Use MATLAB to check controllability and observability.</p></li>
+</ul>
+</div>
+<h2 id="sec:controllability">Controllability</h2>
+<h3 id="what-does-controllability-mean">What does controllability mean?</h3>
+<p>Consider a state-space system <span class="math display">\[\dot{x}(t) = Ax(t) + Bu(t), \qquad y(t) = Cx(t).\]</span> We say this system is <strong>controllable</strong> if, starting from <em>any</em> initial state <span class="math inline">\(x(0)\)</span>, there exists an input <span class="math inline">\(u(t)\)</span> that can drive the state to <em>any</em> desired final state in finite time.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Controllability</div>
+<p>The pair <span class="math inline">\((A,B)\)</span> is <em>controllable</em> if for any initial state <span class="math inline">\(x_0\)</span> and any target state <span class="math inline">\(x_f\)</span>, there exists an input <span class="math inline">\(u(t)\)</span> defined over a finite interval <span class="math inline">\([0, t_f]\)</span> that drives <span class="math inline">\(x(0)=x_0\)</span> to <span class="math inline">\(x(t_f)=x_f\)</span>.</p>
+</div>
+<p>Think of it this way: controllability tells you whether the input has a “path” to influence every part of the system’s internal state. If some state variable is completely disconnected from the input — no matter what you do with <span class="math inline">\(u(t)\)</span> — you cannot change it. That state is <em>uncontrollable</em>.</p>
+<div class="example"><div class="env-label env-label-example">Example: Two-tank system</div>
+<p>Consider two water tanks connected by a pipe (Figure <a href="#fig:two_tank_ctrl" data-reference-type="ref" data-reference="fig:two_tank_ctrl">1.1</a>). Water flows in through <span class="math inline">\(u(t)\)</span> to Tank 1, which feeds Tank 2 through the pipe. By adjusting <span class="math inline">\(u(t)\)</span>, you can control the level in Tank 1 directly, and the level in Tank 2 indirectly (through Tank 1). The input can influence both states — the system is <strong>controllable</strong>.</p>
+<p>Now imagine the pipe between the tanks is removed. Tank 2 just drains on its own. No matter how you adjust <span class="math inline">\(u(t)\)</span>, you cannot change the level in Tank 2. The state <span class="math inline">\(x_2\)</span> is <em>uncontrollable</em>.</p>
+<figure id="fig:two_tank_ctrl" data-latex-placement="H">
+
+<img src="figures/ch10_tikz_01.png" style="max-width:85%;" />
+<figcaption>Two-tank system: the input <span class="math inline">\(u(t)\)</span> flows into Tank 1, which feeds Tank 2 through a pipe.</figcaption>
+</figure>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: The toothpaste analogy</div>
+<p>Consider squeezing toothpaste from a tube onto a toothbrush (Figure <a href="#fig:toothpaste" data-reference-type="ref" data-reference="fig:toothpaste">1.2</a>). By squeezing the tube (your input <span class="math inline">\(u\)</span>), you can move paste from the tube to the brush — you can drive the “paste on brush” state to any desired amount. But can you reverse the process? Can you put the toothpaste <em>back</em> into the tube?</p>
+<p>No. Once the paste is out, you cannot return it. The “paste inside the tube” state is <em>not controllable</em> in the reverse direction — your input (squeezing) can only move paste one way. This is a system where the state space is only partially reachable from a given initial condition.</p>
+<figure id="fig:toothpaste" data-latex-placement="H">
+
+<img src="figures/ch10_tikz_02.png" style="max-width:85%;" />
+<figcaption>The toothpaste analogy: squeezing moves paste from tube to brush (controllable), but you cannot push it back (uncontrollable).</figcaption>
+</figure>
+</div>
+<div class="alertbox">
+<p><span>Analogy vs. formal definition</span> The toothpaste analogy is a loose illustration of irreversibility and reachability in <em>nonlinear</em>, <em>constrained</em> systems — it is <strong>not</strong> the formal definition of controllability for linear systems. In a controllable linear system <span class="math inline">\(\dot{x}=Ax+Bu\)</span>, the input <span class="math inline">\(u(t)\)</span> can drive the state in <em>both</em> directions along every state dimension (positive and negative). There is no “one-way” restriction. The analogy is useful for building initial intuition, but do not carry its limitations into the mathematics.</p>
+</div>
+<h3 id="the-controllability-matrix">The controllability matrix</h3>
+<p>How do we test controllability mathematically? For an <span class="math inline">\(n\)</span>-th order system with state matrix <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> and input matrix <span class="math inline">\(B \in \mathbb{R}^{n\times 1}\)</span>, we form the <strong>controllability matrix</strong>:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Controllability Matrix</div>
+<p><span class="math display">\[\begin{equation}
+        \mathcal{C} = \begin{bmatrix} B &amp; AB &amp; A^2B &amp; \cdots &amp; A^{n-1}B \end{bmatrix}
+        \label{eq:ctrl_matrix}
+\end{equation}\]</span> This is an <span class="math inline">\(n \times n\)</span> matrix (for a single-input system). The system is controllable if and only if <span class="math display">\[\mathrm{rank}(\mathcal{C}) = n.\]</span></p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>For a single-input system, <span class="math inline">\(\mathcal{C}\)</span> is an <span class="math inline">\(n\times n\)</span> square matrix. The rank test simplifies to: the system is controllable if and only if <span class="math inline">\(\det(\mathcal{C}) \neq 0\)</span>.</p>
+</div>
+<h4 class="unnumbered" id="where-does-this-matrix-come-from">Where does this matrix come from?</h4>
+<p>The solution of <span class="math inline">\(\dot{x} = Ax + Bu\)</span> is <span class="math display">\[x(t) = e^{At}x(0) + \int_0^t e^{A(t-\tau)} B\, u(\tau)\, d\tau.\]</span> The integral term represents what the input can contribute. By the Cayley–Hamilton theorem , <span class="math inline">\(e^{At}\)</span> can be written as a polynomial in <span class="math inline">\(A\)</span> of degree at most <span class="math inline">\(n-1\)</span>. So the input can push the state in the directions <span class="math inline">\(B, AB, A^2B, \ldots, A^{n-1}B\)</span>. If these <span class="math inline">\(n\)</span> vectors span all of <span class="math inline">\(\mathbb{R}^n\)</span>, the input can reach any point — the system is controllable.</p>
+<div class="example"><div class="env-label env-label-example">Example: Second-order controllable system</div>
+<p>Consider <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \qquad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.\]</span> The controllability matrix is <span class="math display">\[\mathcal{C} = \begin{bmatrix} B &amp; AB \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -3 \end{bmatrix}.\]</span> We compute <span class="math inline">\(\det(\mathcal{C}) = (0)(-3) - (1)(1) = -1 \neq 0\)</span>, so the system is <strong>controllable</strong>.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Second-order uncontrollable system</div>
+<p>Now consider <span class="math display">\[A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{bmatrix}, \qquad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.\]</span> This is a diagonal system with two decoupled modes. The input enters only through <span class="math inline">\(x_1\)</span>: <span class="math display">\[\dot{x}_1 = -x_1 + u, \qquad \dot{x}_2 = -2x_2.\]</span> The controllability matrix is <span class="math display">\[\mathcal{C} = \begin{bmatrix} 1 &amp; -1 \\ 0 &amp; 0 \end{bmatrix}.\]</span> The second row is all zeros, so <span class="math inline">\(\det(\mathcal{C}) = 0\)</span> and <span class="math inline">\(\mathrm{rank}(\mathcal{C}) = 1 &lt; 2\)</span>. The system is <strong>not controllable</strong>. The state <span class="math inline">\(x_2\)</span> decays on its own and cannot be influenced by <span class="math inline">\(u\)</span>.</p>
+</div>
+<p>The block diagram in Figure <a href="#fig:uncontrollable_block" data-reference-type="ref" data-reference="fig:uncontrollable_block">1.3</a> shows this uncontrollable system. The second mode (<span class="math inline">\(x_2\)</span>) is completely disconnected from the input.</p>
+<figure id="fig:uncontrollable_block" data-latex-placement="H">
+
+<img src="figures/ch10_tikz_03.png" style="max-width:85%;" />
+<figcaption>Block diagram of an uncontrollable system. The mode at <span class="math inline">\(s=-2\)</span> (state <span class="math inline">\(x_2\)</span>) has no path from the input <span class="math inline">\(u\)</span>.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Third-order system</div>
+<p>Consider a system with <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -6 &amp; -11 &amp; -6 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}.\]</span> We compute: <span class="math display">\[AB = \begin{bmatrix} 0 \\ 1 \\ -6 \end{bmatrix}, \qquad
+    A^2B = A(AB) = \begin{bmatrix} 1 \\ -6 \\ 25 \end{bmatrix}.\]</span> So <span class="math display">\[\mathcal{C} = \begin{bmatrix}
+    B &amp; AB &amp; A^2B
+    \end{bmatrix}=\begin{bmatrix} 0 &amp; 0 &amp; 1 \\ 0 &amp; 1 &amp; -6 \\ 1 &amp; -6 &amp; 25 \end{bmatrix}.\]</span> Computing the determinant (expand along the first column): <span class="math display">\[\det(\mathcal{C}) = 1 \cdot \det\begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -6 \end{bmatrix} = 1 \cdot (0-1) = -1 \neq 0.\]</span> The system is controllable.</p>
+</div>
+<h3 id="matlab-commands-for-controllability">MATLAB commands for controllability</h3>
+<p>Listing <a href="#lst:ch10_controllability_check" data-reference-type="ref" data-reference="lst:ch10_controllability_check">[lst:ch10_controllability_check]</a> shows how to form the controllability matrix and test its rank in MATLAB.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Checking controllability in MATLAB</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1, 0], [0, 0, 1], [-6, -11, -6]])
+B = np.array([[0], [0], [1]])
+
+# Form controllability matrix
+Co = ctrl.ctrb(A, B)
+
+# Check rank
+n = A.shape[0]
+r = np.linalg.matrix_rank(Co)
+print("System order = %d, np.linalg.matrix_rank(C) = %d" % (n, r,))
+if r == n:
+    print("System is controllable.")
+else:
+    print("System is NOT controllable.")</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1 0; 0 0 1; -6 -11 -6];
+B = [0; 0; 1];
+
+% Form controllability matrix
+Co = ctrb(A, B);
+
+% Check rank
+n = size(A,1);
+r = rank(Co);
+fprintf('System order = %d, rank(C) = %d\n', n, r);
+if r == n
+    fprintf('System is controllable.\n');
+else
+    fprintf('System is NOT controllable.\n');
+end</code></pre>
+<div class="alertbox">
+<p><span>Common Mistake</span> MATLAB’s <code>rank()</code> uses a numerical tolerance. For a matrix that is <em>nearly</em> singular, the result depends on rounding. Always check the singular values (<code>svd(Co)</code>) if you are unsure — a very small singular value suggests the system is “almost uncontrollable”.</p>
+</div>
+<h2 id="sec:observability">Observability</h2>
+<h3 id="what-does-observability-mean">What does observability mean?</h3>
+<p>Observability is the dual of controllability: can we <em>determine</em> every state by observing the output?</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Observability</div>
+<p>The pair <span class="math inline">\((A,C)\)</span> is <em>observable</em> if the initial state <span class="math inline">\(x(0)\)</span> can be uniquely determined from the output <span class="math inline">\(y(t)\)</span> and input <span class="math inline">\(u(t)\)</span> measured over a finite time interval <span class="math inline">\([0, t_f]\)</span>.</p>
+</div>
+<p>If a system is observable, then every internal state leaves a “fingerprint” on the output. If it is not, some internal dynamics are invisible — they evolve without affecting the output at all.</p>
+<div class="example"><div class="env-label env-label-example">Example: Building with a hidden room</div>
+<p>Imagine a building with temperature sensors only in certain rooms. If Room A and Room B are connected (heat flows between them), a sensor in Room A can detect temperature changes in Room B indirectly. But if Room C is completely insulated from all monitored rooms, its temperature is invisible to the sensors — it is an <em>unobservable</em> state.</p>
+</div>
+<h3 id="the-observability-matrix">The observability matrix</h3>
+<div class="definition"><div class="env-label env-label-definition">Definition: Observability Matrix</div>
+<p>For a system with <span class="math inline">\(A \in \mathbb{R}^{n\times n}\)</span> and <span class="math inline">\(C \in \mathbb{R}^{1\times n}\)</span>, the observability matrix is <span class="math display">\[\begin{equation}
+        \mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}.
+        \label{eq:obs_matrix}
+\end{equation}\]</span> The system is observable if and only if <span class="math inline">\(\mathrm{rank}(\mathcal{O}) = n\)</span>.</p>
+</div>
+<p>The logic mirrors controllability. The output <span class="math inline">\(y(t) = Ce^{At}x(0) + \ldots\)</span> contains information about <span class="math inline">\(x(0)\)</span> through the terms <span class="math inline">\(Cx(0)\)</span>, <span class="math inline">\(CAx(0)\)</span>, <span class="math inline">\(CA^2x(0)\)</span>, and so on. If these row vectors span all of <span class="math inline">\(\mathbb{R}^n\)</span>, we can reconstruct <span class="math inline">\(x(0)\)</span> uniquely from <span class="math inline">\(y(t)\)</span>.</p>
+<div class="example"><div class="env-label env-label-example">Example: Observable system</div>
+<p>Take <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \qquad C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span> The observability matrix is <span class="math display">\[\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{bmatrix}.\]</span> Since <span class="math inline">\(\det(\mathcal{O}) = 1 \neq 0\)</span>, the system is <strong>observable</strong>. We can determine both states from the output <span class="math inline">\(y = x_1\)</span>.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Unobservable system</div>
+<p>Consider the diagonal system <span class="math display">\[A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -3 \end{bmatrix}, \qquad C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span> The output is <span class="math inline">\(y = x_1\)</span>. We cannot see <span class="math inline">\(x_2\)</span> at all: <span class="math display">\[\mathcal{O} = \begin{bmatrix} 1 &amp; 0 \\ -1 &amp; 0 \end{bmatrix}.\]</span> <span class="math inline">\(\det(\mathcal{O}) = 0\)</span>, so the system is <strong>not observable</strong>. The mode <span class="math inline">\(x_2\)</span> is hidden from the output.</p>
+</div>
+<figure id="fig:unobservable_block" data-latex-placement="H">
+
+<img src="figures/ch10_tikz_04.png" style="max-width:85%;" />
+<figcaption>Block diagram of an unobservable system. Both modes are excited by the input, but only <span class="math inline">\(x_1\)</span> contributes to the output <span class="math inline">\(y\)</span>. The mode at <span class="math inline">\(s=-3\)</span> is unobservable.</figcaption>
+</figure>
+<h3 id="matlab-commands-for-observability">MATLAB commands for observability</h3>
+<p>Listing <a href="#lst:ch10_observability_check" data-reference-type="ref" data-reference="lst:ch10_observability_check">[lst:ch10_observability_check]</a> shows the corresponding procedure for observability.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Checking observability in MATLAB</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[-1, 0], [0, -3]])
+C = np.array([1, 0])
+
+# Form observability matrix
+Ob = ctrl.obsv(A, C)
+
+# Check rank
+n = A.shape[0]
+r = np.linalg.matrix_rank(Ob)
+print("System order = %d, np.linalg.matrix_rank(O) = %d" % (n, r,))
+if r == n:
+    print("System is observable.")
+else:
+    print("System is NOT observable.")</code></pre>
+</div>
+<pre class="matlab"><code>A = [-1 0; 0 -3];
+C = [1 0];
+
+% Form observability matrix
+Ob = obsv(A, C);
+
+% Check rank
+n = size(A,1);
+r = rank(Ob);
+fprintf('System order = %d, rank(O) = %d\n', n, r);
+if r == n
+    fprintf('System is observable.\n');
+else
+    fprintf('System is NOT observable.\n');
+end</code></pre>
+<h2 id="sec:duality">Duality Between Controllability and Observability</h2>
+<p>Controllability and observability are directly connected.</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Duality</div>
+<p>The pair <span class="math inline">\((A, B)\)</span> is <strong>controllable</strong> if and only if the pair <span class="math inline">\((A^\top, B^\top)\)</span> is <strong>observable</strong>.</p>
+</div>
+<p>To see why, note that the controllability matrix of <span class="math inline">\((A,B)\)</span> is <span class="math display">\[\mathcal{C} = \begin{bmatrix} B &amp; AB &amp; \cdots &amp; A^{n-1}B \end{bmatrix}\]</span> while the observability matrix of <span class="math inline">\((A^\top, B^\top)\)</span> is <span class="math display">\[\mathcal{O}_{\text{dual}} = \begin{bmatrix} B^\top \\ B^\top A^\top \\ \vdots \\ B^\top (A^\top)^{n-1} \end{bmatrix} = \mathcal{C}^\top.\]</span> Since transposing does not change the rank, the two conditions are equivalent.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>duality means that any theorem or method for controllability has a mirror version for observability (and vice versa). In Chapter 10, we will use this: observer design is “dual” to state feedback design.</p>
+</div>
+<h2 id="sec:tf_cancellation">Transfer Function and Pole-Zero Cancellation</h2>
+<p>Consider a state-space model <span class="math inline">\((A,B,C,D)\)</span> with transfer function <span class="math display">\[G(s) = C(sI-A)^{-1}B + D.\]</span> The eigenvalues of <span class="math inline">\(A\)</span> are the poles of the state-space model. However, the transfer function may have <em>fewer</em> poles than <span class="math inline">\(A\)</span> has eigenvalues. Why? Because uncontrollable or unobservable modes <em>cancel</em> in the transfer function.</p>
+<div class="example"><div class="env-label env-label-example">Example: Pole-zero cancellation from uncontrollable mode</div>
+<p>Consider the system <span class="math display">\[A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 1 &amp; 1 \end{bmatrix}, \quad D = 0.\]</span> The eigenvalues of <span class="math inline">\(A\)</span> are <span class="math inline">\(-1\)</span> and <span class="math inline">\(-2\)</span>. But the transfer function is <span class="math display">\[G(s) = C(sI-A)^{-1}B = \begin{bmatrix} 1 &amp; 1 \end{bmatrix} \begin{bmatrix} \frac{1}{s+1} &amp; 0 \\ 0 &amp; \frac{1}{s+2} \end{bmatrix} \begin{bmatrix} 1 \\ 0 \end{bmatrix} = \frac{1}{s+1}.\]</span> The pole at <span class="math inline">\(s=-2\)</span> has disappeared! It corresponds to the uncontrollable state <span class="math inline">\(x_2\)</span> (which <span class="math inline">\(B\)</span> does not reach). The transfer function only “sees” the controllable and observable part of the system.</p>
+</div>
+<div class="alertbox">
+<p><span>Hidden Dynamics</span> If a system has uncontrollable or unobservable modes, the transfer function hides them. This is dangerous: an unstable hidden mode would not appear in the transfer function, but the system would still be internally unstable. Always check controllability and observability before relying solely on transfer function analysis.</p>
+</div>
+<p>Listing <a href="#lst:ch10_hidden_modes" data-reference-type="ref" data-reference="lst:ch10_hidden_modes">[lst:ch10_hidden_modes]</a> compares the state-space poles with the transfer function poles.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Detecting hidden modes</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[-1, 0], [0, -2]]); B = np.array([[1], [0]]); C = np.array([[1, 1]]); D = 0
+sys_ss = ctrl.ss(A, B, C, D)
+sys_tf = ctrl.tf(sys_ss)      # Transfer function: 1/(s+1)
+
+# The pole at s=-2 is missing from the TF!
+print("State-space poles:"); print(np.linalg.eigvals(A))
+print("Transfer function poles:"); print(ctrl.poles(sys_tf))
+
+# Check controllability
+Co = ctrl.ctrb(A, B)
+print("rank(Co) = %d (need %d for controllability)" % (np.linalg.matrix_rank(Co), A.shape[0]))</code></pre>
+</div>
+<pre class="matlab"><code>A = [-1 0; 0 -2]; B = [1; 0]; C = [1 1]; D = 0;
+sys_ss = ss(A, B, C, D);
+sys_tf = tf(sys_ss);     % Transfer function: 1/(s+1)
+
+% The pole at s=-2 is missing from the TF!
+fprintf('State-space poles: '); disp(eig(A)');
+fprintf('Transfer function poles: '); disp(pole(sys_tf)');
+
+% Check controllability
+Co = ctrb(A, B);
+fprintf('rank(Co) = %d (need %d for controllability)\n', rank(Co), size(A,1));</code></pre>
+<h2 id="sec:canonical_forms">Canonical Forms</h2>
+<p>A transfer function can be realised in many different state-space forms. Two are particularly important: the <strong>ccf</strong> (CCF) and the <strong>ocf</strong> (OCF), which provide systematic realisations guaranteed to be controllable or observable, respectively.</p>
+<h3 id="subsec:ccf">Controllable canonical form (CCF)</h3>
+<p>Given a transfer function <span class="math display">\[G(s) = \frac{b_1 s^{n-1} + b_2 s^{n-2} + \cdots + b_n}{s^n + a_1 s^{n-1} + a_2 s^{n-2} + \cdots + a_n}\]</span> the controllable canonical form is:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Controllable Canonical Form</div>
+<p><span class="math display">\[A_c = \begin{bmatrix}
+        0 &amp; 1 &amp; 0 &amp; \cdots &amp; 0 \\
+        0 &amp; 0 &amp; 1 &amp; \cdots &amp; 0 \\
+        \vdots &amp; &amp; &amp; \ddots &amp; \vdots \\
+        0 &amp; 0 &amp; 0 &amp; \cdots &amp; 1 \\
+        -a_n &amp; -a_{n-1} &amp; -a_{n-2} &amp; \cdots &amp; -a_1
+    \end{bmatrix}, \quad
+    B_c = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}\]</span> <span class="math display">\[C_c = \begin{bmatrix} b_n &amp; b_{n-1} &amp; \cdots &amp; b_1 \end{bmatrix}, \quad D_c = 0\]</span></p>
+</div>
+<p>Notice the structure: the denominator coefficients <span class="math inline">\(a_1, \ldots, a_n\)</span> appear in the last row of <span class="math inline">\(A_c\)</span>, and <span class="math inline">\(B_c\)</span> has a 1 only in the last entry. This structure guarantees controllability.</p>
+<div class="example"><div class="env-label env-label-example">Example: CCF for a second-order system</div>
+<p>Given <span class="math display">\[G(s) = \frac{3s + 5}{s^2 + 4s + 3},\]</span> we identify <span class="math inline">\(a_1 = 4\)</span>, <span class="math inline">\(a_2 = 3\)</span>, <span class="math inline">\(b_1 = 3\)</span>, <span class="math inline">\(b_2 = 5\)</span>. The CCF is: <span class="math display">\[A_c = \begin{bmatrix} 0 &amp; 1 \\ -3 &amp; -4 \end{bmatrix}, \quad
+    B_c = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad
+    C_c = \begin{bmatrix} 5 &amp; 3 \end{bmatrix}, \quad
+    D_c = 0.\]</span></p>
+<p>Let us verify controllability: <span class="math display">\[\mathcal{C} = \begin{bmatrix} B_c &amp; A_c B_c \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -4 \end{bmatrix}, \quad \det(\mathcal{C}) = -1 \neq 0. \quad \checkmark\]</span></p>
+</div>
+<h3 id="subsec:ocf">Observable canonical form (OCF)</h3>
+<p>The observable canonical form is the <em>dual</em> of the CCF. For the same transfer function <span class="math inline">\(G(s)\)</span>:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Observable Canonical Form</div>
+<p><span class="math display">\[A_o = \begin{bmatrix}
+        0 &amp; 0 &amp; \cdots &amp; 0 &amp; -a_n \\
+        1 &amp; 0 &amp; \cdots &amp; 0 &amp; -a_{n-1} \\
+        0 &amp; 1 &amp; \cdots &amp; 0 &amp; -a_{n-2} \\
+        \vdots &amp; &amp; \ddots &amp; &amp; \vdots \\
+        0 &amp; 0 &amp; \cdots &amp; 1 &amp; -a_1
+    \end{bmatrix}, \quad
+    B_o = \begin{bmatrix} b_n \\ b_{n-1} \\ \vdots \\ b_1 \end{bmatrix}\]</span> <span class="math display">\[C_o = \begin{bmatrix} 0 &amp; 0 &amp; \cdots &amp; 0 &amp; 1 \end{bmatrix}, \quad D_o = 0\]</span></p>
+</div>
+<p>Notice that <span class="math inline">\(A_o = A_c^\top\)</span>, <span class="math inline">\(B_o = C_c^\top\)</span>, <span class="math inline">\(C_o = B_c^\top\)</span>. This is the duality in action. The OCF guarantees observability.</p>
+<div class="example"><div class="env-label env-label-example">Example: OCF for the same second-order system</div>
+<p>For <span class="math inline">\(G(s) = \dfrac{3s+5}{s^2+4s+3}\)</span>, the OCF is: <span class="math display">\[A_o = \begin{bmatrix} 0 &amp; -3 \\ 1 &amp; -4 \end{bmatrix}, \quad
+    B_o = \begin{bmatrix} 5 \\ 3 \end{bmatrix}, \quad
+    C_o = \begin{bmatrix} 0 &amp; 1 \end{bmatrix}, \quad
+    D_o = 0.\]</span></p>
+<p>Verify observability: <span class="math display">\[\mathcal{O} = \begin{bmatrix} C_o \\ C_o A_o \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -4 \end{bmatrix}, \quad \det(\mathcal{O}) = -1 \neq 0. \quad \checkmark\]</span></p>
+</div>
+<h3 id="subsec:diagonal">Diagonal canonical form</h3>
+<p>When the system has distinct (non-repeated) poles <span class="math inline">\(p_1, p_2, \ldots, p_n\)</span>, we can also write the state-space model in <strong>diagonal form</strong> by performing a partial fraction expansion of <span class="math inline">\(G(s)\)</span>: <span class="math display">\[G(s) = \frac{r_1}{s-p_1} + \frac{r_2}{s-p_2} + \cdots + \frac{r_n}{s-p_n}\]</span> where <span class="math inline">\(r_i\)</span> are the residues. The diagonal realisation is <span class="math display">\[A_d = \begin{bmatrix} p_1 &amp; &amp; \\ &amp; p_2 &amp; \\ &amp; &amp; \ddots \\ &amp; &amp; &amp; p_n \end{bmatrix}, \quad
+B_d = \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix}, \quad
+C_d = \begin{bmatrix} r_1 &amp; r_2 &amp; \cdots &amp; r_n \end{bmatrix}.\]</span></p>
+<p>In this form, each state corresponds directly to one pole. This makes it easy to see which modes are controllable (nonzero entry in <span class="math inline">\(B_d\)</span>) and observable (nonzero entry in <span class="math inline">\(C_d\)</span>).</p>
+<div class="example"><div class="env-label env-label-example">Example: Diagonal form</div>
+<p>For <span class="math inline">\(G(s) = \dfrac{3s+5}{s^2+4s+3} = \dfrac{3s+5}{(s+1)(s+3)}\)</span>, partial fractions give <span class="math display">\[G(s) = \frac{1}{s+1} + \frac{2}{s+3}.\]</span> So <span class="math display">\[A_d = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -3 \end{bmatrix}, \quad
+    B_d = \begin{bmatrix} 1 \\ 1 \end{bmatrix}, \quad
+    C_d = \begin{bmatrix} 1 &amp; 2 \end{bmatrix}.\]</span> Both entries of <span class="math inline">\(B_d\)</span> are nonzero (controllable) and both entries of <span class="math inline">\(C_d\)</span> are nonzero (observable).</p>
+</div>
+<h3 id="matlab-canonical-form-conversions">MATLAB: canonical form conversions</h3>
+<p>Listing <a href="#lst:ch10_canonical_forms" data-reference-type="ref" data-reference="lst:ch10_canonical_forms">[lst:ch10_canonical_forms]</a> demonstrates how to obtain different canonical forms and verify them using partial fractions.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Canonical forms in MATLAB</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+from scipy import signal as sig
+
+np.set_printoptions(precision=4, suppress=True)
+
+num = np.array([3, 5]); den = np.array([1, 4, 3])
+
+# Convert to state-space (CCF-like for SISO)
+A, B, C, D = sig.tf2ss(num, den)
+print("tf2ss result (CCF-like):")
+print("A =", A); print("B =", B.T); print("C =", C)
+
+# Modal/diagonal form from partial fractions
+r, p, k = sig.residue(num, den)
+A_modal = np.diag(p)
+B_modal = np.ones((len(p), 1))
+C_modal = r.reshape(1, -1)
+
+print("Modal form matrices:")
+print("A =", np.real_if_close(A_modal))
+print("B =", B_modal.T)
+print("C =", np.real_if_close(C_modal))
+print("Residues:", r)
+print("Poles:", p)</code></pre>
+</div>
+<pre class="matlab"><code>num = [3 5]; den = [1 4 3];
+sys = tf(num, den);
+
+% Convert to state-space (MATLAB uses CCF by default for SISO)
+[A, B, C, D] = tf2ss(num, den);
+fprintf('tf2ss result (CCF-like):\n');
+disp(A); disp(B'); disp(C);
+
+% Convert to different canonical forms using canon()
+sys_ss = ss(sys);
+sys_modal = canon(sys_ss, 'modal');   % diagonal/modal form
+fprintf('Modal form A matrix:\n');
+disp(sys_modal.A);
+
+% Alternative: use residue for partial fractions
+[r, p, k] = residue(num, den);
+fprintf('Residues: '); disp(r');
+fprintf('Poles: '); disp(p');</code></pre>
+<div class="notebox">
+<p><span>MATLAB Note</span> MATLAB’s <code>tf2ss()</code> returns a form where the denominator coefficients are in the <em>first</em> row of <span class="math inline">\(A\)</span> (not the last row as in our textbook CCF). The two forms are related by reversing the order of states. Both are valid controllable canonical forms.</p>
+</div>
+<h2 id="sec:ctrl_obs_forms">Controllability and Observability of Specific Forms</h2>
+<p>The canonical forms highlight an important pattern:</p>
+<div class="summarybox">
+<p><span>Controllability/Observability of Canonical Forms</span></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Form</strong></th>
+<th style="text-align: center;"><strong>Controllable?</strong></th>
+<th style="text-align: center;"><strong>Observable?</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Controllable canonical form (CCF)</td>
+<td style="text-align: center;">Always</td>
+<td style="text-align: center;">Depends on numerator</td>
+</tr>
+<tr>
+<td style="text-align: left;">Observable canonical form (OCF)</td>
+<td style="text-align: center;">Depends on numerator</td>
+<td style="text-align: center;">Always</td>
+</tr>
+<tr>
+<td style="text-align: left;">Diagonal form (distinct poles)</td>
+<td style="text-align: center;">Iff all <span class="math inline">\(B_d\)</span> entries <span class="math inline">\(\neq 0\)</span></td>
+<td style="text-align: center;">Iff all <span class="math inline">\(C_d\)</span> entries <span class="math inline">\(\neq 0\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>For state feedback design (Chapter 9), we need the system to be <em>controllable</em>. For observer design (Chapter 10), we need it to be <em>observable</em>. For a combined observer-based state feedback controller, we need <em>both</em>.</p>
+<div class="example"><div class="env-label env-label-example">Example: DC motor: controllability and observability analysis</div>
+<p>A simplified DC motor has the transfer function <span class="math display">\[G(s) = \frac{5}{s^2 + 6s + 5} = \frac{5}{(s+1)(s+5)}.\]</span></p>
+<p><strong>Step 1: Controllable canonical form.</strong></p>
+<p>With <span class="math inline">\(a_1 = 6\)</span>, <span class="math inline">\(a_2 = 5\)</span>, <span class="math inline">\(b_1 = 0\)</span>, <span class="math inline">\(b_2 = 5\)</span>: <span class="math display">\[A_c = \begin{bmatrix} 0 &amp; 1 \\ -5 &amp; -6 \end{bmatrix}, \quad
+    B_c = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad
+    C_c = \begin{bmatrix} 5 &amp; 0 \end{bmatrix}.\]</span></p>
+<p><strong>Step 2: Controllability check.</strong> <span class="math display">\[\mathcal{C} = \begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -6 \end{bmatrix}, \quad \det(\mathcal{C}) = -1 \neq 0 \quad \Rightarrow \quad \text{controllable.}\]</span></p>
+<p><strong>Step 3: Observability check.</strong> <span class="math display">\[\mathcal{O} = \begin{bmatrix} 5 &amp; 0 \\ 0 &amp; 5 \end{bmatrix}, \quad \det(\mathcal{O}) = 25 \neq 0 \quad \Rightarrow \quad \text{observable.}\]</span></p>
+<p><strong>Step 4: Diagonal form.</strong> Partial fractions: <span class="math display">\[G(s) = \frac{5}{(s+1)(s+5)} = \frac{5/4}{s+1} + \frac{-5/4}{s+5}.\]</span> So <span class="math inline">\(r_1 = 5/4\)</span>, <span class="math inline">\(r_2 = -5/4\)</span>, and <span class="math display">\[A_d = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -5 \end{bmatrix}, \quad B_d = \begin{bmatrix} 1 \\ 1 \end{bmatrix}, \quad C_d = \begin{bmatrix} 5/4 &amp; -5/4 \end{bmatrix}.\]</span> Both <span class="math inline">\(B_d\)</span> entries are nonzero <span class="math inline">\(\Rightarrow\)</span> controllable. Both <span class="math inline">\(C_d\)</span> entries are nonzero <span class="math inline">\(\Rightarrow\)</span> observable.</p>
+<p><strong>Step 5: MATLAB verification.</strong> Listing <a href="#lst:ch10_dc_motor_verify" data-reference-type="ref" data-reference="lst:ch10_dc_motor_verify">[lst:ch10_dc_motor_verify]</a> confirms both properties.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">DC motor controllability and observability check</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+G = ctrl.tf(5, np.array([1, 6, 5]))
+sys = ctrl.ss(G)
+n = sys.A.shape[0]
+print("Contr: %d" % (np.linalg.matrix_rank(ctrl.ctrb(sys.A, sys.B)) == n))
+print("Observ: %d" % (np.linalg.matrix_rank(ctrl.obsv(sys.A, sys.C)) == n))</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(5, [1 6 5]);
+sys = ss(G);
+fprintf('Contr: %d\n', rank(ctrb(sys.A, sys.B)) == size(sys.A,1));
+fprintf('Observ: %d\n', rank(obsv(sys.A, sys.C)) == size(sys.A,1));</code></pre>
+<p>Both tests return 1 (true). This motor can be controlled by state feedback and its states can be estimated by an observer.</p>
+</div>
+<h3 id="sec:kalman_decomposition">Kalman Decomposition (Conceptual Overview)</h3>
+<p>A result due to Rudolf Kalman states that <em>any</em> state-space system can be decomposed — via a change of coordinates — into four subsystems:</p>
+<ol>
+<li><p><strong>Controllable and observable</strong> — this part fully appears in the input–output transfer function.</p></li>
+<li><p><strong>Controllable but unobservable</strong> — the input can reach these states, but they do not affect the measured output.</p></li>
+<li><p><strong>Uncontrollable but observable</strong> — these states influence the output, but the input cannot steer them.</p></li>
+<li><p><strong>Uncontrollable and unobservable</strong> — completely hidden from both input and output.</p></li>
+</ol>
+<p>Only subsystem (1) — the controllable <em>and</em> observable part — appears in the transfer function <span class="math inline">\(G(s) = C(sI-A)^{-1}B\)</span>. The remaining modes are “invisible” to input–output experiments. This is precisely why <em>pole–zero cancellations</em> in a transfer function can hide unstable or uncontrollable modes.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The practical lesson is clear: <strong>never rely on the transfer function alone</strong> to judge a system’s behaviour. A transfer function that looks perfectly stable and well-behaved may conceal uncontrollable or unobservable modes that cause problems in practice (e.g. internal instability). Always verify controllability and observability from the state-space matrices <span class="math inline">\((A, B, C)\)</span>.</p>
+</div>
+<h2 id="sec:ch8_summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p><strong>Controllability</strong> answers: can the input influence every state? Test: <span class="math inline">\(\mathrm{rank}(\mathcal{C}) = n\)</span> where <span class="math inline">\(\mathcal{C} = [B \; AB \; \cdots \; A^{n-1}B]\)</span>.</p></li>
+<li><p><strong>Observability</strong> answers: can we determine every state from the output? Test: <span class="math inline">\(\mathrm{rank}(\mathcal{O}) = n\)</span> where <span class="math inline">\(\mathcal{O} = [C;\; CA;\; \cdots;\; CA^{n-1}]\)</span>.</p></li>
+<li><p><strong>Duality</strong>: <span class="math inline">\((A,B)\)</span> controllable <span class="math inline">\(\Leftrightarrow\)</span> <span class="math inline">\((A^\top, B^\top)\)</span> observable.</p></li>
+<li><p><strong>Hidden modes</strong>: uncontrollable or unobservable poles cancel in the transfer function. Always check state-space properties, not just the transfer function.</p></li>
+<li><p><strong>Controllable canonical form (CCF)</strong>: denominator coefficients in the last row of <span class="math inline">\(A\)</span>; always controllable.</p></li>
+<li><p><strong>Observable canonical form (OCF)</strong>: transpose of CCF; always observable.</p></li>
+<li><p><strong>Diagonal form</strong>: each state maps to one pole; controllability and observability are visible from <span class="math inline">\(B\)</span> and <span class="math inline">\(C\)</span> entries.</p></li>
+<li><p>MATLAB: use <code>ctrb()</code>, <code>obsv()</code>, <code>rank()</code>, <code>canon()</code>, <code>tf2ss()</code>.</p></li>
+</ul>
+</div>
+<h2 id="sec:ch8_problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>(Controllability — 2nd order)</strong> Given <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -5 &amp; -6 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Compute the controllability matrix <span class="math inline">\(\mathcal{C}\)</span>.</p></li>
+<li><p>Determine whether the system is controllable.</p></li>
+<li><p>If you change <span class="math inline">\(B\)</span> to <span class="math inline">\(\begin{bmatrix} 1 \\ -5 \end{bmatrix}\)</span>, is the system still controllable? Explain.</p></li>
+</ol></li>
+<li><p><strong>(Observability — 2nd order)</strong> For the system in Problem 1 (original <span class="math inline">\(B\)</span>) with <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span>:</p>
+<ol>
+<li><p>Compute the observability matrix <span class="math inline">\(\mathcal{O}\)</span>.</p></li>
+<li><p>Is the system observable?</p></li>
+<li><p>Find a <span class="math inline">\(C\)</span> matrix that makes the system <em>not</em> observable.</p></li>
+</ol></li>
+<li><p><strong>(Diagonal system)</strong> Consider <span class="math display">\[A = \begin{bmatrix} -2 &amp; 0 &amp; 0 \\ 0 &amp; -3 &amp; 0 \\ 0 &amp; 0 &amp; -5 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 1 &amp; 0 &amp; 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Which modes are controllable? Which are uncontrollable?</p></li>
+<li><p>Which modes are observable? Which are unobservable?</p></li>
+<li><p>What is the transfer function <span class="math inline">\(G(s) = C(sI-A)^{-1}B\)</span>? How many poles does it have?</p></li>
+</ol></li>
+<li><p><strong>(CCF construction)</strong> The transfer function of a system is <span class="math display">\[G(s) = \frac{2s + 7}{s^3 + 5s^2 + 8s + 4}.\]</span></p>
+<ol>
+<li><p>Write the CCF matrices <span class="math inline">\(A_c\)</span>, <span class="math inline">\(B_c\)</span>, <span class="math inline">\(C_c\)</span>.</p></li>
+<li><p>Write the OCF matrices <span class="math inline">\(A_o\)</span>, <span class="math inline">\(B_o\)</span>, <span class="math inline">\(C_o\)</span>.</p></li>
+<li><p>Verify that <span class="math inline">\(A_o = A_c^\top\)</span>, <span class="math inline">\(B_o = C_c^\top\)</span>, <span class="math inline">\(C_o = B_c^\top\)</span>.</p></li>
+</ol></li>
+<li><p><strong>(Pole-zero cancellation)</strong> Consider <span class="math display">\[A = \begin{bmatrix} -1 &amp; 0 \\ 0 &amp; -4 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 0 &amp; 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Find the eigenvalues of <span class="math inline">\(A\)</span>.</p></li>
+<li><p>Compute the transfer function <span class="math inline">\(G(s) = C(sI-A)^{-1}B\)</span>.</p></li>
+<li><p>Explain why both eigenvalues vanish from <span class="math inline">\(G(s)\)</span>. Is this system controllable? Observable?</p></li>
+</ol></li>
+<li><p><strong>(Third-order system)</strong> A system has <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -4 &amp; -8 &amp; -5 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 4 &amp; 0 &amp; 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Verify that this is in CCF. What is the corresponding transfer function?</p></li>
+<li><p>Check controllability and observability using the rank test.</p></li>
+<li><p>Find the diagonal form using partial fraction expansion of <span class="math inline">\(G(s)\)</span>.</p></li>
+</ol></li>
+<li><p><strong>(Mass–spring–damper revisited)</strong> A mass–spring–damper with <span class="math inline">\(m=1\)</span>, <span class="math inline">\(c=3\)</span>, <span class="math inline">\(k=2\)</span> has state-space matrices <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Show the system is controllable for <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span> (position output). Is it observable?</p></li>
+<li><p>Repeat for <span class="math inline">\(C = \begin{bmatrix} 0 &amp; 1 \end{bmatrix}\)</span> (velocity output).</p></li>
+<li><p>Can we design both a state feedback controller and an observer using position measurement only? Justify.</p></li>
+</ol></li>
+<li><p><strong>(MATLAB)</strong> For the system <span class="math display">\[G(s) = \frac{s + 3}{s^3 + 6s^2 + 11s + 6}\]</span></p>
+<ol>
+<li><p>Use MATLAB to obtain the CCF (<code>tf2ss</code>) and the modal form (<code>canon</code>).</p></li>
+<li><p>Use <code>ctrb()</code>, <code>obsv()</code>, and <code>rank()</code> to check controllability and observability of each form.</p></li>
+<li><p>Factor the denominator and find the partial fraction expansion using <code>residue()</code>. Verify that the modal form matches.</p></li>
+</ol></li>
+</ol>

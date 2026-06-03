@@ -1,0 +1,837 @@
+<h1 id="ch:laplace">Mathematical Background and the Laplace Transform</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Compute the Laplace transform of common signals (step, ramp, impulse, exponentials, sinusoids) using the definition and standard properties.</p></li>
+<li><p>Apply the differentiation, integration, and shifting properties to transform differential equations into algebraic equations.</p></li>
+<li><p>Solve initial-value problems using the Laplace transform workflow: transform, solve algebraically, invert.</p></li>
+<li><p>Derive the transfer function <span class="math inline">\(G(s) = Y(s)/U(s)\)</span> from a linear ODE under zero initial conditions.</p></li>
+<li><p>Perform partial fraction expansion for expressions with distinct real, complex, and repeated poles, and compute the corresponding inverse Laplace transforms.</p></li>
+<li><p>Apply the Initial and Final Value Theorems to determine <span class="math inline">\(f(0^+)\)</span> and <span class="math inline">\(\lim_{t\to\infty} f(t)\)</span> directly from <span class="math inline">\(F(s)\)</span>.</p></li>
+</ul>
+</div>
+<h2 id="sec:laplace-intro">Introduction and Roadmap</h2>
+<p>This chapter introduces the Laplace transform gradually: we first learn what the transform does, then use it to solve differential equations, and only after that interpret complete system responses.</p>
+<p>Specifically, we focus on:</p>
+<ul>
+<li><p><strong>The laplace:</strong> We begin with the transform pair <span class="math display">\[F(s)=\mathcal{L}\{f(t)\}=\int_{0}^{\infty}e^{-st}f(t)\,dt
+        \quad \leftrightsquigarrow \quad
+        f(t)=\mathcal{L}^{-1}\{F(s)\},\]</span> and then formalise the definition and develop the properties that are used most often in control: linearity, differentiation in time, integration, shifting, and standard transform pairs.</p></li>
+<li><p><strong>Solving ODEs via the Laplace transform:</strong> We convert initial-value problems in the time domain into algebraic equations in the complex variable <span class="math inline">\(s\)</span>, solve for <span class="math inline">\(F(s)\)</span>, and recover <span class="math inline">\(f(t)\)</span> via the inverse laplace.</p></li>
+<li><p><strong>Transfer functions:</strong> By applying the Laplace transform to lti systems under zero initial conditions, we derive transfer functions <span class="math inline">\(G(s)\)</span> and connect them to input–output modelling in control.</p></li>
+<li><p><strong>Impulse response and convolution:</strong> Once the transform machinery is in place, we return to the system viewpoint and show how impulse response and convolution fit naturally into the Laplace-domain framework.</p></li>
+</ul>
+<p>To design a control system, we need a dynamic model expressed as differential equations. These equations, together with initial conditions such as <span class="math inline">\(x(0)\)</span> or <span class="math inline">\(\dot{x}(0)\)</span>, form an initial value problem (IVP). The Laplace transform converts these time-domain differential equations in <span class="math inline">\(x(t)\)</span> into algebraic equations in <span class="math inline">\(X(s)\)</span>. After solving for <span class="math inline">\(X(s)\)</span>, we use the inverse Laplace transform to obtain <span class="math inline">\(x(t)\)</span>.</p>
+<p>This workflow is illustrated in Figure <a href="#fig:laplace-flow" data-reference-type="ref" data-reference="fig:laplace-flow">1.1</a>. The figure also reminds us that a direct time-domain route from the ODE to <span class="math inline">\(x(t)\)</span> does exist; the Laplace-domain path is valuable because it often turns “solve a differential equation” into “solve an algebraic equation”, and this shift is one of the main reasons Laplace methods are so widely used in systems and control.</p>
+<figure id="fig:laplace-flow" data-latex-placement="htbp">
+
+<img src="figures/ch02_tikz_01.png" style="max-width:85%;" />
+<figcaption>Two routes from the governing ODE to the time response <span class="math inline">\(x(t)\)</span>: direct time-domain solution, or the Laplace-domain workflow that passes through algebraic equations in <span class="math inline">\(X(s)\)</span>.</figcaption>
+</figure>
+<h2 id="sec:laplace-motivation">Motivation: Why the Laplace Domain Helps</h2>
+<p>Even for a simple first-order system, the direct time-domain solution can be awkward to manipulate by hand. The following example illustrates the difficulty.</p>
+<div class="examplebox">
+<p><span>A motivating RC circuit</span></p>
+<p>We model the circuit in Figure <a href="#fig:rc-current" data-reference-type="ref" data-reference="fig:rc-current">[fig:rc-current]</a>.</p>
+<div class="center">
+<div class="circuitikz">
+<p>(3,6) to[sinusoidal voltage source, l=<span><span class="math inline">\(u\)</span></span>, label distance=0.02cm] (3,3); (3,6) to[american resistor, l=<span><span class="math inline">\(R\)</span></span>, label distance=0.02cm] (7,6); (7,6) to[capacitor, l=<span><span class="math inline">\(C\)</span></span>, label distance=0.02cm] (7,3); (3,3) – (7,3); at (5,3) ; (N1) at (7,6) ; at (N1) <span><span class="math inline">\(V_C\)</span></span>; (4,5.5) – node[midway, below] <span><span class="math inline">\(i(t)\)</span></span> (6,5.5);</p>
+</div>
+<p></p>
+</div>
+<p>For the capacitor, the voltage–current relation is <span class="math display">\[C\,\frac{dV_C(t)}{dt}=i(t),\]</span> and by KVL around the loop <span class="math display">\[u(t)=R\,i(t)+V_C(t)
+\quad\Longrightarrow\quad
+i(t)=\frac{u(t)-V_C(t)}{R}
+\quad\Longrightarrow\quad
+\frac{dV_C(t)}{dt}=-\frac{1}{RC}V_C(t)+\frac{1}{RC}u(t).\]</span> Solving this first-order ODE directly yields <span class="math display">\[\begin{equation}
+    \label{eq:rc-solution-time}
+    V_C(t)=V_C(0)e^{-t/(RC)}
+    +\frac{1}{RC}\int_{0}^{t} e^{-(t-\tau)/(RC)}\,u(\tau)\,d\tau.
+\end{equation}\]</span></p>
+<p>The integral term in <a href="#eq:rc-solution-time" data-reference-type="eqref" data-reference="eq:rc-solution-time">[eq:rc-solution-time]</a> shows that the present output depends on the past history of the input. For more complex inputs <span class="math inline">\(u(t)\)</span>, or higher-order systems, repeated time-domain integration quickly becomes cumbersome. The Laplace transform streamlines the process because it:</p>
+<ul>
+<li><p>replaces <span class="math inline">\(\tfrac{d}{dt}\)</span> with multiplication by <span class="math inline">\(s\)</span>, turning ODEs into polynomial equations in <span class="math inline">\(s\)</span>;</p></li>
+<li><p>uses transform properties and tables to handle many inputs and initial conditions systematically;</p></li>
+<li><p>enables block-diagram algebra for combining and simplifying interconnected systems;</p></li>
+<li><p>recovers time-domain responses via the inverse Laplace transform when needed.</p></li>
+</ul>
+</div>
+<h2 id="sec:laplace-core">The Laplace Transform: Definition and Core Properties</h2>
+<p>For this chapter, view <span class="math inline">\(s\)</span> as a bookkeeping variable that turns differentiation into algebra. The main skill is learning how to move between the time domain and the <span class="math inline">\(s\)</span>-domain.</p>
+<h3 id="subsec:laplace-definition">Definition, notation, and convergence</h3>
+<div class="definition"><div class="env-label env-label-definition">Definition: Laplace transform</div>
+<p>Let <span class="math inline">\(f(t)\)</span> be piecewise continuous for <span class="math inline">\(t\ge 0\)</span> and of exponential order. Its (one-sided) Laplace transform is <span class="math display">\[F(s)=\mathcal{L}\{f(t)\}\triangleq \int_{0}^{\infty} f(t)\,e^{-st}\,dt,\]</span> where <span class="math inline">\(s=\sigma+j\omega\)</span> is a complex variable and <span class="math inline">\(\sigma\)</span> is chosen to ensure convergence.</p>
+</div>
+<p>Conceptually, the transform repackages the signal <span class="math inline">\(f(t)\)</span> into a new form <span class="math inline">\(F(s)\)</span> where differentiation becomes algebraic multiplication.</p>
+<p>We write the forward and inverse transforms as <span class="math display">\[F(s)=\mathcal{L}\{f(t)\},
+\qquad
+f(t)=\mathcal{L}^{-1}\{F(s)\},\]</span> and adopt the convention of lower-case letters for time-domain signals and upper-case for their transforms, e.g. <span class="math inline">\(f(t)\leftrightsquigarrow F(s)\)</span>, <span class="math inline">\(y(t)\leftrightsquigarrow Y(s)\)</span>. This convention helps keep track of which domain we are working in.</p>
+<h3 id="subsec:laplace-properties">Linearity, differentiation, and integration</h3>
+<p><strong>Linearity</strong> allows us to transform each piece of a composite input separately and combine the results.</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Linearity</div>
+<p>For any constants <span class="math inline">\(a,b\)</span> and functions <span class="math inline">\(f(t),g(t)\)</span> whose Laplace transforms exist, <span class="math display">\[\mathcal{L}\{a f(t)+b g(t)\}=a\,\mathcal{L}\{f(t)\}+b\,\mathcal{L}\{g(t)\}.\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Directly from the definition: <span class="math display">\[\begin{align*}
+        \mathcal{L}\{af(t)+bg(t)\}
+        &amp;= \int_0^\infty \bigl[af(t)+bg(t)\bigr]e^{-st}\,dt \\
+        &amp;= a\!\int_0^\infty f(t)\,e^{-st}\,dt + b\!\int_0^\infty g(t)\,e^{-st}\,dt
+        = a\,F(s)+b\,G(s).\end{align*}\]</span> ◻</p>
+</div>
+</div>
+<p>The second, and arguably most important, property is that a derivative in time becomes an algebraic expression in <span class="math inline">\(s\)</span>. This is the key step that turns an initial-value ODE into an equation that can be solved by ordinary algebra.</p>
+<div class="result"><div class="env-label env-label-result">Result: Differentiation in time</div>
+<p>Let <span class="math inline">\(f(t)\)</span> be differentiable for <span class="math inline">\(t\ge 0\)</span> with <span class="math inline">\(F(s)=\mathcal{L}\{f(t)\}\)</span>. Then <span class="math display">\[\mathcal{L}\left\{\frac{d}{dt}f(t)\right\}=sF(s)-f(0).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Integration by parts with <span class="math inline">\(u=e^{-st}\)</span> and <span class="math inline">\(dv=f&#39;(t)\,dt\)</span>: <span class="math display">\[\begin{align*}
+            \int_0^\infty f&#39;(t)\,e^{-st}\,dt
+            &amp;= \Bigl[f(t)\,e^{-st}\Bigr]_0^\infty + s\!\int_0^\infty f(t)\,e^{-st}\,dt \\
+            &amp;= 0 - f(0) + s\,F(s) = s\,F(s) - f(0),
+\end{align*}\]</span> where the boundary term at <span class="math inline">\(t\to\infty\)</span> vanishes because <span class="math inline">\(f(t)\)</span> is of exponential order and <span class="math inline">\(\Re(s)\)</span> is chosen large enough. ◻</p>
+</div>
+</div>
+<p>Applying the differentiation rule twice gives the second-derivative formula: <span class="math display">\[\mathcal{L}\{\ddot{f}(t)\} = s^2 F(s) - s\,f(0) - \dot{f}(0).\]</span> These formulas will be used repeatedly. Whenever you see <span class="math inline">\(\dot{x}(t)\)</span>, replace it by <span class="math inline">\(sX(s)-x(0)\)</span>; whenever you see <span class="math inline">\(\ddot{y}(t)\)</span>, replace it by <span class="math inline">\(s^2Y(s)-sy(0)-\dot{y}(0)\)</span>.</p>
+<p>The companion property for integration follows immediately. If <span class="math inline">\(g(t)=\int_0^t f(\tau)\,d\tau\)</span>, then <span class="math inline">\(\dot{g}(t)=f(t)\)</span> with <span class="math inline">\(g(0)=0\)</span>. Applying the differentiation rule to <span class="math inline">\(g(t)\)</span> gives <span class="math inline">\(s\,G(s)=F(s)\)</span>, so <span class="math display">\[\mathcal{L}\left\{\int_{0}^{t} f(\tau)\,d\tau\right\}=\frac{F(s)}{s}.\]</span></p>
+<p>There is also a useful companion rule in the opposite direction: multiplication by <span class="math inline">\(t\)</span> in the time domain becomes differentiation with respect to <span class="math inline">\(s\)</span>. This is especially helpful for signals such as <span class="math inline">\(t e^{-at}\)</span>, <span class="math inline">\(t\sin(\omega t)\)</span>, and higher powers of <span class="math inline">\(t\)</span> multiplying standard signals.</p>
+<div class="result"><div class="env-label env-label-result">Result</div>
+<p><span>Differentiation in the <span class="math inline">\(s\)</span>-domain</span><span>s-domain-diff</span> If <span class="math inline">\(\mathcal{L}\{f(t)\}=F(s)\)</span>, then <span class="math display">\[\mathcal{L}\{t f(t)\}=-\frac{dF(s)}{ds}.\]</span> More generally, <span class="math display">\[\mathcal{L}\{t^n f(t)\}=(-1)^n\frac{d^nF(s)}{ds^n},
+    \qquad n=1,2,\ldots.\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Differentiate the definition of <span class="math inline">\(F(s)\)</span> with respect to <span class="math inline">\(s\)</span>: <span class="math display">\[\frac{dF}{ds}
+        = \frac{d}{ds}\int_0^\infty f(t)e^{-st}\,dt
+        = \int_0^\infty f(t)(-t)e^{-st}\,dt
+        = -\mathcal{L}\{t f(t)\}.\]</span> Repeated differentiation gives the general formula. ◻</p>
+</div>
+</div>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p><span>Using <span class="math inline">\(s\)</span>-domain differentiation</span><span>s-domain-diff-example</span> Find the Laplace transforms of <span class="math inline">\(t e^{-2t}\)</span> and <span class="math inline">\(t\sin(3t)\)</span>.</p>
+<p>For the first signal, start from the basic pair <span class="math display">\[e^{-2t}\quad \longleftrightarrow \quad F(s)=\frac{1}{s+2}.\]</span> Using Result <a href="#res:s-domain-diff" data-reference-type="ref" data-reference="res:s-domain-diff">[res:s-domain-diff]</a>, <span class="math display">\[\mathcal{L}\{t e^{-2t}\}
+    =-\frac{d}{ds}\left(\frac{1}{s+2}\right)
+    =\frac{1}{(s+2)^2}.\]</span> This is much quicker than evaluating the integral <span class="math inline">\(\int_0^\infty t e^{-2t}e^{-st}\,dt\)</span> directly.</p>
+<p>For the second signal, use <span class="math display">\[\sin(3t)\quad \longleftrightarrow \quad F(s)=\frac{3}{s^2+9}.\]</span> Therefore <span class="math display">\[\mathcal{L}\{t\sin(3t)\}
+    =-\frac{d}{ds}\left(\frac{3}{s^2+9}\right)
+    =\frac{6s}{(s^2+9)^2}.\]</span> In control problems, terms of this type appear when repeated poles or polynomially weighted transient responses occur.</p>
+</div>
+<h3 id="subsec:laplace-shifts">Exponential shifting and trigonometric transforms</h3>
+<p>The exponential shifting property lets us reuse a known transform by shifting the variable <span class="math inline">\(s\)</span>, rather than evaluating a new integral each time.</p>
+<div class="result"><div class="env-label env-label-result">Result: Frequency shift (multiplication by an exponential)</div>
+<p>If <span class="math inline">\(\mathcal{L}\{f(t)\}=F(s)\)</span>, then <span class="math display">\[\mathcal{L}\{e^{at}f(t)\}=F(s-a).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> <span class="math display">\[\mathcal{L}\{e^{at}f(t)\}
+            = \int_0^\infty f(t)\,e^{at}\,e^{-st}\,dt
+            = \int_0^\infty f(t)\,e^{-(s-a)t}\,dt
+            = F(s-a).\]</span> ◻</p>
+</div>
+</div>
+<p>As a direct application, taking <span class="math inline">\(f(t)=u_0(t)\)</span> with <span class="math inline">\(F(s)=1/s\)</span> gives the transform of the exponential: <span class="math display">\[\begin{equation}
+\label{eq:exp-transform}
+\mathcal{L}\{e^{at}\}=\frac{1}{s-a},\qquad \Re(s)&gt;\Re(a).
+\end{equation}\]</span> The same formula works for complex exponents: setting <span class="math inline">\(a=\alpha+j\omega\)</span> gives <span class="math inline">\(\mathcal{L}\{e^{(\alpha+j\omega)t}\}=\frac{1}{(s-\alpha-j\omega)}\)</span>.</p>
+<p><strong>Trigonometric transforms.</strong> Using Euler’s identities, <span class="math display">\[\cos\theta=\frac{e^{j\theta}+e^{-j\theta}}{2},\qquad
+\sin\theta=\frac{e^{j\theta}-e^{-j\theta}}{2j},\]</span> we can derive the Laplace transforms of sine and cosine from <a href="#eq:exp-transform" data-reference-type="eqref" data-reference="eq:exp-transform">[eq:exp-transform]</a>. Oscillatory behaviour appears everywhere in systems and control — vibrating structures, electrical circuits, rotating machines, and underdamped closed-loop responses — so these results are fundamental.</p>
+<div class="result"><div class="env-label env-label-result">Result: Laplace transform of cosine</div>
+<p><span class="math display">\[\mathcal{L}\{\cos(\omega t)\}=\frac{s}{s^2+\omega^2}.\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> By Euler’s identity and linearity (Theorem <a href="#thm:linearity" data-reference-type="ref" data-reference="thm:linearity">[thm:linearity]</a>), <span class="math display">\[\mathcal{L}\{\cos(\omega t)\}
+        = \frac{1}{2}\mathcal{L}\{e^{j\omega t}\} + \frac{1}{2}\mathcal{L}\{e^{-j\omega t}\}
+        = \frac{1}{2}\!\left(\frac{1}{s-j\omega}+\frac{1}{s+j\omega}\right)
+        = \frac{s}{s^2+\omega^2}.\]</span> ◻</p>
+</div>
+</div>
+<p>The sine transform follows by the same approach:</p>
+<div class="result"><div class="env-label env-label-result">Result: Laplace transform of sine</div>
+<p><span class="math display">\[\mathcal{L}\{\sin(\omega t)\}=\frac{\omega}{s^2+\omega^2}.\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Using <span class="math inline">\(\sin(\omega t)=\frac{1}{2j}\bigl(e^{j\omega t}-e^{-j\omega t}\bigr)\)</span> and linearity, <span class="math display">\[\mathcal{L}\{\sin(\omega t)\}
+        = \frac{1}{2j}\!\left(\frac{1}{s-j\omega}-\frac{1}{s+j\omega}\right)
+        = \frac{1}{2j}\cdot\frac{2j\omega}{s^2+\omega^2}
+        = \frac{\omega}{s^2+\omega^2}.\]</span> ◻</p>
+</div>
+</div>
+<h3 id="subsec:laplace-initial-final">Initial and final value theorems</h3>
+<p>Often we only need to know how a response starts and where it settles, not the entire time history. The ivt and fvt provide these limiting values directly from <span class="math inline">\(F(s)\)</span>.</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Final value theorem</div>
+<p>If <span class="math inline">\(f(t)\)</span> has Laplace transform <span class="math inline">\(F(s)\)</span>, and all poles of <span class="math inline">\(sF(s)\)</span> have negative real parts, then <span class="math display">\[\lim_{t\to\infty} f(t)=\lim_{s\to 0} sF(s).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> The differentiation property gives <span class="math inline">\(\int_0^\infty f&#39;(t)\,e^{-st}\,dt = sF(s)-f(0)\)</span>. Taking the limit as <span class="math inline">\(s\to 0^+\)</span> (permitted because the poles of <span class="math inline">\(sF(s)\)</span> lie in the open left half-plane): <span class="math display">\[\int_0^\infty f&#39;(t)\,dt = \lim_{s\to 0}\bigl[sF(s)-f(0)\bigr].\]</span> The left side equals <span class="math inline">\(\lim_{T\to\infty}[f(T)-f(0)]\)</span>. Cancelling <span class="math inline">\(f(0)\)</span> from both sides gives the result. ◻</p>
+</div>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Final value theorem</div>
+<p>Let <span class="math inline">\(F(s)=\dfrac{5}{s(s^2+3s+2)}\)</span>. The poles of <span class="math inline">\(sF(s)=\frac{5}{s^2+3s+2}=\frac{5}{(s+1)(s+2)}\)</span> are at <span class="math inline">\(s=-1\)</span> and <span class="math inline">\(s=-2\)</span>, both in the left half-plane. Therefore <span class="math display">\[\lim_{t\to\infty} f(t)=\lim_{s\to 0} sF(s)=\frac{5}{2}.\]</span></p>
+</div>
+<div class="alertbox">
+<p><span>When the Final Value Theorem cannot be used</span> The Final Value Theorem is only valid when all poles of <span class="math inline">\(sF(s)\)</span> lie strictly in the left half-plane. If <span class="math inline">\(sF(s)\)</span> has poles on the imaginary axis or in the right half-plane, the time response does not settle to a finite constant, and the theorem must not be applied.</p>
+<p>For example, let <span class="math display">\[F(s)=\frac{1}{s^2+1}.\]</span> Then <span class="math inline">\(f(t)=\sin t\)</span>, which oscillates forever and has no final value. Although <span class="math display">\[\lim_{s\to 0}sF(s)=\lim_{s\to 0}\frac{s}{s^2+1}=0,\]</span> this number is not a valid final value because <span class="math inline">\(sF(s)=s/(s^2+1)\)</span> has poles at <span class="math inline">\(s=\pm j\)</span>.</p>
+</div>
+<p>Listing <a href="#lst:matlab-final-value-thm" data-reference-type="ref" data-reference="lst:matlab-final-value-thm">[lst:matlab-final-value-thm]</a> shows how to apply the Final Value Theorem symbolically in MATLAB.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code for applying the Final Value Theorem.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, limit
+
+s = symbols('s')
+F = 5 / (s * (s**2 + 3*s + 2))
+fv = limit(s * F, s, 0)
+print("Final value:", fv)</code></pre>
+</div>
+<pre class="matlab"><code>syms s
+    F = 5 / (s * (s^2 + 3*s + 2));
+    fv = limit(s * F, s, 0);</code></pre>
+</div>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Initial value theorem</div>
+<p>If <span class="math inline">\(f(t)\)</span> has Laplace transform <span class="math inline">\(F(s)\)</span> and <span class="math inline">\(F(s)\)</span> is strictly proper (degree of the numerator less than the degree of the denominator), then <span class="math display">\[\lim_{t\to 0^+} f(t)=\lim_{s\to \infty} sF(s).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Again from the differentiation property, <span class="math inline">\(\int_0^\infty f&#39;(t)\,e^{-st}\,dt = sF(s)-f(0)\)</span>. Now let <span class="math inline">\(s\to\infty\)</span>: for <span class="math inline">\(\Re(s)\)</span> large, the factor <span class="math inline">\(e^{-st}\)</span> forces the integral to zero. Hence <span class="math display">\[0 = \lim_{s\to\infty}\bigl[sF(s)-f(0)\bigr]
+            \quad\Longrightarrow\quad
+            f(0^+)=\lim_{s\to\infty}sF(s).\]</span> ◻</p>
+</div>
+</div>
+<h2 id="sec:laplace-signals">Common Laplace Transforms for Signals Used in Control</h2>
+<p>This section collects Laplace transforms of signals that recur throughout control engineering. The aim is to recognise these signal families and understand why they appear so often.</p>
+<h3 id="subsec:standard-test-inputs">Standard test inputs: step, ramp, and parabolic</h3>
+<p>These signals represent progressively more demanding reference inputs and will be central to the tracking and steady-state error analysis in later chapters.</p>
+<p><strong>Step signal.</strong> A unit step is defined by <span class="math display">\[u_0(t)=
+\begin{cases}
+    1, &amp; t\ge 0,\\
+    0, &amp; \text{otherwise.}
+\end{cases}\]</span> We use <span class="math inline">\(u_0(t)\)</span> for the unit step to avoid confusion with <span class="math inline">\(u(t)\)</span>, which denotes the control input throughout this book. Some texts use <span class="math inline">\(\mathbf{1}(t)\)</span> or <span class="math inline">\(\mathcal{H}(t)\)</span> (Heaviside function) instead.</p>
+<figure id="fig:stepsignal" data-latex-placement="htbp">
+<img src="figures/StepSignal.png" style="max-width:50%;" />
+<figcaption>Unit-step signal <span class="math inline">\(u_0(t)\)</span>.</figcaption>
+</figure>
+<p>Its Laplace transform follows directly from the definition: <span class="math display">\[\mathcal{L}\{u_0(t)\}=\int_{0}^{\infty} e^{-st}dt=\left[-\frac{e^{-st}}{s}\right]_0^\infty=\frac{1}{s},\qquad \Re(s)&gt;0.\]</span></p>
+<p>The unit-step signal can be generated in MATLAB as shown in Listing <a href="#lst:matlab-step" data-reference-type="ref" data-reference="lst:matlab-step">[lst:matlab-step]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code for the unit-step signal <span class="math inline">\(r(t)=A\,u_0(t)\)</span>.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.arange(0, 10.01, 0.01)
+A = 1
+r = A * (t &gt;= 0).astype(float)
+plt.plot(t, r)
+plt.xlabel('t'); plt.ylabel('r(t)')
+plt.title('Unit Step Signal')</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:10;
+    A = 1;
+    r = A*(t &gt;= 0);
+    plot(t, r);</code></pre>
+</div>
+<p><strong>Ramp signal.</strong> Let <span class="math inline">\(r(t)=At\)</span> for <span class="math inline">\(t\ge 0\)</span>. Then <span class="math display">\[\mathcal{L}\{r(t)\}=\int_{0}^{\infty} At\, e^{-st}dt=\frac{A}{s^2},\qquad \Re(s)&gt;0.\]</span></p>
+<figure id="fig:rampsignal" data-latex-placement="htbp">
+<img src="figures/RampSignal.png" style="max-width:50%;" />
+<figcaption>Ramp signal.</figcaption>
+</figure>
+<p>The corresponding MATLAB code is given in Listing <a href="#lst:matlab-ramp" data-reference-type="ref" data-reference="lst:matlab-ramp">[lst:matlab-ramp]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code for the ramp signal.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.arange(0, 10.01, 0.01)
+A = 1
+r = A * t
+plt.plot(t, r)
+plt.xlabel('t'); plt.ylabel('r(t)')
+plt.title('Ramp Signal')</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:10;
+    A = 1;
+    r = A*t;
+    plot(t,r);</code></pre>
+</div>
+<p><strong>Parabolic signal.</strong> Let <span class="math inline">\(r(t)=\tfrac{A}{2}t^2\)</span> for <span class="math inline">\(t\ge 0\)</span>. Then <span class="math display">\[\mathcal{L}\{r(t)\}=\frac{A}{s^3},\qquad \Re(s)&gt;0.\]</span></p>
+<figure id="fig:parabola-rt" data-latex-placement="htbp">
+
+<img src="figures/ch02_tikz_04.png" style="max-width:85%;" />
+<figcaption>Parabolic signal <span class="math inline">\(r(t)=\tfrac A2 t^2\)</span>.</figcaption>
+</figure>
+<p>Listing <a href="#lst:matlab-parabolic" data-reference-type="ref" data-reference="lst:matlab-parabolic">[lst:matlab-parabolic]</a> generates the parabolic signal in MATLAB.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code for the parabolic signal.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.arange(0, 10.01, 0.01)
+A = 1
+r = (A / 2) * t**2
+plt.plot(t, r)
+plt.xlabel('t'); plt.ylabel('r(t)')
+plt.title('Parabolic Signal')</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:10;
+    A = 1;
+    r = (A/2).*t.^2;
+    plot(t,r);</code></pre>
+</div>
+<p>These three signals reveal a useful pattern: each extra power of <span class="math inline">\(t\)</span> in the time domain produces one extra factor of <span class="math inline">\(1/s\)</span> in the Laplace domain. The general formula is <span class="math display">\[\mathcal{L}\{t^n\} = \frac{n!}{s^{n+1}}, \qquad n = 0,1,2,\ldots\]</span> which gives <span class="math inline">\(1/s\)</span> for <span class="math inline">\(n=0\)</span> (step), <span class="math inline">\(1/s^2\)</span> for <span class="math inline">\(n=1\)</span> (ramp), and <span class="math inline">\(2/s^3\)</span> for <span class="math inline">\(n=2\)</span> (parabolic with <span class="math inline">\(A=2\)</span>). This pattern will become important later when we interpret system type and tracking performance.</p>
+<h3 id="subsec:dirac">The Dirac delta (impulse) and the sifting property</h3>
+<p>The Dirac delta <span class="math inline">\(\delta(t)\)</span> represents an idealised very short input with finite total effect. Although no real actuator produces a perfect impulse, this idealisation is useful because it reveals the intrinsic dynamics of a system.</p>
+<p>We can build intuition by starting with unit-area rectangular pulses: <span class="math display">\[r_\varepsilon(t)=
+\begin{cases}
+    \dfrac{1}{2\varepsilon}, &amp; -\varepsilon \le t &lt; \varepsilon,\\
+    0, &amp; \text{otherwise},
+\end{cases}
+\qquad
+\int_{-\infty}^{\infty} r_\varepsilon(t)\,dt=1,\]</span> and letting <span class="math inline">\(\varepsilon\to 0^+\)</span>, which yields <span class="math inline">\(\delta(t)\)</span> in the sense of distributions.</p>
+<figure id="fig:diracsignal" data-latex-placement="htbp">
+
+<img src="figures/ch02_tikz_05.png" style="max-width:85%;" />
+<figcaption>Obtaining the Dirac impulse <span class="math inline">\(\delta(t)\)</span> as the limit of unit-area rectangular pulses. Each pulse has width <span class="math inline">\(2\varepsilon\)</span> and height <span class="math inline">\(1/(2\varepsilon)\)</span>, so the area is always 1. As <span class="math inline">\(\varepsilon\to 0\)</span>, the pulses become narrower and taller, approaching <span class="math inline">\(\delta(t)\)</span>.</figcaption>
+</figure>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Sampling (sifting) property</div>
+<p>For any continuous function <span class="math inline">\(f(t)\)</span>, <span class="math display">\[\int_{-\infty}^{\infty} \delta(t-t_0)\, f(t)\,dt=f(t_0).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Informal justification.</em> Replace <span class="math inline">\(\delta(t-t_0)\)</span> by the rectangular pulse <span class="math inline">\(r_\varepsilon(t-t_0)\)</span>. For small <span class="math inline">\(\varepsilon\)</span>, the function <span class="math inline">\(f(t)\)</span> is approximately constant over the narrow interval <span class="math inline">\([t_0-\varepsilon,\,t_0+\varepsilon]\)</span>, so <span class="math display">\[\int_{-\infty}^{\infty} r_\varepsilon(t-t_0)\,f(t)\,dt
+            \;\approx\; f(t_0)\!\int_{-\infty}^{\infty} r_\varepsilon(t-t_0)\,dt
+            = f(t_0)\cdot 1.\]</span> Taking <span class="math inline">\(\varepsilon\to 0^+\)</span> makes this exact. ◻</p>
+</div>
+</div>
+<p>This property explains why the delta function is so powerful: it “picks out” the value of a signal at one instant. That is precisely why the impulse will later become the natural input for defining impulse response.</p>
+<p>Using Theorem <a href="#thm:sifting" data-reference-type="ref" data-reference="thm:sifting">[thm:sifting]</a>, the Laplace transform of the impulse is <span class="math display">\[\mathcal{L}\{\delta(t)\}=\int_{0}^{\infty}\delta(t)e^{-st}dt=e^{-s\cdot 0}=1.\]</span> For a shifted impulse at <span class="math inline">\(t=a&gt;0\)</span>, the sifting property gives <span class="math inline">\(\mathcal{L}\{\delta(t-a)\}=e^{-sa}\)</span>. This is a special case of a more general result about time delay:</p>
+<div class="result"><div class="env-label env-label-result">Result: Time-shifting theorem</div>
+<p>If <span class="math inline">\(\mathcal{L}\{f(t)\} = F(s)\)</span> and <span class="math inline">\(a &gt; 0\)</span>, then <span class="math display">\[\mathcal{L}\{f(t-a)\,u_0(t-a)\} = e^{-as}\,F(s).\]</span> In words: delaying a signal by <span class="math inline">\(a\)</span> seconds multiplies its transform by <span class="math inline">\(e^{-as}\)</span>.</p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Substitute <span class="math inline">\(\tau = t-a\)</span> (so <span class="math inline">\(t=\tau+a\)</span>, <span class="math inline">\(dt=d\tau\)</span>): <span class="math display">\[\int_0^\infty f(t-a)\,u_0(t-a)\,e^{-st}\,dt
+            = \int_0^\infty f(\tau)\,e^{-s(\tau+a)}\,d\tau
+            = e^{-as}\!\int_0^\infty f(\tau)\,e^{-s\tau}\,d\tau
+            = e^{-as}F(s).\]</span> ◻</p>
+</div>
+</div>
+<p>This result is important whenever sensing, actuation, communication, or transport delays are present in a control system. Listing <a href="#lst:matlab-dirac" data-reference-type="ref" data-reference="lst:matlab-dirac">[lst:matlab-dirac]</a> illustrates how MATLAB’s Symbolic Math Toolbox handles the Dirac delta and its Laplace transform.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code to represent <span class="math inline">\(\delta(t)\)</span>, <span class="math inline">\(\delta(t-2)\)</span>, and their Laplace transforms.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, DiracDelta, laplace_transform, pprint
+
+t, s = symbols('t s', positive=True)
+d = DiracDelta(t)
+pprint(d)
+
+L = laplace_transform(d, t, s, noconds=True)
+Lshift = laplace_transform(DiracDelta(t - 2), t, s, noconds=True)
+print("L{delta(t)}   =", L)
+print("L{delta(t-2)} =", Lshift)</code></pre>
+</div>
+<pre class="matlab"><code>syms t
+    d = dirac(t);
+    pretty(d)
+
+    L = laplace(d);
+    Lshift = laplace(dirac(t - 2));</code></pre>
+</div>
+<h3 id="subsec:exp-sinusoids">Exponentially-modulated sinusoids</h3>
+<p>Exponentially-modulated sinusoids arise in underdamped responses, vibration, AC circuits, and modal analysis. The frequency-shift property (Result <a href="#res:exp-shift" data-reference-type="ref" data-reference="res:exp-shift">[res:exp-shift]</a>) gives: <span class="math display">\[\mathcal{L}\{e^{-at}\sin(\omega t)\} = \frac{\omega}{(s+a)^2+\omega^2},
+\qquad
+\mathcal{L}\{e^{-at}\cos(\omega t)\} = \frac{s+a}{(s+a)^2+\omega^2}.\]</span></p>
+<div class="example"><div class="env-label env-label-example">Example: Exponentially-modulated sinusoid</div>
+<p>Consider <span class="math display">\[x(t)=e^{at}\sin(\omega t).\]</span> Using the frequency-shift property (Result <a href="#res:exp-shift" data-reference-type="ref" data-reference="res:exp-shift">[res:exp-shift]</a>) applied to Result <a href="#res:sin-ex" data-reference-type="ref" data-reference="res:sin-ex">[res:sin-ex]</a>, we obtain <span class="math display">\[X(s)=\frac{\omega}{(s-a)^2+\omega^2}.\]</span></p>
+</div>
+<p>For a decaying (stable) signal, <span class="math inline">\(a&lt;0\)</span>. Example responses are shown in Figure <a href="#fig:exponentialsinusoids" data-reference-type="ref" data-reference="fig:exponentialsinusoids">1.6</a>.</p>
+<figure id="fig:exponentialsinusoids" data-latex-placement="htbp">
+<img src="figures/exponential_sinusoids.png" />
+<figcaption>Top: exponentially decaying sinusoid (<span class="math inline">\(a&lt;0\)</span>); middle: non-decaying sinusoid (<span class="math inline">\(a=0\)</span>); bottom: exponentially growing sinusoid (<span class="math inline">\(a&gt;0\)</span>).</figcaption>
+</figure>
+<p>Listing <a href="#lst:matlab-exponentials" data-reference-type="ref" data-reference="lst:matlab-exponentials">[lst:matlab-exponentials]</a> reproduces these three cases in MATLAB.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code to display exponentially-modulated sinusoids.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.arange(0, 10.01, 0.01)
+omega = 1
+a_values = [-1, 0, 1]
+
+for i, a in enumerate(a_values):
+    x = np.exp(a * t) * np.sin(omega * t)
+    plt.subplot(3, 1, i + 1)
+    plt.plot(t, x, linewidth=1.5)
+    plt.xlabel('t'); plt.ylabel('x(t)')
+    plt.title(f'a = {a}')
+plt.tight_layout()</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:10;
+        omega = 1;
+        a_values = [-1, 0, 1];
+        figure;
+
+        for i = 1:length(a_values)
+            a = a_values(i);
+            x = exp(a*t) .* sin(omega*t);
+            subplot(3,1,i);
+            plot(t, x, 'LineWidth', 1.5);
+            xlabel('t'); ylabel('x(t)');
+        end</code></pre>
+</div>
+<p>Listing <a href="#lst:matlab-time-delay" data-reference-type="ref" data-reference="lst:matlab-time-delay">[lst:matlab-time-delay]</a> demonstrates how to construct a time-delayed signal in MATLAB using the unit-step factor to enforce causality.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code to generate a time-delayed function <span class="math inline">\(f(t-\tau)\)</span> from <span class="math inline">\(f(t)\)</span>.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.arange(0, 10.01, 0.01)
+original_function = np.exp(-t / 2) * np.sin(3 * t)
+tau = 2
+delayed_function = np.exp(-(t - tau) / 2) * np.sin(3 * (t - tau)) * (t &gt;= tau)
+
+plt.plot(t, original_function, label='f(t)')
+plt.plot(t, delayed_function, label=f'f(t-{tau})')
+plt.xlabel('t'); plt.legend()
+plt.title('Original and Time-Delayed Signals')</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:10;
+        original_function = exp(-t/2) .* sin(3*t);
+        tau = 2;
+        delayed_function = exp(-(t-tau)/2) .* sin(3*(t-tau)) .* (t&gt;=tau);</code></pre>
+</div>
+<p>When a time delay is present, the delayed signal must be interpreted carefully: the waveform is shifted to the right, and a unit-step factor is used to keep the signal causal. In control, that detail matters because a delayed response should not appear before the delay time has actually elapsed.</p>
+<h2 id="sec:laplace-ode-solving">Solving ODEs with the Laplace Transform</h2>
+<p>The method follows a short recipe:</p>
+<ol>
+<li><p>write the differential equation and the initial conditions clearly;</p></li>
+<li><p>take the Laplace transform of each term, using Result <a href="#res:diff-int" data-reference-type="ref" data-reference="res:diff-int">[res:diff-int]</a> for derivatives;</p></li>
+<li><p>solve the resulting algebraic equation for the unknown transform <span class="math inline">\(X(s)\)</span> or <span class="math inline">\(Y(s)\)</span>;</p></li>
+<li><p>rewrite the answer in a form that matches known transform pairs, then apply <span class="math inline">\(\mathcal{L}^{-1}\)</span>.</p></li>
+</ol>
+<div class="examplebox">
+<p><span>A first complete Laplace-solution workflow</span> Consider the initial-value problem <span class="math display">\[\dot{x}(t)+2x(t)=u_0(t),\qquad x(0)=1.\]</span> Taking the Laplace transform of both sides gives <span class="math display">\[\mathcal{L}\{\dot{x}(t)\}+2\mathcal{L}\{x(t)\}=\mathcal{L}\{u_0(t)\}.\]</span> Using Result <a href="#res:diff-int" data-reference-type="ref" data-reference="res:diff-int">[res:diff-int]</a> and <span class="math inline">\(\mathcal{L}\{u_0(t)\}=1/s\)</span>, <span class="math display">\[\bigl(sX(s)-x(0)\bigr)+2X(s)=\frac{1}{s}.\]</span> Substituting <span class="math inline">\(x(0)=1\)</span> gives <span class="math display">\[(s+2)X(s)-1=\frac{1}{s},\]</span> so <span class="math display">\[(s+2)X(s)=1+\frac{1}{s}=\frac{s+1}{s}
+    \quad\Longrightarrow\quad
+    X(s)=\frac{s+1}{s(s+2)}.\]</span> Now rewrite <span class="math inline">\(X(s)\)</span> using simple partial fractions: <span class="math display">\[\frac{s+1}{s(s+2)}=\frac{A}{s}+\frac{B}{s+2}.\]</span> Matching coefficients gives <span class="math inline">\(A=B=\tfrac12\)</span>, hence <span class="math display">\[X(s)=\frac{1/2}{s}+\frac{1/2}{s+2}.\]</span> Applying the inverse Laplace transform, <span class="math display">\[x(t)=\frac{1}{2}u_0(t)+\frac{1}{2}e^{-2t}u_0(t).\]</span> For <span class="math inline">\(t\ge 0\)</span>, we usually write this simply as <span class="math display">\[x(t)=\frac{1}{2}+\frac{1}{2}e^{-2t}.\]</span> This example is worth remembering because it shows the core pattern of the method: after the transform is taken, the differential equation disappears and we solve an ordinary algebraic equation instead.</p>
+</div>
+<p>The important point is that the answer above depends on both the input and the initial condition. In control, however, we often want a model that captures the system dynamics themselves, independently of a particular experiment. That leads naturally to the idea of a transfer function.</p>
+<h2 id="sec:transfer-functions">From Differential Equations to Transfer Functions</h2>
+<p>A transfer function describes the input–output dynamics of an LTI system itself, independent of any particular experiment. Transfer functions are defined under zero initial conditions so that the model reflects the system dynamics, not a particular starting state.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Transfer function</div>
+<p>The transfer function of a linear time-invariant system is defined as <span class="math display">\[G(s)=\frac{Y(s)}{U(s)},\]</span> where <span class="math inline">\(Y(s)\)</span> is the Laplace transform of the output and <span class="math inline">\(U(s)\)</span> is the Laplace transform of the input, assuming zero initial conditions.</p>
+</div>
+<p>Once <span class="math inline">\(G(s)\)</span> is known, different inputs can be analysed by simple multiplication in the Laplace domain rather than by re-deriving the differential equation each time.</p>
+<figure id="fig:block-tf" data-latex-placement="htbp">
+
+<img src="figures/ch02_tikz_06.png" style="max-width:85%;" />
+<figcaption>Block-diagram representation of a SISO LTI system in the Laplace domain.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Finding a transfer function</div>
+<p>Consider the dynamic model <span class="math display">\[\begin{equation}
+        \label{eq:ode-example}
+        \ddot y(t)+5\dot y(t)+4y(t)=u(t),\qquad y(0)=\dot y(0)=0.
+\end{equation}\]</span> where the input is <span class="math inline">\(u(t)=2e^{-2t}u_0(t)\)</span>.</p>
+<p>Taking the Laplace transform of both sides and using Result <a href="#res:diff-int" data-reference-type="ref" data-reference="res:diff-int">[res:diff-int]</a> gives <span class="math display">\[(s^2+5s+4)Y(s)=U(s).\]</span> Hence the transfer function (Definition <a href="#def:transfer-function" data-reference-type="ref" data-reference="def:transfer-function">[def:transfer-function]</a>) is <span class="math display">\[G(s)=\frac{Y(s)}{U(s)}=\frac{1}{s^2+5s+4}.\]</span> Since <span class="math inline">\(\mathcal{L}\{e^{-2t}\}=\frac{1}{s+2}\)</span> and the input is <span class="math inline">\(u(t)=2e^{-2t}u_0(t)\)</span>, we have <span class="math display">\[U(s)=\frac{2}{s+2}.\]</span> Therefore <span class="math display">\[\begin{equation}
+        \label{eq:Y-example}
+        Y(s)=\frac{2}{(s^2+5s+4)(s+2)}.
+\end{equation}\]</span></p>
+</div>
+<p>Listing <a href="#lst:matlab-ilaplace" data-reference-type="ref" data-reference="lst:matlab-ilaplace">[lst:matlab-ilaplace]</a> verifies the time-domain result using MATLAB’s <code>ilaplace</code> command.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code to compute the inverse Laplace transform <span class="math inline">\(y(t)\)</span> from <span class="math inline">\(Y(s)\)</span>.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, inverse_laplace_transform
+
+s, t = symbols('s t')
+Y = 2 / ((s**2 + 5*s + 4) * (s + 2))
+y_t = inverse_laplace_transform(Y, s, t)
+print("y(t) =", y_t)</code></pre>
+</div>
+<pre class="matlab"><code>syms s t
+        Y   = 2 / ((s^2 + 5*s + 4) * (s + 2));
+        y_t = ilaplace(Y, s, t);</code></pre>
+</div>
+<h2 id="sec:inverse-laplace">Inverse Laplace Transform via Partial Fraction Expansion</h2>
+<p>pfe (PFE) maps a rational <span class="math inline">\(Y(s)\)</span> to standard transform pairs. The key question is: <em>what kind of poles does the expression have?</em> Distinct real poles, complex poles, and repeated poles each produce a standard type of time response.</p>
+<h3 id="subsec:pfe-simple">Case 1: all poles are simple (real, distinct)</h3>
+<p>Suppose we can decompose <a href="#eq:Y-example" data-reference-type="eqref" data-reference="eq:Y-example">[eq:Y-example]</a> as <span class="math display">\[\begin{equation}
+    \label{eq:pfe-form-simple}
+    Y(s)=\frac{A}{s+4}+\frac{B}{s+1}+\frac{C}{s+2}.
+\end{equation}\]</span> For simple poles, the coefficients can be found using the <strong>cover-up method</strong> (also called the residue method): cover the factor associated with the coefficient you want, then substitute the corresponding pole value. For example: <span class="math display">\[A=\left.\frac{2}{(s+1)(s+2)}\right|_{s=-4}=\frac{1}{3},\qquad
+B=\left.\frac{2}{(s+4)(s+2)}\right|_{s=-1}=\frac{2}{3},\]</span> <span class="math display">\[C=\left.\frac{2}{(s+4)(s+1)}\right|_{s=-2}=-1.\]</span> The cover-up method works cleanly whenever all poles are simple. Each term in the expansion corresponds directly to one exponential in time, so the structure of the response is immediately visible: <span class="math display">\[Y(s)=\frac{1/3}{s+4}+\frac{2/3}{s+1}-\frac{1}{s+2},
+\qquad
+y(t)=\left(\frac{1}{3}e^{-4t}+\frac{2}{3}e^{-t}-e^{-2t}\right)u_0(t).\]</span></p>
+<p>These residues and poles can also be obtained numerically using the <code>residue</code> command, as shown in Listing <a href="#lst:matlab-pfe-residue" data-reference-type="ref" data-reference="lst:matlab-pfe-residue">[lst:matlab-pfe-residue]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python code for computing the partial fraction expansion using <code>residue</code>.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+from scipy.signal import residue
+
+num = [2]
+den = np.convolve([1, 5, 4], [1, 2])  # (s^2+5s+4)(s+2)
+r, p, k = residue(num, den)
+print("Residues:", r)
+print("Poles:   ", p)
+print("Direct:  ", k)</code></pre>
+</div>
+<pre class="matlab"><code>num = [2];
+    den = conv([1 5 4], [1 2]); % (s^2+5s+4)(s+2)
+    [r, p, k] = residue(num, den);</code></pre>
+</div>
+<h3 id="subsec:pfe-complex">Case 2: complex poles</h3>
+<p>When a quadratic factor <span class="math inline">\(s^2 + bs + c\)</span> has complex roots, its inverse Laplace transform involves <span class="math inline">\(e^{-\sigma t}\cos(\omega t)\)</span> and <span class="math inline">\(e^{-\sigma t}\sin(\omega t)\)</span>. The strategy is:</p>
+<ol>
+<li><p>Keep the quadratic factor intact (do <em>not</em> split into complex conjugate fractions).</p></li>
+<li><p>Complete the square in the denominator to get the form <span class="math inline">\((s+\sigma)^2 + \omega^2\)</span>.</p></li>
+<li><p>Rewrite the numerator as <span class="math inline">\(\alpha(s+\sigma) + \beta\omega\)</span> so that the fraction splits directly into <span class="math inline">\(\alpha\)</span> times the cosine pair plus <span class="math inline">\(\beta\)</span> times the sine pair: <span class="math display">\[\frac{\alpha(s+\sigma)+\beta\omega}{(s+\sigma)^2+\omega^2}
+    \;\longleftrightarrow\;
+    e^{-\sigma t}\bigl[\alpha\cos(\omega t)+\beta\sin(\omega t)\bigr].\]</span></p></li>
+</ol>
+<div class="example"><div class="env-label env-label-example">Example: Complex poles — step by step</div>
+<p>Consider the ODE <span class="math display">\[\ddot{y} + \dot{y} + y = u(t),\]</span> with unit-step input <span class="math inline">\(u(t) = u_0(t)\)</span>. Taking Laplace transforms (zero ICs): <span class="math display">\[Y(s) = \frac{1}{s(s^2+s+1)}.\]</span></p>
+<p><strong>Step 1: Partial fraction expansion.</strong> <span class="math display">\[\frac{1}{s(s^2+s+1)} = \frac{A}{s} + \frac{Bs + C}{s^2+s+1}.\]</span> The <span class="math inline">\(A\)</span> term (real pole at <span class="math inline">\(s=0\)</span>): use the cover-up method, <span class="math display">\[A = \left.\frac{1}{s^2+s+1}\right|_{s=0} = 1.\]</span> Multiply both sides by <span class="math inline">\(s(s^2+s+1)\)</span>: <span class="math display">\[1 = (s^2+s+1) + (Bs+C)\,s.\]</span> Expanding: <span class="math inline">\(1 = s^2 + s + 1 + Bs^2 + Cs = (1+B)s^2 + (1+C)s + 1\)</span>.</p>
+<p>Matching coefficients: <span class="math display">\[\begin{align*}
+        s^2: \quad 1 + B &amp;= 0 \quad \Rightarrow \quad B = -1, \\
+        s^1: \quad 1 + C &amp;= 0 \quad \Rightarrow \quad C = -1.
+\end{align*}\]</span> So <span class="math display">\[Y(s) = \frac{1}{s} - \frac{s+1}{s^2+s+1}.\]</span></p>
+<p><strong>Step 2: Complete the square in the denominator.</strong> <span class="math display">\[s^2 + s + 1 = \left(s + \tfrac{1}{2}\right)^2 + \tfrac{3}{4}.\]</span> Identify: <span class="math inline">\(\sigma = \frac{1}{2}\)</span> and <span class="math inline">\(\omega^2 = \frac{3}{4}\)</span>, so <span class="math inline">\(\omega = \frac{\sqrt{3}}{2}\)</span>.</p>
+<p><strong>Step 3: Rewrite the numerator to match <span class="math inline">\((s+\sigma)\)</span> and <span class="math inline">\(\omega\)</span>.</strong></p>
+<p>We need the numerator <span class="math inline">\(s + 1\)</span> expressed in terms of <span class="math inline">\((s + \frac{1}{2})\)</span>: <span class="math display">\[s + 1 = \underbrace{\left(s + \tfrac{1}{2}\right)}_{\text{matches cosine pair}} + \underbrace{\tfrac{1}{2}}_{\text{leftover}}.\]</span> Now write the leftover <span class="math inline">\(\frac{1}{2}\)</span> as a multiple of <span class="math inline">\(\omega = \frac{\sqrt{3}}{2}\)</span>: <span class="math display">\[\frac{1}{2} = \frac{1}{\sqrt{3}} \cdot \frac{\sqrt{3}}{2} = \frac{1}{\sqrt{3}} \cdot \omega.\]</span> So <span class="math display">\[\frac{s+1}{(s+\frac{1}{2})^2 + \frac{3}{4}}
+    = \frac{(s+\frac{1}{2})}{(s+\frac{1}{2})^2 + \omega^2}
+    + \frac{1}{\sqrt{3}} \cdot \frac{\omega}{(s+\frac{1}{2})^2 + \omega^2}.\]</span></p>
+<p><strong>Step 4: Read off the inverse Laplace transform.</strong></p>
+<p>Using the standard pairs: <span class="math display">\[\frac{s+\sigma}{(s+\sigma)^2+\omega^2} \;\longleftrightarrow\; e^{-\sigma t}\cos\omega t, \qquad
+    \frac{\omega}{(s+\sigma)^2+\omega^2} \;\longleftrightarrow\; e^{-\sigma t}\sin\omega t,\]</span> we get <span class="math display">\[y(t) = 1 - e^{-t/2}\cos\!\left(\frac{\sqrt{3}}{2}\,t\right) - \frac{1}{\sqrt{3}}\,e^{-t/2}\sin\!\left(\frac{\sqrt{3}}{2}\,t\right), \qquad t \geq 0.\]</span></p>
+<p><strong>Step 5: Compact single-sinusoid form.</strong></p>
+<p>The two oscillatory terms can be combined into a single sinusoid using the identity <span class="math display">\[A\cos\theta + B\sin\theta = C\sin(\theta+\phi),
+    \qquad C=\sqrt{A^2+B^2},\quad \phi=\arctan\!\frac{A}{B}.\]</span> Here, with <span class="math inline">\(\omega_d = \frac{\sqrt{3}}{2}\)</span> and <span class="math inline">\(\theta = \omega_d\,t\)</span>, the oscillatory part is <span class="math display">\[-\!\left[\cos(\omega_d t) + \frac{1}{\sqrt{3}}\sin(\omega_d t)\right]
+    = -\!\left[A\cos(\omega_d t) + B\sin(\omega_d t)\right],\]</span> with <span class="math inline">\(A=1\)</span> and <span class="math inline">\(B=1/\sqrt{3}\)</span>. Therefore <span class="math display">\[C = \sqrt{1+\tfrac{1}{3}} = \frac{2}{\sqrt{3}}, \qquad
+    \phi = \arctan\!\frac{A}{B} = \arctan\sqrt{3} = \frac{\pi}{3}.\]</span> So the step response can be written compactly as <span class="math display">\[\boxed{y(t) = 1 - \frac{2}{\sqrt{3}}\,e^{-t/2}\sin\!\left(\frac{\sqrt{3}}{2}\,t + \frac{\pi}{3}\right), \qquad t\ge 0.}\]</span> This single-sinusoid form makes it easy to read off the oscillation amplitude envelope <span class="math inline">\(\frac{2}{\sqrt{3}}\,e^{-t/2}\)</span> and the phase shift <span class="math inline">\(\pi/3\)</span> directly.</p>
+</div>
+<h3 id="subsec:pfe-repeated">Case 3: repeated real poles</h3>
+<p>Repeated poles lead to one more standard pattern: powers of <span class="math inline">\(t\)</span> multiplying exponentials. The extra factor of <span class="math inline">\(t\)</span> is the time-domain signature of pole repetition.</p>
+<div class="example"><div class="env-label env-label-example">Example: Inverse Laplace with a repeated pole</div>
+<p>Find the inverse Laplace transform of <span class="math display">\[Y(s)=\frac{s-1}{(s+1)^2}.\]</span> For a double pole at <span class="math inline">\(s=-1\)</span>, the partial fraction form is <span class="math display">\[\frac{s-1}{(s+1)^2}=\frac{A}{s+1}+\frac{B}{(s+1)^2}.\]</span> Multiplying both sides by <span class="math inline">\((s+1)^2\)</span>: <span class="math display">\[s-1 = A(s+1)+B.\]</span> Setting <span class="math inline">\(s=-1\)</span> gives <span class="math inline">\(B=-2\)</span>. Comparing the coefficient of <span class="math inline">\(s\)</span> gives <span class="math inline">\(A=1\)</span>. Therefore <span class="math display">\[\frac{s-1}{(s+1)^2}=\frac{1}{s+1}-\frac{2}{(s+1)^2},\]</span> and using <span class="math inline">\(\mathcal{L}^{-1}\{1/(s+a)^2\}=t\,e^{-at}\)</span>, <span class="math display">\[y(t)=e^{-t}-2t\,e^{-t},\qquad t\ge 0.\]</span></p>
+</div>
+<p>In general, a pole of multiplicity <span class="math inline">\(m\)</span> at <span class="math inline">\(s=-a\)</span> contributes terms of the form <span class="math inline">\(t^k e^{-at}\)</span> for <span class="math inline">\(k=0,1,\ldots,m-1\)</span>. The corresponding Laplace pair is <span class="math display">\[\mathcal{L}\{t^k e^{-at}\} = \frac{k!}{(s+a)^{k+1}}.\]</span></p>
+<h2 id="sec:impulse-convolution">Impulse Response and Convolution</h2>
+<p>For LTI systems, two ideas connect the transfer function to time-domain behaviour: the <em>impulse response</em> and <em>convolution</em>.</p>
+<h3 id="subsec:impulse-response">Impulse response as the system fingerprint</h3>
+<p>The <strong>impulse response</strong> <span class="math inline">\(g(t)\)</span> is the output produced by the input <span class="math inline">\(\delta(t)\)</span>. It captures the system’s intrinsic dynamics in a single time-domain function.</p>
+<p>If the transfer function of the system is <span class="math inline">\(G(s)\)</span>, then an impulse input has transform <span class="math inline">\(\mathcal{L}\{\delta(t)\}=1\)</span>, so <span class="math display">\[Y(s)=G(s)\cdot 1 = G(s).\]</span> Therefore the impulse response is simply <span class="math display">\[g(t)=\mathcal{L}^{-1}\{G(s)\}.\]</span> The impulse response is the time-domain counterpart of the transfer function. In a mechanical system it shows how the structure vibrates after a sharp tap; in a circuit it shows the reaction to a short burst of excitation. Once <span class="math inline">\(g(t)\)</span> is known, the output for any input can be computed without re-solving the differential equation.</p>
+<h3 id="subsec:convolution">Convolution in time, multiplication in the Laplace domain</h3>
+<p>Once the impulse response <span class="math inline">\(g(t)\)</span> is known, the output corresponding to a general input <span class="math inline">\(x(t)\)</span> can be written as the convolution of <span class="math inline">\(x(t)\)</span> with <span class="math inline">\(g(t)\)</span>: <span class="math display">\[\begin{equation}
+    \label{eq:convolution-def}
+    y(t)=(x \star g)(t)\triangleq \int_{0}^{t} g(t-\tau)\,x(\tau)\,d\tau.
+\end{equation}\]</span> Equation <a href="#eq:convolution-def" data-reference-type="eqref" data-reference="eq:convolution-def">[eq:convolution-def]</a> says that the output at time <span class="math inline">\(t\)</span> is built from past input values, weighted by how the system responds over time. The symbol <span class="math inline">\(\star\)</span> denotes convolution; it is not ordinary multiplication. Each small piece of the input excites the system, and the total output is the accumulation of all those shifted small responses.</p>
+<figure id="fig:convolution" data-latex-placement="htbp">
+
+
+<figcaption>Convolution of input <span class="math inline">\(x(t)\)</span> with impulse response <span class="math inline">\(g(t)\)</span> in time corresponds to multiplication of <span class="math inline">\(X(s)\)</span> and <span class="math inline">\(G(s)\)</span> in the Laplace domain.</figcaption>
+</figure>
+<p>The great advantage of the Laplace transform is that it turns the integral in <a href="#eq:convolution-def" data-reference-type="eqref" data-reference="eq:convolution-def">[eq:convolution-def]</a> into ordinary multiplication.</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: Convolution theorem</div>
+<p>If <span class="math inline">\(\mathcal{L}\{x(t)\}=X(s)\)</span> and <span class="math inline">\(\mathcal{L}\{g(t)\}=G(s)\)</span>, then <span class="math display">\[\mathcal{L}\{x(t)\star g(t)\}=X(s)\,G(s).\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Starting from the definition of the Laplace transform applied to the convolution integral: <span class="math display">\[\begin{align*}
+            \mathcal{L}\{x\star g\}
+            &amp;= \int_0^\infty \!\left[\int_0^t g(t-\tau)\,x(\tau)\,d\tau\right] e^{-st}\,dt.
+\end{align*}\]</span> The double integral is over the region <span class="math inline">\(0\le\tau\le t&lt;\infty\)</span>. Switching the order of integration to <span class="math inline">\(0\le\tau&lt;\infty\)</span>, <span class="math inline">\(\tau\le t&lt;\infty\)</span>: <span class="math display">\[\begin{align*}
+            &amp;= \int_0^\infty x(\tau)\!\left[\int_\tau^\infty g(t-\tau)\,e^{-st}\,dt\right]d\tau.
+\end{align*}\]</span> In the inner integral, substitute <span class="math inline">\(\sigma=t-\tau\)</span>: <span class="math display">\[\begin{align*}
+            &amp;= \int_0^\infty x(\tau)\,e^{-s\tau}\!\left[\int_0^\infty g(\sigma)\,e^{-s\sigma}\,d\sigma\right]d\tau
+            = G(s)\!\int_0^\infty x(\tau)\,e^{-s\tau}\,d\tau = G(s)\,X(s).\end{align*}\]</span> ◻</p>
+</div>
+</div>
+<p>Therefore, for an LTI system with transfer function <span class="math inline">\(G(s)\)</span> and input <span class="math inline">\(X(s)\)</span>, we can write <span class="math inline">\(Y(s)=G(s)X(s)\)</span>, which in the time domain means exactly that <span class="math inline">\(y(t)=x(t)\star g(t)\)</span>. This theorem explains why transfer-function methods are so effective: in the time domain, interconnected system behaviour may require integration, but in the Laplace domain, the same relationship is captured by straightforward multiplication.</p>
+<h2 id="sec:laplace-periodic">Laplace Transform of Periodic Signals*</h2>
+<p>The Laplace transform of a periodic signal can always be expressed in terms of the transform of a single period.</p>
+<div class="result"><div class="env-label env-label-result">Result: Laplace transform of a periodic signal</div>
+<p>Let <span class="math inline">\(f(t)\)</span> be periodic with period <span class="math inline">\(T&gt;0\)</span> for <span class="math inline">\(t\ge 0\)</span>, i.e. <span class="math inline">\(f(t+T)=f(t)\)</span>. Define <span class="math inline">\(f_1(t)\)</span> as one period of the signal: <span class="math display">\[f_1(t) = \begin{cases} f(t), &amp; 0\le t &lt; T,\\ 0, &amp; \text{otherwise.} \end{cases}\]</span> If <span class="math inline">\(F_1(s)=\mathcal{L}\{f_1(t)\}\)</span>, then <span class="math display">\[\begin{equation}
+\label{eq:periodic-laplace}
+        F(s) = \frac{F_1(s)}{1-e^{-sT}}.
+\end{equation}\]</span></p>
+<div class="proof"><div class="env-label env-label-proof">Proof</div>
+<p><em>Proof.</em> Write <span class="math inline">\(f(t)\)</span> as a sum of shifted copies of <span class="math inline">\(f_1(t)\)</span>: <span class="math display">\[f(t) = \sum_{k=0}^{\infty} f_1(t-kT).\]</span> By the time-shift property (Result <a href="#res:time-shift" data-reference-type="ref" data-reference="res:time-shift">[res:time-shift]</a>), <span class="math inline">\(\mathcal{L}\{f_1(t-kT)\}=e^{-ksT}F_1(s)\)</span>, so <span class="math display">\[F(s) = \sum_{k=0}^{\infty} e^{-ksT} F_1(s)
+        = F_1(s)\sum_{k=0}^{\infty} \bigl(e^{-sT}\bigr)^k
+        = \frac{F_1(s)}{1-e^{-sT}},\]</span> where the geometric series converges for <span class="math inline">\(\Re(s)&gt;0\)</span>. ◻</p>
+</div>
+</div>
+<p>The denominator <span class="math inline">\(1-e^{-sT}\)</span> is common to all periodic signals with the same period; only the single-period transform <span class="math inline">\(F_1(s)\)</span> changes from one waveform to another. This makes it easy to analyse different periodic excitations once the one-period integral has been computed.</p>
+<div class="example"><div class="env-label env-label-example">Example: Laplace transform of a symmetric square wave</div>
+<p>Find the Laplace transform of a square wave with amplitude <span class="math inline">\(A\)</span> and period <span class="math inline">\(T\)</span> defined by <span class="math display">\[f(t) = \begin{cases} +A, &amp; 0 \le t &lt; T/2,\\ -A, &amp; T/2 \le t &lt; T, \end{cases}
+    \qquad f(t+T)=f(t).\]</span> <strong>Step 1:</strong> Compute the one-period transform. <span class="math display">\[F_1(s) = \int_0^{T/2}\! A\,e^{-st}\,dt + \int_{T/2}^{T}\! (-A)\,e^{-st}\,dt
+    = \frac{A}{s}\!\bigl(1-e^{-sT/2}\bigr)
+      - \frac{A}{s}\!\bigl(e^{-sT/2}-e^{-sT}\bigr)
+    = \frac{A}{s}\!\bigl(1-e^{-sT/2}\bigr)^{\!2}.\]</span> <strong>Step 2:</strong> Apply <a href="#eq:periodic-laplace" data-reference-type="eqref" data-reference="eq:periodic-laplace">[eq:periodic-laplace]</a>. <span class="math display">\[F(s) = \frac{F_1(s)}{1-e^{-sT}}
+    = \frac{A}{s}\cdot\frac{\bigl(1-e^{-sT/2}\bigr)^2}{\bigl(1-e^{-sT/2}\bigr)\bigl(1+e^{-sT/2}\bigr)}
+    = \frac{A}{s}\cdot\frac{1-e^{-sT/2}}{1+e^{-sT/2}}.\]</span> Multiplying numerator and denominator by <span class="math inline">\(e^{sT/4}\)</span> gives <span class="math display">\[\boxed{F(s) = \frac{A}{s}\,\tanh\!\left(\frac{sT}{4}\right).}\]</span></p>
+</div>
+<div class="notebox">
+<p><span>Why this matters for PID tuning</span> In Chapter <a href="#chap:pid" data-reference-type="ref" data-reference="chap:pid">[chap:pid]</a>, the relay (on–off) method for PID tuning drives the plant with a square-wave-like signal and measures the resulting oscillation period and amplitude. Understanding how periodic inputs are represented in the Laplace domain helps explain why the method works: the dominant harmonic of the relay output determines the critical gain and frequency.</p>
+</div>
+<p>Listing <a href="#lst:matlab-periodic-square" data-reference-type="ref" data-reference="lst:matlab-periodic-square">[lst:matlab-periodic-square]</a> verifies the square-wave result by comparing the analytical <span class="math inline">\(\tanh\)</span> form with a numerical partial-sum approximation.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Verifying the periodic square-wave Laplace transform in Python.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+
+A = 1;  T = 2
+s = np.arange(0.1, 5.01, 0.1)
+
+# Analytical result: (A/s)*tanh(s*T/4)
+F_exact = (A / s) * np.tanh(s * T / 4)
+
+# Numerical check: sum N shifted copies of F1(s)
+N = 200
+F_approx = np.zeros(s.shape)
+for k in range(N):
+    F_approx += (A / s) * (1 - 2*np.exp(-s*T/2) + np.exp(-s*T)) * np.exp(-k*s*T)
+
+print("Max error with %d terms: %.2e" % (N, np.max(np.abs(F_exact - F_approx))))</code></pre>
+</div>
+<pre class="matlab"><code>A = 1;  T = 2;
+s = 0.1:0.1:5;
+
+% Analytical result: (A/s)*tanh(s*T/4)
+F_exact = (A./s) .* tanh(s*T/4);
+
+% Numerical check: sum N shifted copies of F1(s)
+N = 200;
+F_approx = zeros(size(s));
+for k = 0:N-1
+    F_approx = F_approx + (A./s) .* ...
+        (1 - 2*exp(-s*T/2) + exp(-s*T)) .* exp(-k*s*T);
+end
+
+fprintf('Max error with %d terms: %.2e\n', N, max(abs(F_exact - F_approx)));</code></pre>
+</div>
+<h2 id="sec:matlab-laplace">Useful MATLAB Commands for Laplace Transform Analysis</h2>
+<p>The following MATLAB commands are used throughout this chapter and the next few chapters:</p>
+<ul>
+<li><p><code>residue(num, den)</code> — compute residues and poles for partial fraction expansion. The syntax is <code>[r, p, k] = residue(num, den)</code>, where <code>r</code> contains the residues, <code>p</code> the poles, and <code>k</code> the direct term (if any).</p></li>
+<li><p><code>partfrac(F)</code> — symbolic partial fraction expansion (requires the Symbolic Math Toolbox).</p></li>
+<li><p><code>laplace(f)</code> — Laplace transform of a symbolic expression <span class="math inline">\(f(t)\)</span>.</p></li>
+<li><p><code>ilaplace(F)</code> — inverse Laplace transform of <span class="math inline">\(F(s)\)</span>.</p></li>
+<li><p><code>limit(s*F, s, 0)</code> — apply the Final Value Theorem (Theorem <a href="#thm:final-value" data-reference-type="ref" data-reference="thm:final-value">[thm:final-value]</a>).</p></li>
+</ul>
+<p>Listing <a href="#lst:matlab-partfrac-ilaplace" data-reference-type="ref" data-reference="lst:matlab-partfrac-ilaplace">[lst:matlab-partfrac-ilaplace]</a> combines <code>partfrac</code> and <code>ilaplace</code> in a short workflow.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Using <code>apart</code> and <code>inverse_laplace_transform</code> to compute an inverse Laplace transform.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, apart, inverse_laplace_transform
+
+s, t = symbols('s t')
+F = (s + 1) / ((s + 2) * (s + 3)**3)
+Factorized = apart(F, s)
+print("Partial fractions:", Factorized)
+f_t = inverse_laplace_transform(F, s, t)
+print("f(t) =", f_t)</code></pre>
+</div>
+<pre class="matlab"><code>syms s t
+    F = (s+1)/((s+2)*(s+3)^3);
+    Factorized = partfrac(F);
+    f_t = ilaplace(Factorized, s, t);
+    disp(f_t)</code></pre>
+</div>
+<div class="alertbox">
+<p><span>Common mistakes with Laplace methods</span></p>
+<ul>
+<li><p>Forgetting the initial-condition terms in derivative transforms, for example writing <span class="math inline">\(\mathcal{L}\{\dot{x}\}=sX(s)\)</span> when <span class="math inline">\(x(0)\ne 0\)</span>.</p></li>
+<li><p>Applying the Final Value Theorem before checking the poles of <span class="math inline">\(sF(s)\)</span>.</p></li>
+<li><p>Forgetting the unit-step factor in delayed signals: a causal delay should be written as <span class="math inline">\(f(t-a)u_0(t-a)\)</span>, not just <span class="math inline">\(f(t-a)\)</span>.</p></li>
+<li><p>Treating time-domain convolution as ordinary multiplication. In general, <span class="math inline">\(y(t)=g(t)\star x(t)\)</span>, not <span class="math inline">\(y(t)=g(t)x(t)\)</span>.</p></li>
+<li><p>Mixing the input notation <span class="math inline">\(u(t)\)</span> with the unit-step notation <span class="math inline">\(u_0(t)\)</span>. In this book, <span class="math inline">\(u(t)\)</span> usually means a control input, while <span class="math inline">\(u_0(t)\)</span> denotes the unit step.</p></li>
+</ul>
+</div>
+<h2 id="sec:laplace-summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p>The Laplace transform converts time-domain differential equations into algebraic equations in <span class="math inline">\(s\)</span>, which is why it is so useful in control engineering.</p></li>
+<li><p>The most important beginner workflow is: transform the ODE, substitute the initial conditions, solve algebraically for <span class="math inline">\(X(s)\)</span> or <span class="math inline">\(Y(s)\)</span>, and then invert the transform.</p></li>
+<li><p>Key properties include linearity, differentiation in time <span class="math inline">\(\bigl(\mathcal{L}\{\dot{f}\}=sF(s)-f(0)\bigr)\)</span>, differentiation in the <span class="math inline">\(s\)</span>-domain <span class="math inline">\(\bigl(\mathcal{L}\{t f(t)\}=-dF/ds\bigr)\)</span>, integration, and shifting.</p></li>
+<li><p>Common signals such as the step, ramp, impulse, exponentials, and sinusoids have standard Laplace pairs that are used repeatedly in analysis and design.</p></li>
+<li><p>The Laplace transform of a periodic signal with period <span class="math inline">\(T\)</span> is <span class="math inline">\(F(s) = F_1(s)/(1-e^{-sT})\)</span>, where <span class="math inline">\(F_1(s)\)</span> is the transform of one period.</p></li>
+<li><p>The transfer function <span class="math inline">\(G(s)=Y(s)/U(s)\)</span> captures the input–output dynamics of an LTI system under zero initial conditions.</p></li>
+<li><p>Partial fraction expansion is a practical technique for computing inverse Laplace transforms of rational functions and interpreting time responses.</p></li>
+<li><p>The impulse response <span class="math inline">\(g(t)\)</span> is the time-domain fingerprint of an LTI system, and convolution describes how a general input produces an output through that impulse response.</p></li>
+<li><p>The Initial and Final Value Theorems provide quick access to <span class="math inline">\(f(0^+)\)</span> and <span class="math inline">\(f(\infty)\)</span> directly from <span class="math inline">\(F(s)\)</span>, without always performing the full inverse transform.</p></li>
+<li><p>MATLAB commands such as <code>laplace()</code>, <code>ilaplace()</code>, <code>partfrac()</code>, and <code>residue()</code> are useful for verifying hand calculations and exploring more complex expressions.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="sec:laplace-table">Summary Table of Common Laplace Transform Pairs</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong><span style="color: white"><strong>Signal type</strong></span></strong></th>
+<th style="text-align: left;"><span style="color: white"><strong>Time domain</strong>  <span class="math inline">\(f(t)\)</span>, <span class="math inline">\(t\ge 0\)</span></span></th>
+<th style="text-align: left;"><span style="color: white"><strong>Laplace domain</strong>  <span class="math inline">\(F(s)\)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Unit impulse</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\delta(t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(1\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Unit step</strong></td>
+<td style="text-align: left;"><span class="math inline">\(u_0(t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{1}{s}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Unit ramp</strong></td>
+<td style="text-align: left;"><span class="math inline">\(t\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{1}{s^2}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Powers of <span class="math inline">\(t\)</span></strong></td>
+<td style="text-align: left;"><span class="math inline">\(t^n\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{n!}{s^{n+1}}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Exponential</strong></td>
+<td style="text-align: left;"><span class="math inline">\(e^{-at}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{1}{s+a}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="math inline">\(t\times\)</span> exponential</strong></td>
+<td style="text-align: left;"><span class="math inline">\(t\,e^{-at}\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{1}{(s+a)^2}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Sine</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\sin(\omega t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{\omega}{s^2+\omega^2}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Cosine</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\cos(\omega t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{s}{s^2+\omega^2}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Damped sine</strong></td>
+<td style="text-align: left;"><span class="math inline">\(e^{-at}\sin(\omega t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{\omega}{(s+a)^2+\omega^2}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Damped cosine</strong></td>
+<td style="text-align: left;"><span class="math inline">\(e^{-at}\cos(\omega t)\)</span></td>
+<td style="text-align: left;"><span class="math inline">\(\dfrac{s+a}{(s+a)^2+\omega^2}\)</span></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong><span style="color: white"><strong>Property</strong></span></strong></th>
+<th style="text-align: left;"><span style="color: white"><strong>Result</strong></span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Linearity</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{\alpha f + \beta g\} = \alpha F(s) + \beta G(s)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Differentiation</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{\dot{f}\} = sF(s) - f(0)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Second derivative</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{\ddot{f}\} = s^2F(s) - sf(0) - \dot{f}(0)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Integration</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\!\left\{\displaystyle\int_0^t f(\tau)\,d\tau\right\} = \dfrac{F(s)}{s}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="math inline">\(s\)</span>-domain differentiation</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{t^n f(t)\}=(-1)^n\dfrac{d^nF(s)}{ds^n}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Frequency shift</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{e^{at}f(t)\} = F(s-a)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Time shift</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\mathcal{L}\{f(t-a)\,u_0(t-a)\} = e^{-as}F(s)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Periodic signal</strong></td>
+<td style="text-align: left;"><span class="math inline">\(f(t+T)=f(t) \;\Rightarrow\; F(s)=\dfrac{F_1(s)}{1-e^{-sT}}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Final value</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\displaystyle\lim_{t\to\infty} f(t) = \lim_{s\to 0} sF(s)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Initial value</strong></td>
+<td style="text-align: left;"><span class="math inline">\(\displaystyle\lim_{t\to 0^+} f(t) = \lim_{s\to\infty} sF(s)\)</span></td>
+</tr>
+</tbody>
+</table>
+<h2 id="sec:laplace-problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>(Laplace Transform — Basic Signals)</strong> Compute the Laplace transform of each signal from the definition or using the transform table and properties. State the region of convergence where applicable.</p>
+<ol>
+<li><p><span class="math inline">\(f(t) = 3\,u_0(t) - 2\,e^{-4t}\,u_0(t)\)</span></p></li>
+<li><p><span class="math inline">\(f(t) = t\,e^{-2t}\,u_0(t)\)</span></p></li>
+<li><p><span class="math inline">\(f(t) = e^{-t}\sin(3t)\,u_0(t)\)</span></p></li>
+<li><p><span class="math inline">\(f(t) = 5\,u_0(t-2)\)</span> (delayed unit step of magnitude 5)</p></li>
+</ol></li>
+<li><p><strong>(Inverse Laplace Transform — Distinct Real Poles)</strong> Find <span class="math inline">\(f(t)\)</span> for each <span class="math inline">\(F(s)\)</span> using partial fraction expansion:</p>
+<ol>
+<li><p><span class="math inline">\(F(s) = \dfrac{5}{s(s+3)}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{2s+7}{(s+1)(s+4)}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{10}{(s+1)(s+2)(s+5)}\)</span></p></li>
+</ol></li>
+<li><p><strong>(Inverse Laplace Transform — Complex Poles)</strong> Find <span class="math inline">\(f(t)\)</span>:</p>
+<ol>
+<li><p><span class="math inline">\(F(s) = \dfrac{4}{s^2 + 4s + 13}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{s+1}{s^2 + 2s + 5}\)</span></p></li>
+</ol>
+<p><em>Hint:</em> Complete the square in the denominator and use the <span class="math inline">\(e^{-at}\sin(\omega t)\)</span> and <span class="math inline">\(e^{-at}\cos(\omega t)\)</span> transform pairs.</p></li>
+<li><p><strong>(Inverse Laplace Transform — Repeated Poles)</strong> Find <span class="math inline">\(f(t)\)</span>:</p>
+<ol>
+<li><p><span class="math inline">\(F(s) = \dfrac{3}{(s+2)^2}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{s+5}{s(s+1)^2}\)</span></p></li>
+</ol></li>
+<li><p><strong>(Transfer Function from ODE)</strong> A system is described by the differential equation: <span class="math display">\[\ddot{y} + 5\dot{y} + 6y = 2\dot{u} + 3u\]</span></p>
+<ol>
+<li><p>Assuming zero initial conditions, derive the transfer function <span class="math inline">\(G(s) = Y(s)/U(s)\)</span>.</p></li>
+<li><p>Find the poles and zeros of <span class="math inline">\(G(s)\)</span>.</p></li>
+<li><p>Is the system stable? Justify your answer.</p></li>
+<li><p>Use the Final Value Theorem to find the steady-state output for a unit step input.</p></li>
+</ol></li>
+<li><p><strong>(Initial and Final Value Theorems)</strong> For each <span class="math inline">\(F(s)\)</span>, use the IVT to find <span class="math inline">\(f(0^+)\)</span> and the FVT to find <span class="math inline">\(\lim_{t\to\infty} f(t)\)</span> (if the limit exists). State any conditions required.</p>
+<ol>
+<li><p><span class="math inline">\(F(s) = \dfrac{3(s+2)}{s(s+1)(s+4)}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{10}{s(s^2 + 2s + 10)}\)</span></p></li>
+<li><p><span class="math inline">\(F(s) = \dfrac{5}{s^2 + 4}\)</span> (Does the FVT apply? Why or why not?)</p></li>
+</ol></li>
+<li><p><strong>(Step Response by Hand)</strong> Consider the transfer function: <span class="math display">\[G(s) = \frac{6}{(s+1)(s+3)}\]</span></p>
+<ol>
+<li><p>Find the unit step response <span class="math inline">\(Y(s) = G(s) \cdot \dfrac{1}{s}\)</span>.</p></li>
+<li><p>Perform partial fraction expansion on <span class="math inline">\(Y(s)\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(y(t)\)</span> using the inverse Laplace transform.</p></li>
+<li><p>What is the steady-state value? Verify using the Final Value Theorem.</p></li>
+<li><p>Verify your result in MATLAB using <code>step(tf([6],[1 4 3]))</code>.</p></li>
+</ol></li>
+<li><p><strong>(MATLAB Verification)</strong> Use MATLAB to verify your answers to Problems 2 and 4:</p>
+<ol>
+<li><p>Use <code>residue(num, den)</code> to compute the partial fraction expansion for Problem 2(c). Compare with your hand calculation.</p></li>
+<li><p>Use the Symbolic Math Toolbox: <code>syms s; F = ...; ilaplace(F)</code> to find the inverse transform for Problem 4(b). Does it match?</p></li>
+<li><p>Create a transfer function object for Problem 7: <code>G = tf([6],[1 4 3])</code>. Use <code>step(G)</code> and <code>stepinfo(G)</code> to find the settling time and steady-state value.</p></li>
+</ol></li>
+<li><p><strong>(Pole–Zero Map and Behaviour)</strong> For each transfer function below, find the poles and zeros, plot the pole–zero map (by hand or using <code>pzmap()</code> in MATLAB), and describe the expected time-domain behaviour (decaying, oscillatory, growing, etc.):</p>
+<ol>
+<li><p><span class="math inline">\(G_1(s) = \dfrac{1}{s+5}\)</span></p></li>
+<li><p><span class="math inline">\(G_2(s) = \dfrac{s+2}{s^2 + 2s + 10}\)</span></p></li>
+<li><p><span class="math inline">\(G_3(s) = \dfrac{4}{s^2 - 1}\)</span></p></li>
+</ol></li>
+<li><p><strong>(Periodic Signals)</strong> A sawtooth wave has amplitude <span class="math inline">\(A\)</span>, period <span class="math inline">\(T\)</span>, and is defined over one period by <span class="math inline">\(f_1(t) = \frac{A}{T}\,t\)</span> for <span class="math inline">\(0\le t&lt;T\)</span>.</p>
+<ol>
+<li><p>Show that the one-period Laplace transform is <span class="math display">\[F_1(s) = \frac{A}{Ts^2}\bigl(1 - e^{-sT}(1+sT)\bigr).\]</span></p></li>
+<li><p>Use the periodic-signal formula <a href="#eq:periodic-laplace" data-reference-type="eqref" data-reference="eq:periodic-laplace">[eq:periodic-laplace]</a> to write <span class="math inline">\(F(s)\)</span>.</p></li>
+<li><p>A first-order system <span class="math inline">\(G(s) = 1/(s+1)\)</span> is driven by the sawtooth with <span class="math inline">\(A=1\)</span> and <span class="math inline">\(T=2\)</span>. Use MATLAB to plot the output <span class="math inline">\(y(t)\)</span> for <span class="math inline">\(0 \le t \le 10\)</span> using <code>lsim</code> with a sawtooth input vector. Comment on whether <span class="math inline">\(y(t)\)</span> also becomes periodic after an initial transient.</p></li>
+</ol></li>
+<li><p><strong>(Challenge)</strong> A system has the transfer function: <span class="math display">\[G(s) = \frac{s + 3}{(s+1)(s^2+4s+8)}\]</span></p>
+<ol>
+<li><p>Find all poles and zeros. Identify the damping ratio and natural frequency of the complex poles.</p></li>
+<li><p>Perform full partial fraction expansion of <span class="math inline">\(Y(s) = G(s)/s\)</span>.</p></li>
+<li><p>Find <span class="math inline">\(y(t)\)</span> and sketch the expected step response shape.</p></li>
+<li><p>Verify every step using MATLAB: <code>residue</code>, <code>ilaplace</code>, <code>step</code>, and <code>pzmap</code>.</p></li>
+</ol></li>
+</ol>

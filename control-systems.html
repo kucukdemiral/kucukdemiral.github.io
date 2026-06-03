@@ -3,18 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Systems - Dr. Ibrahim Beklan Kucukdemiral</title>
+    <title>Control Systems: Modelling, Analysis, and Design - Ibrahim Kucukdemiral</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/control-systems.css">
+
+    <!-- MathJax -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            processEscapes: true,
+            tags: 'ams'
+        },
+        svg: { fontCache: 'global' },
+        startup: { typeset: false }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 </head>
 <body>
     <header>
         <div class="header-content">
             <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
-            <p class="subtitle">Glasgow Caledonian University</p>
+            <p class="subtitle">Reader &middot; Glasgow Caledonian University</p>
         </div>
         <nav>
             <ul>
@@ -33,44 +48,266 @@
         </nav>
     </header>
 
-    <div class="container">
-        <h2>Control Systems</h2>
-        <p>Explore the interactive tools below to experiment with classical control system analysis and design techniques.</p>
+    <div class="cs-layout">
+        <!-- Sidebar TOC -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Control Systems</h3>
+                <div style="font-size:0.7rem;color:var(--text-light);margin-bottom:0.4rem;">Feedback Control: Modelling, Analysis &amp; Design</div>
+                <a href="cs-notes/CS_Lecture_Notes.pdf" target="_blank" class="dl-link">Download PDF</a>
+                <a href="cs-notes/CS_Lecture_Notes.pdf" target="_blank" style="display:block;margin-top:0.6rem;">
+                    <img src="cs-notes/figures/cs_book_cover.jpg" alt="Feedback Control Book Cover" style="width:100%;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                </a>
+            </div>
 
-        <div class="tool-selector">
-            <button class="tool-btn active" data-tool="pid">
-                <span class="btn-icon">&#9881;</span> PID Simulator
-            </button>
-            <button class="tool-btn" data-tool="bode">
-                <span class="btn-icon">&#8767;</span> Bode Sketch Studio
-            </button>
-        </div>
+            <div class="part-label">Part I &mdash; Foundations</div>
+            <div class="toc-item active" data-ch="ch01" onclick="loadChapter('ch01')">
+                <span class="ch-num">1</span>Introduction to Feedback Control
+            </div>
+            <div class="toc-item" data-ch="ch02" onclick="loadChapter('ch02')">
+                <span class="ch-num">2</span>Laplace Transform
+            </div>
+            <div class="toc-item toc-sub" data-ch="laplace" onclick="loadChapter('laplace')">
+                <span class="ch-num"></span>Laplace Table
+            </div>
+            <div class="toc-item" data-ch="ch03" onclick="loadChapter('ch03')">
+                <span class="ch-num">3</span>Modelling Dynamical Systems
+            </div>
+            <div class="toc-item" data-ch="ch04" onclick="loadChapter('ch04')">
+                <span class="ch-num">4</span>State-Space Modelling
+            </div>
+            <div class="toc-item" data-ch="ch05" onclick="loadChapter('ch05')">
+                <span class="ch-num">5</span>Block Diagrams
+            </div>
 
-        <div class="applet applet-full" id="tool-pid">
-            <p class="tool-description">Experiment with PID controller tuning and observe system response characteristics in real time.</p>
-            <iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
-        </div>
+            <div class="part-label">Part II &mdash; Analysis</div>
+            <div class="toc-item" data-ch="ch06" onclick="loadChapter('ch06')">
+                <span class="ch-num">6</span>Time Response
+            </div>
+            <div class="toc-item" data-ch="ch07" onclick="loadChapter('ch07')">
+                <span class="ch-num">7</span>Stability
+            </div>
 
-        <div class="applet applet-full" id="tool-bode" style="display:none;">
-            <p class="tool-description">Interactive Bode plot sketcher with asymptotic and exact magnitude/phase responses, pole-zero analysis, stability metrics, and time delay support.</p>
-            <iframe src="bode-plotter/index.html" title="Bode Sketch Studio"></iframe>
-        </div>
+            <div class="part-label">Part III &mdash; Design</div>
+            <div class="toc-item" data-ch="ch08" onclick="loadChapter('ch08')">
+                <span class="ch-num">8</span>PID Control
+            </div>
+            <div class="toc-item toc-sub" data-ch="pid-sim" onclick="loadChapter('pid-sim')">
+                <span class="ch-num"></span>PID Simulator
+            </div>
+            <div class="toc-item" data-ch="ch09" onclick="loadChapter('ch09')">
+                <span class="ch-num">9</span>Frequency Domain: Analysis and Design
+            </div>
+            <div class="toc-item toc-sub" data-ch="bode-studio" onclick="loadChapter('bode-studio')">
+                <span class="ch-num"></span>Bode Plot Studio
+            </div>
+
+            <div class="part-label">Part IV &mdash; Modern Control</div>
+            <div class="toc-item" data-ch="ch10" onclick="loadChapter('ch10')">
+                <span class="ch-num">10</span>Controllability &amp; Observability
+            </div>
+            <div class="toc-item" data-ch="ch11" onclick="loadChapter('ch11')">
+                <span class="ch-num">11</span>State Feedback Control
+            </div>
+            <div class="toc-item" data-ch="ch12" onclick="loadChapter('ch12')">
+                <span class="ch-num">12</span>Observer Design
+            </div>
+        </aside>
+
+        <!-- Main content area -->
+        <main class="main-content">
+            <div class="chapter-nav">
+                <button id="btn-prev" onclick="navigateChapter(-1)" disabled>&larr; Previous</button>
+                <span class="ch-indicator" id="ch-indicator">Chapter 1: Introduction to Feedback Control</span>
+                <button id="btn-next" onclick="navigateChapter(1)">Next &rarr;</button>
+            </div>
+            <div class="chapter-body" id="chapter-body">
+                <div class="loading">Loading content...</div>
+            </div>
+        </main>
     </div>
 
+    <!-- Mobile sidebar toggle -->
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
+
     <footer>
-        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Ibrahim Kucukdemiral, Glasgow, Scotland, UK.
+        Licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>.
+        </p>
     </footer>
+
+    <script src="js/pyodide-runner.js"></script>
     <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-        document.querySelectorAll('.tool-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tool-btn').forEach(function(b) { b.classList.remove('active'); });
-                btn.classList.add('active');
-                var tool = btn.getAttribute('data-tool');
-                document.getElementById('tool-pid').style.display = tool === 'pid' ? '' : 'none';
-                document.getElementById('tool-bode').style.display = tool === 'bode' ? '' : 'none';
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    var chapters = [
+        { id: 'ch01', file: 'cs-notes/Chapter01.html', title: 'Chapter 1: Introduction to Feedback Control' },
+        { id: 'ch02', file: 'cs-notes/Chapter02.html', title: 'Chapter 2: Laplace Transform' },
+        { id: 'laplace', file: 'cs-notes/LaplaceTable.html', title: 'Laplace Transform Table' },
+        { id: 'ch03', file: 'cs-notes/Chapter03.html', title: 'Chapter 3: Modelling Dynamical Systems' },
+        { id: 'ch04', file: 'cs-notes/Chapter04.html', title: 'Chapter 4: State-Space Modelling' },
+        { id: 'ch05', file: 'cs-notes/Chapter05.html', title: 'Chapter 5: Block Diagrams' },
+        { id: 'ch06', file: 'cs-notes/Chapter06.html', title: 'Chapter 6: Time Response' },
+        { id: 'ch07', file: 'cs-notes/Chapter07.html', title: 'Chapter 7: Stability' },
+        { id: 'ch08', file: 'cs-notes/Chapter08.html', title: 'Chapter 8: PID Control' },
+        { id: 'pid-sim', file: 'cs-notes/PIDSimulator.html', title: 'Interactive PID Simulator' },
+        { id: 'ch09', file: 'cs-notes/Chapter09.html', title: 'Chapter 9: Frequency Domain: Analysis and Design' },
+        { id: 'bode-studio', file: 'cs-notes/BodePlotStudio.html', title: 'Interactive Bode Sketch Studio' },
+        { id: 'ch10', file: 'cs-notes/Chapter10.html', title: 'Chapter 10: Controllability & Observability' },
+        { id: 'ch11', file: 'cs-notes/Chapter11.html', title: 'Chapter 11: State Feedback Control' },
+        { id: 'ch12', file: 'cs-notes/Chapter12.html', title: 'Chapter 12: Observer Design' }
+    ];
+
+    var currentIndex = 0;
+    var cache = {};
+    var chapterAssetVersion = '2026-06-03-subtabs-laplace';
+
+    function normalizeChapterHtml(html) {
+        return html
+            .replace(/src="figures\//g, 'src="cs-notes/figures/')
+            .replace(/\\begin\{bsmallmatrix\}/g, '\\left[\\begin{smallmatrix}')
+            .replace(/\\end\{bsmallmatrix\}/g, '\\end{smallmatrix}\\right]');
+    }
+
+    function loadChapter(id) {
+        var idx = chapters.findIndex(function(c) { return c.id === id; });
+        if (idx === -1) return;
+        currentIndex = idx;
+        var ch = chapters[idx];
+        var body = document.getElementById('chapter-body');
+        var indicator = document.getElementById('ch-indicator');
+
+        document.querySelectorAll('.toc-item').forEach(function(el) {
+            el.classList.toggle('active', el.getAttribute('data-ch') === id);
+        });
+
+        indicator.textContent = ch.title;
+        updateNavButtons();
+        history.replaceState(null, '', '#' + id);
+
+        if (cache[id]) {
+            cache[id] = normalizeChapterHtml(cache[id]);
+            body.innerHTML = cache[id];
+            body.scrollTop = 0;
+            fixFigures(body);
+            typesetMath();
+            if (window.PyodideRunner) PyodideRunner.initAll(body);
+            return;
+        }
+
+        body.innerHTML = '<div class="loading">Loading...</div>';
+
+        fetch(ch.file + '?v=' + chapterAssetVersion, { cache: 'no-store' })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                html = normalizeChapterHtml(html);
+                cache[id] = html;
+                body.innerHTML = html;
+                body.scrollTop = 0;
+                fixFigures(body);
+                typesetMath();
+                if (window.PyodideRunner) PyodideRunner.initAll(body);
+            })
+            .catch(function() {
+                body.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:3rem;">Could not load chapter content. <a href="' + ch.file + '">Open directly</a>.</p>';
+            });
+
+        window.scrollTo(0, 0);
+        document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function fixFigures(container) {
+        var figures = container.querySelectorAll('figure[id]');
+        var figMap = {};
+        var counter = 0;
+        function directCaption(fig) {
+            return Array.prototype.find.call(fig.children, function(child) {
+                return child.tagName && child.tagName.toLowerCase() === 'figcaption';
+            });
+        }
+        function figureLabels(fig) {
+            var labels = [fig.id];
+            var extra = fig.getAttribute('data-figure-labels');
+            if (extra) {
+                extra.split(/\s+/).forEach(function(label) {
+                    if (label) labels.push(label);
+                });
+            }
+            return labels;
+        }
+        function mapFigureLabels(fig, value) {
+            figureLabels(fig).forEach(function(label) {
+                figMap[label] = value;
+            });
+        }
+        figures.forEach(function(fig) {
+            if (fig.parentElement.closest('figure')) return;
+            counter++;
+            mapFigureLabels(fig, counter);
+            var caption = directCaption(fig);
+            if (caption && !/^Figure\s/.test(caption.textContent)) {
+                caption.innerHTML = '<strong>Figure ' + counter + ':</strong> ' + caption.innerHTML;
+            }
+            var subfigures = Array.prototype.filter.call(fig.querySelectorAll('figure[id]'), function(child) {
+                return child.parentElement.closest('figure') === fig;
+            });
+            subfigures.forEach(function(child, idx) {
+                var letter = String.fromCharCode(97 + idx);
+                mapFigureLabels(child, counter + letter);
+                var subcaption = directCaption(child);
+                if (subcaption && !/^\([a-z]\)/.test(subcaption.textContent)) {
+                    subcaption.innerHTML = '<strong>(' + letter + ')</strong> ' + subcaption.innerHTML;
+                }
             });
         });
+        var refs = container.querySelectorAll('a[data-reference]');
+        refs.forEach(function(ref) {
+            var target = ref.getAttribute('data-reference');
+            if (figMap[target]) {
+                ref.textContent = figMap[target];
+            }
+        });
+    }
+
+    function typesetMath() {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.texReset();
+            MathJax.typesetClear([document.getElementById('chapter-body')]);
+            MathJax.typesetPromise([document.getElementById('chapter-body')]).catch(function(err) {
+                console.warn('MathJax typeset error:', err);
+            });
+        }
+    }
+
+    function updateNavButtons() {
+        document.getElementById('btn-prev').disabled = currentIndex === 0;
+        document.getElementById('btn-next').disabled = currentIndex === chapters.length - 1;
+    }
+
+    function navigateChapter(dir) {
+        var next = currentIndex + dir;
+        if (next >= 0 && next < chapters.length) {
+            loadChapter(chapters[next].id);
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+        if (e.key === 'ArrowLeft') navigateChapter(-1);
+        if (e.key === 'ArrowRight') navigateChapter(1);
+    });
+
+    // Load initial chapter from hash or default
+    document.addEventListener('DOMContentLoaded', function() {
+        var hash = window.location.hash.replace('#', '');
+        var startCh = chapters.find(function(c) { return c.id === hash; });
+        loadChapter(startCh ? startCh.id : 'ch01');
+    });
     </script>
 </body>
 </html>

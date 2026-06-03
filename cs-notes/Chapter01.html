@@ -1,0 +1,476 @@
+<h1 id="introduction-to-feedback-control">Introduction to Feedback Control</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Distinguish between <strong>open-loop</strong> and <strong>closed-loop</strong> control systems and classify real-world examples into each category.</p></li>
+<li><p>Identify the components of a feedback loop: reference, error, controller, actuator, plant, sensor, and disturbance.</p></li>
+<li><p>Draw and interpret block diagrams for feedback control systems.</p></li>
+<li><p>Derive the closed-loop transfer function for a unity-feedback system and compute the effect of disturbances.</p></li>
+<li><p>Explain why feedback attenuates disturbances and improves tracking accuracy, using the cruise control and volume control examples.</p></li>
+<li><p>Describe the effect of hysteresis in on–off control and explain its practical purpose.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="why-study-control-engineering">Why Study Control Engineering?</h2>
+<p>Control systems are everywhere. From the moment we wake up to the moment we go to sleep, we interact with systems that quietly measure, decide, and adjust in order to achieve a desired outcome. When your alarm clock rings at the correct time, when the central heating keeps a room comfortable, when a lift stops precisely level with the floor, or when a washing machine automatically selects the correct cycle — control is at work behind the scenes.</p>
+<p>At its simplest, control engineering is about making things behave in the way we want. It allows us to regulate temperature, speed, position, pressure, voltage, and countless other physical quantities. Without control systems, many everyday tasks would require constant human supervision. With control systems, processes can run automatically, safely, and efficiently.</p>
+<p>Control also enables us to go beyond normal human capability. Modern aircraft remain stable in turbulent conditions thanks to automatic flight control systems. Industrial robots position components with millimetre or even micrometre accuracy. Spacecraft navigate millions of kilometres through space with remarkable precision. In medicine, devices such as insulin pumps continuously monitor and regulate blood glucose levels. These achievements are possible because of carefully designed control systems.</p>
+<p>Interestingly, control is not purely an engineering concept — it is also fundamental to nature. The human body continuously regulates its internal temperature, blood pressure, and oxygen levels through feedback mechanisms. When you feel cold, your body shivers to generate heat; when you are too warm, you sweat to cool down. This natural process of measurement, comparison, and correction is the same basic principle used in engineered control systems.</p>
+<p>In engineering practice, well-designed control systems bring significant benefits. They improve safety by reducing human error, increase efficiency by minimising waste and energy consumption, enhance reliability by compensating for disturbances, and reduce cost through automation. In many cases, a system would simply not function without control.</p>
+<p>In this module, you will learn how to model dynamic systems, analyse their behaviour, and design controllers that achieve stability, accuracy, and robustness. Although the mathematical tools may at first seem challenging, they provide a powerful framework for understanding and shaping the behaviour of real-world systems.</p>
+<p>By the end of this course, you will be able to analyse a system, predict its behaviour, and design a controller that makes it do what you want.</p>
+<h2 id="feedback-all-around-us">Feedback All Around Us</h2>
+<p>Feedback appears wherever a system measures its current state, compares it with a desired condition, and adjusts accordingly. The examples below illustrate how pervasive this principle is.</p>
+<h3 class="unnumbered" id="everyday-life">Everyday Life</h3>
+<p>In everyday life, feedback appears in devices that seem ordinary precisely because they regulate themselves so effectively. Voice assistants can adjust their volume or microphone sensitivity when the surrounding noise changes. Elevators reopen their doors when sensors detect that a passenger is still entering, while navigation apps recalculate a route as soon as the driver misses a turn. Traffic lights equipped with sensors adapt their timing to traffic conditions, smart fridges maintain their internal temperature even when the door is opened repeatedly, and fitness watches monitor heart rate and prompt the user to slow down or speed up. Coffee machines regulate water temperature and pressure while stopping the pour at the right moment, and central heating systems compare the measured room temperature with the thermostat setting before deciding whether to switch the boiler on or off.</p>
+<h3 class="unnumbered" id="engineering-and-technology">Engineering and Technology</h3>
+<p>In engineering and technology, feedback is even more central. Aircraft autopilots continuously adjust control surfaces to keep the aircraft level and on course despite turbulence. Wind turbines vary blade pitch so that they capture useful energy without overloading the mechanism, and medical ventilators measure oxygen and pressure levels before adjusting airflow to match the patient’s needs. Robotic arms in manufacturing rely on sensors to keep welding, assembly, and positioning accurate; electric vehicle battery management systems regulate temperature and charge for safety and efficiency; drones use gyroscopes and accelerometers to stabilise flight; and industrial control systems keep pressure, temperature, and chemical concentration within safe operating limits.</p>
+<h3 class="unnumbered" id="biological-and-natural-systems">Biological and Natural Systems</h3>
+<p>Biological and natural systems also depend heavily on feedback. Blood sugar regulation relies on insulin and glucagon acting in opposition to keep glucose within a safe range. Body temperature is stabilised through sweating or shivering, balance during walking is maintained by feedback from the inner ear, muscles, and eyes, and pupil size changes automatically in response to light. At a larger scale, ecosystems exhibit feedback when predator and prey populations influence one another and create recurring population cycles.</p>
+<h3 class="unnumbered" id="economics-and-social-systems">Economics and Social Systems</h3>
+<p>Feedback is not confined to physical systems. In economics and social systems, central banks change interest rates in response to inflation and economic growth, supply and demand interact through price changes, stock markets can amplify movements when investors react to recent trends, and public health policies are tightened or relaxed in response to infection rates, which then alter future transmission.</p>
+<h3 class="unnumbered" id="traffic-and-infrastructure">Traffic and Infrastructure</h3>
+<p>Traffic and infrastructure provide further examples. Adaptive cruise control changes a vehicle’s speed to maintain a safe distance from the car ahead. On motorways, congestion can emerge when small disturbances are amplified through positive feedback. In water reservoir management, release rates are adjusted according to rainfall and storage level so that flooding and shortages can both be avoided.</p>
+<h3 class="unnumbered" id="climate-and-environmental-systems">Climate and Environmental Systems</h3>
+<p>Climate and environmental systems also involve powerful feedback mechanisms. Ice melt reduces surface reflectivity and increases heat absorption, which is a classic example of positive feedback. By contrast, the carbon cycle contains balancing effects, since plant growth can absorb carbon dioxide and partially offset emissions.</p>
+<h3 class="unnumbered" id="fun-and-unexpected-examples">Fun and Unexpected Examples</h3>
+<p>Even playful or unexpected systems are shaped by feedback. Video game controllers use haptic feedback to influence the player’s actions, concert sound systems must suppress unwanted audio feedback to avoid screeching, and social media platforms alter what they show users in response to previous interaction, often reinforcing viewing patterns.</p>
+<h2 id="classification-of-control-systems">Classification of Control Systems</h2>
+<p>Control systems fall into two categories: open-loop and closed-loop. In an open-loop system, the control action is applied without measuring the output, so performance depends entirely on prior calibration. In a closed-loop system, the output is measured and compared with the reference. The difference (the error) adjusts the control action, making the system more accurate and resistant to disturbances.</p>
+<h3 id="open-loop-control-systems">Open-Loop Control Systems</h3>
+<p>An open-loop control system has the general form illustrated in Figure <a href="#fig:openloop" data-reference-type="ref" data-reference="fig:openloop">1.1</a>. Here, the desired input <span class="math inline">\(y_d\)</span> is processed by a controller to produce a control signal <span class="math inline">\(u\)</span>, which is applied to the plant via an actuator. The plant produces the output <span class="math inline">\(y\)</span>.</p>
+<figure id="fig:openloop" data-latex-placement="!ht">
+
+<img src="figures/ch01_tikz_01.png" style="max-width:85%;" />
+<figcaption>Block diagram of an open-loop control system.</figcaption>
+</figure>
+<p><strong>Key characteristics of open-loop control:</strong> Open-loop control depends strongly on calibration: the controller must be tuned beforehand if the system is to perform correctly. Because the output is not measured, the controller is effectively blind; it has no way of knowing whether the desired result has actually been achieved, and it cannot correct its own mistakes. For the same reason, open-loop systems are sensitive to disturbances and model changes, since any unexpected variation in the plant appears directly at the output.</p>
+<h5 id="open-loop-control-example-toaster">Open-Loop Control Example (Toaster): </h5>
+<p>A toaster toasts bread by setting a timer, as illustrated in Figure <a href="#fig:toaster-diagram" data-reference-type="ref" data-reference="fig:toaster-diagram">1.2</a>. The objective is to make the bread golden browned and crisp. However, the toaster does not measure the colour of the bread during the toasting process. For a fixed timer setting, the result can vary: in winter, the toast may remain pale, while in summer it may burn and turn black. This illustrates that calibration is crucial in open-loop systems. A more sophisticated toaster could use sensors to measure the bread’s colour and actuators to adjust the timer accordingly, but this would increase both the cost and the complexity of the device.</p>
+<figure id="fig:toaster-diagram">
+
+<img src="figures/ch01_tikz_02.png" style="max-width:85%;" />
+<figcaption>A toaster as an open-loop control system.</figcaption>
+</figure>
+<h5 id="open-loop-control-example-laundry-machine">Open-Loop Control Example (Laundry Machine):</h5>
+<p>A laundry machine washes clothes by running a program selected by the user, as shown in Figure <a href="#fig:laundry-diagram" data-reference-type="ref" data-reference="fig:laundry-diagram">1.3</a>. The program determines how long the machine agitates, rinses, and spins the clothes. The machine does not measure how clean the clothes actually become during the cycle. As a result, for the same program setting, some clothes may still remain dirty while others may be over-washed, depending on the load size, type of fabric, or how soiled the clothes were initially. This lack of feedback means that the performance of the machine depends entirely on the correct choice of program.</p>
+<p>Control without measuring devices such as sensors is therefore called <em>open-loop control</em>.</p>
+<figure id="fig:laundry-diagram">
+
+<img src="figures/ch01_tikz_03.png" style="max-width:85%;" />
+<figcaption>A laundry machine as an open-loop control system.</figcaption>
+</figure>
+<h3 id="closed-loop-control-a-common-pattern-in-all-these-examples">Closed-loop Control : A Common Pattern in All These Examples</h3>
+<p>Despite their different appearances, all the examples above share a <em>common structure</em>.</p>
+<p>For instance, in a <strong>thermostat</strong>, the actual room temperature is measured, compared with the temperature you set, and the heating is switched on or off accordingly. In <strong>cruise control</strong>, the car’s actual speed is measured, compared with the chosen set speed, and the throttle is adjusted to reduce any mismatch. In the <strong>human body</strong>, internal temperature is monitored against a safe range, and the body responds by sweating or shivering so that the temperature remains close to <span class="math inline">\(36\,^{\circ}\mathrm{C}\)</span> to <span class="math inline">\(37\,^{\circ}\mathrm{C}\)</span>.</p>
+<p>What all of these systems have in common is a reference (or set point), a <strong>measurement</strong> of what is actually happening, a <strong>comparison</strong> between desired and actual behaviour, and an <strong>action</strong> that reduces the difference. This is the essential structure of a <strong>feedback control system</strong>.</p>
+<figure id="fig:BasicFeedbackSystem">
+
+<img src="figures/ch01_tikz_04.png" style="max-width:85%;" />
+<figcaption>The basic structure of a feedback control system.</figcaption>
+</figure>
+<p>This simple diagram in Figure <a href="#fig:BasicFeedbackSystem" data-reference-type="ref" data-reference="fig:BasicFeedbackSystem">1.4</a> captures the essence of all the systems we have seen:</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Feedback compares what we want with what we get, and acts to reduce the gap.</p>
+</div>
+<figure id="fig:feedback">
+<img src="figures/feedback.png" style="max-width:100%;" />
+<figcaption>Detailed representation of a feedback control system.</figcaption>
+</figure>
+<h2 id="a-more-detailed-view-of-feedback-control">A More Detailed View of Feedback Control</h2>
+<p>In practice, real feedback systems include physical components beyond the controller and plant. Figure <a href="#fig:feedback" data-reference-type="ref" data-reference="fig:feedback">1.5</a> provides a more detailed representation.</p>
+<p>The error <span class="math inline">\(e\)</span> is formed by comparing the desired reference <span class="math inline">\(r\)</span> with the measured output from the sensor. The controller processes this error and generates a control signal <span class="math inline">\(u\)</span>, which is sent to the actuator. The actuator converts this signal into a physical action that drives the controlled system (the plant). At the same time, the system is affected by disturbances, which may push the output <span class="math inline">\(y\)</span> away from its desired behaviour. The sensor measures the actual output and sends the measurement back for comparison, closing the loop.</p>
+<p>The summing junction is the comparison point, represented by the circular element in Figure <a href="#fig:feedback" data-reference-type="ref" data-reference="fig:feedback">1.5</a>, where the error signal <span class="math inline">\(e(t)=r(t)-y(t)\)</span> is formed. A thermostat comparator that subtracts the measured room temperature from the user’s setting is a simple example. The <strong>controller</strong> is the decision-making element of the loop: it processes the error according to a control law such as PID, LQR, or MPC and determines the control effort <span class="math inline">\(u\)</span>. A drone flight computer that stabilises orientation from IMU data plays this role. The <strong>actuator</strong> then converts that usually low-power command into physical action, such as force, torque, flow, or voltage; examples include an electric motor in a robot joint or a hydraulic valve in an aircraft mechanism. The <strong>plant</strong> is the physical process being regulated, such as the vehicle in a cruise control problem or a heat exchanger in a chemical plant. disturbance refers to unwanted external influences, such as wind gusts or load changes, that push the plant away from its desired behaviour. Finally, the sensor closes the loop by measuring the actual output and converting it into a usable signal; a tachometer, a thermometer, or an ultrasonic range sensor all serve this purpose. The quality of feedback control therefore depends not only on the controller itself, but also on the actuators, sensors, and disturbances present in the real system.</p>
+<div class="examplebox">
+<p><span>Room Heating System</span></p>
+<p>A familiar case is the heating of a room in a house.</p>
+<p>In this example, the reference <span class="math inline">\(r\)</span> is the temperature chosen by the user on the thermostat, for example <span class="math inline">\(21\,^{\circ}\mathrm{C}\)</span>. The error <span class="math inline">\(e\)</span> is the difference between this desired value and the measured room temperature. The controller is the thermostat logic that decides whether to switch the heating system on or off, or, in more advanced designs, how much power to request. The actuator is the boiler or heating unit, the plant is the room and its contents, the disturbances include open windows, outside weather, and heat from people or appliances, and the sensor is the thermometer inside the thermostat that measures the actual room temperature. Figure <a href="#fig:heater_overview" data-reference-type="ref" data-reference="fig:heater_overview">[fig:heater_overview]</a> illustrates the complete system.</p>
+<figure id="fig:heater_overview">
+<img src="figures/heater.png" alt="Room heating feedback control system" />
+<figcaption>Room heating feedback control system. (a) Physical layout: the thermostat controller reads the room temperature from its built-in sensor, compares it with the user-set reference of <span class="math inline">\(21\,^{\circ}\mathrm{C}\)</span>, and switches the boiler actuator on or off accordingly. The room and its contents form the plant, while open windows, outside weather, sunlight, and occupant activity act as disturbances. (b) Resulting on-off behaviour: the room temperature oscillates around the set point as the heater cycles between on and off states.</figcaption>
+</figure>
+<p>In this example, the controller’s task is to ensure that the room temperature remains close to the user’s chosen set point, despite disturbances such as cold draughts or the heat generated by sunlight. This illustrates how the theoretical components of the feedback diagram correspond directly to real physical elements in a system we encounter daily.</p>
+<p>Figure <a href="#fig:heatercontrolonoff" data-reference-type="ref" data-reference="fig:heatercontrolonoff">[fig:heatercontrolonoff]</a> shows the variation of the room temperature and the operation of the controller (ON/OFF). Notice how the heater switches on whenever the temperature drops slightly below the set point and switches off as soon as the set point is reached. As a result, the temperature oscillates around the desired value. This type of control is called onoff, or sometimes <em>bang–bang control</em>.</p>
+<p>While simple and inexpensive to implement, pure on–off control has an important drawback: the heater may switch very frequently near the set point, which can cause wear and tear on the equipment and waste energy. Moreover, the temperature never settles exactly at the desired value; there is always a small error due to the switching.</p>
+<p>A practical improvement is to introduce a <strong>control band</strong> (sometimes called hysteresis). Instead of switching exactly at the set point, the heater is turned on only when the temperature falls below a lower threshold, and turned off only when it rises above an upper threshold. Figure <a href="#fig:heatercontrolonoffhysterisis" data-reference-type="ref" data-reference="fig:heatercontrolonoffhysterisis">[fig:heatercontrolonoffhysterisis]</a> illustrates this approach. The two green dashed lines indicate the band around the set point. Within this band, the heater does not switch, so the controller avoids rapid toggling. The result is smoother operation, reduced wear on the actuator, and greater overall efficiency. Although the temperature still oscillates, the switching is far less frequent and the system performance is significantly improved.</p>
+<p>This improvement is useful, but it is only a starting point. In the upcoming chapters, you will learn how more advanced control methods (such as proportional, integral, and derivative control) can achieve far smoother, more accurate, and energy-efficient regulation.</p>
+<figure id="fig:heatercontrolonoff">
+<img src="figures/HeaterControlON_OFF.png" style="max-width:100%;" alt="Heater example using simple on-off control" />
+<figcaption>Heater example using simple on-off control. The top plot shows the variation of room temperature compared with the desired set point. The middle plot shows the heater state, where 1 indicates ON and 0 indicates OFF. The bottom plot zooms in near the set point, highlighting that the error never reaches exactly zero and small oscillations remain.</figcaption>
+</figure>
+<figure id="fig:heatercontrolonoffhysterisis">
+<img src="figures/HeaterControlON_OFF_hysterisis.png" style="max-width:100%;" alt="Heater example with ON/OFF control and a hysteresis band" />
+<figcaption>Heater example with ON/OFF control and a hysteresis band. The top plot shows the room temperature compared with the desired set point and the hysteresis band limits. The middle plot shows fewer ON/OFF transitions compared to pure on-off control, improving efficiency and reducing wear. The bottom plot zooms in near the set point and shows the temperature fluctuating between the upper and lower band limits.</figcaption>
+</figure>
+</div>
+<div class="examplebox">
+<p><span>Automatic Volume Control in a Car Radio</span></p>
+<h5 class="unnumbered" id="the-problem">The Problem:</h5>
+<p>Imagine you are driving on a motorway while listening to the radio. You set the volume to a comfortable level. However, as the speed of the car increases, the road and wind noise also increase. As a result, the music becomes difficult to hear. Without an automatic adjustment system, you would need to manually increase the volume. This is an example of an <strong>open–loop system</strong>.</p>
+<h5 class="unnumbered" id="openloop-system">Open–Loop System:</h5>
+<p>In the open–loop case shown in Figure <a href="#fig:exsoundol" data-reference-type="ref" data-reference="fig:exsoundol">[fig:exsoundol]</a>, the system has no way of knowing whether the output (sound in the cabin) is adequate. It simply multiplies the driver’s volume setting by a fixed amplifier gain. Any additional noise directly affects the output.</p>
+<p><span class="math display">\[y = K r + d\]</span> where <span class="math inline">\(r\)</span> denotes the driver’s desired volume setting, <span class="math inline">\(K\)</span> is the amplifier gain, <span class="math inline">\(d\)</span> represents the disturbance caused by road noise, and <span class="math inline">\(y\)</span> is the resulting sound level in the cabin.</p>
+<figure id="fig:exsoundol">
+<img src="figures/Ex_Sound_OL.png" style="max-width:90%;" alt="Open-loop sound system block diagram" />
+<figcaption>Manual control of the sound volume in the cabin.</figcaption>
+</figure>
+<figure id="fig:caramp">
+<img src="figures/ch01_carradio_ol.png" style="max-width:90%;" alt="Car radio amplifier system" />
+<figcaption>Car radio amplifier system.</figcaption>
+</figure>
+<h5 class="unnumbered" id="closedloop-system">Closed–Loop System:</h5>
+<p>To improve performance, a small microphone is placed in the cabin to measure the actual sound level <span class="math inline">\(y\)</span>. The measured sound is compared with the desired setting <span class="math inline">\(r\)</span>, and the difference, called the <em>error</em> <span class="math inline">\(e\)</span>, is used by the controller to adjust the amplifier gain. This arrangement creates a <strong>feedback system</strong>, also called a <strong>closed–loop system</strong>.</p>
+<figure id="fig:exsoundcl">
+<img src="figures/ch01_carradio_cl.png" style="max-width:90%;" alt="Closed-loop volume control system" />
+<figcaption>Closed-loop volume control system. The microphone measures the cabin sound level <span class="math inline">\(y\)</span>, which is compared with the desired setting <span class="math inline">\(r\)</span> to produce the error <span class="math inline">\(e\)</span>. The controller then adjusts the amplifier input <span class="math inline">\(u\)</span> accordingly.</figcaption>
+</figure>
+<p><span class="math display">\[e = r - y, 
+\qquad 
+u = K e, 
+\qquad 
+y = u + d\]</span></p>
+<p>From these relations we obtain <span class="math display">\[y = \frac{K}{1+K}\,r \;+\; \frac{1}{1+K}\,d\]</span></p>
+<p>This expression shows two important effects. First, the contribution of the reference <span class="math inline">\(r\)</span> is multiplied by <span class="math inline">\(\tfrac{K}{1+K}\)</span>, which approaches <span class="math inline">\(1\)</span> as <span class="math inline">\(K\)</span> becomes large, so increasing the gain improves the accuracy with which the system reproduces the desired volume. Second, the disturbance <span class="math inline">\(d\)</span> is multiplied by <span class="math inline">\(\tfrac{1}{1+K}\)</span>, which becomes small when <span class="math inline">\(K\)</span> is large, so the effect of road noise is attenuated by feedback.</p>
+<h5 class="unnumbered" id="benefits-of-feedback">Benefits of Feedback:</h5>
+<p>The system automatically compensates for increased road noise, so the driver no longer needs to adjust the volume manually. The sensitivity to disturbances is reduced by the factor <span class="math inline">\(\tfrac{1}{1+K}\)</span>.</p>
+</div>
+<div class="examplebox">
+<p><span>Cruise Control: Manual vs Feedback Control</span></p>
+<p>We study cruise control — maintaining a desired constant speed in a car — first with <strong>manual (open-loop) control</strong>, then with <strong>feedback (closed-loop) control</strong>.</p>
+<h5 id="system-description-and-assumptions">System Description and Assumptions:</h5>
+<p>We consider the following simplified system model for a car operating around a nominal speed of approximately <span class="math inline">\(55\ \text{mph}\)</span>:</p>
+<p>A <span class="math inline">\(1\%\)</span> change in throttle position is assumed to produce approximately <span class="math inline">\(+10\ \text{mph}\)</span> change in speed, while a <span class="math inline">\(1\%\)</span> change in road grade produces approximately <span class="math inline">\(-5\ \text{mph}\)</span> change in speed. We also approximate the engine dynamics as instantaneous, so that the system can be treated as a static gain in this introductory example.</p>
+<figure id="fig:cruisecontrol2">
+<img src="figures/CruiseControl2.png" style="max-width:70%;" alt="Block diagram of the cruise control system with feedback" />
+<figcaption>Block diagram of the cruise control system with feedback. The reference speed <span class="math inline">\(r(t)\)</span> is compared with the actual speed <span class="math inline">\(y(t)\)</span> to produce the error <span class="math inline">\(e(t)\)</span>, which the controller uses to adjust the throttle input <span class="math inline">\(u(t)\)</span>. The system and actuator convert the throttle command into vehicle speed, while the road grade <span class="math inline">\(w(t)\)</span> acts as a disturbance that reduces speed.</figcaption>
+</figure>
+<p>The problem is formalised in Figure <a href="#fig:cruisecontrol2" data-reference-type="ref" data-reference="fig:cruisecontrol2">[fig:cruisecontrol2]</a> and also visualised in Figure <a href="#fig:cruisecontrol" data-reference-type="ref" data-reference="fig:cruisecontrol">[fig:cruisecontrol]</a>. Hence, the speed of the car can be modelled as <span class="math display">\[y(t) = 10u(t) - 5w(t),\]</span> where <span class="math inline">\(y(t)\)</span> denotes the vehicle speed in mph, <span class="math inline">\(u(t)\)</span> is the throttle angle in percent, and <span class="math inline">\(w(t)\)</span> is the road grade in percent.</p>
+<figure id="fig:cruisecontrol">
+<img src="figures/CruiseControl.png" style="max-width:100%;" alt="Cruise control system for a vehicle" />
+<figcaption>Cruise control system for a vehicle. The diagram shows both the physical interpretation and the block diagram representation. The reference speed <span class="math inline">\(r(t)\)</span> is compared with the actual speed <span class="math inline">\(y(t)\)</span> to form the error <span class="math inline">\(e(t)\)</span>, which the controller uses to adjust the throttle input <span class="math inline">\(u(t)\)</span>. The road grade <span class="math inline">\(w(t)\)</span> acts as a disturbance, and a sensor measures the actual speed, closing the feedback loop.</figcaption>
+</figure>
+<h5 id="case-1-manual-open-loop-control">Case 1: Manual (Open-Loop) Control:</h5>
+<p>In open-loop control, the driver sets the throttle to a fixed value corresponding to the desired speed <span class="math inline">\(r(t)\)</span>. There is no feedback from the speed sensor. So the system is completely blind. For example, the driver may use the rule <span class="math display">\[u(t) = \frac{1}{10}\,r(t).\]</span> to get <span class="math inline">\(y(t)=r(t)\)</span> when there is no disturbance (road flat, no wind, no friction etc.). Then, substituting into the system model gives: <span class="math display">\[y_{OL}(t) = 10\cdot\frac{1}{10}r(t) - 5w(t) 
+= r(t) - 5w(t).\]</span></p>
+<h5 id="interpretation">Interpretation:</h5>
+<p>This formula immediately shows the weakness of open-loop control. On a flat road, where <span class="math inline">\(w=0\)</span>, the speed matches the reference exactly. However, if the road grade increases so that <span class="math inline">\(w&gt;0\)</span>, the vehicle speed falls; in this model, each <span class="math inline">\(1\%\)</span> uphill slope reduces the speed by <span class="math inline">\(5\ \text{mph}\)</span>. The driver must then notice the change and manually adjust the throttle to recover the desired speed.</p>
+<h5 id="performance-measure">Performance Measure:</h5>
+<p>We define the <em>percentage error</em> as <span class="math display">\[PE = 100\cdot\frac{|r(t)-y_{OL}(t)|}{r(t)}.\]</span></p>
+<p>Let <span class="math inline">\(r(t)=55\ \text{mph}\)</span>. Table <a href="#tab:openloop" data-reference-type="ref" data-reference="tab:openloop">[tab:openloop]</a> shows the open-loop performance for different slopes <span class="math inline">\(w(t)\)</span>.</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><span class="math inline">\(r(t)\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(w(t)\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(y_{OL}(t)\)</span></th>
+<th style="text-align: center;">Percentage Error (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">50</td>
+<td style="text-align: center;">9.1</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">45</td>
+<td style="text-align: center;">18.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;">54.5</td>
+<td style="text-align: center;">0.9</td>
+</tr>
+</tbody>
+</table>
+<p></p>
+</div>
+<p>We see that performance degrades directly with road slope.</p>
+<h5 id="case-2-closed-loop-cruise-control-system">Case 2: Closed-Loop Cruise Control System:</h5>
+<p>To overcome the open-loop sensitivity to disturbances, we now add feedback.</p>
+<h5 id="block-diagram-of-the-closed-loop-system">Block Diagram of the Closed-Loop System:</h5>
+<p>Figure <a href="#fig:closedloop" data-reference-type="ref" data-reference="fig:closedloop">[fig:closedloop]</a> shows the closed-loop cruise control system. The reference speed <span class="math inline">\(r(t)\)</span> is compared with the actual speed <span class="math inline">\(y_{CL}(t)\)</span> at a summing junction, producing the error signal <span class="math display">\[e(t) = r(t) - y_{CL}(t).\]</span></p>
+<p>This error is amplified by the controller <span class="math inline">\(C\)</span> which is set to <span class="math inline">\(100\)</span>, which produces the throttle command <span class="math inline">\(u(t)\)</span>. The plant <span class="math inline">\(P\)</span> (the system and actuator) then converts the throttle into the vehicle speed <span class="math inline">\(y_{CL}(t)\)</span>.</p>
+<p>In order to work out this system, one needs to know how to find the gain from the input <span class="math inline">\(R\)</span> to the output <span class="math inline">\(Y\)</span> in a basic feedback interconnection. This is described in the Figure <a href="#fig:feedbackIC" data-reference-type="ref" data-reference="fig:feedbackIC">[fig:feedbackIC]</a>. Here, a sensor <span class="math inline">\(H\)</span> measures the actual speed and feeds it back to the summing junction which is absent in our system as we assume that the speed measurement is perfect and in the same unit with the reference speed. The road grade <span class="math inline">\(w(t)\)</span> enters the plant as a disturbance.</p>
+<figure id="fig:closedloop">
+<img src="figures/CL_Cruise_Control.png" style="max-width:90%;" alt="Closed-loop cruise control system" />
+<figcaption>Closed-loop cruise control system. The error <span class="math inline">\(e(t)\)</span> is formed by comparing the reference <span class="math inline">\(r(t)\)</span> with the measured speed <span class="math inline">\(y(t)\)</span>, and the controller adjusts the throttle <span class="math inline">\(u(t)\)</span>. Because the system is linear, superposition can be used to analyse reference tracking and disturbance attenuation separately.</figcaption>
+</figure>
+<figure id="fig:feedbackIC">
+<img src="figures/FeedbackIC.png" style="max-width:80%;" alt="Basic feedback interconnection" />
+<figcaption>Basic feedback interconnection with controller <span class="math inline">\(C\)</span>, plant <span class="math inline">\(P\)</span>, and sensor <span class="math inline">\(H\)</span>.</figcaption>
+</figure>
+<p>From Figure <a href="#fig:feedbackIC" data-reference-type="ref" data-reference="fig:feedbackIC">[fig:feedbackIC]</a>, the output and error signals satisfy <span class="math display">\[Y = P \cdot C \cdot E, \qquad E = R - H \cdot Y.\]</span> Substituting the first equation into the second: <span class="math display">\[E = R - H \cdot P \cdot C \cdot E
+\quad\Longrightarrow\quad
+(1 + HPC)\,E = R
+\quad\Longrightarrow\quad
+E = \frac{1}{1+HPC}\,R.\]</span> Therefore the cltf from <span class="math inline">\(R\)</span> to <span class="math inline">\(Y\)</span> is <span class="math display">\[T(s) = \frac{Y(s)}{R(s)} = \frac{P(s)\,C(s)}{1 + H(s)\,P(s)\,C(s)}.\]</span></p>
+<h5 id="analysis">Analysis:</h5>
+<p>For our example: <span class="math display">\[P = 10,\quad H = 1,\quad C = K = 100.\]</span></p>
+<p>Thus, <span class="math display">\[y_{CL}(t) 
+= \frac{10 \cdot 100}{1 + 10 \cdot 100}r(t) 
+\;-\; \frac{5}{1 + 10 \cdot 100}w(t).\]</span></p>
+<p>Numerically: <span class="math display">\[y_{CL}(t) = \frac{1000}{1001}r(t) - \frac{5}{1001}w(t).\]</span></p>
+<p>Table <a href="#tab:closedloopresults" data-reference-type="ref" data-reference="tab:closedloopresults">[tab:closedloopresults]</a> shows the steady-state vehicle speeds, percentage errors, and system gain for various values of the disturbance <span class="math inline">\(w(t)\)</span>.</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><span class="math inline">\(r(t)\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(w(t)\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(y_{CL}(t)\)</span></th>
+<th style="text-align: center;">Percentage Error (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">54.945</td>
+<td style="text-align: center;">0.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">54.940</td>
+<td style="text-align: center;">0.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">54.935</td>
+<td style="text-align: center;">0.12</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">54.920</td>
+<td style="text-align: center;">0.15</td>
+</tr>
+<tr>
+<td style="text-align: center;">55</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">54.895</td>
+<td style="text-align: center;">0.19</td>
+</tr>
+</tbody>
+</table>
+<p></p>
+</div>
+<h5 id="comparison-with-open-loop-case">Comparison with Open-Loop Case:</h5>
+<p>For reference, recall that in the open-loop design: <span class="math display">\[y_{OL}(t) = r(t) - 5w(t).\]</span></p>
+<p>This meant that a <span class="math inline">\(2\%\)</span> slope caused a <span class="math inline">\(10\ \text{mph}\)</span> loss in speed, leading to an <span class="math inline">\(18.2\%\)</span> error. In contrast, in the closed-loop design with <span class="math inline">\(C=100\)</span>, the error is reduced below <span class="math inline">\(0.2\%\)</span>, even under large disturbances.</p>
+<h5 id="interpretation-1">Interpretation:</h5>
+<p>The reference-tracking gain is <span class="math inline">\(\tfrac{1000}{1001}\approx 0.999\)</span>, so the speed nearly equals the desired value. The disturbance gain is <span class="math inline">\(\tfrac{5}{1001}\approx 0.005\)</span>, so road grade becomes almost negligible. Compared with the open-loop case, the percentage error drops from roughly <span class="math inline">\(9\%\)</span>–<span class="math inline">\(18\%\)</span> to below <span class="math inline">\(0.2\%\)</span>. This is why we use the feedback interconnection exclusively in this module.</p>
+</div>
+<h2 id="examples-of-feedback-in-other-fields">Examples of Feedback in Other Fields</h2>
+<p>Figure <a href="#fig:feedbackexamples" data-reference-type="ref" data-reference="fig:feedbackexamples">1.6</a> illustrates feedback in two non-engineering domains.</p>
+<figure id="fig:feedbackexamples" data-latex-placement="ht">
+<img src="figures/DifferentFeedbackExamples3.png" style="max-width:85%;" />
+<figcaption>Examples of feedback in macroeconomics and in ecological systems.</figcaption>
+</figure>
+<h3 id="feedback-in-macroeconomics">Feedback in Macroeconomics:</h3>
+<p>In an economy, the government plays the role of a controller. It receives information about the current inflation rate and economic growth (feedback) and compares them with the desired targets. Based on the difference, it adjusts policy tools such as <em>interest rates</em> and <em>taxation</em>. These control actions influence the behaviour of the national economy, which in turn produces new values for inflation and growth rates, completing the feedback loop. Without such feedback, the economy could easily deviate from its desired path.</p>
+<h3 id="feedback-in-ecological-problems">Feedback in Ecological Problems:</h3>
+<p>Think of an ecosystem with rabbits (prey) and foxes (predators). When rabbits are plentiful, foxes have more food and their numbers rise. As foxes increase, they consume more rabbits and the rabbit population falls. With fewer rabbits available, fox numbers then fall, allowing rabbits to recover. This interaction naturally creates repeating rises and falls.</p>
+<p><strong>Uncontrolled case:</strong> If nobody intervenes, the populations are left to evolve on their own. In Figure <a href="#fig:lv_control_overview" data-reference-type="ref" data-reference="fig:lv_control_overview">1.7</a>(a) (solid lines), the rabbit population occasionally drops to very low levels, which could be risky in reality.</p>
+<p><strong>Controlled case (feedback intervention):</strong> Now imagine a manager monitors the rabbits. When rabbit numbers become too low, they provide support (e.g., extra food or habitat help). This is <strong>feedback</strong>: measure what is happening and act only when necessary. In Figure <a href="#fig:lv_control_overview" data-reference-type="ref" data-reference="fig:lv_control_overview">1.7</a>(a) (dashed lines), the rabbits are prevented from falling as dangerously low, and the overall swings are reduced. Figure <a href="#fig:lv_control_overview" data-reference-type="ref" data-reference="fig:lv_control_overview">1.7</a>(c) shows the support effort over time: it is applied only when needed and is naturally limited by available resources.</p>
+<figure id="fig:lv_control_overview" data-latex-placement="!htb">
+<figure>
+<img src="figures/LV_time.png" />
+<figcaption>Populations versus time (solid: uncontrolled, dashed: controlled).</figcaption>
+</figure>
+<figure>
+<img src="figures/LV_phase.png" />
+<figcaption>Rabbits vs. foxes (feedback changes the orbit).</figcaption>
+</figure>
+<figure>
+<img src="figures/LV_control.png" />
+<figcaption>Support action over time (applied only when needed).</figcaption>
+</figure>
+<figcaption>Feedback control idea in a predator–prey ecosystem.</figcaption>
+</figure>
+<div class="examplebox">
+<p><span>Feedback Control in Blood Glucose Regulation</span></p>
+<p>An important medical application of feedback is the <strong>artificial pancreas</strong> used by diabetic patients, shown in Figure <a href="#fig:pancreas" data-reference-type="ref" data-reference="fig:pancreas">[fig:pancreas]</a>.</p>
+<p>A continuous glucose monitor (CGM) measures blood glucose every few minutes, a control algorithm computes how much insulin is needed, and an insulin pump delivers it. The objective is to keep blood glucose within its normal range. In control terminology, the blood glucose level <span class="math inline">\(y(t)\)</span> is the controlled variable, the insulin infusion rate <span class="math inline">\(u(t)\)</span> is the manipulated variable, and meals, exercise, and stress act as disturbances. The continuous glucose monitor (CGM) is the sensor, the insulin pump is the actuator, and the patient’s glucose–insulin dynamics form the plant. The controller is the algorithm running on a microprocessor, which computes <span class="math inline">\(u(t)\)</span> from the error <span class="math inline">\(e(t)=r(t)-y(t)\)</span>, where <span class="math inline">\(r(t)\)</span> is the desired glucose level and <span class="math inline">\(y(t)\)</span> is the measured glucose level. In operation, the CGM measures glucose continuously, the controller compares that measurement with the desired target, and the pump delivers insulin accordingly. In this way, the loop compensates for disturbances such as meals and helps maintain glucose within safe bounds.</p>
+<figure id="fig:pancreas">
+<img src="figures/insulin_pump.png" style="max-width:70%;" alt="Artificial pancreas closed-loop control system" />
+<figcaption>Artificial pancreas closed-loop control system. A continuous glucose monitor measures blood glucose and transmits the reading to a controller. The controller compares the measured glucose level with the target range and computes the required insulin dose. An insulin pump then delivers the computed dose subcutaneously, closing the feedback loop. Meals, exercise, and stress act as disturbances that the loop continuously compensates for.</figcaption>
+</figure>
+</div>
+<h2 id="systematic-controller-design-process">Systematic Controller Design Process</h2>
+<p>Control system design follows four main stages, illustrated in Figure <a href="#fig:design-workflow" data-reference-type="ref" data-reference="fig:design-workflow">1.8</a>.</p>
+<h3 class="unnumbered" id="modelling">Modelling</h3>
+<p>The first step is to develop a mathematical model of the physical system (plant). The model captures the essential dynamics of the system, including the effects of actuators, sensors, and possible disturbances. Depending on the application, this can be achieved using physical laws, system identification techniques, or a combination of both.</p>
+<h3 class="unnumbered" id="analysis-1">Analysis</h3>
+<p>Once the model is established, it is analysed to understand the system’s behaviour. This includes studying stability, transient response, and frequency response. Analysis helps to identify system limitations and determine the requirements for control.</p>
+<h3 class="unnumbered" id="design">Design</h3>
+<p>Based on the analysis, a controller is designed to meet the desired performance objectives. The controller can be designed using techniques such as PID tuning, root locus, frequency response, or modern state-space methods. The goal is to ensure accuracy, robustness, and efficiency.</p>
+<h3 class="unnumbered" id="implementation">Implementation</h3>
+<p>The designed controller is then implemented, often using digital hardware and software. Practical considerations such as sensor noise, actuator saturation, and computational delays are taken into account. At this stage, the system is tested and, if necessary, the model and controller are refined.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The controller design process is iterative. Feedback from the implementation stage may require revisiting the modelling and analysis steps to achieve satisfactory performance.</p>
+</div>
+<figure id="fig:design-workflow" data-latex-placement="H">
+<img src="figures/ch01_design_workflow.png" style="max-width:95%;" />
+<figcaption>Controller design workflow. The process starts with modelling and proceeds through analysis, design, and implementation. Testing and validation may reveal performance gaps, requiring iteration (dashed arrows) back to earlier stages.</figcaption>
+</figure>
+<h2 id="historical-context-of-feedback-control">Historical Context of Feedback Control</h2>
+<h3 id="early-origins-automatic-regulation">Early Origins: Automatic Regulation</h3>
+<p>The roots of feedback control can be traced back to ancient regulation devices. Water clocks (clepsydras) in ancient Greece and China used float regulators to maintain a roughly constant water level, making them early examples of automatic adjustment. During the Islamic Golden Age, Al-Jazari designed mechanical devices such as fountains and clocks that used rudimentary feedback-like mechanisms . A major industrial milestone came in the eighteenth century, when James Watt’s <strong>centrifugal governor</strong> (1788) was used to regulate steam-engine speed automatically .</p>
+<figure id="fig:wattgovernor" data-latex-placement="htbp">
+<img src="figures/flyball.png" style="max-width:65%;" />
+<figcaption>James Watt’s centrifugal governor (1788). The engine shaft drives the spindle at angular velocity <span class="math inline">\(\omega\)</span>, rotating two flyballs on hinged arms. As <span class="math inline">\(\omega\)</span> increases, centrifugal force swings the balls outward (increasing the arm angle <span class="math inline">\(\theta\)</span>), which raises the sleeve. The sleeve motion is transmitted through a linkage to the throttle valve, partially closing it and reducing steam flow to the engine. Conversely, if the engine slows, the balls drop, the sleeve descends, and the valve opens to admit more steam. This continuous cycle of measurement (spindle speed), comparison (ball position versus equilibrium), and actuation (valve adjustment) constitutes a closed-loop feedback system — one of the earliest in industrial use.</figcaption>
+</figure>
+<h3 class="unnumbered" id="mathematical-foundations">Mathematical Foundations</h3>
+<p>The mathematical study of feedback began in earnest in the nineteenth century. James Clerk Maxwell’s 1868 paper on Watt’s governor introduced differential equations as a tool for analysing feedback stability . Later, Edward Routh (1877) and Adolf Hurwitz (1895) developed algebraic tests for stability, which together became the well-known <em>Routh–Hurwitz stability criterion</em> .</p>
+<h3 class="unnumbered" id="the-frequency-domain-era">The Frequency-Domain Era</h3>
+<p>In the early twentieth century, telephone and radio engineers, particularly at Bell Labs, were forced to confront instability in amplifiers and communication systems. Harry Nyquist responded by introducing the Nyquist stability criterion in 1932, using frequency-response ideas to determine when feedback systems remain stable . Hendrik Bode then developed gain–phase plots and related design methods in the 1930s and 1940s, tools that are still taught today . During World War II, the urgent demand for accurate gun aiming, radar, and autopilot systems accelerated progress in automatic control even further.</p>
+<figure id="fig:Kalman">
+<img src="figures/Kalman.png" style="max-width:70%;" />
+<figcaption>Rudolf Emil Kálmán (May 19, 1930 – July 2, 2016) was a Hungarian–American electrical engineer, mathematician, and inventor. He is most noted for his co-invention and development of the <a href="https://en.wikipedia.org/wiki/Kalman_filter">Kalman filter</a>, a mathematical algorithm widely used in signal processing, control systems, and guidance, navigation, and control.</figcaption>
+</figure>
+<h3 class="unnumbered" id="the-state-space-revolution">The State-Space Revolution</h3>
+<p>In the 1960s, Rudolf Kalman introduced <strong>state-space methods</strong>, which made it possible to study multivariable systems and formulate control problems in a much more general way. The <strong>Kalman filter</strong> then provided a powerful method for estimating system states in real time from noisy measurements . From this point onward, control theory became closely linked with linear algebra, estimation, and systems theory.</p>
+<h3 class="unnumbered" id="modern-control-and-beyond">Modern Control and Beyond</h3>
+<p>From the 1970s onward, the subject broadened again. <strong>Robust control</strong> emerged in the 1970s and 1980s to deal explicitly with model uncertainty and disturbance rejection, with tools such as <span class="math inline">\(H_\infty\)</span> methods and <span class="math inline">\(\mu\)</span>-synthesis . In the 1980s and 1990s, <strong>Model Predictive Control (MPC)</strong> became widely used in process industries such as oil refining and chemical plants . Since the 2000s, control has become deeply integrated with digital computation, data-driven methods, and artificial intelligence. Applications now range from autonomous vehicles and renewable energy systems to biomedical devices such as artificial pancreases, unmanned air and underwater vehicles, and smart grids.</p>
+<p>Control has evolved from mechanical regulators in ancient water clocks to advanced algorithms running on microprocessors. Throughout, the central idea has remained the same: measure, compare, and adjust.</p>
+<h3 class="unnumbered" id="matlab-companion-your-first-feedback-system">MATLAB Companion: Your First Feedback System</h3>
+<div class="notebox">
+<p><span>Try it yourself</span> The following short MATLAB script builds the cruise control example from this chapter and compares open-loop with closed-loop behaviour. Type these commands in the MATLAB Command Window or save them as a script (Listing <a href="#lst:ch1_cruise_control" data-reference-type="ref" data-reference="lst:ch1_cruise_control">[lst:ch1_cruise_control]</a>).</p>
+</div>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Open-loop vs closed-loop cruise control comparison.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+P = 10             # Plant gain (mph per % throttle)
+C = 100            # Controller gain
+
+# Open-loop: output = P * input (no feedback)
+G_ol = ctrl.tf([P], [1])    # Transfer function: 10/1
+
+# Closed-loop: T = PC / (1 + PC)
+G_cl = ctrl.feedback(G_ol * C, 1)
+
+# Compare step responses
+_resp = ctrl.step_response(G_ol)
+
+t1, y1 = _resp.time, _resp.outputs
+_resp = ctrl.step_response(G_cl)
+
+t2, y2 = _resp.time, _resp.outputs
+
+plt.figure(figsize=(8, 4))
+plt.plot(t1, y1, label='Open-loop (no feedback)')
+plt.plot(t2, y2, label='Closed-loop (with feedback)')
+plt.xlabel('Time (s)')
+plt.ylabel('Speed (mph)')
+plt.title('Cruise Control: Open-Loop vs Closed-Loop')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Display the closed-loop transfer function
+print('Closed-loop transfer function:')
+print(G_cl)</code></pre>
+</div>
+<pre class="matlab"><code>P = 10;            % Plant gain (mph per % throttle)
+C = 100;           % Controller gain
+
+% Open-loop: output = P * input (no feedback)
+G_ol = tf(P, 1);   % Transfer function: 10/1
+
+% Closed-loop: T = PC / (1 + PC)
+G_cl = feedback(G_ol * C, 1);
+
+% Compare step responses
+figure;
+step(G_ol, G_cl, 5);   % Simulate for 5 seconds
+legend('Open-loop (no feedback)', 'Closed-loop (with feedback)');
+title('Cruise Control: Open-Loop vs Closed-Loop');
+grid on;
+
+% Display the closed-loop transfer function
+disp('Closed-loop transfer function:');
+G_cl</code></pre>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>Open-loop control acts without measuring the output; closed-loop (feedback) control measures the output and corrects errors automatically.</p></li>
+<li><p>Every feedback loop has the same structure: reference, error, controller, actuator, plant, sensor, and disturbance.</p></li>
+<li><p>The closed-loop transfer function for a unity feedback system with loop gain <span class="math inline">\(L\)</span> is <span class="math inline">\(T = \frac{L}{1+L}\)</span>, and the disturbance sensitivity is <span class="math inline">\(\frac{1}{1+L}\)</span>.</p></li>
+<li><p>High loop gain improves tracking accuracy and disturbance rejection, but practical limits (actuator saturation, instability) prevent making the gain arbitrarily large.</p></li>
+<li><p>On–off control with hysteresis is the simplest feedback strategy; more advanced methods (PID, state feedback) are introduced in later chapters.</p></li>
+<li><p>Feedback appears across engineering, biology, economics, and ecology — the same measure-compare-adjust principle applies everywhere.</p></li>
+<li><p>Controller design follows a systematic cycle: model, analyse, design, implement, and validate.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="sec:ch1-exercises">End-of-Chapter Exercises</h2>
+<ol>
+<li><p><strong>(Identifying Open-Loop vs Closed-Loop Systems)</strong> For each of the following systems, state whether it operates in <em>open-loop</em> or <em>closed-loop</em> mode, and briefly justify your answer.</p>
+<ol>
+<li><p>A washing machine that runs a fixed 40-minute cycle regardless of how clean the clothes are.</p></li>
+<li><p>A self-driving car that adjusts its steering based on camera and LIDAR measurements of the road.</p></li>
+<li><p>A sprinkler system on a timer that waters the garden every morning at 7 am.</p></li>
+<li><p>An oven with a built-in thermostat that switches the heating element on and off to maintain a set temperature.</p></li>
+<li><p>A traffic light that changes on a fixed timer with no sensors.</p></li>
+<li><p>A modern air conditioning unit that adjusts its fan speed based on a room temperature sensor.</p></li>
+</ol></li>
+<li><p><strong>(Feedback Components)</strong> Consider a domestic hot water system where a boiler heats water to a user-selected temperature. A temperature sensor measures the water temperature and a controller switches the burner on or off.</p>
+<ol>
+<li><p>Identify the <em>reference</em>, <em>sensor</em>, <em>controller</em>, <em>actuator</em>, <em>plant</em>, and <em>disturbance</em> in this system.</p></li>
+<li><p>Draw a simple block diagram of the feedback loop, labelling all signals (<span class="math inline">\(r\)</span>, <span class="math inline">\(e\)</span>, <span class="math inline">\(u\)</span>, <span class="math inline">\(y\)</span>) and components.</p></li>
+<li><p>What would happen if the temperature sensor failed and always reported <span class="math inline">\(0\,^{\circ}\mathrm{C}\)</span>? Explain in terms of the error signal.</p></li>
+</ol></li>
+<li><p><strong>(Drawing Block Diagrams)</strong> A student uses a desk lamp with a dimmer to read a book. The student observes the brightness on the page (with their eyes), compares it to the brightness they want, and adjusts the dimmer knob accordingly.</p>
+<ol>
+<li><p>Is this an open-loop or closed-loop system? Justify your answer.</p></li>
+<li><p>Draw a block diagram of this system, labelling the reference (desired brightness), sensor (eyes), controller (brain), actuator (hand on dimmer), plant (lamp and room), and output (actual brightness on the page).</p></li>
+<li><p>Suggest one disturbance that could affect this system.</p></li>
+</ol></li>
+<li><p><strong>(Cruise Control Calculations — Varying the Controller Gain)</strong> Recall the cruise control example from this chapter. The plant gain is <span class="math inline">\(P=10\)</span>, the sensor gain is <span class="math inline">\(H=1\)</span>, and the system model is <span class="math inline">\(y(t) = 10\,u(t) - 5\,w(t)\)</span>. The closed-loop output is: <span class="math display">\[y_{CL}(t) = \frac{10C}{1+10C}\,r(t) - \frac{5}{1+10C}\,w(t),\]</span> where <span class="math inline">\(C\)</span> is the controller gain.</p>
+<ol>
+<li><p>For <span class="math inline">\(C = 10\)</span>, compute the closed-loop speed <span class="math inline">\(y_{CL}\)</span> when <span class="math inline">\(r = 55\)</span> mph and <span class="math inline">\(w = 2\%\)</span>. What is the percentage error?</p></li>
+<li><p>Repeat the calculation for <span class="math inline">\(C = 50\)</span> and <span class="math inline">\(C = 500\)</span>.</p></li>
+<li><p>Fill in a table comparing the three controller gains (<span class="math inline">\(C = 10,\; 50,\; 500\)</span>) in terms of steady-state speed and percentage error for <span class="math inline">\(w = 2\%\)</span>.</p></li>
+<li><p>What happens to the disturbance rejection as <span class="math inline">\(C\)</span> increases? Is there any practical reason we might not want <span class="math inline">\(C\)</span> to be extremely large? (<em>Hint:</em> think about what a very large gain does to the control signal <span class="math inline">\(u(t)\)</span>.)</p></li>
+</ol></li>
+<li><p><strong>(Benefits and Limitations of Feedback)</strong></p>
+<ol>
+<li><p>List three advantages of closed-loop (feedback) control over open-loop control.</p></li>
+<li><p>Give one example of a situation where open-loop control might be acceptable or even preferred over closed-loop control.</p></li>
+<li><p>A friend argues: “Feedback control always makes a system better.” Explain, using the concept of instability, why this statement is not always true.</p></li>
+</ol></li>
+<li><p><strong>(Cruise Control — Open-Loop Analysis)</strong> Using the open-loop cruise control model from the chapter: <span class="math display">\[y_{OL}(t) = r(t) - 5\,w(t),\]</span></p>
+<ol>
+<li><p>If the desired speed is <span class="math inline">\(r = 70\)</span> mph and the road grade is <span class="math inline">\(w = 3\%\)</span>, what is the actual speed? What is the percentage error?</p></li>
+<li><p>What road grade <span class="math inline">\(w\)</span> would cause the open-loop speed to drop to <span class="math inline">\(40\)</span> mph when <span class="math inline">\(r = 55\)</span> mph?</p></li>
+<li><p>Explain in your own words why the open-loop system cannot correct for disturbances.</p></li>
+</ol></li>
+<li><p><strong>(Feedback in Everyday Life)</strong> Choose <em>one</em> of the following systems and describe, in your own words, how feedback operates within it. Identify the reference, sensor, controller, actuator, plant, and at least one disturbance.</p>
+<ol>
+<li><p>A person balancing on one leg.</p></li>
+<li><p>A toilet cistern refilling after a flush.</p></li>
+<li><p>The pupil of your eye adjusting to bright sunlight.</p></li>
+</ol></li>
+<li><p><strong>(On–Off Control and Hysteresis)</strong> Consider the room heating example from the chapter, where the set point is <span class="math inline">\(21\,^{\circ}\mathrm{C}\)</span>.</p>
+<ol>
+<li><p>In pure on–off control (no hysteresis), explain why the heater switches very frequently near the set point.</p></li>
+<li><p>A hysteresis band of <span class="math inline">\(\pm 1\,^{\circ}\mathrm{C}\)</span> is introduced. At what temperatures does the heater switch on and off?</p></li>
+<li><p>Explain one advantage and one disadvantage of increasing the hysteresis band to <span class="math inline">\(\pm 3\,^{\circ}\mathrm{C}\)</span>.</p></li>
+</ol></li>
+</ol>

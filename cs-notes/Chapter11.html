@@ -1,0 +1,846 @@
+<h1 id="chap:state_feedback">State Feedback Control</h1>
+<blockquote>
+<p><em>“With PID, you tune three knobs and hope for the best. With state feedback, you choose exactly where the closed-loop poles go.”</em></p>
+</blockquote>
+<p>Instead of feeding back only the output error, state feedback feeds back the <em>entire state vector</em> <span class="math inline">\(x(t)\)</span>. This gives <span class="math inline">\(n\)</span> gains to choose (one per state variable), which is exactly enough to place all <span class="math inline">\(n\)</span> closed-loop poles at any desired locations — provided the system is <strong>controllable</strong> (Chapter 8).</p>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Explain the state feedback control law <span class="math inline">\(u = -Kx + r\)</span> and derive the closed-loop system matrix <span class="math inline">\(A - BK\)</span>.</p></li>
+<li><p>Translate time-domain specifications (settling time, overshoot) into desired pole locations.</p></li>
+<li><p>Compute the feedback gain <span class="math inline">\(K\)</span> by direct comparison of characteristic polynomials.</p></li>
+<li><p>Apply Ackermann’s formula to find <span class="math inline">\(K\)</span> for single-input systems.</p></li>
+<li><p>Use MATLAB’s <code>place()</code> and <code>acker()</code> commands for pole placement.</p></li>
+<li><p>Design state feedback with integral action to achieve zero steady-state tracking error.</p></li>
+</ul>
+</div>
+<h2 id="sec:sf_law">The State Feedback Control Law</h2>
+<p>Consider a controllable system in state-space form: <span class="math display">\[\dot{x}(t) = Ax(t) + Bu(t), \qquad y(t) = Cx(t).\]</span></p>
+<p>The <strong>state feedback</strong> control law is:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: State Feedback Control Law</div>
+<p><span class="math display">\[\begin{equation}
+        u(t) = -Kx(t) + r(t)
+        \label{eq:sf_law}
+\end{equation}\]</span> where <span class="math inline">\(K \in \mathbb{R}^{1\times n}\)</span> is the <em>feedback gain vector</em> and <span class="math inline">\(r(t)\)</span> is the reference input.</p>
+</div>
+<p>Substituting into the state equation: <span class="math display">\[\dot{x} = Ax + B(-Kx + r) = (A - BK)x + Br.\]</span> The closed-loop system matrix is <span class="math inline">\(A_{cl} = A - BK\)</span>. The closed-loop poles are the eigenvalues of <span class="math inline">\(A - BK\)</span>.</p>
+<figure id="fig:state_feedback_block" data-latex-placement="H">
+
+<img src="figures/ch11_tikz_01.png" style="max-width:85%;" />
+<figcaption>State feedback control: the full state vector <span class="math inline">\(x(t)\)</span> is fed back through gain <span class="math inline">\(K\)</span>.</figcaption>
+</figure>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The key result: the closed-loop characteristic polynomial is <span class="math display">\[\det(sI - A + BK) = 0.\]</span> By choosing <span class="math inline">\(K\)</span>, we can place the roots of this polynomial (the closed-loop poles) at any desired locations, <strong>if and only if</strong> <span class="math inline">\((A,B)\)</span> is controllable.</p>
+</div>
+<h3 id="why-does-controllability-matter">Why does controllability matter?</h3>
+<p>If the system is not controllable, some modes cannot be influenced by the input. No choice of <span class="math inline">\(K\)</span> can move those poles. Controllability (Chapter 8) is therefore a prerequisite for pole placement.</p>
+<h2 id="sec:direct_comparison">Pole Placement by Direct Comparison</h2>
+<p>The simplest method to find <span class="math inline">\(K\)</span> is to compare the closed-loop characteristic polynomial with the desired one.</p>
+<h3 id="design-procedure">Design procedure</h3>
+<ol>
+<li><p><strong>Choose desired poles</strong> <span class="math inline">\(p_1, p_2, \ldots, p_n\)</span> based on performance specifications (settling time, damping, etc.).</p></li>
+<li><p><strong>Form the desired characteristic polynomial:</strong> <span class="math display">\[\alpha_d(s) = (s - p_1)(s - p_2)\cdots(s - p_n) = s^n + \alpha_1 s^{n-1} + \cdots + \alpha_n.\]</span></p></li>
+<li><p><strong>Compute the closed-loop characteristic polynomial</strong> <span class="math inline">\(\det(sI - A + BK)\)</span> symbolically in terms of <span class="math inline">\(K = [k_1 \; k_2 \; \cdots \; k_n]\)</span>.</p></li>
+<li><p><strong>Match coefficients:</strong> equate the coefficients of each power of <span class="math inline">\(s\)</span> to get <span class="math inline">\(n\)</span> equations in <span class="math inline">\(n\)</span> unknowns <span class="math inline">\(k_1, \ldots, k_n\)</span>.</p></li>
+</ol>
+<div class="example"><div class="env-label env-label-example">Example: Second-order pole placement</div>
+<p>Consider the mass–spring–damper from Chapter 3: <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span> The open-loop poles are the eigenvalues of <span class="math inline">\(A\)</span>: <span class="math display">\[\det(sI - A) = s^2 + 3s + 2 = (s+1)(s+2).\]</span> So the open-loop poles are at <span class="math inline">\(s = -1\)</span> and <span class="math inline">\(s = -2\)</span> (stable, but slow).</p>
+<p><strong>Specification:</strong> We want the closed-loop system to have <span class="math inline">\(\zeta = 0.7\)</span> and <span class="math inline">\(\omega_n = 5\)</span> rad/s. The desired poles are: <span class="math display">\[p_{1,2} = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2} = -3.5 \pm j3.57.\]</span> The desired characteristic polynomial is: <span class="math display">\[\alpha_d(s) = s^2 + 2\zeta\omega_n\, s + \omega_n^2 = s^2 + 7s + 25.\]</span></p>
+<p><strong>Find <span class="math inline">\(K\)</span>:</strong> Let <span class="math inline">\(K = [k_1 \; k_2]\)</span>. Then <span class="math display">\[A - BK = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix} - \begin{bmatrix} 0 \\ 1 \end{bmatrix}\begin{bmatrix} k_1 &amp; k_2 \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ -2-k_1 &amp; -3-k_2 \end{bmatrix}.\]</span> The closed-loop characteristic polynomial is: <span class="math display">\[\det(sI - A + BK) = s^2 + (3+k_2)s + (2+k_1).\]</span> Matching with <span class="math inline">\(s^2 + 7s + 25\)</span>: <span class="math display">\[\begin{align*}
+        3 + k_2 &amp;= 7 \quad \Rightarrow \quad k_2 = 4, \\
+        2 + k_1 &amp;= 25 \quad \Rightarrow \quad k_1 = 23.
+\end{align*}\]</span> Therefore <span class="math inline">\(K = \begin{bmatrix} 23 &amp; 4 \end{bmatrix}\)</span>.</p>
+<p><strong>Verification:</strong> <span class="math display">\[A_{cl} = A - BK = \begin{bmatrix} 0 &amp; 1 \\ -25 &amp; -7 \end{bmatrix}.\]</span> Eigenvalues: <span class="math inline">\(s^2 + 7s + 25 = 0\)</span> gives <span class="math inline">\(s = -3.5 \pm j3.57\)</span>. <span class="math inline">\(\checkmark\)</span></p>
+</div>
+<h3 id="choosing-desired-poles-from-specifications">Choosing desired poles from specifications</h3>
+<p>How do we translate time-domain specifications into pole locations? For a dominant second-order system:</p>
+<div class="summarybox">
+<p><span>Pole Location from Specifications</span></p>
+<ul>
+<li><p><strong>Settling time</strong> (<span class="math inline">\(2\%\)</span> criterion): <span class="math inline">\(t_s \approx \dfrac{4}{\zeta\omega_n}\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(\sigma = \zeta\omega_n \approx \dfrac{4}{t_s}\)</span></p></li>
+<li><p><strong>Overshoot:</strong> <span class="math inline">\(M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(\zeta = \dfrac{-\ln(M_p/100)}{\sqrt{\pi^2 + \ln^2(M_p/100)}}\)</span></p></li>
+<li><p><strong>Desired poles:</strong> <span class="math inline">\(p_{1,2} = -\sigma \pm j\omega_d\)</span> where <span class="math inline">\(\omega_d = \sigma\dfrac{\sqrt{1-\zeta^2}}{\zeta}\)</span></p></li>
+</ul>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Design from specifications</div>
+<p>A system has <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -1 &amp; -1 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.\]</span> <strong>Specification:</strong> settling time <span class="math inline">\(t_s \leq 1\)</span> s, overshoot <span class="math inline">\(M_p \leq 10\%\)</span>.</p>
+<p>From <span class="math inline">\(M_p = 10\%\)</span>: <span class="math inline">\(\zeta = \dfrac{-\ln(0.1)}{\sqrt{\pi^2 + \ln^2(0.1)}} \approx 0.59\)</span>.</p>
+<p>From <span class="math inline">\(t_s = 1\)</span> s: <span class="math inline">\(\sigma = 4/1 = 4\)</span>, so <span class="math inline">\(\omega_n = \sigma/\zeta = 4/0.59 \approx 6.78\)</span> rad/s.</p>
+<p>Desired poles: <span class="math inline">\(p_{1,2} = -4 \pm j5.47\)</span>.</p>
+<p>Desired characteristic polynomial: <span class="math inline">\(s^2 + 8s + 46\)</span>.</p>
+<p>With <span class="math inline">\(K = [k_1\; k_2]\)</span>: <span class="math display">\[\det(sI - A + BK) = s^2 + (1+k_2)s + (1+k_1).\]</span> Matching: <span class="math inline">\(k_2 = 7\)</span>, <span class="math inline">\(k_1 = 45\)</span>. So <span class="math inline">\(K = [45\; 7]\)</span>.</p>
+</div>
+<h2 id="sec:pp_ccf">Pole Placement Using Controllable Canonical Form</h2>
+<p>When the system is already in controllable canonical form (CCF), the gain computation becomes trivial. Recall from Chapter 8 that the CCF has <span class="math display">\[A_c = \begin{bmatrix} 0 &amp; 1 &amp; \cdots &amp; 0 \\ \vdots &amp; &amp; \ddots &amp; \vdots \\ 0 &amp; 0 &amp; \cdots &amp; 1 \\ -a_n &amp; -a_{n-1} &amp; \cdots &amp; -a_1 \end{bmatrix}, \quad B_c = \begin{bmatrix} 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}.\]</span></p>
+<p>With <span class="math inline">\(K_c = [k_1 \; k_2 \; \cdots \; k_n]\)</span>, only the last row of <span class="math inline">\(A_c\)</span> changes: <span class="math display">\[A_c - B_c K_c = \begin{bmatrix} 0 &amp; 1 &amp; \cdots &amp; 0 \\ \vdots &amp; &amp; \ddots &amp; \vdots \\ -a_n - k_1 &amp; -a_{n-1} - k_2 &amp; \cdots &amp; -a_1 - k_n \end{bmatrix}.\]</span></p>
+<p>The closed-loop characteristic polynomial is <span class="math display">\[s^n + (a_1 + k_n)s^{n-1} + \cdots + (a_n + k_1).\]</span></p>
+<p>Comparing with the desired polynomial <span class="math inline">\(s^n + \alpha_1 s^{n-1} + \cdots + \alpha_n\)</span>, each gain is simply:</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>In controllable canonical form, the feedback gains are <span class="math display">\[k_i = \alpha_{n+1-i} - a_{n+1-i}, \qquad i = 1, \ldots, n.\]</span> In other words, subtract the original coefficients from the desired ones.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Third-order system in CCF</div>
+<p>A system in CCF has <span class="math display">\[A_c = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -6 &amp; -11 &amp; -6 \end{bmatrix}, \quad B_c = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}.\]</span> The open-loop characteristic polynomial is <span class="math inline">\(s^3 + 6s^2 + 11s + 6 = (s+1)(s+2)(s+3)\)</span>.</p>
+<p><strong>Desired poles:</strong> <span class="math inline">\(s = -5, -5, -5\)</span> (all poles at <span class="math inline">\(-5\)</span> for fast decay).</p>
+<p>Desired polynomial: <span class="math inline">\((s+5)^3 = s^3 + 15s^2 + 75s + 125\)</span>.</p>
+<p>The gains are: <span class="math display">\[\begin{align*}
+        k_1 &amp;= 125 - 6 = 119, \\
+        k_2 &amp;= 75 - 11 = 64, \\
+        k_3 &amp;= 15 - 6 = 9.
+\end{align*}\]</span> So <span class="math inline">\(K_c = \begin{bmatrix} 119 &amp; 64 &amp; 9 \end{bmatrix}\)</span>.</p>
+</div>
+<p>For systems not in CCF, you can first transform to CCF, find <span class="math inline">\(K_c\)</span> there, and then transform <span class="math inline">\(K_c\)</span> back to the original coordinates. However, Ackermann’s formula (next section) does this automatically.</p>
+<h2 id="sec:ackermann">Ackermann’s Formula</h2>
+<p>For a single-input system, <strong>ackermann</strong> gives the feedback gain directly, without needing to transform to CCF:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Ackermann’s Formula</div>
+<p><span class="math display">\[\begin{equation}
+        K = \begin{bmatrix} 0 &amp; 0 &amp; \cdots &amp; 0 &amp; 1 \end{bmatrix} \mathcal{C}^{-1}\, \alpha_d(A)
+        \label{eq:ackermann}
+\end{equation}\]</span> where <span class="math inline">\(\mathcal{C} = [B \; AB \; \cdots \; A^{n-1}B]\)</span> is the controllability matrix and <span class="math display">\[\alpha_d(A) = A^n + \alpha_1 A^{n-1} + \cdots + \alpha_n I\]</span> is the desired characteristic polynomial evaluated at the matrix <span class="math inline">\(A\)</span>.</p>
+</div>
+<p>The formula requires <span class="math inline">\(\mathcal{C}\)</span> to be invertible, which is guaranteed if and only if the system is controllable.</p>
+<div class="example"><div class="env-label env-label-example">Example: Ackermann’s formula for 2nd-order system</div>
+<p>Revisit Example <a href="#ex:pp_2nd" data-reference-type="ref" data-reference="ex:pp_2nd">[ex:pp_2nd]</a>: <span class="math inline">\(A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}\)</span>, <span class="math inline">\(B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}\)</span>, desired polynomial <span class="math inline">\(\alpha_d(s) = s^2 + 7s + 25\)</span>.</p>
+<p><strong>Step 1:</strong> Controllability matrix: <span class="math display">\[\mathcal{C} = \begin{bmatrix} 0 &amp; 1 \\ 1 &amp; -3 \end{bmatrix}, \quad \mathcal{C}^{-1} = \begin{bmatrix} 3 &amp; 1 \\ 1 &amp; 0 \end{bmatrix}.\]</span></p>
+<p><strong>Step 2:</strong> Evaluate <span class="math inline">\(\alpha_d(A)\)</span>: <span class="math display">\[\alpha_d(A) = A^2 + 7A + 25I = \begin{bmatrix} -2 &amp; -3 \\ 6 &amp; 7 \end{bmatrix} + \begin{bmatrix} 0 &amp; 7 \\ -14 &amp; -21 \end{bmatrix} + \begin{bmatrix} 25 &amp; 0 \\ 0 &amp; 25 \end{bmatrix} = \begin{bmatrix} 23 &amp; 4 \\ -8 &amp; 11 \end{bmatrix}.\]</span></p>
+<p><strong>Step 3:</strong> Apply the formula: <span class="math display">\[K = \begin{bmatrix} 0 &amp; 1 \end{bmatrix} \begin{bmatrix} 3 &amp; 1 \\ 1 &amp; 0 \end{bmatrix} \begin{bmatrix} 23 &amp; 4 \\ -8 &amp; 11 \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \end{bmatrix} \begin{bmatrix} 61 &amp; 23 \\ 23 &amp; 4 \end{bmatrix} = \begin{bmatrix} 23 &amp; 4 \end{bmatrix}.\]</span> This matches the result from direct comparison. <span class="math inline">\(\checkmark\)</span></p>
+</div>
+<h2 id="sec:sf_matlab">MATLAB Implementation</h2>
+<p>MATLAB provides two commands for pole placement, as shown in Listing <a href="#lst:ch11_pole_placement" data-reference-type="ref" data-reference="lst:ch11_pole_placement">[lst:ch11_pole_placement]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Pole placement in MATLAB</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+
+# Desired poles
+p = [-3.5+3.57j, -3.5-3.57j]
+
+# Method 1: place() - robust, works for repeated poles (approximately)
+K = ctrl.place(A, B, p)
+print("K (place) = [%.4f  %.4f]" % (K[0,0], K[0,1]))
+
+# Method 2: acker() - Ackermann's formula, exact for SISO
+K2 = ctrl.acker(A, B, p)
+print("K (acker) = [%.4f  %.4f]" % (K2[0,0], K2[0,1]))
+
+# Verify closed-loop poles
+A_cl = A - B @ K
+print("Closed-loop poles:"); print(np.linalg.eigvals(A_cl))</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3];
+B = [0; 1];
+
+% Desired poles
+p = [-3.5+3.57j, -3.5-3.57j];
+
+% Method 1: place() - robust, works for repeated poles (approximately)
+K = place(A, B, p);
+fprintf('K (place) = [%.4f  %.4f]\n', K);
+
+% Method 2: acker() - Ackermann's formula, exact for SISO
+K2 = acker(A, B, p);
+fprintf('K (acker) = [%.4f  %.4f]\n', K2);
+
+% Verify closed-loop poles
+A_cl = A - B*K;
+fprintf('Closed-loop poles: '); disp(eig(A_cl)');</code></pre>
+<div class="notebox">
+<p><span>place() vs acker()</span></p>
+<ul>
+<li><p><code>acker()</code> implements Ackermann’s formula exactly. It works only for single-input systems and can be numerically sensitive for high-order systems.</p></li>
+<li><p><code>place()</code> uses a more robust algorithm and also works for multi-input systems. It does not allow repeated poles at the exact same location (use slightly separated poles instead, e.g. <span class="math inline">\(-5.0\)</span> and <span class="math inline">\(-5.01\)</span>).</p></li>
+<li><p>For most coursework problems, both give the same answer.</p></li>
+</ul>
+</div>
+<h3 id="complete-design-and-simulation-in-matlab">Complete design and simulation in MATLAB</h3>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Full state feedback design and simulation</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]); B = np.array([[0], [1]]); C = np.array([[1, 0]]); D = 0
+sys_ol = ctrl.ss(A, B, C, D)
+
+# Design: desired poles at -3.5 +/- j3.57
+p = [-3.5+3.57j, -3.5-3.57j]
+K = ctrl.place(A, B, p)
+
+# Closed-loop system
+A_cl = A - B @ K
+sys_cl = ctrl.ss(A_cl, B, C, D)
+
+# Compare unit-step responses
+t = np.arange(0, 8.01, 0.01)
+_resp = ctrl.step_response(sys_ol, t)
+
+t_ol, y_ol = _resp.time, _resp.outputs
+_resp = ctrl.step_response(sys_cl, t)
+
+t_cl, y_cl = _resp.time, _resp.outputs
+
+plt.subplot(2,1,1)
+plt.plot(t_ol, np.ones_like(t_ol), 'k--', t_ol, y_ol, 'b', t_cl, y_cl, 'r', linewidth=1.5)
+plt.legend(['Reference r = 1', 'Open-loop', 'State feedback'])
+plt.title('Pole placement improves the transient but not the tracking')
+plt.ylabel('Output y')
+plt.grid(True)
+
+plt.subplot(2,1,2)
+plt.plot(t_ol, 1-y_ol, 'b', t_cl, 1-y_cl, 'r', linewidth=1.5)
+plt.legend(['Open-loop error', 'State feedback error'])
+plt.xlabel('Time (s)')
+plt.ylabel('Tracking error e = r-y')
+plt.grid(True)
+
+# Check performance
+info = ctrl.step_info(sys_cl)
+print("Settling time: %.2f s" % info['SettlingTime'])
+print("Overshoot: %.1f%%" % info['Overshoot'])
+print("Open-loop final value: %.4f" % ctrl.dcgain(sys_ol))
+print("State-feedback final value: %.4f" % ctrl.dcgain(sys_cl))</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3]; B = [0; 1]; C = [1 0]; D = 0;
+sys_ol = ss(A, B, C, D);
+
+% Design: desired poles at -3.5 +/- j3.57
+p = [-3.5+3.57j, -3.5-3.57j];
+K = place(A, B, p);
+
+% Closed-loop system
+A_cl = A - B*K;
+sys_cl = ss(A_cl, B, C, D);
+
+% Compare unit-step responses
+t = 0:0.01:8;
+[y_ol, t] = step(sys_ol, t);
+[y_cl, ~] = step(sys_cl, t);
+
+figure;
+subplot(2,1,1);
+plot(t, ones(size(t)), 'k--', t, y_ol, 'b', t, y_cl, 'r', 'LineWidth', 1.5);
+legend('Reference r = 1', 'Open-loop', 'State feedback');
+title('Pole placement improves the transient but not the tracking');
+ylabel('Output y');
+grid on;
+
+subplot(2,1,2);
+plot(t, 1-y_ol, 'b', t, 1-y_cl, 'r', 'LineWidth', 1.5);
+legend('Open-loop error', 'State feedback error');
+xlabel('Time (s)');
+ylabel('Tracking error e = r-y');
+grid on;
+
+% Check performance
+info = stepinfo(sys_cl);
+fprintf('Settling time: %.2f s\n', info.SettlingTime);
+fprintf('Overshoot: %.1f%%\n', info.Overshoot);
+fprintf('Open-loop final value: %.4f\n', dcgain(sys_ol));
+fprintf('State-feedback final value: %.4f\n', dcgain(sys_cl));</code></pre>
+<p>Figure <a href="#fig:sf_tracking_problem" data-reference-type="ref" data-reference="fig:sf_tracking_problem">1.2</a> shows the responses. The pole-placement design gives a faster transient, but the tracking error does not go to zero — motivating the integral action introduced later in this chapter.</p>
+<figure id="fig:sf_tracking_problem" data-latex-placement="H">
+<img src="figures/state_feedback_tracking_problem.png" style="max-width:88%;" />
+<figcaption>Unit-step response of the open-loop plant and the pole-placed state-feedback system from Listing <a href="#lst:sf_full_design" data-reference-type="ref" data-reference="lst:sf_full_design">[lst:sf_full_design]</a>. State feedback improves the transient response, but the output still settles far below the reference because there is no integral action.</figcaption>
+</figure>
+<h2 id="sec:sf_tracking">The Tracking Problem</h2>
+<p>State feedback gives us the desired transient behaviour, but if we apply a step reference <span class="math inline">\(r(t) = 1\)</span>, the output generally does <em>not</em> settle at <span class="math inline">\(y = 1\)</span>.</p>
+<p>The reason: <span class="math inline">\(u = -Kx + r\)</span> has no mechanism to accumulate past errors. If the output is below the reference, nothing pushes it up over time. PID solves this with the integral term; state feedback needs the same idea.</p>
+<div class="example"><div class="env-label env-label-example">Example: State feedback without integral action</div>
+<p>Consider <span class="math inline">\(A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}\)</span>, <span class="math inline">\(B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}\)</span>, <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span> with <span class="math inline">\(K = \begin{bmatrix} 23 &amp; 4 \end{bmatrix}\)</span> (poles at <span class="math inline">\(-3.5 \pm j3.57\)</span>).</p>
+<p>For a unit step reference <span class="math inline">\(r = 1\)</span>, the closed-loop system is <span class="math display">\[\dot{x} = (A-BK)x + Br, \qquad y = Cx.\]</span> So the transfer function from <span class="math inline">\(r\)</span> to <span class="math inline">\(y\)</span> is <span class="math display">\[G_{ry}(s) = C\bigl(sI-(A-BK)\bigr)^{-1}B = \frac{1}{s^2 + 7s + 25}.\]</span> Using the final value theorem with <span class="math inline">\(R(s) = 1/s\)</span>: <span class="math display">\[y_{ss} = \lim_{s\to 0} sY(s) = \lim_{s\to 0} s\,G_{ry}(s)\frac{1}{s}
+        = \lim_{s\to 0} \frac{1}{s^2 + 7s + 25} = \frac{1}{25} = 0.04.\]</span> Equivalently, at steady state <span class="math display">\[0 = (A-BK)x_{ss} + B, \qquad
+        y_{ss} = Cx_{ss} = -C(A-BK)^{-1}B = 0.04.\]</span> The output settles at <span class="math inline">\(0.04\)</span> instead of <span class="math inline">\(1\)</span>. The system has a massive steady-state error of <span class="math inline">\(96\%\)</span>.</p>
+</div>
+<p>State feedback alone is a <em>regulator</em> — it drives the state to zero, not to a nonzero reference.</p>
+<h3 id="why-not-just-scale-the-reference">Why not just scale the reference?</h3>
+<p>A tempting fix is to multiply the reference by a gain <span class="math inline">\(\bar{N}\)</span> so that <span class="math inline">\(u = -Kx + \bar{N}r\)</span>, choosing <span class="math inline">\(\bar{N}\)</span> to make <span class="math inline">\(y_{ss} = 1\)</span>. This requires exact knowledge of <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>. Any modelling error or disturbance produces a permanent steady-state offset. The robust solution is <strong>integral action</strong>.</p>
+<h2 id="sec:integral_action">Integral Action in State Feedback</h2>
+<h3 id="the-idea">The idea</h3>
+<p>To achieve zero steady-state error, integrate the tracking error and use that integral as an additional feedback signal. The integral accumulates until the error reaches zero — then it holds the control signal at the right value.</p>
+<p>Define the tracking error: <span class="math display">\[e(t) = r(t) - y(t) = r(t) - Cx(t)\]</span> and introduce a new state variable — the integral of this error: <span class="math display">\[x_I(t) = \int_0^t e(\tau)\,d\tau, \qquad \dot{x}_I(t) = e(t) = r(t) - Cx(t).\]</span></p>
+<p>The control law becomes:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: State Feedback with Integral Action</div>
+<p><span class="math display">\[\begin{equation}
+        u(t) = -Kx(t) + K_I\, x_I(t)
+        \label{eq:sf_integral}
+\end{equation}\]</span> where <span class="math inline">\(K \in \mathbb{R}^{1 \times n}\)</span> is the state feedback gain and <span class="math inline">\(K_I \in \mathbb{R}\)</span> is the integral gain.</p>
+</div>
+<p>At steady state, <span class="math inline">\(\dot{x}_I = 0\)</span> forces <span class="math inline">\(e = r - y = 0\)</span>, so <span class="math inline">\(y = r\)</span> regardless of modelling errors or constant disturbances.</p>
+<h3 id="the-augmented-system">The augmented system</h3>
+<p>To design the gains <span class="math inline">\(K\)</span> and <span class="math inline">\(K_I\)</span> systematically, we combine the original states <span class="math inline">\(x\)</span> with the new integral state <span class="math inline">\(x_I\)</span> into an <strong>augmented state vector</strong>: <span class="math display">\[\bar{x}(t) = \begin{bmatrix} x(t) \\ x_I(t) \end{bmatrix}.\]</span></p>
+<p>The augmented system dynamics are: <span class="math display">\[\underbrace{\begin{bmatrix} \dot{x} \\ \dot{x}_I \end{bmatrix}}_{\dot{\bar{x}}} =
+\underbrace{\begin{bmatrix} A &amp; 0 \\ -C &amp; 0 \end{bmatrix}}_{\bar{A}}
+\underbrace{\begin{bmatrix} x \\ x_I \end{bmatrix}}_{\bar{x}} +
+\underbrace{\begin{bmatrix} B \\ 0 \end{bmatrix}}_{\bar{B}} u +
+\underbrace{\begin{bmatrix} 0 \\ 1 \end{bmatrix}}_{\bar{B}_r} r.\]</span></p>
+<p>The control law <span class="math inline">\(u = -Kx + K_I x_I\)</span> can be written as: <span class="math display">\[u = -\underbrace{\begin{bmatrix} K &amp; -K_I \end{bmatrix}}_{\bar{K}} \bar{x}.\]</span></p>
+<p>This is standard state feedback on the augmented system. The closed-loop matrix is <span class="math inline">\(\bar{A} - \bar{B}\bar{K}\)</span>, and we can place its <span class="math inline">\(n+1\)</span> eigenvalues at any desired locations — provided <span class="math inline">\((\bar{A}, \bar{B})\)</span> is controllable.</p>
+<figure id="fig:sf_integral_block" data-latex-placement="H">
+
+<img src="figures/ch11_tikz_03.png" style="max-width:85%;" />
+<figcaption>State feedback with integral action. The integrator accumulates the tracking error <span class="math inline">\(e = r - y\)</span> and drives it to zero at steady state.</figcaption>
+</figure>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The augmented system has <span class="math inline">\(n+1\)</span> states (the original <span class="math inline">\(n\)</span> plant states plus the integral state <span class="math inline">\(x_I\)</span>). We need to place <span class="math inline">\(n+1\)</span> poles, so we have <span class="math inline">\(n+1\)</span> gains to choose: <span class="math inline">\(K = [k_1 \; \cdots \; k_n]\)</span> and <span class="math inline">\(K_I\)</span>.</p>
+</div>
+<h3 id="controllability-of-the-augmented-system">Controllability of the augmented system</h3>
+<p>For the design to work, <span class="math inline">\((\bar{A}, \bar{B})\)</span> must be controllable. A sufficient condition is that <span class="math inline">\((A, B)\)</span> is controllable (which we already check) and <span class="math inline">\(A\)</span> has no eigenvalue at <span class="math inline">\(s = 0\)</span>. If <span class="math inline">\(A\)</span> does have a zero eigenvalue (e.g. a free integrator in the plant), the augmented system may still be controllable — check with MATLAB.</p>
+<h3 id="design-procedure-1">Design procedure</h3>
+<ol>
+<li><p><strong>Form the augmented system</strong> <span class="math inline">\((\bar{A}, \bar{B})\)</span> by appending the integral state.</p></li>
+<li><p><strong>Check controllability</strong> of <span class="math inline">\((\bar{A}, \bar{B})\)</span>.</p></li>
+<li><p><strong>Choose <span class="math inline">\(n+1\)</span> desired poles.</strong> The extra pole (from the integrator) is typically placed on the real axis, further left than the dominant poles, so it does not slow down the response.</p></li>
+<li><p><strong>Compute</strong> <span class="math inline">\(\bar{K} = \begin{bmatrix} K &amp; -K_I \end{bmatrix}\)</span> using <code>place()</code> or <code>acker()</code> on the augmented system.</p></li>
+<li><p><strong>Extract</strong> <span class="math inline">\(K\)</span> and <span class="math inline">\(K_I\)</span> from <span class="math inline">\(\bar{K}\)</span>.</p></li>
+</ol>
+<h2 id="sec:sf_integral_example">Worked Example: Mass–Spring–Damper<br />
+with Integral Action</h2>
+<div class="example"><div class="env-label env-label-example">Example: State feedback with integral action</div>
+<p>Consider our familiar system: <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span></p>
+<p><strong>Step 1: Augmented system.</strong> <span class="math display">\[\bar{A} = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ -2 &amp; -3 &amp; 0 \\ -1 &amp; 0 &amp; 0 \end{bmatrix}, \quad
+    \bar{B} = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}.\]</span></p>
+<p><strong>Step 2: Controllability.</strong> <span class="math display">\[\bar{\mathcal{C}} = \begin{bmatrix} \bar{B} &amp; \bar{A}\bar{B} &amp; \bar{A}^2\bar{B} \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 &amp; -3 \\ 1 &amp; -3 &amp; 7 \\ 0 &amp; 0 &amp; -1 \end{bmatrix}.\]</span> <span class="math inline">\(\det(\bar{\mathcal{C}}) = 1 \neq 0\)</span>. Therefore the augmented system is Controllable. <span class="math inline">\(\checkmark\)</span></p>
+<p><strong>Step 3: Desired poles.</strong> We want the original two poles to be the roots of <span class="math display">\[s^2 + 7s + 25 = 0,\]</span> which are approximately <span class="math inline">\(-3.5 \pm j3.57\)</span>, and we place the integral pole at <span class="math inline">\(-8\)</span> (fast, so it doesn’t affect the transient): <span class="math display">\[p = [-3.5+j3.5707, \;\; -3.5-j3.5707, \;\; -8].\]</span></p>
+<p><strong>Step 4: Compute gains.</strong> The desired characteristic polynomial is <span class="math display">\[(s^2 + 7s + 25)(s+8) = s^3 + 15s^2 + 81s + 200.\]</span></p>
+<p>With <span class="math inline">\(\bar{K} = [k_1 \; k_2 \; -K_I]\)</span>, the closed-loop characteristic polynomial of <span class="math inline">\(\bar{A} - \bar{B}\bar{K}\)</span> is <span class="math display">\[\det(sI - \bar{A} + \bar{B}\bar{K}) = s^3 + (3+k_2)s^2 + (2+k_1)s + K_I.\]</span> Rather than expanding by hand for a <span class="math inline">\(3\times 3\)</span> system, we use MATLAB (Listing <a href="#lst:ch11_integral_design" data-reference-type="ref" data-reference="lst:ch11_integral_design">[lst:ch11_integral_design]</a>):</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Integral action design via augmented system.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]); B = np.array([[0], [1]]); C = np.array([[1, 0]])
+
+# Augmented system
+Abar = np.block([[A, np.zeros((2,1))], [-C, np.zeros((1,1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+
+# Desired poles: original pair from s^2 + 7s + 25, plus integral pole
+wd = np.sqrt(25 - 3.5**2)
+p = [-3.5+1j*wd, -3.5-1j*wd, -8]
+
+# Compute augmented gain
+Kbar = ctrl.place(Abar, Bbar, p)
+
+# Extract gains
+K  = Kbar[0, 0:2]       # state feedback gains
+KI = -Kbar[0, 2]        # integral gain (note the sign)
+
+print("K  = [%.4f  %.4f]" % (K[0], K[1]))
+print("KI = %.4f" % KI)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3]; B = [0; 1]; C = [1 0];
+
+% Augmented system
+Abar = [A zeros(2,1); -C 0];
+Bbar = [B; 0];
+
+    % Desired poles: original pair from s^2 + 7s + 25, plus integral pole
+    wd = sqrt(25 - 3.5^2);
+    p = [-3.5+1j*wd, -3.5-1j*wd, -8];
+
+% Compute augmented gain
+Kbar = place(Abar, Bbar, p);
+
+% Extract gains
+K  = Kbar(1:2);       % state feedback gains
+KI = -Kbar(3);        % integral gain (note the sign)
+
+fprintf('K  = [%.4f  %.4f]\n', K);
+fprintf('KI = %.4f\n', KI);</code></pre>
+<p>This gives <span class="math display">\[K = \begin{bmatrix} 79 &amp; 12 \end{bmatrix},
+        \qquad
+        K_I = 200.\]</span> If you instead use the rounded pole pair <span class="math inline">\(-3.5 \pm j3.57\)</span> directly, MATLAB returns values extremely close to these.</p>
+<p><strong>Step 5: Simulate</strong> (Listing <a href="#lst:ch11_integral_sim" data-reference-type="ref" data-reference="lst:ch11_integral_sim">[lst:ch11_integral_sim]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Simulating state feedback with and without integral action.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]); B = np.array([[0], [1]]); C = np.array([[1, 0]])
+
+# Augmented system
+Abar = np.block([[A, np.zeros((2,1))], [-C, np.zeros((1,1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+
+wd = np.sqrt(25 - 3.5**2)
+Kbar = ctrl.place(Abar, Bbar, [-3.5+1j*wd, -3.5-1j*wd, -8])
+
+Acl = Abar - Bbar @ Kbar
+Br  = np.array([[0], [0], [1]])            # reference enters through integral state
+Ccl = np.hstack([C, np.zeros((1,1))])
+sys_int = ctrl.ss(Acl, Br, Ccl, 0)
+
+# Compare with state feedback without integral action
+Ksf = ctrl.place(A, B, [-3.5+1j*wd, -3.5-1j*wd])
+sys_sf = ctrl.ss(A - B @ Ksf, B, C, 0)
+
+t = np.arange(0, 8.01, 0.01)
+_resp = ctrl.step_response(sys_sf, t)
+
+t_sf, y_sf = _resp.time, _resp.outputs
+_resp = ctrl.step_response(sys_int, t)
+
+t_int, y_int = _resp.time, _resp.outputs
+
+plt.subplot(2,1,1)
+plt.plot(t_sf, np.ones_like(t_sf), 'k--', t_sf, y_sf, 'r', t_int, y_int, 'g', linewidth=1.5)
+plt.legend(['Reference r = 1', 'Without integral action', 'With integral action'])
+plt.title('Integral action removes the steady-state tracking error')
+plt.ylabel('Output y')
+plt.grid(True)
+
+plt.subplot(2,1,2)
+plt.plot(t_sf, 1-y_sf, 'r', t_int, 1-y_int, 'g', linewidth=1.5)
+plt.legend(['Error without K_I', 'Error with K_I'])
+plt.xlabel('Time (s)')
+plt.ylabel('Tracking error e = r-y')
+plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>    Acl = Abar - Bbar*Kbar;
+    Br  = [0; 0; 1];           % reference enters through integral state
+    sys_int = ss(Acl, Br, [C 0], 0);
+
+    % Compare with state feedback without integral action
+        wd = sqrt(25 - 3.5^2);
+        Ksf = place(A, B, [-3.5+1j*wd, -3.5-1j*wd]);
+    sys_sf = ss(A - B*Ksf, B, C, 0);
+
+    t = 0:0.01:8;
+    [y_sf, t] = step(sys_sf, t);
+    [y_int, ~] = step(sys_int, t);
+
+    figure;
+    subplot(2,1,1);
+    plot(t, ones(size(t)), 'k--', t, y_sf, 'r', t, y_int, 'g', 'LineWidth', 1.5);
+    legend('Reference r = 1', 'Without integral action', 'With integral action');
+    title('Integral action removes the steady-state tracking error');
+    ylabel('Output y');
+    grid on;
+
+    subplot(2,1,2);
+    plot(t, 1-y_sf, 'r', t, 1-y_int, 'g', 'LineWidth', 1.5);
+    legend('Error without K_I', 'Error with K_I');
+    xlabel('Time (s)');
+    ylabel('Tracking error e = r-y');
+    grid on;</code></pre>
+<p>Figure <a href="#fig:sf_integral_response" data-reference-type="ref" data-reference="fig:sf_integral_response">1.4</a> shows the responses produced by this simulation. The upper plot makes the practical benefit immediate: with integral action, the output converges to the unit-step reference instead of stalling at a large offset. The lower plot confirms the same point in error coordinates: <span class="math inline">\(e(t)\)</span> goes to zero only when the integral state is included.</p>
+<figure id="fig:sf_integral_response" data-latex-placement="H">
+<img src="figures/state_feedback_integral_action.png" style="max-width:88%;" />
+
+<figcaption>Comparison of state feedback with and without integral action for the same mass–spring–damper system. The integral-action design tracks the unit-step reference and drives the tracking error to zero.</figcaption>
+</figure>
+<p>The output now tracks the step reference with <strong>zero steady-state error</strong> for this nominal design, and integral action also improves robustness to constant disturbances and modest modelling errors provided the closed loop remains stable.</p>
+</div>
+<h2 id="sec:integral_intuition">Why Integral Action Works: An Intuitive View</h2>
+<figure id="fig:integral_comparison" data-latex-placement="H">
+
+
+<figcaption>Comparison of state feedback with and without integral action. Without <span class="math inline">\(K_I\)</span>, the output settles below the reference. With <span class="math inline">\(K_I\)</span>, the integrator drives the error to zero.</figcaption>
+</figure>
+<p>Think of the integral state <span class="math inline">\(x_I\)</span> as a “memory of dissatisfaction”. Every instant that <span class="math inline">\(y &lt; r\)</span>, the error <span class="math inline">\(e &gt; 0\)</span> adds to <span class="math inline">\(x_I\)</span>, which increases <span class="math inline">\(K_I x_I\)</span> in the control signal, pushing the output harder towards the reference. The process stops only when <span class="math inline">\(e = 0\)</span> and <span class="math inline">\(x_I\)</span> holds steady. This is exactly what the “I” term does in PID — here we have embedded it into the state feedback framework.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>At steady state: <span class="math inline">\(\dot{x}_I = 0 \Rightarrow e = r - y = 0 \Rightarrow y = r\)</span>. This holds regardless of the actual plant parameters, as long as the closed-loop system is stable. This is what makes integral action <strong>robust</strong>.</p>
+</div>
+<h2 id="sec:sf_rotary_pendulum">A Complete Design Example: Rotary Inverted Pendulum Tracking</h2>
+<p>This example uses the linearised Quanser rotary inverted pendulum model and the balance-design specifications given in the Quanser Controls Board lab manual . We assume all four states are measurable, so no observer is needed at this stage.</p>
+<figure id="fig:quanser_rotary_pendulum_model" data-latex-placement="H">
+<img src="figures/quanser_rotary_pendulum_model.png" style="max-width:33%;" />
+<figcaption>Rotary inverted pendulum geometry used in the Quanser lab manual. Adapted from the Quanser Controls Board lab manual .</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Rotary inverted pendulum tracking with integral action</div>
+<p><strong>Problem formulation.</strong></p>
+<p>Using the model in Figure <a href="#fig:quanser_rotary_pendulum_model" data-reference-type="ref" data-reference="fig:quanser_rotary_pendulum_model">1.6</a>, let the state be <span class="math display">\[x = \begin{bmatrix} \theta &amp; \tilde{\alpha} &amp; \dot{\theta} &amp; \dot{\tilde{\alpha}} \end{bmatrix}^{\top},\]</span> where <span class="math inline">\(\theta\)</span> is the rotary arm angle. In the Quanser geometry, the physical pendulum angle <span class="math inline">\(\alpha\)</span> is measured from the hanging-down position, so the upright equilibrium corresponds to <span class="math inline">\(\alpha = \pi\)</span>. The linear balance model is therefore written in terms of the small deviation <span class="math display">\[\tilde{\alpha} = \alpha - \pi.\]</span> The control objective is to move the arm to a constant command <span class="math inline">\(\theta_r = 20^\circ\)</span> while keeping the pendulum close to the upright equilibrium, i.e. keeping <span class="math inline">\(\tilde{\alpha}\)</span> small. To make the tracking problem realistic, we also include an unknown constant actuator bias <span class="math inline">\(d = 0.30\)</span> V, representing effects such as amplifier offset or unmodelled friction.</p>
+<p>The controller must:</p>
+<ul>
+<li><p>stabilise the upright pendulum,</p></li>
+<li><p>track the arm-angle command <span class="math inline">\(\theta_r\)</span>,</p></li>
+<li><p>remove the steady-state error caused by the constant bias.</p></li>
+</ul>
+<p><strong>Step 1: State-space model from the Quanser manual.</strong></p>
+<p>The representative linearised model given in the Quanser lab manual is  <span class="math display">\[\dot{x} = Ax + Bu, \qquad y = Cx + Du\]</span> with <span class="math display">\[A = \begin{bmatrix}
+        0 &amp; 0 &amp; 1 &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 1 \\
+        0 &amp; 149.23 &amp; -0.0104 &amp; 0 \\
+        0 &amp; 261.53 &amp; -0.0103 &amp; 0
+    \end{bmatrix},
+    \quad
+    B = \begin{bmatrix}
+        0 \\ 0 \\ 49.72 \\ 49.13
+    \end{bmatrix},\]</span> <span class="math display">\[C = \begin{bmatrix}
+        1 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 1 &amp; 0 &amp; 0
+    \end{bmatrix},
+    \quad
+    D = \begin{bmatrix}
+        0 \\ 0
+    \end{bmatrix}.\]</span> Only <span class="math inline">\(\theta\)</span> and the physical pendulum angle are measured directly; in this worked example we assume <span class="math inline">\(\dot{\theta}\)</span> and <span class="math inline">\(\dot{\tilde{\alpha}}\)</span> are also available, for example from filtered differentiation of encoder signals.</p>
+<p>The open-loop poles are approximately <span class="math display">\[0,\quad -0.00452,\quad -16.1748,\quad +16.1690.\]</span> Because one pole is in the right-half plane, this is the linearisation about the <em>upright</em> equilibrium, not the hanging-down equilibrium. That is exactly what we need for balance control.</p>
+<p><strong>Step 2: Check controllability.</strong></p>
+<p>Before placing poles, verify that the pair <span class="math inline">\((A,B)\)</span> is controllable (Listing <a href="#lst:ch11_rip_ctrb" data-reference-type="ref" data-reference="lst:ch11_rip_ctrb">[lst:ch11_rip_ctrb]</a>):</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">RIP controllability check.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 0, 1, 0],
+              [0, 0, 0, 1],
+              [0, 149.23, -0.0104, 0],
+              [0, 261.53, -0.0103, 0]])
+
+B = np.array([[0], [0], [49.72], [49.13]])
+
+print("rank(ctrb) =", np.linalg.matrix_rank(ctrl.ctrb(A, B)))   # returns 4</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 0 1 0;
+     0 0 0 1;
+     0 149.23 -0.0104 0;
+     0 261.53 -0.0103 0];
+
+B = [0; 0; 49.72; 49.13];
+
+rank(ctrb(A,B))   % returns 4</code></pre>
+<p>So full-state feedback can assign the four closed-loop poles arbitrarily.</p>
+<p><strong>Step 3: First design a balance controller.</strong></p>
+<p>We start from the Quanser manual specifications for the balance problem : <span class="math display">\[\zeta = 0.7, \qquad \omega_n = 4~\text{rad/s}.\]</span> This gives the dominant pair <span class="math display">\[p_{1,2} = -\zeta \omega_n \pm j\omega_n\sqrt{1-\zeta^2}
+    = -2.8 \pm j2.8566.\]</span> As in the manual, place the remaining poles at <span class="math display">\[p_3 = -30, \qquad p_4 = -40.\]</span> In MATLAB (Listing <a href="#lst:ch11_rip_balance" data-reference-type="ref" data-reference="lst:ch11_rip_balance">[lst:ch11_rip_balance]</a>):</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">RIP balance controller pole placement.</p>
+<pre class="matlab"><code>p = [-2.8+2.8566j, -2.8-2.8566j, -30, -40];
+K = place(A, B, p)</code></pre>
+<p>which gives <span class="math display">\[K = \begin{bmatrix}
+        -3.3853 &amp; 41.4787 &amp; -1.3825 &amp; 2.9377
+    \end{bmatrix}.\]</span></p>
+<p>If the model were exact and no disturbance were present, a reference prefilter <span class="math display">\[N_r = -\frac{1}{C_r(A-BK)^{-1}B}, \qquad
+    C_r = \begin{bmatrix} 1 &amp; 0 &amp; 0 &amp; 0 \end{bmatrix},\]</span> makes the arm angle track a constant command. For this model, <span class="math display">\[N_r = -3.3853.\]</span></p>
+<p><strong>Step 4: Why the balance controller is not enough for robust tracking.</strong></p>
+<p>With a constant input bias <span class="math inline">\(d\)</span>, the practical control law becomes <span class="math display">\[u = -Kx + N_r r, \qquad
+    \dot{x} = (A-BK)x + BN_r r + Bd.\]</span> At steady state, <span class="math display">\[0 = (A-BK)x_{ss} + B(N_r r + d),\]</span> so the tracked arm angle is <span class="math display">\[\theta_{ss} = -C_r(A-BK)^{-1}B(N_r r + d).\]</span> Now substitute the prefilter chosen in Step 3: <span class="math display">\[N_r = -\frac{1}{C_r(A-BK)^{-1}B}.\]</span> Then <span class="math display">\[\theta_{ss}
+    = -C_r(A-BK)^{-1}B\,N_r\,r - C_r(A-BK)^{-1}B\,d
+    = r - C_r(A-BK)^{-1}B\,d.\]</span> Hence the steady-state tracking error is <span class="math display">\[e_{ss} = r - \theta_{ss} = C_r(A-BK)^{-1}B\,d.\]</span> This shows the key point: the prefilter <span class="math inline">\(N_r\)</span> cancels the nominal steady-state gain only when <span class="math inline">\(d=0\)</span>. A constant bias adds an extra term that is not cancelled, so the steady-state error is generally nonzero. Therefore, even though state feedback stabilises the pendulum, it does <em>not</em> guarantee zero steady-state tracking error in the presence of constant disturbances.</p>
+<p><strong>Step 5: Add integral action on the arm-angle error.</strong></p>
+<p>Define the integral state <span class="math display">\[x_I = \int (r-\theta)\,dt,
+    \qquad
+    \dot{x}_I = r - C_r x.\]</span> The augmented model is <span class="math display">\[\dot{\bar{x}} = \bar{A}\bar{x} + \bar{B}u + B_r r,
+    \qquad
+    \bar{x} = \begin{bmatrix} x \\ x_I \end{bmatrix},\]</span> with <span class="math display">\[\bar{A} =
+    \begin{bmatrix}
+        A &amp; 0 \\
+        -C_r &amp; 0
+    \end{bmatrix},
+    \qquad
+    \bar{B} =
+    \begin{bmatrix}
+        B \\ 0
+    \end{bmatrix},
+    \qquad
+    B_r =
+    \begin{bmatrix}
+        0 \\ 0 \\ 0 \\ 0 \\ 1
+    \end{bmatrix}.\]</span></p>
+<p>We keep the four balance poles and add one extra pole for the integral state: <span class="math display">\[p_5 = -6.\]</span> This pole is fast enough to remove the bias promptly, but not so fast that it makes the control unnecessarily aggressive.</p>
+<p><strong>Step 6: Compute the augmented gain.</strong></p>
+<p>The augmented pair <span class="math inline">\((\bar{A},\bar{B})\)</span> must also be controllable (Listing <a href="#lst:ch11_rip_integral" data-reference-type="ref" data-reference="lst:ch11_rip_integral">[lst:ch11_rip_integral]</a>):</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">RIP augmented system with integral action.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 0, 1, 0],
+              [0, 0, 0, 1],
+              [0, 149.23, -0.0104, 0],
+              [0, 261.53, -0.0103, 0]])
+B = np.array([[0], [0], [49.72], [49.13]])
+
+Cr   = np.array([[1, 0, 0, 0]])
+Abar = np.block([[A, np.zeros((4,1))], [-Cr, np.zeros((1,1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+
+print("rank(ctrb) =", np.linalg.matrix_rank(ctrl.ctrb(Abar, Bbar)))   # returns 5
+
+pbar = [-2.8+2.8566j, -2.8-2.8566j, -30, -40, -6]
+Kbar = ctrl.place(Abar, Bbar, pbar)
+print("Kbar =", Kbar)</code></pre>
+</div>
+<pre class="matlab"><code>Cr   = [1 0 0 0];
+Abar = [A zeros(4,1);
+       -Cr 0];
+Bbar = [B; 0];
+
+rank(ctrb(Abar,Bbar))   % returns 5
+
+pbar = [-2.8+2.8566j, -2.8-2.8566j, -30, -40, -6];
+Kbar = place(Abar, Bbar, pbar)</code></pre>
+<p>This gives <span class="math display">\[\bar{K} = \begin{bmatrix}
+        -11.6792 &amp; 59.1050 &amp; -3.2617 &amp; 4.9616 &amp; 20.3117
+    \end{bmatrix}.\]</span> Using the chapter convention <span class="math inline">\(\bar{K} = \begin{bmatrix} K &amp; -K_I \end{bmatrix}\)</span>, this means <span class="math display">\[K_I = -20.3117.\]</span> The negative sign is not a mistake. For this particular linearised model, a positive arm-angle command requires a negative steady-state motor voltage, so both the reference prefilter and the integral gain are negative in the convention <span class="math inline">\(u = -Kx + K_I x_I\)</span>.</p>
+<p><strong>Step 7: Simulate the tracking problem.</strong></p>
+<p>The following MATLAB script compares:</p>
+<ul>
+<li><p>state feedback with reference prefilter only, and</p></li>
+<li><p>state feedback with integral action,</p></li>
+</ul>
+<p>for the same <span class="math inline">\(20^\circ\)</span> command and the same constant bias <span class="math inline">\(d=0.30\)</span> V (Listing <a href="#lst:ch11_rip_tracking_sim" data-reference-type="ref" data-reference="lst:ch11_rip_tracking_sim">[lst:ch11_rip_tracking_sim]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">RIP tracking simulation: prefilter vs integral action.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[0, 0, 1, 0],
+              [0, 0, 0, 1],
+              [0, 149.23, -0.0104, 0],
+              [0, 261.53, -0.0103, 0]])
+B = np.array([[0], [0], [49.72], [49.13]])
+Cr = np.array([[1, 0, 0, 0]])
+
+# State feedback without integral action
+p = [-2.8+2.8566j, -2.8-2.8566j, -30, -40]
+K = ctrl.place(A, B, p)
+Nr = -1.0 / (Cr @ np.linalg.solve(A - B @ K, B))
+Nr = Nr[0, 0]
+
+Acl_sf = A - B @ K
+Bsf = np.hstack([B * Nr, B])           # inputs [r; d]
+sys_sf = ctrl.ss(Acl_sf, Bsf, np.eye(4), np.zeros((4, 2)))
+
+# State feedback with integral action
+Abar = np.block([[A, np.zeros((4, 1))], [-Cr, np.zeros((1, 1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+Br = np.array([[0], [0], [0], [0], [1]])
+Bd = np.vstack([B, np.array([[0]])])
+
+pbar = [-2.8+2.8566j, -2.8-2.8566j, -30, -40, -6]
+Kbar = ctrl.place(Abar, Bbar, pbar)
+
+Acl_int = Abar - Bbar @ Kbar
+sys_int = ctrl.ss(Acl_int, np.hstack([Br, Bd]), np.eye(5), np.zeros((5, 2)))
+
+t = np.arange(0, 8.005, 0.005)
+r_cmd = np.deg2rad(20) * np.ones_like(t)
+d_cmd = 0.30 * np.ones_like(t)
+U = np.vstack([r_cmd, d_cmd])
+
+_resp = ctrl.forced_response(sys_sf, T=t, U=U)
+
+
+t_sf, xsf = _resp.time, _resp.outputs
+_resp = ctrl.forced_response(sys_int, T=t, U=U)
+
+t_int, zint = _resp.time, _resp.outputs
+
+theta_sf = np.rad2deg(xsf[0, :])
+alpha_tilde_sf = np.rad2deg(xsf[1, :])
+theta_int = np.rad2deg(zint[0, :])
+alpha_tilde_int = np.rad2deg(zint[1, :])
+
+plt.subplot(2, 2, 1)
+plt.plot(t, 20*np.ones_like(t), 'k--', t_sf, theta_sf, 'r', t_int, theta_int, 'g', linewidth=1.5)
+plt.legend(['Reference', 'State feedback + Nr', 'With integral action'])
+plt.ylabel('theta (deg)'); plt.grid(True)
+
+plt.subplot(2, 2, 2)
+plt.plot(t_sf, 20-theta_sf, 'r', t_int, 20-theta_int, 'g', linewidth=1.5)
+plt.ylabel('Tracking error (deg)'); plt.grid(True)
+
+plt.subplot(2, 2, 3)
+plt.plot(t_sf, alpha_tilde_sf, 'r', t_int, alpha_tilde_int, 'g', linewidth=1.5)
+plt.xlabel('Time (s)'); plt.ylabel('alpha from upright (deg)'); plt.grid(True)
+
+plt.subplot(2, 2, 4)
+u_sf = -(K @ xsf[0:4, :]).flatten() + Nr*np.deg2rad(20)
+u_int = -(Kbar @ zint).flatten()
+plt.plot(t_sf, u_sf, 'r', t_int, u_int, 'g', linewidth=1.5)
+plt.xlabel('Time (s)'); plt.ylabel('u (V)'); plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 0 1 0;
+     0 0 0 1;
+     0 149.23 -0.0104 0;
+     0 261.53 -0.0103 0];
+B = [0; 0; 49.72; 49.13];
+Cr = [1 0 0 0];
+
+% State feedback without integral action
+p = [-2.8+2.8566j, -2.8-2.8566j, -30, -40];
+K = place(A, B, p);
+Nr = -1/(Cr * ((A - B*K)\B));
+
+Acl_sf = A - B*K;
+Bsf = [B*Nr  B];           % inputs [r; d]
+sys_sf = ss(Acl_sf, Bsf, eye(4), zeros(4,2));
+
+% State feedback with integral action
+Abar = [A zeros(4,1);
+       -Cr 0];
+Bbar = [B; 0];
+Br = [0; 0; 0; 0; 1];
+Bd = [B; 0];
+
+pbar = [-2.8+2.8566j, -2.8-2.8566j, -30, -40, -6];
+Kbar = place(Abar, Bbar, pbar);
+
+Acl_int = Abar - Bbar*Kbar;
+sys_int = ss(Acl_int, [Br Bd], eye(5), zeros(5,2));
+
+t = 0:0.005:8;
+r = deg2rad(20) * ones(size(t));
+d = 0.30 * ones(size(t));
+U = [r(:) d(:)];
+
+xsf = lsim(sys_sf, U, t);
+zint = lsim(sys_int, U, t);
+
+theta_sf = rad2deg(xsf(:,1));
+alpha_tilde_sf = rad2deg(xsf(:,2));
+theta_int = rad2deg(zint(:,1));
+alpha_tilde_int = rad2deg(zint(:,2));
+
+u_sf = -xsf*K.' + Nr*deg2rad(20);
+u_int = -zint*Kbar.';
+
+figure;
+subplot(2,2,1);
+plot(t, 20*ones(size(t)), 'k--', t, theta_sf, 'r', t, theta_int, 'g', 'LineWidth', 1.5);
+legend('Reference', 'State feedback + N_r', 'With integral action');
+ylabel('\theta (deg)'); grid on;
+
+subplot(2,2,2);
+plot(t, 20-theta_sf, 'r', t, 20-theta_int, 'g', 'LineWidth', 1.5);
+ylabel('Tracking error (deg)'); grid on;
+
+subplot(2,2,3);
+plot(t, alpha_tilde_sf, 'r', t, alpha_tilde_int, 'g', 'LineWidth', 1.5);
+xlabel('Time (s)'); ylabel('\\alpha~from upright (deg)'); grid on;
+
+subplot(2,2,4);
+plot(t, u_sf, 'r', t, u_int, 'g', 'LineWidth', 1.5);
+xlabel('Time (s)'); ylabel('u (V)'); grid on;</code></pre>
+<p>Figure <a href="#fig:rip_integral_tracking" data-reference-type="ref" data-reference="fig:rip_integral_tracking">1.7</a> shows the result. The red curves correspond to the balance controller with a reference prefilter only; the green curves include the integral state. Without the integrator, the arm settles at about <span class="math inline">\(14.9^\circ\)</span> instead of <span class="math inline">\(20^\circ\)</span>, so the steady-state tracking error is about <span class="math inline">\(5.1^\circ\)</span>. With integral action, the arm reaches the command and the error goes to zero, while the pendulum deviation from upright remains small.</p>
+<figure id="fig:rip_integral_tracking" data-latex-placement="H">
+<img src="figures/state_feedback_rotary_pendulum_tracking.png" style="max-width:95%;" />
+
+<figcaption>Rotary inverted pendulum tracking with a constant actuator bias of <span class="math inline">\(0.30\)</span> V. Integral action removes the arm-angle offset while keeping the pendulum deviation from upright small.</figcaption>
+</figure>
+<p>From the simulation: <span class="math display">\[\theta_{ss,\text{no int}} \approx 14.9^\circ,
+    \qquad
+    \theta_{ss,\text{int}} \approx 20.0^\circ,\]</span> and the integral-action design keeps <span class="math display">\[\max |\tilde{\alpha}(t)| \approx 0.95^\circ,
+    \qquad
+    \max |u(t)| \approx 0.42~\text{V},\]</span> which is comfortably within the additional Quanser implementation limits of pendulum deflection and control effort quoted in the same lab manual .</p>
+<p><strong>Conclusion.</strong></p>
+<p>For the rotary inverted pendulum, ordinary state feedback is excellent for <em>balancing</em>, but integral action is what makes the design a reliable <em>tracking controller</em> in the presence of constant disturbances and modelling errors.</p>
+</div>
+<h2 id="sec:sf_vs_pid">State Feedback vs PID: When to Use Which?</h2>
+<div class="summarybox">
+<p><span>State Feedback (with Integral Action) vs PID</span></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>PID</strong></th>
+<th style="text-align: left;"><strong>State Feedback + Integral</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Feeds back the output error only</td>
+<td style="text-align: left;">Feeds back all states + integral of error</td>
+</tr>
+<tr>
+<td style="text-align: left;">Three gains to tune</td>
+<td style="text-align: left;"><span class="math inline">\(n + 1\)</span> gains (systematic)</td>
+</tr>
+<tr>
+<td style="text-align: left;">Limited pole placement capability</td>
+<td style="text-align: left;">Places <em>all</em> <span class="math inline">\(n+1\)</span> poles exactly</td>
+</tr>
+<tr>
+<td style="text-align: left;">Does not need a model</td>
+<td style="text-align: left;">Requires a state-space model</td>
+</tr>
+<tr>
+<td style="text-align: left;">Built-in integral action</td>
+<td style="text-align: left;">Integral action added explicitly</td>
+</tr>
+<tr>
+<td style="text-align: left;">SISO only</td>
+<td style="text-align: left;">Extends naturally to MIMO</td>
+</tr>
+<tr>
+<td style="text-align: left;">Industry standard, widely understood</td>
+<td style="text-align: left;">Foundation for modern control</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>State feedback requires measurement of all states <span class="math inline">\(x(t)\)</span>. In practice, we often cannot measure all states directly. Chapter <a href="#chap:observers" data-reference-type="ref" data-reference="chap:observers">[chap:observers]</a> solves this problem by introducing an <em>observer</em> — a system that estimates <span class="math inline">\(x(t)\)</span> from the measured output <span class="math inline">\(y(t)\)</span>.</p>
+</div>
+<h2 id="sec:ch9_summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p>State feedback uses <span class="math inline">\(u = -Kx\)</span> to place all closed-loop poles at desired locations. The closed-loop system matrix is <span class="math inline">\(A_{cl} = A - BK\)</span>.</p></li>
+<li><p>Pole placement requires <strong>controllability</strong> of <span class="math inline">\((A,B)\)</span>.</p></li>
+<li><p><span class="math inline">\(K\)</span> can be found by direct comparison of characteristic polynomials, via the CCF shortcut, or by Ackermann’s formula.</p></li>
+<li><p>MATLAB: <code>place(A,B,p)</code> or <code>acker(A,B,p)</code>.</p></li>
+<li><p>State feedback alone does not guarantee zero steady-state tracking error.</p></li>
+<li><p><strong>Integral action</strong> solves this: augment the state with <span class="math inline">\(x_I = \int(r-y)\,dt\)</span>, then design <span class="math inline">\(\bar{K} = [K \;\; {-K_I}]\)</span> on the augmented system. The result is robust zero steady-state error.</p></li>
+<li><p>State feedback requires full state measurement — Chapter <a href="#chap:observers" data-reference-type="ref" data-reference="chap:observers">[chap:observers]</a> introduces observers to estimate unmeasured states.</p></li>
+</ul>
+</div>
+<h2 id="sec:ch9_problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>(Direct comparison — 2nd order)</strong> A system has <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -3 &amp; -4 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Find the open-loop poles.</p></li>
+<li><p>Design <span class="math inline">\(K\)</span> to place the closed-loop poles at <span class="math inline">\(s = -5 \pm j5\)</span>.</p></li>
+<li><p>Verify by computing <span class="math inline">\(\det(sI - A + BK)\)</span>.</p></li>
+</ol></li>
+<li><p><strong>(Specifications to poles)</strong> For the system in Problem 1 with <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span>:</p>
+<ol>
+<li><p>Find the desired pole locations for <span class="math inline">\(t_s \leq 0.8\)</span> s and <span class="math inline">\(M_p \leq 15\%\)</span>.</p></li>
+<li><p>Design <span class="math inline">\(K\)</span> for these specifications.</p></li>
+<li><p>Apply a unit step reference using <span class="math inline">\(u = -Kx + r\)</span> (no integral action). What is <span class="math inline">\(y_{ss}\)</span>?</p></li>
+</ol></li>
+<li><p><strong>(Ackermann’s formula)</strong> For the system <span class="math display">\[A = \begin{bmatrix} -1 &amp; 2 \\ 0 &amp; -3 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}:\]</span></p>
+<ol>
+<li><p>Verify controllability.</p></li>
+<li><p>Use Ackermann’s formula to find <span class="math inline">\(K\)</span> that places the poles at <span class="math inline">\(s = -4, -6\)</span>.</p></li>
+<li><p>Verify using direct comparison.</p></li>
+</ol></li>
+<li><p><strong>(CCF pole placement)</strong> A third-order system in CCF has <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -2 &amp; -5 &amp; -4 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Find the open-loop poles.</p></li>
+<li><p>Place the poles at <span class="math inline">\(s = -3, -3, -3\)</span> using the CCF shortcut (subtract coefficients).</p></li>
+<li><p>Verify with MATLAB.</p></li>
+</ol></li>
+<li><p><strong>(Integral action — 2nd order)</strong> For the system in Problem 1 with <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span>:</p>
+<ol>
+<li><p>Form the augmented system <span class="math inline">\((\bar{A}, \bar{B})\)</span> by adding the integral state.</p></li>
+<li><p>Verify that <span class="math inline">\((\bar{A}, \bar{B})\)</span> is controllable.</p></li>
+<li><p>Place the three closed-loop poles at <span class="math inline">\(s = -5 \pm j5\)</span> and <span class="math inline">\(s = -12\)</span>. Find <span class="math inline">\(K\)</span> and <span class="math inline">\(K_I\)</span>.</p></li>
+<li><p>Simulate the step response in MATLAB and verify <span class="math inline">\(y_{ss} = 1\)</span>.</p></li>
+</ol></li>
+<li><p><strong>(Uncontrollable system)</strong> Consider <span class="math display">\[A = \begin{bmatrix} -2 &amp; 0 \\ 0 &amp; -5 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Show that the system is not controllable.</p></li>
+<li><p>Try to place both poles at <span class="math inline">\(s = -10\)</span>. What happens?</p></li>
+<li><p>Which pole can be moved by state feedback? Which cannot?</p></li>
+</ol></li>
+<li><p><strong>(Robustness of integral action)</strong> For the system <span class="math inline">\(A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}\)</span>, <span class="math inline">\(B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}\)</span>, <span class="math inline">\(C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}\)</span>:</p>
+<ol>
+<li><p>Design state feedback with integral action (place poles at <span class="math inline">\(-3.5 \pm j3.57\)</span> and <span class="math inline">\(-8\)</span>).</p></li>
+<li><p>Simulate with the nominal plant. Verify <span class="math inline">\(y_{ss} = 1\)</span>.</p></li>
+<li><p>Now change the plant to <span class="math inline">\(A_{\text{true}} = \begin{bmatrix} 0 &amp; 1 \\ -2.5 &amp; -3.5 \end{bmatrix}\)</span> (a <span class="math inline">\(25\%\)</span> parameter error) but keep the same controller. Simulate again. Does <span class="math inline">\(y_{ss}\)</span> still equal <span class="math inline">\(1\)</span>?</p></li>
+<li><p>Repeat part (c) but without integral action (use state feedback with a fixed gain only). Compare.</p></li>
+</ol></li>
+<li><p><strong>(MATLAB — complete design)</strong> A system has <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -10 &amp; -17 &amp; -8 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 &amp; 0 &amp; 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Check controllability of the original and augmented systems.</p></li>
+<li><p>Design state feedback with integral action. Place the original poles at <span class="math inline">\(s = -6 \pm j4\)</span> and <span class="math inline">\(s = -8\)</span>, and the integral pole at <span class="math inline">\(s = -15\)</span>.</p></li>
+<li><p>Simulate the step response and verify zero steady-state error.</p></li>
+<li><p>Add a step disturbance of magnitude <span class="math inline">\(0.5\)</span> at <span class="math inline">\(t = 5\)</span> s (entering at the plant input). Show that the integral action rejects it.</p></li>
+</ol></li>
+</ol>

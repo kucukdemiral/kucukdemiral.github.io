@@ -1,0 +1,1238 @@
+<h1 id="modelling-of-dynamical-systems-and-simulation">Modelling of dynamical systems and simulation</h1>
+<blockquote>
+<p><em>“Everything should be made as simple as possible, but not simpler.”</em></p>
+<div class="flushright">
+<p>— Albert Einstein</p>
+</div>
+</blockquote>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Derive transfer functions from physical laws for electrical (RLC), mechanical (translational and rotational), and thermal systems.</p></li>
+<li><p>Apply Kirchhoff’s voltage and current laws to obtain circuit equations and convert them to the Laplace domain.</p></li>
+<li><p>Use the impedance method to derive transfer functions without writing differential equations explicitly.</p></li>
+<li><p>Apply Newton’s second law to translational and rotational systems, including multi-body and geared configurations.</p></li>
+<li><p>Identify the electrical–mechanical–thermal analogies and use them to model systems across domains.</p></li>
+<li><p>Construct and simulate transfer function models in MATLAB using <code>tf()</code>, <code>step()</code>, and <code>lsim()</code>.</p></li>
+</ul>
+</div>
+<p>A <strong>model</strong> of a dynamical system is a mathematical description that links inputs, internal behaviour, and outputs in a way useful for prediction and control design.</p>
+<h2 id="why-do-we-need-models-of-systems-at-all">Why do we need models of systems at all?</h2>
+<p>A mathematical model allows us to predict how a system will respond under different conditions <em>before</em> we build hardware or run expensive experiments. Once we have equations that describe the system, we can reason about stability, speed of response, and sensitivity to disturbances in a structured way — rather than relying on trial-and-error.</p>
+<p>In safety-critical applications (aerospace, robotics, biomedical devices), models let us test disturbances, parameter variations, and candidate control laws through simulation before anything is deployed. Without a model, controller design becomes guesswork.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Models are abstractions of reality. They are not perfect copies of the physical world, but they are detailed enough to capture the essential dynamics needed for prediction, analysis, and design.</p>
+</div>
+<h2 id="why-physics-based-modelling-still-matters">Why physics-based modelling still matters</h2>
+<p><em>If AI can learn from data, why do we still need mathematical models?</em> AI methods work best when large amounts of reliable data are available and operating conditions match training. In safety-critical systems (aircraft, medical devices, autonomous vehicles), we cannot allow a controller to “learn by making mistakes.” We need predictable behaviour from the start, and that comes from mathematical modelling. Furthermore, at the design stage a new system may have little or no data — physics-based models are then the only tools available.</p>
+<figure id="fig:aivstraditionsimple">
+<img src="figures/AI_vs_Tradition_simple.png" style="max-width:25%;" />
+<figcaption>AI vs traditional modelling and control. Who do you think will win?</figcaption>
+</figure>
+<p>The most effective solutions often combine both: physics-based models capture the dominant dynamics, while AI compensates for hard-to-model effects like friction or wear. In many industries, regulations require mathematical justification of system behaviour.</p>
+<div class="safetybox">
+<p><span>Why safety-critical industries demand white-box design</span></p>
+<p>In domains where failure can cost lives — civil aviation, nuclear power, medical devices, autonomous vehicles — industry standards impose a non-negotiable requirement: every component in the control loop must be fully understood, mathematically justified, and independently verifiable. There is no room for black boxes.</p>
+<p><strong>Certification frameworks.</strong> In aviation, for example, standards such as ARP 4754A , DO-178C , and DO-254  require the development process to be deterministic, auditable, and traceable. The authority reviewing the design must be able to inspect the equations, examine the control law, and verify why each design choice was made.</p>
+<p><strong>What “white-box” design means in practice.</strong> When a flight control law is submitted for certification, the manufacturer must provide a validated mathematical model of the aircraft, a controller whose gains can be traced back to explicit requirements, evidence that the closed-loop system remains stable throughout the operating envelope, and worst-case analysis for failures, uncertainty, saturation, and disturbances. A black-box controller cannot offer this kind of explanation, even if it performs well in limited testing.</p>
+<p><strong>The same logic appears elsewhere.</strong> Automotive standards such as ISO 26262 , medical-device standards such as IEC 62304 , nuclear standards such as IEC 61513 , and railway standards such as EN 50128/50129  all demand some form of transparent, verifiable, model-based reasoning.</p>
+<p><strong>The bottom line.</strong> In safety-critical systems the real question is not merely “does it work in this test?” but “can you explain why it works, prove that it is safe enough, and justify its behaviour beyond the exact situations you already observed?” Model-based design remains indispensable because it provides that line of reasoning.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Mathematical models are not outdated; they remain the foundation of control engineering. AI is a powerful companion, but it cannot replace the physical insight, safety guarantees, and predictive power that models provide.</p>
+</div>
+<h2 id="types-of-models-in-control-engineering">Types of Models in Control Engineering</h2>
+<p>Models can be classified <strong>by origin</strong> (physical/first-principles vs. empirical/data-driven), <strong>by domain</strong> (time-domain differential equations vs. frequency-domain transfer functions), and <strong>by mathematical form</strong> (linear vs. nonlinear, continuous vs. discrete).</p>
+<p>In this module we typically start from a physical continuous-time model, then simplify or linearise it into a linear time-invariant transfer function or state-space form suitable for analysis and control design.</p>
+<h2 id="what-makes-a-good-control-model">What Makes a Good Control Model?</h2>
+<p>A good control model captures the dynamics that matter for the control task while remaining simple enough for analysis and design. The input, output, states, and disturbances should be identified explicitly, and the model should be accurate over the operating range where the controller will work. A model that is too simple misses essential behaviour; one that is too complex becomes impractical.</p>
+<h2 id="linear-models">Linear Models</h2>
+<p>A large class of dynamical systems can be represented using linear constant-coefficient differential equations. The general input-output form is <span class="math display">\[\begin{multline}
+    y^{(n)}(t)+a_{n-1}y^{(n-1)}(t)+\cdots+a_1 y^{(1)}(t)+a_0y(t)
+    = \\ b_m u^{(m)}(t)+b_{m-1}u^{(m-1)}(t)+\cdots+b_1u^{(1)}(t)+b_0u(t),
+    \label{eqn:ODE_general}
+\end{multline}\]</span> Here, <span class="math inline">\(u(t)\)</span> is the input, <span class="math inline">\(y(t)\)</span> is the output, <span class="math inline">\(y^{(i)}(t)\)</span> denotes the <span class="math inline">\(i\)</span>-th derivative of <span class="math inline">\(y(t)\)</span>, and the coefficients <span class="math inline">\(a_i\)</span> and <span class="math inline">\(b_j\)</span> are constants. The condition <span class="math inline">\(m\leq n\)</span> is consistent with ordinary physical systems, where the output dynamics are not of lower order than the input-side dynamics.</p>
+<p>Because the coefficients are constant, the system is <strong>time-invariant</strong>. In control calculations we often set the initial conditions to zero to isolate the pure input-output behaviour, and we assume causality (the system cannot respond to future inputs).</p>
+<p>Assuming zero initial conditions, taking the Laplace transform of <a href="#eqn:ODE_general" data-reference-type="eqref" data-reference="eqn:ODE_general">[eqn:ODE_general]</a> gives <span class="math display">\[\begin{multline}
+    (s^n+a_{n-1}s^{n-1}+\cdots+a_1 s+a_0)Y(s) 
+    = (b_m s^m+b_{m-1}s^{m-1}+\cdots+b_1s+b_0)U(s).
+\end{multline}\]</span> We therefore define the <strong>transfer function</strong> as <span class="math display">\[G(s)\triangleq \frac{Y(s)}{U(s)} 
+= \frac{b_m s^m+b_{m-1}s^{m-1}+\cdots+b_1s+b_0}
+{s^n+a_{n-1}s^{n-1}+\cdots+a_1s+a_0}.\]</span></p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Two Python methods to define the transfer function
+            <span class="math inline">\(G(s) = \tfrac{s+3}{s^2+5s+6}\)</span>:
+            (1) using numerator/denominator coefficients,
+            (2) using the symbolic variable <code>s = ctrl.tf('s')</code>.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+num = np.array([1, 3])            # Numerator: s + 3
+den = np.array([1, 5, 6])         # Denominator: s**2 + 5s + 6
+sys1 = ctrl.tf(num, den)
+
+# Method 2: Using coefficient arrays directly
+sys2 = ctrl.tf([1, 3], [1, 5, 6])
+
+print(sys1)
+print(sys2)</code></pre>
+</div>
+<pre class="matlab"><code>        num = [1 3];          % Numerator: s + 3
+        den = [1 5 6];        % Denominator: s^2 + 5s + 6
+        sys1 = tf(num, den);
+        
+        % Method 2: Using symbolic 's'
+        s = tf('s');
+        sys2 = (s + 3) / (s^2 + 5*s + 6);
+        
+        disp(sys1);
+        disp(sys2);</code></pre>
+</div>
+<p>Listing <a href="#lst:ch3_tf_methods" data-reference-type="ref" data-reference="lst:ch3_tf_methods">[lst:ch3_tf_methods]</a> shows two equivalent ways to define a transfer function in MATLAB. This ratio summarises how the system maps input to output in the Laplace domain when the initial state is zero. As a block diagram, it is represented in Figure <a href="#fig:transferfunction" data-reference-type="ref" data-reference="fig:transferfunction">1.2</a>.</p>
+<figure id="fig:transferfunction" data-latex-placement="!htb">
+
+<img src="figures/ch03_tikz_01.png" style="max-width:85%;" />
+<figcaption>Transfer function representation as a block diagram.</figcaption>
+</figure>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>A transfer function is called proper tf when the degree of the denominator is greater than or equal to that of the numerator <span class="math inline">\((m\leq n)\)</span>. It is called <strong>strictly proper</strong> when the denominator degree is strictly larger <span class="math inline">\((m&lt;n)\)</span>, in which case <span class="math display">\[G(\infty)=\lim_{s\to\infty}G(s)=0.\]</span> If the numerator and denominator have the same degree, then <span class="math inline">\(G(\infty)\neq 0\)</span> in general and the transfer function can be separated into a constant high-frequency gain and a strictly proper remainder: <span class="math display">\[G(s)=G(\infty)+G_{sp}(s).\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Transfer Function of a System Represented by a Differential Equation</div>
+<p>Find the transfer function of the system represented by the differential equation <span class="math display">\[\ddot{y} + 8\dot{y} + 15y \;=\; 3\ddot{u} + 10\dot{u} - 12u ,\]</span> where <span class="math inline">\(\dot{u} = u^{(1)}\)</span>, <span class="math inline">\(\ddot{u} = u^{(2)}\)</span>, and so on. Determine if the transfer function is proper or strictly proper. If it is not strictly proper, find the strictly proper part.</p>
+<p>The transfer function can be written by inspection as <span class="math display">\[G(s) = \frac{3s^2 + 10s - 12}{s^2 + 8s + 15}.\]</span></p>
+<p>The second-order transfer function <span class="math inline">\(G(s)\)</span> is proper because the degrees of the numerator and denominator are the same. To check if it is strictly proper, we evaluate <span class="math display">\[G(\infty) = \lim_{s\to\infty} G(s).\]</span></p>
+<p>Since the leading coefficients are <span class="math inline">\(3\)</span> (numerator) and <span class="math inline">\(1\)</span> (denominator), we have <span class="math display">\[G(\infty) = 3.\]</span></p>
+<p>Thus, <span class="math inline">\(G(s)\)</span> is proper but not strictly proper. We can write <span class="math display">\[G(s) - G(\infty) 
+    = \frac{3s^2 + 10s - 12}{s^2 + 8s + 15} - 3.\]</span></p>
+<p>Simplify the expression: <span class="math display">\[G(s) - G(\infty) 
+    = \frac{3s^2 + 10s - 12 - 3(s^2 + 8s + 15)}{s^2 + 8s + 15},\]</span> <span class="math display">\[= \frac{3s^2 + 10s - 12 - (3s^2 + 24s + 45)}{s^2 + 8s + 15},\]</span> <span class="math display">\[= \frac{-14s - 57}{s^2 + 8s + 15}.\]</span> Based on this, we define the strictly proper part as <span class="math display">\[G_{sp}(s) = \frac{-14s - 57}{s^2 + 8s + 15}.\]</span> Hence, <span class="math display">\[G(s) = 3 + \frac{-14s - 57}{s^2 + 8s + 15}.\]</span></p>
+</div>
+<p><strong>Poles and zeros.</strong> Once a transfer function has been written down, the next quantities to identify are its zeros and poles. The zeros are the values of <span class="math inline">\(s\)</span> that make the numerator vanish. If the numerator factors as <span class="math display">\[b_m (s-z_1)(s-z_2)\cdots (s-z_m),\]</span> then <span class="math inline">\(z_1,z_2,\ldots,z_m\)</span> are the zeros. The <strong>poles</strong> are the values of <span class="math inline">\(s\)</span> that make the denominator vanish. If the denominator factors as <span class="math display">\[(s-p_1)(s-p_2)\cdots (s-p_n),\]</span> then <span class="math inline">\(p_1,p_2,\ldots,p_n\)</span> are the poles.</p>
+<p>This lets us rewrite the transfer function in the compact pole-zero form <span class="math display">\[G(s) = K \cdot \frac{(s - z_1)(s - z_2)\cdots (s - z_m)}
+{(s - p_1)(s - p_2)\cdots (s - p_n)},\]</span> where <span class="math inline">\(K\)</span> is a constant gain factor (often <span class="math inline">\(b_m\)</span>). Listing <a href="#lst:ch3_zpk" data-reference-type="ref" data-reference="lst:ch3_zpk">1.3</a> shows how to define a transfer function using zero–pole–gain form in MATLAB.</p>
+<figure id="lst:ch3_zpk" data-figure-labels="fig:zpk_matlab">
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+z = np.array([-2, -3])        # zeros
+p = np.array([-1, -5, -10])   # poles
+k = 4                          # gain
+
+# Create transfer function in ZPK form
+sys = ctrl.zpk(z,p,k)
+
+# Display system
+print(sys)</code></pre>
+</div>
+<pre class="matlab"><code>        z = [-2 -3];       % zeros
+        p = [-1 -5 -10];   % poles
+        k = 4;             % gain
+
+        % Create transfer function in ZPK form
+        sys = zpk(z,p,k);
+
+        % Display system
+        disp(sys)</code></pre>
+<figcaption>Defining a transfer function in MATLAB using zero–pole–gain (ZPK) form.</figcaption>
+</figure>
+<p>The poles of <span class="math inline">\(G(s)\)</span> largely determine the stability and natural dynamic behaviour of the system. For example, if any pole lies in the right half of the complex plane, the system is unstable. The zeros influence how the input is shaped on its way to the output and therefore affect transient and frequency behaviour, but they do not by themselves determine stability. If the coefficients of the transfer function are real, then complex poles and zeros appear in conjugate pairs.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Poles shape the system’s natural dynamics, while zeros affect how the input is filtered through the system.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Identifying poles and zeros of a transfer function</div>
+<p>Given the transfer function <span class="math display">\[G(s) = \frac{2(s+2)(s+3)}{(s+1)(s+4)(s+5)},\]</span> find all poles and zeros, write <span class="math inline">\(G(s)\)</span> in pole-zero form, and determine whether the system is stable.</p>
+<p>We begin with the zeros, which are the values of <span class="math inline">\(s\)</span> that make the numerator equal to zero: <span class="math display">\[2(s+2)(s+3) = 0.\]</span> Hence, <span class="math display">\[s = -2, \qquad s = -3.\]</span> Therefore, the system has two zeros located at <span class="math display">\[z_1 = -2, \qquad z_2 = -3.\]</span></p>
+<p>Next we find the poles by setting the denominator equal to zero: <span class="math display">\[(s+1)(s+4)(s+5) = 0.\]</span> Hence, <span class="math display">\[s = -1, \qquad s = -4, \qquad s = -5.\]</span> Thus, the system has three poles located at <span class="math display">\[p_1 = -1, \qquad p_2 = -4, \qquad p_3 = -5.\]</span></p>
+<p>The transfer function can therefore be written in pole-zero form as <span class="math display">\[G(s) = 2\frac{(s+2)(s+3)}{(s+1)(s+4)(s+5)}
+    = K\frac{(s-z_1)(s-z_2)}{(s-p_1)(s-p_2)(s-p_3)},\]</span> where <span class="math display">\[K=2, \quad z_1=-2,\quad z_2=-3,\quad 
+    p_1=-1,\quad p_2=-4,\quad p_3=-5.\]</span></p>
+<p>Since all poles lie in the left half-plane <span class="math inline">\((-1,-4,-5)\)</span>, the system is stable. The poles at <span class="math inline">\(-4\)</span> and <span class="math inline">\(-5\)</span> correspond to faster decaying modes, while the pole at <span class="math inline">\(-1\)</span> dominates the slower part of the response. The zeros at <span class="math inline">\(-2\)</span> and <span class="math inline">\(-3\)</span> influence how the input signal is filtered before it appears at the output. Figure <a href="#fig:pz_splane_example" data-reference-type="ref" data-reference="fig:pz_splane_example">1.4</a> shows these pole and zero locations in the <span class="math inline">\(s\)</span>-plane.</p>
+</div>
+<figure id="fig:pz_splane_example" data-latex-placement="H">
+
+<img src="figures/ch03_tikz_02.png" style="max-width:85%;" />
+<figcaption>Pole–zero plot in the <span class="math inline">\(s\)</span>-plane for <span class="math inline">\(G(s)=\frac{2(s+2)(s+3)}{(s+1)(s+4)(s+5)}\)</span>. All poles lie in the left half-plane, so the system is stable.</figcaption>
+</figure>
+<h2 id="electrical-circuits">Electrical Circuits</h2>
+<p>RLC circuit modelling starts from the constitutive equation of each component and applies Kirchhoff’s laws to the connections. Figure <a href="#fig:rlc_components" data-reference-type="ref" data-reference="fig:rlc_components">1.5</a> shows the basic elements.</p>
+<figure id="fig:rlc_components" data-latex-placement="!ht">
+
+<img src="figures/ch03_tikz_03.png" style="max-width:85%;" />
+<figcaption>Basic components of an RLC circuit with increased spacing.</figcaption>
+</figure>
+<p>Each element has its own constitutive equation:</p>
+<p><span class="math display">\[\begin{align*}
+    v_R(t) &amp;= R \, i(t), \\
+    v_L(t) &amp;= L \, \frac{di(t)}{dt}, \\
+    i_C(t) &amp;= C \, \frac{dv(t)}{dt}.
+\end{align*}\]</span></p>
+<p>These equations are the building blocks of more complex circuits. Once the components are connected together, we use Kirchhoff’s laws to combine them into an overall model.</p>
+<figure id="fig:kclkvl">
+<img src="figures/KCL_KVL.png" style="max-width:100%;" />
+<figcaption>Kirchoff's voltage (a) and current laws (b).</figcaption>
+</figure>
+<p><strong>Kirchhoff’s laws.</strong> Figure <a href="#fig:kclkvl" data-reference-type="ref" data-reference="fig:kclkvl">1.6</a> shows the two laws that organise circuit modelling. Kirchhoff’s Voltage Law (KVL) states that the algebraic sum of voltages around a closed loop is zero. Kirchhoff’s Current Law (KCL) states that the algebraic sum of currents at a node is zero, or simply that current flowing into a node must equal current flowing out.</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: KVL and KCL</div>
+<p>The algebraic sum of voltages around any closed loop is zero: <span class="math display">\[v_{ab} + v_{bc} + v_{cd} + v_{da} = 0\]</span></p>
+<p>The algebraic sum of currents at any node is zero. In other words, the total current that goes into a node should leave the node: <span class="math display">\[i_a + i_b - i_c = 0\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Parallel RLC Circuit</div>
+<p>Find the transfer function <span class="math inline">\(\tfrac{V(s)}{I(s)}\)</span> for the parallel RLC circuit shown in Fig. <a href="#fig:parallelRLC" data-reference-type="ref" data-reference="fig:parallelRLC">1.7</a>. Assume <span class="math inline">\(v(t) = 0\)</span> for <span class="math inline">\(t &lt; 0\)</span>.</p>
+<p>Applying Kirchhoff’s Current Law gives <span class="math display">\[i(t) = i_R(t) + i_L(t) + i_C(t).\]</span></p>
+<p>Substituting the component relations gives <span class="math display">\[i(t) = \frac{v(t)}{R} + \frac{1}{L}\int_0^t v(\tau)\, d\tau + C\frac{dv(t)}{dt}.\]</span></p>
+<p>Differentiating both sides with respect to <span class="math inline">\(t\)</span>: <span class="math display">\[\frac{di(t)}{dt} = \frac{1}{R}\frac{dv(t)}{dt} + \frac{1}{L}v(t) + C\frac{d^2 v(t)}{dt^2}.\]</span></p>
+<p>Dividing by <span class="math inline">\(C\)</span>: <span class="math display">\[\frac{d^2 v(t)}{dt^2} + \frac{1}{CR}\frac{dv(t)}{dt} + \frac{1}{CL}v(t) 
+    = \frac{1}{C}\frac{di(t)}{dt}.\]</span></p>
+<p>Taking the Laplace transform (zero initial conditions): <span class="math display">\[\left(s^2 + \frac{1}{CR}s + \frac{1}{CL}\right)V(s) = \frac{s}{C} I(s).\]</span></p>
+<p>Hence, the transfer function is <span class="math display">\[G(s) = \frac{V(s)}{I(s)} = \frac{\tfrac{1}{C}s}{s^2 + \tfrac{1}{CR}s + \tfrac{1}{CL}}.\]</span></p>
+</div>
+<figure id="fig:parallelRLC" data-latex-placement="!ht">
+<div class="circuitikz">
+<p>(0,0) to[american current source, l=<span class="math inline">\(i(t)\)</span>] (0,3) (0,3) – (4.5,3) (0,0) – (4.5,0);</p>
+<p>(1.5,3) to[R=<span class="math inline">\(R\)</span>, i_=<span class="math inline">\(i_R(t)\)</span>] (1.5,0);</p>
+<p>(3,3) to[L=<span class="math inline">\(L\)</span>, i_=<span class="math inline">\(i_L(t)\)</span>] (3,0);</p>
+<p>(4.5,3) to[C=<span class="math inline">\(C\)</span>, i_=<span class="math inline">\(i_C(t)\)</span>] (4.5,0);</p>
+<p>at (2.5,3.3) <span><span class="math inline">\(v(t)\)</span></span>;</p>
+</div>
+<img src="figures/ch03_tikz_04.svg" style="max-width:85%;" />
+<figcaption>Parallel RLC circuit excited by a current source.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Series RLC Circuit</div>
+<p>Find the transfer function <span class="math inline">\(I/V\)</span> of the series RLC circuit in Figure <a href="#fig:seriesRLC" data-reference-type="ref" data-reference="fig:seriesRLC">1.8</a>. Assume that no current was flowing through the loop prior to <span class="math inline">\(t=0\)</span>.</p>
+<p>The current through all components is the same, so Kirchhoff’s Voltage Law gives <span class="math display">\[\begin{align*}
+        v(t) &amp;= v_R(t) + v_L(t) + v_C(t) \\
+        &amp;= Ri(t) + L\frac{di(t)}{dt} + \frac{1}{C}\int_0^t i(\tau)\, d\tau + v_C(0).
+\end{align*}\]</span></p>
+<p>Differentiating both sides with respect to time and dividing by <span class="math inline">\(L\)</span>, we obtain <span class="math display">\[\frac{d^2 i(t)}{dt^2} 
+    + \frac{R}{L}\frac{di(t)}{dt} 
+    + \frac{1}{CL}i(t) 
+    = \frac{1}{L}\frac{dv(t)}{dt}.\]</span></p>
+<p>Taking the Laplace transform under zero initial conditions, <span class="math display">\[\left( s^2 + \frac{R}{L}s + \frac{1}{CL} \right) I(s)
+    = \frac{s}{L} V(s).\]</span></p>
+<p>Thus, the transfer function is <span class="math display">\[G(s) = \frac{I(s)}{V(s)} 
+    = \frac{\tfrac{1}{L}s}{s^2 + \tfrac{R}{L}s + \tfrac{1}{CL}}.\]</span></p>
+</div>
+<figure id="fig:seriesRLC" data-latex-placement="!ht">
+<div class="circuitikz">
+<p>(0,0) to[sinusoidal voltage source, l=<span class="math inline">\(v(t)\)</span>] (0,3) – (1.5,3);</p>
+<p>(1.5,3) to[R, l_=<span class="math inline">\(R\)</span>, i&gt;_=<span class="math inline">\(i(t)\)</span>, v^&lt;=<span class="math inline">\(v_R(t)\)</span>] (3.5,3);</p>
+<p>(3.5,3) to[L, l_=<span class="math inline">\(L\)</span>, v^&lt;=<span class="math inline">\(v_L(t)\)</span>] (5.5,3);</p>
+<p>(5.5,3) to[C, l_=<span class="math inline">\(C\)</span>, v^&lt;=<span class="math inline">\(v_C(t)\)</span>] (5.5,0) – (0,0);</p>
+</div>
+<img src="figures/ch03_tikz_05.svg" style="max-width:85%;" />
+<figcaption>Series RLC circuit excited with a voltage source <span class="math inline">\(v(t)\)</span>.</figcaption>
+</figure>
+<h2 id="impedance-method-for-circuit-modelling">Impedance Method for Circuit Modelling</h2>
+<p>A quicker alternative to writing differential equations is to replace each element by its impedance in the Laplace domain and analyse the circuit using series and parallel rules.</p>
+<p><strong>Impedance.</strong> For an electric circuit with input voltage <span class="math inline">\(V(s)\)</span> and input current <span class="math inline">\(I(s)\)</span>, the impedance is defined as <span class="math display">\[Z(s) = \frac{V(s)}{I(s)} .\]</span></p>
+<p>For the basic components, the impedances in the <span class="math inline">\(s\)</span>–domain are <span class="math display">\[\begin{align}
+    Z_R(s) &amp;= R, &amp;&amp; \text{for a resistor}, \\
+    Z_L(s) &amp;= sL, &amp;&amp; \text{for an inductor}, \\
+    Z_C(s) &amp;= \frac{1}{sC}, &amp;&amp; \text{for a capacitor}.
+\end{align}\]</span></p>
+<p><strong>Series and parallel combinations.</strong> Once each element has been replaced by its impedance, ordinary circuit-combination rules apply. In series, impedances add directly: <span class="math display">\[Z = Z_1 + Z_2 + \cdots\]</span> In parallel, admittances add: <span class="math display">\[\frac{1}{Z} = \frac{1}{Z_1} + \frac{1}{Z_2} + \cdots\]</span> Figure <a href="#fig:seriesparallelimpedance" data-reference-type="ref" data-reference="fig:seriesparallelimpedance">1.9</a> shows these two basic combinations.</p>
+<figure id="fig:seriesparallelimpedance">
+<img src="figures/SeriesParallel_impedance.png" style="max-width:95%;" />
+<figcaption>Series (left) and Parallel (right) connections of impedances.</figcaption>
+</figure>
+<p>Once an equivalent impedance is obtained, the transfer function follows from a voltage-divider or current-divider argument.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>This method avoids solving differential equations directly. Once the equivalent impedance <span class="math inline">\(Z(s)\)</span> is found, the transfer function follows immediately as <span class="math display">\[G(s) = \frac{V(s)}{I(s)} \quad \text{or} \quad G(s) = \frac{I(s)}{V(s)} ,\]</span> depending on the desired input-output relationship.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Voltage divider with capacitor and inductor</div>
+<p>Consider the two series networks in Fig. <a href="#fig:voltagedivider" data-reference-type="ref" data-reference="fig:voltagedivider">1.10</a>. Find the transfer function <span class="math inline">\(G(s)=\dfrac{V_o(s)}{V_i(s)}\)</span> where <span class="math inline">\(V_o\)</span> is measured across the lower element (<span class="math inline">\(C_2\)</span> in (a), <span class="math inline">\(L_2\)</span> in (b)).</p>
+<p><strong>(a) Capacitive divider.</strong> The impedances are <span class="math inline">\(Z_{C_1}=\dfrac{1}{sC_1}\)</span> and <span class="math inline">\(Z_{C_2}=\dfrac{1}{sC_2}\)</span>. By the voltage divider rule, <span class="math display">\[G(s)=\frac{V_o(s)}{V_i(s)}=\frac{Z_{C_2}}{Z_{C_1}+Z_{C_2}}
+    =\frac{\dfrac{1}{sC_2}}{\dfrac{1}{sC_1}+\dfrac{1}{sC_2}}
+    =\frac{C_1}{C_1+C_2}.\]</span> Thus the gain is constant (independent of <span class="math inline">\(s\)</span>): <span class="math inline">\(G(s)=\dfrac{C_1}{C_1+C_2}\)</span>.</p>
+<p><strong>(b) Inductive divider.</strong> The impedances are <span class="math inline">\(Z_{L_1}=sL_1\)</span> and <span class="math inline">\(Z_{L_2}=sL_2\)</span>. Again using the divider rule, <span class="math display">\[G(s)=\frac{V_o(s)}{V_i(s)}=\frac{Z_{L_2}}{Z_{L_1}+Z_{L_2}}
+    =\frac{sL_2}{s(L_1+L_2)}
+    =\frac{L_2}{L_1+L_2}.\]</span> This gain is also constant: <span class="math inline">\(G(s)=\dfrac{L_2}{L_1+L_2}\)</span>.</p>
+</div>
+<figure id="fig:voltagedivider" data-latex-placement="htbp">
+
+<img src="figures/ch03_tikz_06.png" style="max-width:85%;" />
+<figcaption>(a) Capacitive voltage divider. (b) Inductive voltage divider.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Impedance Method for Transfer Function</div>
+<p>Consider the circuits shown in Fig. <a href="#fig:impedance_circuit" data-reference-type="ref" data-reference="fig:impedance_circuit">1.11</a>. We wish to derive the transfer function <span class="math display">\[G(s) \;=\; \frac{V_o(s)}{V_i(s)}.\]</span></p>
+<p>Using impedance equivalents, we identify <span class="math display">\[Z_1(s) \;=\; R_1 \; \Big\| \; \frac{1}{sC_1}, 
+    \qquad 
+    Z_2(s) \;=\; R_2.\]</span></p>
+<p>Thus the transfer function is a simple voltage divider: <span class="math display">\[\frac{V_o(s)}{V_i(s)} 
+    \;=\; \frac{Z_2(s)}{Z_1(s) + Z_2(s)}.\]</span></p>
+<p>Substituting the impedances: <span class="math display">\[G(s) 
+    = \frac{R_2}{\left( \dfrac{R_1}{1+sR_1C_1} \right) + R_2}.\]</span></p>
+</div>
+<figure id="fig:impedance_circuit" data-latex-placement="!ht">
+<div class="circuitikz">
+<p>(0,0) to[sV, l=<span class="math inline">\(V_i\)</span>] (0,-3) node[ground] (0,0) to[R=<span class="math inline">\(R_1\)</span>] (3,0) (3,0) to[R=<span class="math inline">\(R_2\)</span>] (3,-3) node[ground] (0.5,1.5) to[C=<span class="math inline">\(C_1\)</span>] (2.5,1.5) (0.5,1.5) |- (0,0) (2.5,1.5) |- (3,0) (3,0) node[circ] node[above,red]<span><span class="math inline">\(V_o\)</span></span>;</p>
+<p>(6,0) to[sV, l=<span class="math inline">\(V_i\)</span>] (6,-3) node[ground] (6,0) to[generic, l=<span class="math inline">\(Z_1(s)\)</span>] (9,0) (9,0) to[generic, l=<span class="math inline">\(Z_2(s)\)</span>] (9,-3) node[ground] (9,0) node[circ] node[above,red]<span><span class="math inline">\(V_o\)</span></span>;</p>
+</div>
+<img src="figures/ch03_tikz_07.png" style="max-width:85%;" />
+<figcaption>Comparison: physical RC circuit (left) and impedance model (right).</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: A complex RLC circuit</div>
+<p>Consider the circuit given in Fig <a href="#fig:RLC_circuit_example" data-reference-type="ref" data-reference="fig:RLC_circuit_example">1.12</a>. Considering the impedance equivalent of each component, derive the equations describing the system dynamics and obtain the transfer function from the input voltage source <span class="math inline">\(V_i\)</span> to the output voltage <span class="math inline">\(V_o\)</span>.</p>
+<p>Consider the circuit in Figure <a href="#fig:RLC_circuit_example" data-reference-type="ref" data-reference="fig:RLC_circuit_example">1.12</a>. Using mesh currents <span class="math inline">\(I_1,I_2,I_3,I_4\)</span> and the impedances <span class="math inline">\(Z_{L_k}=sL_k\)</span>, <span class="math inline">\(Z_{C_k}=1/(sC_k)\)</span>, the KVL equations are <span class="math display">\[\begin{aligned}
+        &amp; sL_1 I_1 + \frac{1}{sC_1}(I_1-I_2) = V_i,\\
+        &amp; \frac{1}{sC_1}(I_2-I_1) + R_1(I_2-I_3) = 0,\\
+        &amp; sL_2 I_3 + \frac{1}{sC_2}(I_3-I_4) + R_1(I_3-I_2) = 0,\\
+        &amp; R_2 I_4 + \frac{1}{sC_2}(I_4-I_3) = 0 .
+    \end{aligned}\]</span> In matrix (mesh impedance) form, <span class="math display">\[\underbrace{\begin{bmatrix}
+            Z_{L_1}+Z_{C_1} &amp; -Z_{C_1} &amp; 0 &amp; 0\\[2pt]
+            -Z_{C_1} &amp; Z_{C_1}+R_1 &amp; -R_1 &amp; 0\\[2pt]
+            0 &amp; -R_1 &amp; Z_{L_2}+R_1+Z_{C_2} &amp; -Z_{C_2}\\[2pt]
+            0 &amp; 0 &amp; -Z_{C_2} &amp; Z_{C_2}+R_2
+    \end{bmatrix}}_{\displaystyle Z(s)}
+    \underbrace{\begin{bmatrix} I_1\\ I_2\\ I_3\\ I_4 \end{bmatrix}}_{I(s)}
+    =
+    \underbrace{\begin{bmatrix} V_i\\ 0\\ 0\\ 0 \end{bmatrix}}_{V(s)}.\]</span> The currents can then be obtained with standard linear algebra techniques (e.g. <span class="math inline">\(I(s)=Z(s)^{-1}{V(s)}\)</span> ) or with the <span class="smallcaps">Matlab</span> Symbolic Toolbox as shown in code Listing <a href="#lst:transfer_function_symbolic" data-reference-type="ref" data-reference="lst:transfer_function_symbolic">[lst:transfer_function_symbolic]</a>. The output is <span class="math inline">\(V_o(s)=R_2 I_4(s)\)</span>, hence <span class="math inline">\(G(s)=V_o(s)/V_i(s)=R_2\,I_4(s)/V_i(s)\)</span>.</p>
+</div>
+<figure id="fig:RLC_circuit_example" data-latex-placement="!htb">
+
+<img src="figures/ch03_tikz_08.png" style="max-width:85%;" />
+<figcaption>Example: RLC circuit</figcaption>
+</figure>
+<div class="listing">
+<div class="minipage">
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, Matrix, simplify, pprint, Rational
+
+s, Vi = symbols('s Vi')
+L1 = Rational(1, 10)    # 100e-3
+L2 = Rational(1, 10)    # 100e-3
+C1 = Rational(1, 100)   # 10e-3
+C2 = Rational(1, 100)   # 10e-3
+R1 = 100
+R2 = 100
+
+ZL1 = s*L1
+ZL2 = s*L2
+ZC1 = 1/(s*C1)
+ZC2 = 1/(s*C2)
+
+Z = Matrix([
+    [ZL1+ZC1,  -ZC1,       0,           0      ],
+    [-ZC1,      ZC1+R1,    -R1,          0      ],
+    [0,        -R1,         ZL2+R1+ZC2, -ZC2    ],
+    [0,         0,         -ZC2,         ZC2+R2 ]
+])
+
+V = Matrix([Vi, 0, 0, 0])
+I = Z.solve(V)
+G = simplify(R2 * I[3] / Vi)
+
+print("G(s) = V_o(s)/V_i(s) =")
+pprint(G)</code></pre>
+</div>
+<pre class="matlab"><code>syms s Vi
+            L1=100e-3; L2=100e-3; C1=10e-3; C2=10e-3; R1=100; R2=100;
+            
+            ZL1=s*L1; ZL2=s*L2;
+            ZC1=1/(s*C1); ZC2=1/(s*C2);
+            
+            Z=[ ZL1+ZC1, -ZC1, 0, 0;
+            -ZC1, ZC1+R1, -R1, 0;
+            0, -R1, ZL2+R1+ZC2, -ZC2;
+            0, 0, -ZC2, ZC2+R2 ];
+            
+            I = Z\[Vi;0;0;0];
+            G = simplify(R2*I(4)/Vi)
+            </code></pre>
+</div>
+</div>
+<h2 id="ideal-operational-amplifier-op-amp">Ideal Operational Amplifier (Op-Amp)</h2>
+<p>An <strong>operational amplifier (op-amp)</strong> has two input terminals: the <strong>inverting input</strong> <span class="math inline">\(V_{-}\)</span> and the <strong>non-inverting input</strong> <span class="math inline">\(V_{+}\)</span>. Figure <a href="#fig:lm741pinoutsquare" data-reference-type="ref" data-reference="fig:lm741pinoutsquare">1.14</a> shows a commercial op-amp (LM741) and its pin configuration.</p>
+<p>The output voltage <span class="math inline">\(V_{o}\)</span> is given by <span class="math display">\[V_{o} = K \, (V_{+} - V_{-}),\]</span> where <span class="math inline">\(K\)</span> is the open-loop gain of the amplifier.</p>
+<figure id="fig:lm741overview" data-latex-placement="ht">
+<figure id="fig:lm741">
+<img src="figures/LM741.png" style="max-width:35%;" />
+<figcaption>An operational amplifier (LM741).</figcaption>
+</figure>
+<figure id="fig:lm741pinoutsquare">
+<img src="figures/LM741_Pinout_Square.png" style="max-width:35%;" />
+<figcaption>Pinout of LM741.</figcaption>
+</figure>
+<figcaption>The LM741 operational amplifier and its pin configuration.</figcaption>
+</figure>
+<p><strong>Ideal op-amp assumptions.</strong> We assume infinite gain <span class="math inline">\((K\to\infty)\)</span>, infinite input impedance (zero input currents), and zero output impedance. With feedback, these assumptions imply <span class="math display">\[V_{+} = V_{-}, \qquad i_{+} = i_{-} = 0.\]</span></p>
+<figure id="fig:idealopamp">
+<div class="circuitikz">
+<p>(opamp) ; at (opamp.+) <span><span class="math inline">\(V_{+}\)</span></span>; at (opamp.-) <span><span class="math inline">\(V_{-}\)</span></span>; at (opamp.out) <span><span class="math inline">\(V_{o}\)</span></span>;</p>
+</div>
+<img src="figures/ch03_tikz_09.png" style="max-width:85%;" />
+<figcaption>Symbol of the ideal operational amplifier.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Op-Amp Circuits</div>
+<p>Find the transfer function <span class="math inline">\(V_{o}/V_{i}\)</span> of the circuits shown in Fig. <a href="#fig:opamp-configs" data-reference-type="ref" data-reference="fig:opamp-configs">1.17</a>.</p>
+<p><strong>Solution:</strong></p>
+<p><strong>Case (a): Non-inverting configuration.</strong> Here, <span class="math inline">\(V_{i}(s)=V_{+}(s)=V_{-}(s)\)</span>. The input current into the op-amp is zero. By applying KCL at the inverting input:</p>
+<p><span class="math display">\[\frac{V_{i}}{Z_{1}} = \frac{V_{o}-V_{i}}{Z_{2}}
+    \quad \Rightarrow \quad 
+    \left( \frac{1}{Z_{1}} + \frac{1}{Z_{2}} \right) V_{i} = \frac{V_{o}}{Z_{2}}\]</span></p>
+<p><span class="math display">\[\Rightarrow \quad 
+    \frac{V_{o}}{V_{i}} = \frac{Z_{1}+Z_{2}}{Z_{1}}.
+    \tag{2.19a}\]</span></p>
+<p><strong>Case (b): Inverting configuration.</strong> Here, <span class="math inline">\(V_{-}=V_{+}=0\)</span> (virtual ground). By KCL:</p>
+<p><span class="math display">\[\frac{V_{i}}{Z_{1}} = -\frac{V_{o}}{Z_{2}}
+    \quad \Rightarrow \quad 
+    \frac{V_{o}}{V_{i}} = -\frac{Z_{2}}{Z_{1}}.
+    \tag{2.19b}\]</span></p>
+<p>Thus, the non-inverting case provides a positive gain greater than unity, while the inverting case provides a negative gain determined by the impedance ratio.</p>
+</div>
+<figure id="fig:opamp-configs" data-latex-placement="h!">
+
+<img src="figures/ch03_tikz_10.png" style="max-width:85%;" />
+<figcaption>Op-amp circuits: (Left) non-inverting configuration and (Right) inverting configuration.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: A Circuit with Two Op-Amps</div>
+<p>Find the overall transfer function <span class="math inline">\(G(s)=V_o(s)/V_i(s)\)</span> of the two-stage network shown in Figure <a href="#fig:two-opamp-cascade" data-reference-type="ref" data-reference="fig:two-opamp-cascade">1.18</a>. Assume zero initial conditions.</p>
+<p><strong>Solution.</strong> We split the analysis into two parts.</p>
+<p>1. First stage: <span class="math inline">\(V_1/V_i\)</span></p>
+<p>The first op-amp is the configuration of Example 2-7(b) with <span class="math display">\[Z_{1}(s) \;=\; \frac{1}{C_1 s}\,\Big\|\,R_1
+    \;=\;\frac{R_1}{C_1 R_1 s +1},\]</span> <span class="math display">\[Z_{2}(s) \;=\;\frac{1}{C_2 s}\,\Big\|\,R_2
+    \;=\;\frac{R_2}{C_2 R_2 s +1}.\]</span> For an inverting op-amp, <span class="math display">\[\frac{V_1}{V_i} \;=\;-\,\frac{Z_{2}(s)}{Z_{1}(s)}
+    \;=\;-\,\frac{\displaystyle \frac{R_2}{C_2 R_2 s +1}}
+    {\displaystyle \frac{R_1}{C_1 R_1 s +1}}
+    \;=\;-\,\frac{R_2}{R_1}\;
+    \frac{C_1 R_1 s +1}{C_2 R_2 s +1}.\]</span> 2. Second stage: <span class="math inline">\(V_o/V_1\)</span></p>
+<p>Similarly, the second op-amp (also an inverting configuration) has <span class="math display">\[Z_{1}&#39;(s)=\frac{R_3}{C_3 R_3 s +1}, 
+    \qquad
+    Z_{2}&#39;(s)=\frac{R_4}{C_4 R_4 s +1},\]</span> and <span class="math display">\[\frac{V_o}{V_1}
+    \;=\;-\,\frac{Z_{2}&#39;(s)}{Z_{1}&#39;(s)}
+    \;=\;-\,\frac{R_4}{R_3}\;
+    \frac{\,C_3 R_3 s +1\,}{\,C_4 R_4 s +1\,}.\]</span></p>
+<p>3. Overall transfer: <span class="math inline">\(V_o/V_i\)</span></p>
+<p>The two stages cascade, so <span class="math display">\[G(s)
+    =\frac{V_o}{V_i}
+    =\frac{V_o}{V_1}\,\frac{V_1}{V_i}
+    =\Bigl(-\,\dfrac{R_4}{R_3}\,\dfrac{C_3 R_3 s +1}{C_4 R_4 s +1}\Bigr)
+    \;\times\;
+    \Bigl(-\,\dfrac{R_2}{R_1}\,\dfrac{C_1 R_1 s +1}{C_2 R_2 s +1}\Bigr).\]</span> which simplifies to <span class="math display">\[G(s)
+    = \frac{V_o(s)}{V_i(s)}
+    = \frac{R_2\,R_4}{R_1\,R_3}\;
+    \underbrace{\frac{C_1 R_1 s +1}{C_2 R_2 s +1}}_{\text{stage 1}}
+    \;\times\;
+    \underbrace{\frac{C_3 R_3 s +1}{C_4 R_4 s +1}}_{\text{stage 2}}.\]</span></p>
+</div>
+<figure id="fig:two-opamp-cascade">
+
+<img src="figures/ch03_tikz_11.png" style="max-width:85%;" />
+<figcaption>Cascade connection of 2-opamp filters.</figcaption>
+</figure>
+<h2 id="mechanical-systems-translational-motion">Mechanical Systems : Translational motion</h2>
+<figure id="fig:mechanical_components_translational">
+
+<img src="figures/ch03_tikz_12.png" style="max-width:85%;" />
+<figcaption>Basic mechanical components used in translational motion.</figcaption>
+</figure>
+<p>Translational motion is modelled with three basic elements: springs (react to displacement), dampers (react to velocity), and masses (react to acceleration). Figure <a href="#fig:mechanical_components_translational" data-reference-type="ref" data-reference="fig:mechanical_components_translational">1.19</a> shows these elements and their constitutive relations.</p>
+<p><strong>Spring.</strong> A linear spring stores potential energy and exerts a restoring force proportional to the displacement <span class="math inline">\(x(t)\)</span> from its equilibrium position. Its constitutive relation is <span class="math display">\[f(t)\;=\;K\,x(t),
+\qquad
+\underbrace{[\,\text{N}\,]}_{f}\;=\;\underbrace{[\,\tfrac{\text{N}}{\text{m}}\,]}_{K}\;\times\;\underbrace{[\,\text{m}\,]}_{x}\,.\]</span></p>
+<p><strong>Viscous damper.</strong> A viscous damper dissipates kinetic energy and produces a force proportional to relative velocity: <span class="math display">\[f(t)\;=\;b\,\dot x(t),
+\qquad
+\underbrace{[\,\text{N}\,]}_{f}\;=\;\underbrace{[\,\tfrac{\text{N}\cdot\text{s}}{\text{m}}\,]}_{b}\;\times\;\underbrace{[\,\tfrac{\text{m}}{\text{s}}\,]}_{\dot x}\,.\]</span></p>
+<p><strong>Mass.</strong> A rigid mass resists acceleration according to Newton’s second law: <span class="math display">\[M\,\ddot x(t)\;=\;f(t),
+\qquad
+\underbrace{[\,\text{kg}\,]}_{M}\;\times\;\underbrace{[\,\tfrac{\text{m}}{\text{s}^2}\,]}_{\ddot x}\;=\;\underbrace{[\,\text{N}\,]}_{f}.\]</span> Here <span class="math inline">\(\dot x(t)\)</span> denotes velocity and <span class="math inline">\(b\)</span> is the damping coefficient, measured as force per unit velocity.</p>
+<figure id="fig:mass_damper_spring">
+
+<img src="figures/ch03_tikz_13.png" style="max-width:85%;" />
+<figcaption>Simple mass-damper-spring system.</figcaption>
+</figure>
+<figure id="fig:mass_damper_spring_forces">
+
+<img src="figures/ch03_tikz_14.png" style="max-width:85%;" />
+<figcaption>Simple mass-damper-spring system: Forces acting on mass <span class="math inline">\(M\)</span>.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p>Derive the equation of motion for the system shown in Figure <a href="#fig:mass_damper_spring" data-reference-type="ref" data-reference="fig:mass_damper_spring">1.20</a>. Assume that the system is initially at rest, so <span class="math inline">\(x(0)=\dot x(0)=0\)</span>.</p>
+<p>We begin the modelling process by identifying all forces acting on the mass <span class="math inline">\(M\)</span> and applying Newton’s second law of motion: <span class="math display">\[\sum F = M\ddot{x},\]</span> where <span class="math inline">\(\sum F\)</span> denotes the net force acting on <span class="math inline">\(M\)</span>.</p>
+<p>Consider Figure <a href="#fig:mass_damper_spring" data-reference-type="ref" data-reference="fig:mass_damper_spring">1.20</a>. Since there is only one moving body, the analysis focuses on mass <span class="math inline">\(M\)</span> and the forces applied to it. We choose the positive direction of motion to the right, with the external force <span class="math inline">\(f(t)\)</span> also acting in this direction.</p>
+<p>The spring and damper, whose other ends are fixed to a rigid wall, oppose this motion. The spring exerts a restoring force proportional to displacement, <span class="math inline">\(k x(t)\)</span>, and the damper exerts a resistive force proportional to velocity, <span class="math inline">\(b\dot{x}(t)\)</span>. Both of these forces act to the left, opposing the applied force. These forces are illustrated in Figure <a href="#fig:mass_damper_spring_forces" data-reference-type="ref" data-reference="fig:mass_damper_spring_forces">1.21</a>.</p>
+<p>Thus, the equation of motion (EOM) is: <span class="math display">\[\begin{equation}
+        M\ddot{x}(t) = f(t) - kx(t) - b\dot{x}(t).
+\end{equation}\]</span></p>
+<p>Taking the Laplace transform of both sides, and assuming zero initial displacement and velocity, we obtain: <span class="math display">\[\begin{equation*}
+        (Ms^2 + bs + k)X(s) = F(s).
+\end{equation*}\]</span></p>
+<p>Therefore, the transfer function from the input force <span class="math inline">\(f(t)\)</span> to the displacement <span class="math inline">\(x(t)\)</span> is: <span class="math display">\[\begin{equation*}
+        G(s) = \frac{X(s)}{F(s)} 
+        = \frac{1}{Ms^2 + bs + k}.
+\end{equation*}\]</span></p>
+</div>
+<figure id="fig:two_mass_spring_damper" data-latex-placement="!ht">
+
+<img src="figures/ch03_tikz_15.png" style="max-width:85%;" />
+<figcaption>Two-mass system: <span class="math inline">\(M_1\)</span> attached to wall with spring and damper, <span class="math inline">\(M_2\)</span> connected to <span class="math inline">\(M_1\)</span> with another spring and damper, subject to external force <span class="math inline">\(f(t)\)</span>.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p>Derive the equations of motion for the two-mass system shown in Figure <a href="#fig:two_mass_spring_damper" data-reference-type="ref" data-reference="fig:two_mass_spring_damper">1.22</a>. Assume that the system is initially at rest, so <span class="math inline">\(x_1(0)=\dot x_1(0)=x_2(0)=\dot x_2(0)=0\)</span>.</p>
+<p>We apply Newton’s second law to each mass: <span class="math display">\[\sum F = M\ddot{x}.\]</span></p>
+<p>For mass <span class="math inline">\(M_1\)</span>, the wall spring and wall damper contribute the restoring and dissipative forces <span class="math inline">\(-k_1x_1\)</span> and <span class="math inline">\(-b_1\dot{x}_1\)</span>. The coupling spring and damper contribute forces based on relative displacement and relative velocity, namely <span class="math inline">\(-k_2(x_1-x_2)\)</span> and <span class="math inline">\(-b_2(\dot{x}_1-\dot{x}_2)\)</span>. Therefore <span class="math display">\[\begin{equation*}
+        M_1\ddot{x}_1 = -k_1x_1 - b_1\dot{x}_1 - k_2(x_1 - x_2) - b_2(\dot{x}_1 - \dot{x}_2).
+\end{equation*}\]</span></p>
+<p>For mass <span class="math inline">\(M_2\)</span>, the external force <span class="math inline">\(f(t)\)</span> acts to the right, while the coupling spring and damper oppose the relative motion. Hence <span class="math display">\[\begin{equation*}
+        M_2\ddot{x}_2 = f(t) - k_2(x_2 - x_1) - b_2(\dot{x}_2 - \dot{x}_1).
+\end{equation*}\]</span></p>
+<p>These equations can be written compactly in matrix form as <span class="math display">\[\begin{bmatrix}
+            M_1 &amp; 0 \\
+            0 &amp; M_2
+        \end{bmatrix}
+        \begin{bmatrix}
+            \ddot{x}_1 \\
+            \ddot{x}_2
+        \end{bmatrix}
+        +
+        \begin{bmatrix}
+            b_1+b_2 &amp; -b_2 \\
+            -b_2 &amp; b_2
+        \end{bmatrix}
+        \begin{bmatrix}
+            \dot{x}_1 \\
+            \dot{x}_2
+        \end{bmatrix}
+        +
+        \begin{bmatrix}
+            k_1+k_2 &amp; -k_2 \\
+            -k_2 &amp; k_2
+        \end{bmatrix}
+        \begin{bmatrix}
+            x_1 \\
+            x_2
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+            0 \\
+            f(t)
+        \end{bmatrix}.\]</span></p>
+<p>Assuming zero initial conditions and taking the Laplace transform gives <span class="math display">\[A(s)\begin{bmatrix}X_1(s) \\ X_2(s)\end{bmatrix} 
+    = 
+    \begin{bmatrix}0 \\ F(s)\end{bmatrix},\]</span> where <span class="math display">\[A(s) =
+    \begin{bmatrix}
+        M_1 s^2 + (b_1+b_2)s + (k_1+k_2) &amp; -(b_2 s + k_2) \\
+        -(b_2 s + k_2) &amp; M_2 s^2 + b_2 s + k_2
+    \end{bmatrix}.\]</span></p>
+<p>Solving this <span class="math inline">\(2\times2\)</span> system by matrix inversion gives <span class="math display">\[\begin{bmatrix}
+            X_1(s) \\ X_2(s)
+        \end{bmatrix}
+        = \frac{1}{\Delta(s)}
+        \begin{bmatrix}
+            M_2 s^2 + b_2 s + k_2 &amp; b_2 s + k_2 \\
+            b_2 s + k_2 &amp; M_1 s^2 + (b_1+b_2)s + (k_1+k_2)
+        \end{bmatrix}
+        \begin{bmatrix}
+            0 \\ F(s)
+        \end{bmatrix},\]</span> with <span class="math display">\[\Delta(s) = \bigl[M_1 s^2 + (b_1+b_2)s + (k_1+k_2)\bigr]
+        \bigl[M_2 s^2 + b_2 s + k_2\bigr] - (b_2 s + k_2)^2.\]</span></p>
+<p>Therefore, <span class="math display">\[X_1(s) = \dfrac{(b_2 s + k_2)F(s)}{\Delta(s)}, \quad 
+        X_2(s) = \dfrac{\big[M_1 s^2 + (b_1+b_2)s + (k_1+k_2)\big]F(s)}{\Delta(s)}.\]</span> Hence, the transfer function from the applied force to the displacement of <span class="math inline">\(M_2\)</span> is <span class="math display">\[\frac{X_2(s)}{F(s)} 
+    = \dfrac{M_1 s^2 + (b_1+b_2)s + (k_1+k_2)}{\Delta(s)}.\]</span></p>
+</div>
+<p>Listing <a href="#lst:matlab-verification" data-reference-type="ref" data-reference="lst:matlab-verification">[lst:matlab-verification]</a> confirms the symbolic expressions for <span class="math inline">\(X_1(s)\)</span>, <span class="math inline">\(X_2(s)\)</span>, and the transfer function <span class="math inline">\(X_2(s)/F(s)\)</span> using MATLAB.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Python verification of <span class="math inline">\(X_1(s)\)</span>, <span class="math inline">\(X_2(s)\)</span>, and transfer function <span class="math inline">\(X_2(s)/F(s)\)</span>.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, Matrix, simplify, pprint
+
+M1, M2, b1, b2, k1, k2, s, Fs = symbols('M1 M2 b1 b2 k1 k2 s Fs')
+
+A_s = Matrix([
+    [M1*s**2 + (b1+b2)*s + (k1+k2),  -(b2*s + k2)],
+    [-(b2*s + k2),                     M2*s**2 + b2*s + k2]
+])
+
+F_s = Matrix([0, Fs])
+X_s = A_s.solve(F_s)
+X1_s = simplify(X_s[0])
+X2_s = simplify(X_s[1])
+
+print('X1(s):')
+pprint(X1_s)
+print('\nX2(s):')
+pprint(X2_s)
+
+G2_s = simplify(X2_s / Fs)
+print('\nX2(s)/F(s):')
+pprint(G2_s)</code></pre>
+</div>
+<pre class="matlab"><code>clear; clc;
+        syms M1 M2 b1 b2 k1 k2 s Fs
+        
+        A_s = [M1*s^2+(b1+b2)*s+(k1+k2), -(b2*s+k2);
+        -(b2*s+k2), M2*s^2+b2*s+k2];
+        F_s = [0; Fs];
+        
+        X_s = A_s \ F_s;
+        X1_s = simplify(X_s(1));
+        X2_s = simplify(X_s(2));
+        
+        disp('X1(s):'); pretty(X1_s)
+        disp('X2(s):'); pretty(X2_s)
+        
+        G2_s = simplify(X2_s/Fs);
+        disp('X2(s)/F(s):'); pretty(G2_s)</code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p>Derive the equations of motion for the quarter-car suspension system shown in Figure <a href="#fig:suspension" data-reference-type="ref" data-reference="fig:suspension">1.23</a>. The model consists of a sprung mass <span class="math inline">\(M_s\)</span> representing the vehicle body and an unsprung mass <span class="math inline">\(M_{us}\)</span> representing the wheel assembly. The suspension is modelled by a spring <span class="math inline">\(k_s\)</span> and a damper <span class="math inline">\(c_s\)</span>, while the tire is modelled as a spring <span class="math inline">\(k_t\)</span>. The road disturbance is <span class="math inline">\(y_r(t)\)</span>. Assume initial rest conditions.</p>
+<p>We apply Newton’s second law to each mass. Let <span class="math inline">\(y_s(t)\)</span> denote the vertical displacement of the sprung mass and <span class="math inline">\(y_{us}(t)\)</span> the displacement of the unsprung mass. The positive direction is upward.</p>
+<p>For the sprung mass, the only forces come from the suspension spring and damper, both of which depend on the relative motion between the body and the wheel. Therefore <span class="math display">\[\begin{equation}
+        M_s \ddot{y}_s = -k_s(y_s-y_{us}) - c_s(\dot{y}_s-\dot{y}_{us}).
+\end{equation}\]</span></p>
+<p>For the unsprung mass, the suspension spring and damper act in the opposite direction, and the tire spring contributes an additional force based on the relative displacement between the wheel and the road. Hence <span class="math display">\[\begin{equation}
+        M_{us} \ddot{y}_{us} = -k_s(y_{us}-y_s) - c_s(\dot{y}_{us}-\dot{y}_{s}) - k_t(y_{us}-y_r).
+\end{equation}\]</span></p>
+<p>The system can be written compactly as</p>
+<p><span class="math display">\[\underbrace{\begin{bmatrix}
+                M_s &amp; 0 \\
+                0 &amp; M_{us}
+        \end{bmatrix}}_{M}
+        \begin{bmatrix}
+            \ddot{y}_s \\ \ddot{y}_{us}
+        \end{bmatrix}
+        +
+        \underbrace{\begin{bmatrix}
+                c_s &amp; -c_s \\
+                -c_s &amp; c_s
+        \end{bmatrix}}_{C}
+        \begin{bmatrix}
+            \dot{y}_s \\ \dot{y}_{us}
+        \end{bmatrix}
+        +
+        \underbrace{\begin{bmatrix}
+                k_s &amp; -k_s \\
+                -k_s &amp; k_s+k_t
+        \end{bmatrix}}_{K}
+        \begin{bmatrix}
+            y_s \\ y_{us}
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+            0 \\ k_t y_r
+        \end{bmatrix}.\]</span></p>
+<p>Assuming zero initial conditions and taking the Laplace transform gives <span class="math display">\[\Big(Ms^2 + Cs + K\Big)
+    \begin{bmatrix}
+        Y_s(s) \\ Y_{us}(s)
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        0 \\ k_t Y_r(s)
+    \end{bmatrix}.\]</span></p>
+<p>Let <span class="math display">\[A(s) = Ms^2 + Cs + K,\]</span> then <span class="math display">\[A(s)\begin{bmatrix}Y_s(s) \\ Y_{us}(s)\end{bmatrix}
+    =
+    \begin{bmatrix}0 \\ k_t Y_r(s)\end{bmatrix}.\]</span></p>
+<p>The solution is obtained by inverting <span class="math inline">\(A(s)\)</span>: <span class="math display">\[\begin{bmatrix}
+        Y_s(s) \\ Y_{us}(s)
+    \end{bmatrix}
+    =
+    A(s)^{-1}
+    \begin{bmatrix}
+        0 \\ k_t Y_r(s)
+    \end{bmatrix}.\]</span></p>
+<p>This system can be solved analytically by matrix inversion or numerically in MATLAB. For ride-comfort analysis, the transfer function from the road displacement <span class="math inline">\(Y_r(s)\)</span> to the body displacement <span class="math inline">\(Y_s(s)\)</span> is usually the quantity of greatest interest.</p>
+</div>
+<figure id="fig:suspension" data-latex-placement="!htb">
+<img src="figures/active_suspension.png" style="max-width:100%;" />
+<figcaption>Suspension system and its simplified model.</figcaption>
+</figure>
+<figure id="fig:suspensionreal" data-latex-placement="!htb">
+<img src="figures/suspension_real.png" style="max-width:50%;" />
+<figcaption>A real suspension system used in cars.</figcaption>
+</figure>
+<h2 id="mechanical-systems-rotational-systems">Mechanical Systems : Rotational Systems</h2>
+<p>Rotational systems are modelled the same way as translational ones, with mass replaced by moment of inertia <span class="math inline">\(J\)</span>, displacement by angle <span class="math inline">\(\theta\)</span>, velocity by <span class="math inline">\(\dot{\theta}\)</span>, and force by torque <span class="math inline">\(T\)</span>. A torsional spring obeys <span class="math inline">\(T=k\,\theta\)</span>, a rotational damper obeys <span class="math inline">\(T=b\,\dot{\theta}\)</span>, and Newton’s second law for rotation gives <span class="math inline">\(T=J\,\ddot{\theta}\)</span>.</p>
+<figure id="fig:rotationalsystems">
+<img src="figures/RotationalSystems.png" style="max-width:100%;" />
+<figcaption>Basic components of rotational mechanical systems.</figcaption>
+</figure>
+<div class="table*">
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Translational</strong></th>
+<th style="text-align: left;"><strong>Rotational</strong></th>
+<th style="text-align: left;"><strong>Analogy</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Displacement <span class="math inline">\(x\)</span> [m]</td>
+<td style="text-align: left;">Angular displacement <span class="math inline">\(\theta\)</span> [rad]</td>
+<td style="text-align: left;">Position</td>
+</tr>
+<tr>
+<td style="text-align: left;">Velocity <span class="math inline">\(\dot{x}=v\)</span> [m/s]</td>
+<td style="text-align: left;">Angular velocity <span class="math inline">\(\dot{\theta}=\omega\)</span> [rad/s]</td>
+<td style="text-align: left;">Velocity</td>
+</tr>
+<tr>
+<td style="text-align: left;">Acceleration <span class="math inline">\(\ddot{x}=a\)</span> [m/s<span class="math inline">\(^2\)</span>]</td>
+<td style="text-align: left;">Angular acceleration <span class="math inline">\(\ddot{\theta}=\alpha\)</span> [rad/s<span class="math inline">\(^2\)</span>]</td>
+<td style="text-align: left;">Acceleration</td>
+</tr>
+<tr>
+<td style="text-align: left;">Mass <span class="math inline">\(m\)</span> [kg]</td>
+<td style="text-align: left;">Moment of inertia <span class="math inline">\(J\)</span> [kg m<span class="math inline">\(^2\)</span>]</td>
+<td style="text-align: left;">Resistance to acceleration</td>
+</tr>
+<tr>
+<td style="text-align: left;">Force <span class="math inline">\(F\)</span> [N]</td>
+<td style="text-align: left;">Torque <span class="math inline">\(T\)</span> [N m]</td>
+<td style="text-align: left;">Cause of motion</td>
+</tr>
+<tr>
+<td style="text-align: left;">Spring: <span class="math inline">\(F = k\;x\)</span>, <span class="math inline">\(k\)</span> [N/m]</td>
+<td style="text-align: left;">Spring: <span class="math inline">\(T = k\;\theta\)</span>, <span class="math inline">\(k\)</span> [N m/rad]</td>
+<td style="text-align: left;">Restoring element</td>
+</tr>
+<tr>
+<td style="text-align: left;">Damper: <span class="math inline">\(F = b\;\dot{x}\)</span>, <span class="math inline">\(b\)</span> [N s/m]</td>
+<td style="text-align: left;">Damper: <span class="math inline">\(T = b\;\dot{\theta}\)</span>, <span class="math inline">\(b\)</span> [N m s/rad]</td>
+<td style="text-align: left;">Energy dissipation</td>
+</tr>
+<tr>
+<td style="text-align: left;">Inertia: <span class="math inline">\(F = m\;\ddot{x}\)</span>, <span class="math inline">\(m\)</span> [kg]</td>
+<td style="text-align: left;">Inertia: <span class="math inline">\(T = J\;\ddot{\theta}\)</span>, <span class="math inline">\(J\)</span> [kg m<span class="math inline">\(^2\)</span>]</td>
+<td style="text-align: left;">Newton’s law</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<figure id="fig:rotationalexample01" data-latex-placement="!htb">
+<img src="figures/Rotational_Example01.png" style="max-width:100%;" />
+<figcaption>Example for a rotational system (left), torques acting on the inertial body <span class="math inline">\(J\)</span> (right).</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p>Consider the system shown in Figure <a href="#fig:rotationalexample01" data-reference-type="ref" data-reference="fig:rotationalexample01">1.26</a>. The applied torque <span class="math inline">\(T(t)\)</span> causes the inertial body <span class="math inline">\(J\)</span> to rotate in the clockwise direction, producing an angular displacement <span class="math inline">\(\theta(t)\)</span>. However, the viscous damper (with damping constant <span class="math inline">\(b\)</span>) and the torsional spring (with stiffness <span class="math inline">\(k\)</span>) oppose this motion. The damper exerts a resisting torque of magnitude <span class="math inline">\(b\,\dot{\theta}(t)\)</span>, while the spring produces a restoring torque of <span class="math inline">\(k\,\theta(t)\)</span>, both acting in the opposite direction to <span class="math inline">\(T(t)\)</span>.</p>
+<p>Applying Newton’s second law for rotation gives: <span class="math display">\[\begin{equation*}
+        J\,\ddot{\theta}(t) = T(t) - b\,\dot{\theta}(t) - k\,\theta(t).
+\end{equation*}\]</span></p>
+<p>Taking the Laplace transform of both sides (assuming zero initial conditions) yields: <span class="math display">\[\begin{equation*}
+        J\,s^2 \Theta(s) = T(s) - b\,s\,\Theta(s) - k\,\Theta(s).
+\end{equation*}\]</span></p>
+<p>Rearranging terms: <span class="math display">\[\begin{equation*}
+        \left(J\,s^2 + b\,s + k \right)\Theta(s) = T(s).
+\end{equation*}\]</span></p>
+<p>Thus, the transfer function from the input torque <span class="math inline">\(T(s)\)</span> to the angular displacement <span class="math inline">\(\Theta(s)\)</span> is: <span class="math display">\[\begin{equation*}
+        \frac{\Theta(s)}{T(s)} = \frac{1}{J\,s^2 + b\,s + k}.
+\end{equation*}\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Model of a torsional shaft</div>
+<p>Consider the torsional system shown in Figure <a href="#fig:torsionalshaft" data-reference-type="ref" data-reference="fig:torsionalshaft">1.27</a>. In part (a), a torque <span class="math inline">\(T(t)\)</span> is applied to the left end of a shaft mounted on bearings at both ends. Because the shaft is elastic, it cannot be treated as a perfectly rigid body. Instead, it twists under the applied torque, so that the angular displacement at the input end differs from that at the output end. To capture this effect, the shaft is modeled in part (b) as two rotating inertias, <span class="math inline">\(J_1\)</span> and <span class="math inline">\(J_2\)</span>, connected by a torsional spring of stiffness <span class="math inline">\(K\)</span>. This spring accounts for the elastic twist of the shaft. The friction in the bearings is represented by viscous dampers <span class="math inline">\(b_1\)</span> and <span class="math inline">\(b_2\)</span>, attached respectively to the two inertias, to model the energy dissipation due to bearing resistance.</p>
+<p>Determine the transfer function between the input torque and the angular displacement of the second inertia, i.e., <span class="math display">\[\frac{\Theta_2(s)}{T(s)}.\]</span></p>
+<p>We write one rotational balance for <span class="math inline">\(J_1\)</span> and one for <span class="math inline">\(J_2\)</span>. If <span class="math inline">\(J_2\)</span> is viewed temporarily as fixed at position <span class="math inline">\(\theta_2\)</span>, then a positive twist of <span class="math inline">\(J_1\)</span> by <span class="math inline">\(\theta_1\)</span> produces a spring torque <span class="math display">\[k\bigl(\theta_1(t)-\theta_2(t)\bigr).\]</span> The damper <span class="math inline">\(b_1\)</span> contributes an opposing torque proportional to angular velocity: <span class="math display">\[b_1\dot{\theta}_1(t).\]</span> The dynamic equation for <span class="math inline">\(J_1\)</span> is therefore <span class="math display">\[\begin{equation*}
+        J_1\,\ddot{\theta}_1(t) 
+        = T(t) - b_1\dot{\theta}_1(t) - k\bigl(\theta_1(t)-\theta_2(t)\bigr).
+\end{equation*}\]</span></p>
+<p>Now focus on <span class="math inline">\(J_2\)</span>. When <span class="math inline">\(J_2\)</span> turns relative to <span class="math inline">\(J_1\)</span>, the spring resists with a torque <span class="math display">\[k\bigl(\theta_2(t)-\theta_1(t)\bigr),\]</span> and the damper <span class="math inline">\(b_2\)</span> adds the torque <span class="math display">\[b_2\dot{\theta}_2(t).\]</span> Since no external torque is applied directly to <span class="math inline">\(J_2\)</span>, its equation of motion is <span class="math display">\[\begin{equation*}
+        J_2\,\ddot{\theta}_2(t) 
+        = -k\bigl(\theta_2(t)-\theta_1(t)\bigr) - b_2\dot{\theta}_2(t).
+\end{equation*}\]</span> Taking the Laplace transform of both equations and assuming zero initial conditions gives <span class="math display">\[\begin{align}
+        J_1 \,s^2\, \Theta_1(s) &amp;= T(s) - b_1 s \Theta_1(s) - k\bigl(\Theta_1(s)-\Theta_2(s)\bigr), \label{eq:J1laplace} \\
+        J_2 \,s^2 \,\Theta_2(s) &amp;= -k\bigl(\Theta_2(s)-\Theta_1(s)\bigr) - b_2 s \Theta_2(s). \label{eq:J2laplace}
+\end{align}\]</span> Rearranging <a href="#eq:J1laplace" data-reference-type="eqref" data-reference="eq:J1laplace">[eq:J1laplace]</a> gives: <span class="math display">\[\begin{equation*}
+        \bigl(J_1 s^2 + b_1 s + k \bigr)\Theta_1(s) - k\Theta_2(s) = T(s).
+\end{equation*}\]</span> On the other hand, rearranging <a href="#eq:J2laplace" data-reference-type="eqref" data-reference="eq:J2laplace">[eq:J2laplace]</a> gives: <span class="math display">\[\begin{equation*}
+        -k\Theta_1(s) + \bigl(J_2 s^2 + b_2 s + k\bigr)\Theta_2(s) = 0.
+\end{equation*}\]</span></p>
+<p>Writing the equations in matrix form: <span class="math display">\[\begin{bmatrix}
+        J_1 s^2 + b_1 s + k &amp; -k \\
+        -k &amp; J_2 s^2 + b_2 s + k
+    \end{bmatrix}
+    \begin{bmatrix}
+        \Theta_1(s) \\
+        \Theta_2(s)
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        T(s) \\
+        0
+    \end{bmatrix}.\]</span> Inverting this system yields <span class="math display">\[\frac{\Theta_2(s)}{T(s)} 
+    = \frac{k}{(J_1 s^2 + b_1 s + k)(J_2 s^2 + b_2 s + k) - k^2}\]</span></p>
+</div>
+<figure id="fig:torsionalshaft" data-latex-placement="!htb">
+<img src="figures/torsional_shaft.png" style="max-width:100%;" />
+<figcaption>Model (b) of a torsional shaft(a). </figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: A complex rotational system</div>
+<p>Find the transfer function <span class="math inline">\(\dfrac{\Theta_3(s)}{T(s)}\)</span> for the rotational system shown in Figure <a href="#fig:rotationalexample02" data-reference-type="ref" data-reference="fig:rotationalexample02">1.28</a>.</p>
+<p>Following the same procedure as in the previous examples, we write one equation of motion for each inertia <span class="math inline">\(J_i\)</span>, <span class="math inline">\(i=1,\ldots,3\)</span>: <span class="math display">\[\begin{align*}
+        J_1\ddot \theta_1 &amp;=T-k_1(\theta_1-\theta_2)-b_1\dot \theta_1 \\
+        J_2\ddot \theta_2 &amp;=-k_1(\theta_2-\theta_1)-k_2(\theta_2-\theta_3)-b_3(\dot \theta_2-\dot \theta_3)-b_2\dot \theta_2 \\
+        J_3\ddot \theta_3 &amp;=-k_2(\theta_3-\theta_2)-b_3(\dot \theta_3-\dot \theta_2)-b_4\dot \theta_3
+\end{align*}\]</span></p>
+<p>Taking Laplace transforms (zero initial conditions assumed): <span class="math display">\[\begin{align*}
+        (J_1s^2+b_1s+k_1)\Theta_1 -k_1\Theta_2 &amp;= T(s) \\
+        -k_1\Theta_1+(J_2s^2+(b_2+b_3)s+(k_1+k_2))\Theta_2 -(k_2+b_3s)\Theta_3 &amp;=0 \\
+        -(k_2+b_3s)\Theta_2+(J_3s^2+(b_3+b_4)s+k_2)\Theta_3 &amp;=0
+\end{align*}\]</span></p>
+<p>These equations can then be written in matrix form as <span class="math display">\[\underbrace{\begin{bmatrix}
+                J_1s^2+b_1s+k_1 &amp; -k_1 &amp; 0 \\
+                -k_1 &amp; J_2s^2+(b_2+b_3)s+(k_1+k_2) &amp; -(k_2+b_3s) \\
+                0 &amp; -(k_2+b_3s) &amp; J_3s^2+(b_3+b_4)s+k_2
+        \end{bmatrix}}_{\triangleq A(s)}
+        \begin{bmatrix}
+            \Theta_1 \\ \Theta_2 \\ \Theta_3
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+            T(s) \\ 0 \\ 0
+        \end{bmatrix}.\]</span></p>
+<p>Letting <span class="math inline">\(\boldsymbol{\Theta}(s)=[\Theta_1,\Theta_2,\Theta_3]^\top\)</span>, we compactly have <span class="math display">\[A(s)\,\boldsymbol{\Theta}(s)=\begin{bmatrix}T(s)\\0\\0\end{bmatrix}.\]</span></p>
+<p>Solving for <span class="math inline">\(\boldsymbol{\Theta}(s)\)</span> gives <span class="math display">\[\boldsymbol{\Theta}(s)=A(s)^{-1}\begin{bmatrix}T(s)\\0\\0\end{bmatrix}.\]</span></p>
+<p>Therefore, the transfer function is obtained from the <span class="math inline">\((3,1)\)</span> element of <span class="math inline">\(A(s)^{-1}\)</span>: <span class="math display">\[\frac{\Theta_3(s)}{T(s)}=\bigl[A(s)^{-1}\bigr]_{31}.\]</span></p>
+</div>
+<figure id="fig:rotationalexample02" data-latex-placement="!htb">
+<img src="figures/Rotational_Example02.png" style="max-width:100%;" />
+<figcaption>A rotational system with three inertial bodies.</figcaption>
+</figure>
+<h2 id="gears-in-mechanical-systems">Gears in mechanical systems</h2>
+<p>Gears trade speed for torque and impose geometric constraints between angular displacement, velocity, and torque.</p>
+<p>Consider the gear pair in Figure <a href="#fig:gear" data-reference-type="ref" data-reference="fig:gear">1.29</a>. Gear 1 is the input gear, with radius <span class="math inline">\(r_1\)</span>, tooth count <span class="math inline">\(N_1\)</span>, and angular displacement <span class="math inline">\(\theta_1\)</span>. Gear 2 is the output gear, with radius <span class="math inline">\(r_2\)</span>, tooth count <span class="math inline">\(N_2\)</span>, and angular displacement <span class="math inline">\(\theta_2\)</span>.</p>
+<figure id="fig:gear">
+<img src="figures/gears.png" style="max-width:100%;" />
+<figcaption>Gear system (a) and the torques, forces and geometry of the gears (b)</figcaption>
+</figure>
+<p>At the point of contact, assuming no slipping, the arc lengths must be equal: <span class="math display">\[r_1 \theta_1 = r_2 \theta_2\]</span></p>
+<p>Taking time derivatives yields the angular velocity relationship: <span class="math display">\[r_1 \omega_1 = r_2 \omega_2\]</span></p>
+<p>The number of teeth on each gear is proportional to its radius, hence: <span class="math display">\[\frac{\theta_2}{\theta_1} = \frac{\omega_2}{\omega_1} = \frac{r_1}{r_2} = \frac{N_1}{N_2}\]</span> where <span class="math inline">\(N_1/N_2\)</span> is the <strong>gear ratio</strong>.</p>
+<p>At the contact point, the tangential force <span class="math inline">\(F\)</span> is equal and opposite on both gears. Since torque is the product of force and radius: <span class="math display">\[T_1 = F r_1 \qquad T_2 = F r_2\]</span></p>
+<p>Thus, the torque relationship becomes: <span class="math display">\[\frac{T_1}{r_1} = \frac{T_2}{r_2} \quad \Rightarrow \quad \frac{T_1}{T_2} = \frac{r_1}{r_2}\]</span></p>
+<p>Therefore, the torque relationship between the two gears becomes: <span class="math display">\[\frac{T_2}{T_1} = \frac{r_2}{r_1} = \frac{N_2}{N_1}.\]</span> Assuming there is no frictional loss, <span class="math display">\[T_2 = J_2s^2\Theta_2\]</span> Since <span class="math inline">\(T_1=\frac{r_1}{r_2}T_2\)</span> <span class="math display">\[T_1= \frac{r_1}{r_2}T_2= \frac{r_1}{r_2} J_2s^2\Theta_2= \left(\frac{r_1}{r_2}\right)^2 J_2s^2\Theta_1\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Secondary side inertias and damping coefficients translate to the primary side by multiplying the term by the square of the gear ratio, <span class="math inline">\(\left(\frac{r_1}{r_2}\right)^2\)</span>.</p>
+</div>
+<figure id="fig:motorloadgear">
+<img src="figures/Motor_Load_gear.png" style="max-width:100%;" />
+<figcaption>(a) Motor–load system (b) torques and forces acting on the motor and load.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Motor driving a load through gears</div>
+<p>Consider the motor-load system shown in Figure <a href="#fig:motorloadgear" data-reference-type="ref" data-reference="fig:motorloadgear">1.30</a>. A motor with moment of inertia <span class="math inline">\(J_m\)</span> and viscous damping <span class="math inline">\(b_m\)</span> drives a load with inertia <span class="math inline">\(J_L\)</span> and damping <span class="math inline">\(b_L\)</span> through an ideal gear train with gear ratio <span class="math inline">\(\dfrac{N_1}{N_2}\)</span>, where <span class="math inline">\(N_1\)</span> and <span class="math inline">\(N_2\)</span> are the number of teeth on the motor-side and load-side gears respectively. The motor applies torque <span class="math inline">\(T_m\)</span>, and rotates with angular displacement <span class="math inline">\(\theta_m\)</span>, while the load rotates with <span class="math inline">\(\theta_L\)</span>. Derive the transfer functions <span class="math inline">\(\dfrac{\theta_m(s)}{T_m(s)}\)</span> and <span class="math inline">\(\dfrac{\theta_L(s)}{T_m(s)}\)</span>.</p>
+<p>In an ideal gear, angular displacements and torques are related by <span class="math display">\[\frac{N_1}{N_2}\theta_m = \theta_L, \qquad T_1 = \frac{N_1}{N_2}\, T_2,\]</span> where <span class="math inline">\(T_1\)</span> is the torque exerted by the motor gear on the load gear, and <span class="math inline">\(T_2\)</span> is the torque acting on the load. <span class="math inline">\(T_1\)</span> appears as a resistive torque in the motor’s dynamics, while <span class="math inline">\(T_2\)</span> drives the load.</p>
+<p>The equation of motion for the load is <span class="math display">\[J_L s^2 \theta_L = T_2 - b_L s \theta_L
+    \Rightarrow T_2 = (J_L s^2 + b_L s) \theta_L.\]</span> Substituting <span class="math inline">\(\theta_L = \frac{N_1}{N_2}\theta_m\)</span> gives <span class="math display">\[T_2 = \left(J_L s^2 + b_L s\right) \frac{N_1}{N_2}\theta_m.\]</span> Then <span class="math display">\[T_1 = \frac{N_1}{N_2} T_2 = \left (\frac{N_1}{N_2}\right )^2 \cdot \left(J_L s^2 + b_L s\right) \cdot \theta_m\]</span></p>
+<p>The motor’s equation of motion is <span class="math display">\[J_m s^2 \theta_m = T_m - b_m s \theta_m - T_1.\]</span> Substituting <span class="math inline">\(T_1\)</span>, <span class="math display">\[J_m s^2 \theta_m = T_m - b_m s \theta_m -\left (\frac{N_1}{N_2}\right )^2  \left(J_L s^2 + b_L s\right) \theta_m,\]</span> In terms of the gear ratio, the load inertia and damping reflected to the motor side are <span class="math inline">\(\left (\frac{N_1}{N_2}\right )^2  J_L\)</span> and <span class="math inline">\(\left (\frac{N_1}{N_2}\right )^2  b_L\)</span>, so the correct reflected equation is <span class="math display">\[\left(J_m + \left (\frac{N_1}{N_2}\right )^2  J_L\right) s^2 \theta_m + \left(b_m + \left (\frac{N_1}{N_2}\right )^2  b_L\right) s \theta_m = T_m.\]</span> Define <span class="math display">\[J_e = J_m + \left (\frac{N_1}{N_2}\right )^2 J_L, \qquad b_e = b_m + \left (\frac{N_1}{N_2}\right )^2 b_L,\]</span> then <span class="math display">\[J_e s^2 \theta_m + b_e s \theta_m = T_m.\]</span></p>
+<p>The transfer functions are <span class="math display">\[\frac{\theta_m(s)}{T_m(s)} = \frac{1}{s(J_e s + b_e)}, \qquad
+    \frac{\theta_L(s)}{T_m(s)} = \frac{N_1}{N_2} \cdot \frac{1}{s(J_e s + b_e)}.\]</span></p>
+</div>
+<figure id="fig:2mass" data-latex-placement="!htb">
+<img src="figures/ch03_tikz_16.png" style="max-width:85%;" />
+<figcaption>Mechanical system consisting of two masses <span class="math inline">\(m_1\)</span> and <span class="math inline">\(m_2\)</span>, connected by springs and a viscous damper, subject to an external force <span class="math inline">\(F\)</span>. </figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Electrical-analogue solution via node equations</div>
+<p>Consider the two mass system and its electrical analogue in Fig. <a href="#fig:2mass" data-reference-type="ref" data-reference="fig:2mass">1.31</a>.</p>
+<p>Collecting terms gives the linear system <span class="math display">\[\underbrace{\begin{bmatrix}
+            k_1+s^2 m_1+k_2+s b &amp; -(k_2+s b)\\[2pt]
+            -(k_2+s b) &amp; k_3+s^2 m_2+k_2+s b
+    \end{bmatrix}}_{\displaystyle A(s)}
+    \begin{bmatrix} X_1 \\[2pt] X_2 \end{bmatrix}
+    =
+    \begin{bmatrix} F \\[2pt] 0 \end{bmatrix}.\]</span></p>
+<p>Let <span class="math inline">\(a_{11}=k_1+s^2 m_1+k_2+s b\)</span>, <span class="math inline">\(a_{22}=k_3+s^2 m_2+k_2+s b\)</span>, and <span class="math inline">\(a_{12}=a_{21}=-(k_2+s b)\)</span>. With <span class="math inline">\(\Delta(s)=a_{11}a_{22}-a_{12}a_{21}=(k_1+s^2m_1+k_2+s b)(k_3+s^2m_2+k_2+s b)-(k_2+s b)^2\)</span>, the inverse of <span class="math inline">\(A(s)\)</span> yields <span class="math display">\[\begin{bmatrix} X_1 \\ X_2 \end{bmatrix}
+    =\frac{1}{\Delta(s)}
+    \begin{bmatrix}
+        a_{22}&amp; -a_{12}\\ -a_{21} &amp; a_{11}
+    \end{bmatrix}
+    \begin{bmatrix} F \\ 0 \end{bmatrix}
+    =\frac{1}{\Delta(s)}
+    \begin{bmatrix} a_{22}\,F \\ -( - (k_2+s b))\,F \end{bmatrix}.\]</span></p>
+<p>Hence the transfer function from force input to the displacement of the second mass is <span class="math display">\[\frac{X_2(s)}{F(s)}=  \frac{k_{2}+b\,s}{\Delta(s)}\]</span> where <span class="math display">\[\begin{multline*}
+        \Delta(s)=  m_{1}m_{2}s^{4}
+        + b\,(m_{1}+m_{2})\,s^{3}
+        + \big[m_{1}(k_{2}+k_{3}) + m_{2}(k_{1}+k_{2})\big] s^{2} \\
+        + b\,(k_{1}+k_{3})\,s
+        + (k_{1}k_{2}+k_{2}k_{3}+k_{3}k_{1})
+\end{multline*}\]</span></p>
+</div>
+<p>The MATLAB code in Listing <a href="#lst:ch3_two_mass_elec_analogue" data-reference-type="ref" data-reference="lst:ch3_two_mass_elec_analogue">[lst:ch3_two_mass_elec_analogue]</a> verifies this result symbolically.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Symbolic verification of <span class="math inline">\(X_2(s)/F(s)\)</span> for the two-mass electrical-analogue system.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, Matrix, simplify, pprint
+
+s, k1, k2, k3, m1, m2, c, F = symbols('s k1 k2 k3 m1 m2 c F', real=True)
+
+A = Matrix([
+    [k1 + s**2*m1 + k2 + s*c,  -(k2 + s*c)],
+    [-(k2 + s*c),                k3 + s**2*m2 + k2 + s*c]
+])
+
+b = Matrix([F, 0])
+
+X = A.solve(b)    # X = [X1, X2]
+X1 = simplify(X[0])
+X2 = simplify(X[1])
+
+G = simplify(X2 / F)
+
+print('X1(s):'); pprint(X1)
+print('\nX2(s):'); pprint(X2)
+print('\nG(s) = X2(s)/F(s):'); pprint(G)</code></pre>
+</div>
+<pre class="matlab"><code>syms s k1 k2 k3 m1 m2 c F real
+    
+    A = [k1 + s^2*m1 + k2 + s*c, -(k2 + s*c);
+    -(k2 + s*c), k3 + s^2*m2 + k2 + s*c];
+    
+    b = [F; 0];
+    
+    X = A\b;    % X=[X1; X2]
+    X1 = simplify(X(1));
+    X2 = simplify(X(2));
+    
+    G = simplify(X2/F); </code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Matrix solution via impedance analogy</div>
+<p>Consider the mechanical system in Figure <a href="#fig:mass_damper_spring" data-reference-type="ref" data-reference="fig:mass_damper_spring">1.20</a>. The node equations are <span class="math display">\[\begin{aligned}
+        m s^{2}X_1 + k(X_1-X_2) &amp;= F,\\
+        k(X_2-X_1) + b s\,X_2 &amp;= 0 .
+    \end{aligned}\]</span> These can be written compactly as a <span class="math inline">\(2\times2\)</span> matrix equation <span class="math display">\[\underbrace{\begin{bmatrix}
+            ms^{2}+k &amp; -k\\[2pt]
+            -k &amp; k+bs
+    \end{bmatrix}}_{\displaystyle A(s)}
+    \underbrace{\begin{bmatrix} X_1 \\[2pt] X_2 \end{bmatrix}}_{\displaystyle X(s)}
+    =
+    \underbrace{\begin{bmatrix} F \\[2pt] 0 \end{bmatrix}}_{\displaystyle B(s)}.\]</span> Therefore, <span class="math inline">\(X(s)=A^{-1}(s)B(s)\)</span> The determinant of <span class="math inline">\(A(s)\)</span> is <span class="math display">\[\begin{align*}
+        \Delta(s)=\det A(s)&amp;=(ms^{2}+k)(k+bs)-k^{2}\\
+        &amp;=ms^{2}(k+bs)+kb s\\
+        &amp;=mb\,s^{3}+mk\,s^{2}+kb\,s .
+\end{align*}\]</span> Using <span class="math inline">\(A(s)^{-1}=\frac{1}{\Delta(s)}\!\begin{bmatrix} k+bs &amp; k\\ k &amp; ms^{2}+k\end{bmatrix}\)</span>, <span class="math display">\[\begin{bmatrix} X_1 \\[2pt] X_2 \end{bmatrix}
+    =\frac{1}{\Delta(s)}
+    \begin{bmatrix} k+bs &amp; k\\ k &amp; ms^{2}+k\end{bmatrix}
+    \begin{bmatrix} F \\[2pt] 0 \end{bmatrix}
+    =\frac{1}{\Delta(s)}
+    \begin{bmatrix} (k+bs)\,F \\[2pt] k\,F \end{bmatrix}.\]</span> Hence the transfer functions are <span class="math display">\[\boxed{\;\frac{X_1(s)}{F(s)}=\frac{k+bs}{mb\,s^{3}+mk\,s^{2}+kb\,s}
+        =\frac{k+bs}{s\,(mb\,s^{2}+mk\,s+kb)}\;}\]</span> <span class="math display">\[\boxed{\;\frac{X_2(s)}{F(s)}=\frac{k}{mb\,s^{3}+mk\,s^{2}+kb\,s}
+        =\frac{k}{s\,(mb\,s^{2}+mk\,s+kb)}\;.}\]</span></p>
+</div>
+<figure id="fig:spring-damper-mass" data-latex-placement="!htb">
+<img src="figures/ch03_tikz_17.png" style="max-width:85%;" />
+<figcaption>Mechanical system with a damper and spring</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p>Consider the three-mass mechanical system shown in Figure <a href="#fig:triple_mass_system" data-reference-type="ref" data-reference="fig:triple_mass_system">1.33</a>. Obtain the equations of motion using the electrical analogy and determine the transfer function from the applied force <span class="math inline">\(F\)</span> to the displacement <span class="math inline">\(x_3\)</span>.</p>
+<p>Let us consider the forces on each mass <span class="math inline">\(m_i\)</span>, <span class="math inline">\(i=1,\ldots,3\)</span>, and apply Newton’s second law to each component. Assume <span class="math inline">\(m_2\)</span> and <span class="math inline">\(m_3\)</span> are fixed at <span class="math inline">\(x_2\)</span> and <span class="math inline">\(x_3\)</span>, respectively, while <span class="math inline">\(m_1\)</span> moves to the right by an amount <span class="math inline">\(x_1\)</span>. Then Newton’s law gives <span class="math display">\[m_1\ddot x_1 = F - k_1x_1-b_1\dot x_1-b_2(\dot x_1-\dot x_3)-k_2(x_1- x_2)\]</span> Similarly, for <span class="math inline">\(m_2\)</span> and <span class="math inline">\(m_3\)</span>, one can write: <span class="math display">\[\begin{align*}
+        m_2\ddot x_2 &amp;=-k_2(x_2-x_1)-k_3(x_2-x_3) \\
+        m_3\ddot x_3 &amp;=-b_2(\dot x_3-\dot x_1)-k_3(x_3-x_2)
+\end{align*}\]</span></p>
+<p>Taking the Laplace Transform, the equation of motion can be writen in matrix form as follows:</p>
+<p><span class="math display">\[\underbrace{\begin{bmatrix}
+                s^{2}m_{1}+s b_{1}+k_{1}+k_{2}+s b_{2} &amp; -\,k_{2} &amp; -\,s b_{2}\\[4pt]
+                -\,k_{2} &amp; s^{2}m_{2}+k_{2}+k_{3} &amp; -\,k_{3}\\[4pt]
+                -\,s b_{2} &amp; -\,k_{3} &amp; s^{2}m_{3}+k_{3}+s b_{2}
+        \end{bmatrix}}_{\displaystyle A(s)}
+        \begin{bmatrix} X_{1}(s)\\[2pt] X_{2}(s)\\[2pt] X_{3}(s) \end{bmatrix}
+        =
+        \begin{bmatrix} F(s)\\[2pt] 0\\[2pt] 0 \end{bmatrix}.\]</span></p>
+<p>Let <span class="math inline">\(X(s)=[X_1(s)\;X_2(s)\;X_3(s)]^\top\)</span> and <span class="math inline">\(A(s)\)</span> be as above. Solving <span class="math inline">\(A(s)X(s) = [F(s)\;0\;0]^\top\)</span> gives <span class="math inline">\(G(s)=\dfrac{X_3(s)}{F(s)}\)</span>. The MATLAB code in Listing <a href="#lst:ch3_triple_mass_symbolic" data-reference-type="ref" data-reference="lst:ch3_triple_mass_symbolic">[lst:ch3_triple_mass_symbolic]</a> constructs <span class="math inline">\(A(s)\)</span> symbolically and computes <span class="math inline">\(G(s)\)</span>, together with its collected numerator and denominator polynomials in <span class="math inline">\(s\)</span>.</p>
+<p>For reference, <span class="math inline">\(G(s)\)</span> can be written compactly as <span class="math display">\[G(s)\;=\;\frac{X_3(s)}{F(s)}
+    =\frac{\;k_2k_3 + s\,b_2(k_2+k_3) + s^{3} b_2 m_2\;}
+    {\det A(s)}\]</span> with <span class="math inline">\(\det A(s)\)</span> being the sixth-order polynomial obtained from expanding the <span class="math inline">\(3\times 3\)</span> determinant. Because <span class="math inline">\(\det A(s)\)</span> is lengthy, it is best computed symbolically; the MATLAB code below does exactly that.</p>
+</div>
+<figure id="fig:triple_mass_system" data-latex-placement="ht">
+<img src="figures/ch03_tikz_18.png" style="max-width:85%;" />
+<figcaption>Triple mass system.</figcaption>
+</figure>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Symbolic computation of <span class="math inline">\(G(s)=X_3(s)/F(s)\)</span> for the triple-mass system.</p>
+<div class="pyodide-runner">
+<pre><code>from sympy import symbols, Matrix, simplify, fraction, collect, expand, pprint
+
+s, m1, m2, m3, b1, b2, k1, k2, k3, F = symbols(
+    's m1 m2 m3 b1 b2 k1 k2 k3 F', real=True, positive=True)
+
+A = Matrix([
+    [s**2*m1 + s*b1 + k1 + k2 + s*b2,  -k2,                       -s*b2],
+    [-k2,                                s**2*m2 + k2 + k3,        -k3],
+    [-s*b2,                             -k3,                        s**2*m3 + k3 + s*b2]
+])
+
+rhs = Matrix([F, 0, 0])
+
+X = simplify(A.solve(rhs))       # [X1, X2, X3]
+G = simplify(X[2] / F)           # Transfer function X3/F
+
+num, den = fraction(G)
+num = collect(expand(num), s)
+den = collect(expand(den), s)
+
+print('G(s) = X3(s)/F(s) =')
+pprint(G)
+print('\nNumerator:')
+pprint(num)
+print('\nDenominator:')
+pprint(den)</code></pre>
+</div>
+<pre class="matlab"><code>syms s m1 m2 m3 b1 b2 k1 k2 k3 F real
+    assumeAlso([m1 m2 m3 b1 b2 k1 k2 k3] &gt; 0)
+    
+    A = [ s^2*m1 + s*b1 + k1 + k2 + s*b2,   -k2,     -s*b2;
+    -k2,      s^2*m2 + k2 + k3,   -k3;
+    -s*b2,     -k3,      s^2*m3 + k3 + s*b2 ];
+    
+    rhs = [F; 0; 0];
+    
+    X   = simplify(A\rhs);       % [X1; X2; X3]
+    G   = simplify(X(3)/F);      % Transfer function X3/F
+    
+    [num, den] = numden(G);
+    num = collect(expand(num), s);
+    den = collect(expand(den), s);
+    
+    disp('G(s) = X3(s)/F(s) =');   pretty(G)
+    disp('Numerator:');            pretty(num)
+    disp('Denominator:');          pretty(den)
+    </code></pre>
+</div>
+<h2 id="utilisation-of-rc-circuits-for-thermal-modelling">Utilisation of RC Circuits for Thermal Modelling</h2>
+<p>The electrical–thermal analogy maps temperatures to voltages, heat flows to currents, thermal capacitance to electrical capacitance, and thermal resistance to electrical resistance.</p>
+<p>Consider a single-zone enclosure with temperature <span class="math inline">\(T(t)\)</span>, ambient temperature <span class="math inline">\(T_a(t)\)</span>, heat input <span class="math inline">\(q(t)\)</span> (e.g. from a heater or solar gain), thermal capacitance <span class="math inline">\(C\)</span> and an overall thermal resistance <span class="math inline">\(R\)</span> between the enclosure and the ambient environment. The heat-energy balance is</p>
+<p><span class="math display">\[C \,\dot T(t) \;=\; \frac{T_a(t)-T(t)}{R} \;+\; q(t),\]</span></p>
+<p>which has exactly the same mathematical form as the first-order <span class="math inline">\(RC\)</span> equation in the electrical domain.</p>
+<p>Taking the Laplace transform (assuming zero initial conditions) gives</p>
+<p><span class="math display">\[(Cs + 1/R)\,T(s) \;=\; \frac{T_a(s)}{R} \;+\; Q(s).\]</span></p>
+<figure id="fig:thermal_rc_model" data-latex-placement="!ht">
+<img src="figures/ch03_tikz_19.png" style="max-width:85%;" />
+<figcaption>Lumped thermal RC model. The zone temperature <span class="math inline">\(T(t)\)</span> stores heat in thermal capacitance <span class="math inline">\(C\)</span> and exchanges heat with the ambient <span class="math inline">\(T_a(t)\)</span> through thermal resistance <span class="math inline">\(R\)</span>, while receiving an external heat input <span class="math inline">\(q(t)\)</span>.</figcaption>
+</figure>
+<p>Using the electrical thermal analogy (voltage <span class="math inline">\(\leftrightarrow\)</span> temperature, current <span class="math inline">\(\leftrightarrow\)</span> heat flow, resistance <span class="math inline">\(\leftrightarrow\)</span> thermal resistance, capacitance <span class="math inline">\(\leftrightarrow\)</span> thermal capacitance), the house in Fig. <a href="#fig:heatmodel" data-reference-type="ref" data-reference="fig:heatmodel">1.35</a> is modelled as an <span class="math inline">\(RC\)</span> ladder with two thermal nodes: the <em>envelope</em> temperature <span class="math inline">\(T_e\)</span> (walls/roof/fabric) and the <em>indoor air</em> temperature <span class="math inline">\(T_i\)</span>. Heat inputs are represented by current sources: the heater <span class="math inline">\(Q_h\)</span> acts directly on the indoor air node, while solar gains <span class="math inline">\(Q_s\)</span> mainly warm the envelope. The ambient temperature <span class="math inline">\(T_o\)</span> is a voltage source connected to the envelope through the external resistance <span class="math inline">\(R_e\)</span>; the indoor air exchanges heat with the envelope through the internal resistance <span class="math inline">\(R_i\)</span>. The envelope and indoor air store heat in the capacitances <span class="math inline">\(C_e\)</span> and <span class="math inline">\(C_i\)</span> respectively. This structure captures the thermal inertia and time lag of the building fabric and is the thermal counterpart of a two-capacitor, two-resistor <span class="math inline">\(RC\)</span> network.</p>
+<p>Applying energy balance at each node gives the differential equations <span class="math display">\[\begin{align}
+    C_i\,\dot T_i(t) &amp;= \frac{T_e(t)-T_i(t)}{R_i} \;+\; Q_h(t), \label{eq:Ti}\\
+    C_e\,\dot T_e(t) &amp;= \frac{T_i(t)-T_e(t)}{R_i} \;+\; \frac{T_o(t)-T_e(t)}{R_e} \;+\; Q_s(t). \label{eq:Te}
+\end{align}\]</span> Equations <a href="#eq:Ti" data-reference-type="eqref" data-reference="eq:Ti">[eq:Ti]</a>–<a href="#eq:Te" data-reference-type="eqref" data-reference="eq:Te">[eq:Te]</a> are first-order <span class="math inline">\(RC\)</span> balances with units of watts on both sides.</p>
+<p>Taking Laplace transforms with zero initial conditions (standard transfer-function assumption) gives <span class="math display">\[\begin{align}
+    \big(C_i s + \tfrac{1}{R_i}\big) T_i(s) - \tfrac{1}{R_i}\,T_e(s) &amp;= Q_h(s), \label{eq:Ti_s}\\
+    -\tfrac{1}{R_i}\,T_i(s) + \big(C_e s + \tfrac{1}{R_i}+\tfrac{1}{R_e}\big) T_e(s) &amp;= \tfrac{1}{R_e}\,T_o(s) + Q_s(s). \label{eq:Te_s}
+\end{align}\]</span> Solving <a href="#eq:Ti_s" data-reference-type="eqref" data-reference="eq:Ti_s">[eq:Ti_s]</a> and <a href="#eq:Te_s" data-reference-type="eqref" data-reference="eq:Te_s">[eq:Te_s]</a> for <span class="math inline">\(T_i(s)\)</span> yields <span class="math display">\[T_i(s)=
+\frac{\big(C_e s+\tfrac{1}{R_i}+\tfrac{1}{R_e}\big)\,Q_h(s)
+    +\tfrac{1}{R_i}\,Q_s(s)
+    +\tfrac{1}{R_iR_e}\,T_o(s)}
+{\big(C_i s+\tfrac{1}{R_i}\big)\big(C_e s+\tfrac{1}{R_i}+\tfrac{1}{R_e}\big)-\big(\tfrac{1}{R_i}\big)^2 }.\]</span> Equivalently, the indoor temperature is the superposition of three inputs, <span class="math display">\[T_i(s) = G_h(s)\,Q_h(s) + G_s(s)\,Q_s(s) + G_o(s)\,T_o(s),\]</span> with transfer functions <span class="math display">\[G_h(s)=\frac{C_e s+\tfrac{1}{R_i}+\tfrac{1}{R_e}}{D(s)},\qquad
+G_s(s)=\frac{\tfrac{1}{R_i}}{D(s)},\qquad
+G_o(s)=\frac{\tfrac{1}{R_iR_e}}{D(s)},\]</span> where <span class="math display">\[D(s)=\Big(C_i s+\tfrac{1}{R_i}\Big)\Big(C_e s+\tfrac{1}{R_i}+\tfrac{1}{R_e}\Big)-\Big(\tfrac{1}{R_i}\Big)^2.\]</span> These expressions provide <span class="math inline">\(T_i(s)\)</span> directly in the <span class="math inline">\(s\)</span>-domain without resorting to a state-space formulation.</p>
+<figure id="fig:heatmodel" data-latex-placement="H">
+<img src="figures/Heat_Model.png" style="max-width:70%;" />
+<figcaption>Electrical <em>analogy</em> of the thermodynamic model of a house.</figcaption>
+</figure>
+<h2 id="dc-motor-system">DC Motor System</h2>
+<p>DC motors are common actuators in control: armature current determines torque, input voltage influences speed. They are an ideal example of coupled electrical and mechanical dynamics.</p>
+<figure id="fig:dcmotor" data-latex-placement="H">
+<img src="figures/DC_motor.png" style="max-width:70%;" />
+<figcaption>Electro-mechanical Structure of a Permanent Magnet DC motor</figcaption>
+</figure>
+<p>The system shown in Figure <a href="#fig:dcmotor" data-reference-type="ref" data-reference="fig:dcmotor">1.36</a> represents a permanent-magnet DC motor connected to a mechanical load. It is helpful to think of the model as two coupled parts: an electrical subsystem that governs the armature current, and a mechanical subsystem that governs the shaft speed.</p>
+<p>The key quantities are the input voltage <span class="math inline">\(V_{in}\)</span>, armature resistance <span class="math inline">\(R\)</span>, armature inductance <span class="math inline">\(L\)</span>, armature current <span class="math inline">\(i\)</span>, back electromotive force <span class="math inline">\(V_b\)</span>, torque constant <span class="math inline">\(K_m\)</span>, back-EMF constant <span class="math inline">\(K_b\)</span>, motor torque <span class="math inline">\(T\)</span>, combined inertia <span class="math inline">\(J\)</span>, viscous friction coefficient <span class="math inline">\(b\)</span>, and shaft angular velocity <span class="math inline">\(\omega\)</span>.</p>
+<figure id="fig:dcmotorreal" data-latex-placement="H">
+<img src="figures/DC_motor_real.png" style="max-width:60%;" />
+<figcaption>A commercial PMDC motor. </figcaption>
+</figure>
+<p>Applying KVL to the armature circuit: <span class="math display">\[\begin{equation}
+    V_{in} = L\frac{di}{dt} + Ri + V_{b}
+\end{equation}\]</span> Newton’s second law for the shaft rotation gives: <span class="math display">\[\begin{equation*}
+    T = J\,\dot{\omega} + b\,\omega
+\end{equation*}\]</span> The electrical and mechanical subsystems are linked by two constitutive laws. The motor torque is proportional to the armature current: <span class="math display">\[\begin{equation*}
+    T = K_{m}i.
+\end{equation*}\]</span> The back EMF is proportional to the shaft speed: <span class="math display">\[\begin{equation*}
+    V_{b} = K_{b}\,\omega.
+\end{equation*}\]</span> In SI units, the torque constant and back EMF constant are numerically equal: <span class="math inline">\(K_m = K_b\)</span>.</p>
+<p>Taking the Laplace transform (zero initial conditions):</p>
+<p>The E.O.M.s become: <span class="math display">\[\begin{align*}
+    (Ls + R)I(s) + V_b(s) &amp;= V_{in}(s) \\
+    T(s) &amp;= K_m I(s) \\
+    (Js + b)\Omega(s) &amp;= T(s) \\
+    V_b(s) &amp;= K_b \Omega(s)
+\end{align*}\]</span> where <span class="math inline">\(I(s)\)</span>, <span class="math inline">\(V_{in}(s)\)</span>, <span class="math inline">\(V_b(s)\)</span>, <span class="math inline">\(T(s)\)</span>, and <span class="math inline">\(\Omega(s)\)</span> are the Laplace transforms of the corresponding time-domain variables.</p>
+<p>From these algebraic equations, we can read off several useful intermediate transfer relationships: <span class="math display">\[\frac{I(s)}{V_{in}(s)-V_b(s)} = \frac{1}{Ls+R}, \qquad
+\frac{T(s)}{I(s)} = K_m,\]</span> <span class="math display">\[\frac{\Omega(s)}{T(s)} = \frac{1}{Js+b}, \qquad
+\frac{V_b(s)}{\Omega(s)} = K_b.\]</span></p>
+<p>We eliminate <span class="math inline">\(I(s)\)</span>, <span class="math inline">\(T(s)\)</span>, and <span class="math inline">\(V_b(s)\)</span> to obtain the overall transfer function <span class="math inline">\(\Omega(s)/V_{in}(s)\)</span>.</p>
+<p>Expressing the current as a function of speed: <span class="math display">\[\begin{align*}
+    K_m I(s) &amp;= (Js + b)\Omega(s) \\
+    \implies I(s) &amp;= \frac{Js + b}{K_m}\Omega(s) \label{eq:I_of_omega}
+\end{align*}\]</span></p>
+<p>Hence <span class="math display">\[\begin{align*}
+    V_{in}(s) &amp;= (Ls + R) \left( \frac{Js + b}{K_m}\Omega(s) \right) + K_b \Omega(s)
+\end{align*}\]</span> Factoring out <span class="math inline">\(\Omega(s)\)</span>: <span class="math display">\[\begin{align*}
+    V_{in}(s) &amp;= \left[ \frac{LJs^2 + (Lb + RJ)s + Rb + K_m K_b}{K_m} \right] \Omega(s)
+\end{align*}\]</span> The transfer function from input voltage to angular velocity is: <span class="math display">\[G(s) = \frac{\Omega(s)}{V_{in}(s)} = \frac{K_m}{LJs^2 + (Lb + RJ)s + (Rb + K_m K_b)}\]</span> The denominator is the characteristic polynomial; its roots determine the damping ratio and natural frequency of the motor’s response.</p>
+<figure id="fig:CoupledMechSys" data-latex-placement="!htb">
+<img src="figures/ch03_tikz_20.png" style="max-width:85%;" />
+<figcaption>Coupled mechanical system</figcaption>
+</figure>
+<h2 id="examples-on-modelling">Examples on Modelling</h2>
+<div class="example"><div class="env-label env-label-example">Example: Coupled mechanical system</div>
+<p>This example demonstrates the derivation of the equations of motion for the coupled mechanical system shown in Figure <a href="#fig:CoupledMechSys" data-reference-type="ref" data-reference="fig:CoupledMechSys">1.38</a>. We define the translational coordinate of the cart as <span class="math inline">\(x\)</span> (positive to the right) and the rotational coordinate of the link as <span class="math inline">\(\theta\)</span> (positive clockwise).</p>
+<p>Applying Newton’s Second Law for the translation of mass <span class="math inline">\(m\)</span> yields: <span class="math display">\[\begin{align*}
+        \sum F_x &amp;= m\ddot{x} \\
+        -k_1(x - L_1\sin\theta) &amp;- k_2x - b\dot{x} = m\ddot{x}
+\end{align*}\]</span> Rearranging gives the first equation of motion: <span class="math display">\[\begin{equation*}
+        m\ddot{x} + b\dot{x} + (k_1 + k_2)x - k_1L_1\sin\theta = 0
+\end{equation*}\]</span></p>
+<p>For the rotation of the link with moment of inertia <span class="math inline">\(J\)</span> about its pivot, the sum of torques gives: <span class="math display">\[\begin{align*}
+        \sum \tau &amp;= J\ddot{\theta} \\
+        k_1(x - L_1\sin\theta)L_1\cos\theta &amp;- k_3(L_2\sin\theta)L_2\cos\theta = J\ddot{\theta}
+\end{align*}\]</span> Rearranging gives the second equation of motion: <span class="math display">\[\begin{equation*}
+        J\ddot{\theta} + (k_1L_1^2 + k_3L_2^2)\sin\theta\cos\theta - k_1L_1x\cos\theta = 0
+\end{equation*}\]</span></p>
+<p>For control system analysis, it is often useful to linearize the system about its equilibrium position (<span class="math inline">\(\theta = 0\)</span>). Using the small angle approximations, <span class="math inline">\(\sin\theta \approx \theta\)</span> and <span class="math inline">\(\cos\theta \approx 1\)</span>, the equations become: <span class="math display">\[\begin{gather*}
+        m\ddot{x} + b\dot{x} + (k_1 + k_2)x - k_1L_1\theta = 0 \\
+        J\ddot{\theta} - k_1L_1x + (k_1L_1^2 + k_3L_2^2)\theta = 0
+\end{gather*}\]</span></p>
+<p>These linearized equations can be conveniently expressed in the standard matrix form <span class="math inline">\({M\ddot{q} + C\dot{q} + Kq = 0}\)</span>, where the generalized-coordinate vector is <span class="math inline">\({q} = \begin{bmatrix} x &amp; \theta \end{bmatrix}^T\)</span>.</p>
+<p><span class="math display">\[\begin{equation*}
+        \begin{bmatrix}
+            m &amp; 0 \\
+            0 &amp; J
+        \end{bmatrix}
+        \begin{bmatrix} \ddot{x} \\ \ddot{\theta} \end{bmatrix}
+        +
+        \begin{bmatrix}
+            b &amp; 0 \\
+            0 &amp; 0
+        \end{bmatrix}
+        \begin{bmatrix} \dot{x} \\ \dot{\theta} \end{bmatrix}
+        +
+        \begin{bmatrix}
+            k_1+k_2 &amp; -k_1L_1 \\
+            -k_1L_1 &amp; k_1L_1^2 + k_3L_2^2
+        \end{bmatrix}
+        \begin{bmatrix} x \\ \theta \end{bmatrix}
+        =
+        \begin{bmatrix} 0 \\ 0 \end{bmatrix}
+\end{equation*}\]</span></p>
+<p>To obtain a first-order linear state-space model, define the state vector <span class="math display">\[z =
+    \begin{bmatrix}
+        x \\ \dot{x} \\ \theta \\ \dot{\theta}
+    \end{bmatrix}.\]</span> From the linearized equations, <span class="math display">\[\ddot{x} = -\frac{b}{m}\dot{x} - \frac{k_1+k_2}{m}x + \frac{k_1L_1}{m}\theta,
+    \qquad
+    \ddot{\theta} = \frac{k_1L_1}{J}x - \frac{k_1L_1^2+k_3L_2^2}{J}\theta.\]</span> Therefore, the linear state-space equations are <span class="math display">\[\dot{z} = Az,\]</span> with <span class="math display">\[A=
+    \begin{bmatrix}
+        0 &amp; 1 &amp; 0 &amp; 0 \\
+        -\dfrac{k_1+k_2}{m} &amp; -\dfrac{b}{m} &amp; \dfrac{k_1L_1}{m} &amp; 0 \\
+        0 &amp; 0 &amp; 0 &amp; 1 \\
+        \dfrac{k_1L_1}{J} &amp; 0 &amp; -\dfrac{k_1L_1^2+k_3L_2^2}{J} &amp; 0
+    \end{bmatrix}.\]</span> If we choose the cart displacement and link angle as outputs, then <span class="math display">\[y = Cz,
+    \qquad
+    C=
+    \begin{bmatrix}
+        1 &amp; 0 &amp; 0 &amp; 0 \\
+        0 &amp; 0 &amp; 1 &amp; 0
+    \end{bmatrix},
+    \qquad D=0.\]</span></p>
+</div>
+<h3 class="unnumbered" id="matlab-companion-simulating-a-derived-model">MATLAB Companion: Simulating a Derived Model</h3>
+<div class="notebox">
+<p><span>Try it yourself</span> Once you have derived a transfer function from physical laws, MATLAB lets you simulate its behaviour in just a few lines. Listing <a href="#lst:ch3_msd_simulation" data-reference-type="ref" data-reference="lst:ch3_msd_simulation">[lst:ch3_msd_simulation]</a> creates a mass-spring-damper system and plots its step response and response to a custom force input.</p>
+</div>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Simulating a mass-spring-damper transfer function in Python.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+# Transfer function: G(s) = 1 / (m*s^2 + b*s + k)
+m = 1
+b = 3
+k = 2                                # system parameters
+G = ctrl.tf(1, np.array([m, b, k]))  # create transfer function
+
+# Step response: apply a unit step force and see displacement
+_resp = ctrl.step_response(G, 10)
+
+t_step, y_step = _resp.time, _resp.outputs    # simulate for 10 seconds
+plt.figure()
+plt.plot(t_step, y_step)
+plt.title('Mass-Spring-Damper Step Response')
+plt.xlabel('Time (s)')
+plt.ylabel('Displacement')
+plt.grid(True)
+plt.show()
+
+# Custom input: ramp force F(t) = 2t for 5 seconds
+t = np.arange(0, 5.01, 0.01)        # time vector
+F = 2 * t                           # ramp force input
+_resp = ctrl.forced_response(G, t, F)
+
+t_out, y_out = _resp.time, _resp.outputs  # simulate with custom input
+plt.figure()
+plt.plot(t_out, y_out)
+plt.title('Response to Ramp Force F(t) = 2t')
+plt.xlabel('Time (s)')
+plt.ylabel('Displacement')
+plt.grid(True)
+plt.show()
+
+# Display poles to check system behaviour
+print('System poles:')
+print(ctrl.poles(G))</code></pre>
+</div>
+<pre class="matlab"><code>% Transfer function: G(s) = 1 / (m*s^2 + b*s + k)
+m = 1;  b = 3;  k = 2;           % system parameters
+G = tf(1, [m b k]);               % create transfer function
+
+% Step response: apply a unit step force and see displacement
+figure;
+step(G, 10);                      % simulate for 10 seconds
+title('Mass-Spring-Damper Step Response');
+grid on;
+
+% Custom input: ramp force F(t) = 2t for 5 seconds
+t = 0:0.01:5;                     % time vector
+F = 2*t;                          % ramp force input
+figure;
+lsim(G, F, t);                    % simulate with custom input
+title('Response to Ramp Force F(t) = 2t');
+grid on;
+
+% Display poles to check system behaviour
+disp('System poles:');
+pole(G)</code></pre>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>A transfer function <span class="math inline">\(G(s) = Y(s)/U(s)\)</span> captures the input–output dynamics of an LTI system under zero initial conditions.</p></li>
+<li><p>Electrical circuits are modelled using KVL/KCL with component relations, or more efficiently via the impedance method (<span class="math inline">\(Z_R = R\)</span>, <span class="math inline">\(Z_L = sL\)</span>, <span class="math inline">\(Z_C = 1/(sC)\)</span>).</p></li>
+<li><p>Translational mechanical systems use <span class="math inline">\(F = ma\)</span> with springs (<span class="math inline">\(Kx\)</span>), dampers (<span class="math inline">\(b\dot{x}\)</span>), and masses (<span class="math inline">\(m\ddot{x}\)</span>); rotational systems follow the same pattern with torque, angle, and inertia.</p></li>
+<li><p>Gears impose the constraint <span class="math inline">\(\theta_L/\theta_m = N_1/N_2\)</span>, and load-side inertia and damping reflect to the motor side scaled by the square of the gear ratio.</p></li>
+<li><p>The DC motor transfer function <span class="math inline">\(\Omega(s)/V_{in}(s) = K_m / [LJs^2 + (Lb+RJ)s + (Rb+K_mK_b)]\)</span> couples electrical and mechanical dynamics.</p></li>
+<li><p>The electrical–thermal analogy allows RC-network methods to model heat flow in buildings, devices, and thermal systems.</p></li>
+<li><p>Multi-body systems lead to matrix equations <span class="math inline">\(A(s)\,X(s) = B(s)\)</span> that can be solved symbolically or numerically in MATLAB.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="end-of-chapter-exercises">End-of-Chapter Exercises</h2>
+<ol>
+<li><p><strong>Series RLC circuit.</strong> For a series RLC circuit with <span class="math inline">\(R=4\;\Omega\)</span>, <span class="math inline">\(L=1\;\text{H}\)</span>, <span class="math inline">\(C=\tfrac{1}{3}\;\text{F}\)</span>, and the output taken across the capacitor:</p>
+<ol>
+<li><p>Write the differential equation relating <span class="math inline">\(v_C(t)\)</span> to the input voltage <span class="math inline">\(v(t)\)</span>.</p></li>
+<li><p>Derive the transfer function <span class="math inline">\(G(s) = V_C(s)/V(s)\)</span>.</p></li>
+<li><p>Find the poles of the system and classify them (real distinct, repeated, or complex).</p></li>
+<li><p>Verify your transfer function in MATLAB using <code>tf()</code> and <code>pole()</code>.</p></li>
+</ol></li>
+<li><p><strong>Mass–spring–damper.</strong> A mass <span class="math inline">\(m=2\;\text{kg}\)</span> is attached to a spring with stiffness <span class="math inline">\(k=8\;\text{N/m}\)</span> and a damper with coefficient <span class="math inline">\(b=4\;\text{Ns/m}\)</span>. An external force <span class="math inline">\(F(t)\)</span> is applied to the mass. Taking displacement <span class="math inline">\(x(t)\)</span> as the output:</p>
+<ol>
+<li><p>Draw a free-body diagram and write the equation of motion.</p></li>
+<li><p>Derive <span class="math inline">\(G(s) = X(s)/F(s)\)</span>.</p></li>
+<li><p>Use MATLAB to plot the step response. What is the steady-state displacement for a unit step force?</p></li>
+</ol></li>
+<li><p><strong>Two-mass system.</strong> Two masses <span class="math inline">\(m_1 = 1\;\text{kg}\)</span> and <span class="math inline">\(m_2 = 2\;\text{kg}\)</span> are connected by a spring <span class="math inline">\(k = 5\;\text{N/m}\)</span>. A force <span class="math inline">\(F(t)\)</span> is applied to <span class="math inline">\(m_1\)</span> only. Write the equations of motion for both masses and express them in Laplace-domain matrix form <span class="math inline">\(A(s)\begin{bmatrix}X_1\\X_2\end{bmatrix} = \begin{bmatrix}F\\0\end{bmatrix}\)</span>.</p></li>
+<li><p><strong>Gear ratio.</strong> A motor with inertia <span class="math inline">\(J_m = 0.01\;\text{kg}\,\text{m}^2\)</span> drives a load with inertia <span class="math inline">\(J_L = 1\;\text{kg}\,\text{m}^2\)</span> through a gear train with <span class="math inline">\(N_1 = 10\)</span> teeth (motor side) and <span class="math inline">\(N_2 = 50\)</span> teeth (load side). Neglect damping.</p>
+<ol>
+<li><p>Compute the equivalent inertia <span class="math inline">\(J_e\)</span> referred to the motor side.</p></li>
+<li><p>Find the transfer function <span class="math inline">\(\theta_m(s)/T_m(s)\)</span>.</p></li>
+<li><p>Find the transfer function <span class="math inline">\(\theta_L(s)/T_m(s)\)</span>.</p></li>
+</ol></li>
+<li><p><strong>Rotational system.</strong> A disc with moment of inertia <span class="math inline">\(J = 0.5\;\text{kg}\,\text{m}^2\)</span> and rotational damping <span class="math inline">\(b = 2\;\text{Nm}\,\text{s/rad}\)</span> is driven by a torque <span class="math inline">\(T(t)\)</span>. Derive the transfer function <span class="math inline">\(\Theta(s)/T(s)\)</span> and find the time constant.</p></li>
+<li><p><strong>Thermal system.</strong> A room has thermal capacitance <span class="math inline">\(C = 5000\;\text{J/}^\circ\text{C}\)</span> and thermal resistance <span class="math inline">\(R = 0.2\;{}^\circ\text{C/W}\)</span> to the outside environment. A heater supplies heat <span class="math inline">\(q(t)\)</span> watts.</p>
+<ol>
+<li><p>Write the first-order ODE governing the room temperature deviation from ambient.</p></li>
+<li><p>Derive the transfer function <span class="math inline">\(T(s)/Q(s)\)</span> and identify the time constant.</p></li>
+<li><p>If the heater applies a constant 500 W step input, what is the steady-state temperature rise?</p></li>
+</ol></li>
+<li><p><strong>Op-amp integrator.</strong> An inverting op-amp circuit has input resistor <span class="math inline">\(R = 10\;\text{k}\Omega\)</span> and feedback capacitor <span class="math inline">\(C = 1\;\mu\text{F}\)</span>. Derive the transfer function <span class="math inline">\(V_{out}(s)/V_{in}(s)\)</span> and verify that it acts as an integrator.</p></li>
+<li><p><strong>MATLAB verification.</strong> For the mass–spring–damper in Exercise 2, use <code>lsim()</code> to simulate the response to a ramp input <span class="math inline">\(F(t) = 3t\)</span> over the interval <span class="math inline">\([0, 10]\)</span> seconds. Plot the result and comment on the steady-state behaviour.</p></li>
+</ol>

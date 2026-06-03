@@ -1,0 +1,842 @@
+<h1 id="chap:stability">Stability</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Classify a continuous-time LTI system as asymptotically stable, marginally stable, or unstable from its pole locations.</p></li>
+<li><p>Explain why poles must lie in the open left half-plane for asymptotic stability.</p></li>
+<li><p>Construct a Routh array from a characteristic polynomial and count right-half-plane roots.</p></li>
+<li><p>Determine the range of a parameter (e.g. gain <span class="math inline">\(K\)</span>) for which a feedback system remains stable using the Routh–Hurwitz criterion.</p></li>
+<li><p>Compute eigenvalues of a state matrix <span class="math inline">\(A\)</span> and relate them to system stability.</p></li>
+<li><p>Verify stability in MATLAB using <code>roots()</code>, <code>pole()</code>, <code>eig()</code>, and <code>isstable()</code>.</p></li>
+</ul>
+</div>
+<p>Stability is one of the central ideas in control engineering. Before discussing speed of response, overshoot, steady-state error, or robustness, we must first determine whether the system behaves in a physically acceptable manner over time. A system that produces an ever-growing output in response to a bounded command or a small disturbance cannot be regarded as satisfactory, regardless of how attractive its other specifications may appear.</p>
+<p>For linear time-invariant systems, stability is answered by the location of the poles of the transfer function, or equivalently by the roots of the characteristic equation.</p>
+<h2 id="why-stability-comes-first">Why Stability Comes First</h2>
+<p>If the response of a dynamic system grows without bound, it may saturate actuators, excite structural vibration, damage hardware, or simply fail to perform its intended task. Only once stability has been established does it make sense to ask whether the response is sufficiently fast or sufficiently accurate.</p>
+<p>The standard decomposition of the output into a forced part and a natural part makes this precise: <span class="math display">\[\begin{equation}
+    y(t)=y_{\text{forced}}(t)+y_{\text{natural}}(t).
+\end{equation}\]</span> The forced response is associated with the applied input, whereas the natural response is determined by the internal dynamics of the system. The study of stability focuses primarily on the natural response, because it reveals whether the system’s own modes decay or grow with time.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>In continuous-time LTI systems, stability is fundamentally a question about the natural response, and the natural response is determined by the poles of the system.</p>
+</div>
+<h2 id="basic-stability-definitions-for-lti-systems">Basic Stability Definitions for LTI Systems</h2>
+<div class="definition"><div class="env-label env-label-definition">Definition: Asymptotic, Marginal Stability and Instability</div>
+<p>A continuous-time LTI system is said to be <strong>asymptotically stable</strong> if every natural response approaches zero as <span class="math inline">\(t \to \infty\)</span>.</p>
+<p>A continuous-time LTI system is said to be <strong>marginally stable</strong> if every natural response remains bounded for all time, but at least one natural response does not approach zero as <span class="math inline">\(t \to \infty\)</span>.</p>
+<p>A continuous-time LTI system is said to be <strong>unstable</strong> if at least one natural response becomes unbounded as <span class="math inline">\(t \to \infty\)</span>.</p>
+</div>
+<div class="definition"><div class="env-label env-label-definition">Definition: BIBO Stability</div>
+<p>A system is said to be <strong>bounded-input bounded-output</strong> stable if every bounded input produces a bounded output.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>In introductory control analysis, the pole test is usually presented in terms of the natural response of the transfer function model. This chapter follows that convention. For standard rational LTI systems without problematic cancellations, the familiar left-half-plane pole condition also gives the usual BIBO test.</p>
+</div>
+<h2 id="transfer-function-characteristic-equation-and-poles">Transfer Function, Characteristic Equation, and Poles</h2>
+<p>Consider a continuous-time LTI system with transfer function <span class="math display">\[\begin{equation}
+    G(s)=\frac{N(s)}{D(s)},
+\end{equation}\]</span> where <span class="math inline">\(N(s)\)</span> and <span class="math inline">\(D(s)\)</span> are polynomials in <span class="math inline">\(s\)</span>. The roots of the denominator polynomial <span class="math inline">\(D(s)\)</span> are called the <strong>poles</strong> of the system. These poles determine the form of the natural response.</p>
+<p>In feedback control, it is usually the <em>closed-loop</em> poles that matter. If the closed-loop transfer function is written as <span class="math display">\[\begin{equation}
+    T(s)=\frac{N_{cl}(s)}{D_{cl}(s)},
+\end{equation}\]</span> then the equation <span class="math display">\[\begin{equation}
+    D_{cl}(s)=0
+\end{equation}\]</span> is called the <strong>characteristic equation</strong>. The roots of this equation determine the stability of the closed-loop system.</p>
+<p>Suppose the denominator factors as <span class="math display">\[\begin{equation}
+    D(s)=\prod_{i=1}^{r}(s-p_i)^{m_i},
+\end{equation}\]</span> where <span class="math inline">\(p_i\)</span> are the distinct poles and <span class="math inline">\(m_i\)</span> are their multiplicities. The inverse Laplace transform then shows that the natural response is built from terms of the form <span class="math display">\[\begin{equation}
+    t^k e^{p_i t}, \qquad k=0,1,\dots,m_i-1.
+\end{equation}\]</span> Therefore, the behaviour of the response depends directly on the location of each pole <span class="math inline">\(p_i\)</span> in the complex plane.</p>
+<h2 id="why-stability-requires-poles-in-the-open-left-half-plane">Why Stability Requires Poles in the Open Left Half-Plane</h2>
+<p>Let a pole be located at <span class="math display">\[\begin{equation}
+    p=\sigma+j\omega.
+\end{equation}\]</span> The corresponding modal term in the time response contains the factor <span class="math display">\[\begin{equation}
+    e^{pt}=e^{(\sigma+j\omega)t}=e^{\sigma t}\bigl(\cos \omega t + j\sin \omega t\bigr).
+\end{equation}\]</span> This expression immediately reveals the role of the real part <span class="math inline">\(\sigma\)</span>:</p>
+<ul>
+<li><p>if <span class="math inline">\(\sigma&lt;0\)</span>, the exponential factor <span class="math inline">\(e^{\sigma t}\)</span> decays to zero;</p></li>
+<li><p>if <span class="math inline">\(\sigma=0\)</span>, the exponential factor remains constant in magnitude;</p></li>
+<li><p>if <span class="math inline">\(\sigma&gt;0\)</span>, the exponential factor grows without bound.</p></li>
+</ul>
+<p>Hence, a mode decays only when the corresponding pole lies strictly to the left of the imaginary axis. If even one pole lies on the imaginary axis, that mode does not decay. If a pole lies in the right half-plane, the corresponding mode grows exponentially. This is the reason for the classical stability condition: <span class="math display">\[\begin{equation}
+    \Re(p_i)&lt;0 \qquad \text{for all poles } p_i.
+\end{equation}\]</span></p>
+<p>The phrase <em>open left half-plane</em> is essential. It means that the imaginary axis itself is excluded. A pole exactly on the imaginary axis does not produce exponential decay, so asymptotic stability is lost.</p>
+<div class="result"><div class="env-label env-label-result">Result: Pole Location Test for Continuous-Time LTI Systems</div>
+<p>For a continuous-time rational LTI system, the stability classification is determined by the poles of the transfer function as follows:</p>
+<ol>
+<li><p>The system is <strong>asymptotically stable</strong> if all poles lie in the open left half-plane.</p></li>
+<li><p>The system is <strong>marginally stable</strong> if there are no poles in the right half-plane, the only poles on the imaginary axis are simple, and all remaining poles lie in the left half-plane.</p></li>
+<li><p>The system is <strong>unstable</strong> if at least one pole lies in the right half-plane, or if there is any repeated pole on the imaginary axis.</p></li>
+</ol>
+</div>
+<h2 id="interpretation-of-the-different-pole-locations">Interpretation of the Different Pole Locations</h2>
+<h3 id="all-poles-in-the-open-left-half-plane">All poles in the open left half-plane</h3>
+<p>If every pole satisfies <span class="math inline">\(\Re(p_i)&lt;0\)</span>, then every modal term decays with time. Even if a pole is repeated, the response may contain factors such as <span class="math inline">\(t e^{-at}\)</span> or <span class="math inline">\(t^2 e^{-at}\)</span>, but these still tend to zero because the exponential decay dominates the polynomial growth. Consequently, the natural response vanishes, and the system is asymptotically stable.</p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Physical meaning</div>
+<p>Poles in the left half-plane correspond to modes that dissipate energy. The system eventually forgets its initial condition and settles to its forced behaviour.</p>
+</div>
+<div class="examplebox">
+<p><span>Step response of a stable system</span> Consider the transfer function <span class="math display">\[\begin{equation}
+        G(s)=\frac{2}{(s+1)(s+2)}.
+\end{equation}\]</span> Since the poles are at <span class="math inline">\(s=-1\)</span> and <span class="math inline">\(s=-2\)</span>, both poles lie in the open left half-plane. We now determine the response to a unit step input <span class="math display">\[\begin{equation}
+        r(t)=u(t), \qquad R(s)=\frac{1}{s}.
+\end{equation}\]</span></p>
+<p>The output in the Laplace domain is <span class="math display">\[\begin{equation}
+        Y(s)=G(s)R(s)=\frac{2}{(s+1)(s+2)}\cdot \frac{1}{s}
+        =\frac{2}{s(s+1)(s+2)}.
+\end{equation}\]</span></p>
+<p>Using partial fraction expansion, <span class="math display">\[\begin{equation}
+        \frac{2}{s(s+1)(s+2)}
+        =\frac{1}{s}-\frac{2}{s+1}+\frac{1}{s+2}.
+\end{equation}\]</span></p>
+<p>Taking the inverse Laplace transform gives <span class="math display">\[\begin{equation}
+        y(t)=1-2e^{-t}+e^{-2t}, \qquad t\geq 0.
+\end{equation}\]</span></p>
+<p>This expression shows that the step response consists of a constant steady-state term and two decaying exponential terms. As <span class="math inline">\(t\to\infty\)</span>, <span class="math display">\[\begin{equation}
+        e^{-t}\to 0, \qquad e^{-2t}\to 0,
+\end{equation}\]</span> so that <span class="math display">\[\begin{equation}
+        y(t)\to 1.
+\end{equation}\]</span></p>
+<p>The natural part of the response is <span class="math display">\[\begin{equation}
+        y_{\text{natural}}(t)=-2e^{-t}+e^{-2t},
+\end{equation}\]</span> and it vanishes with time because both poles are in the open left half-plane. Hence the system is asymptotically stable.</p>
+</div>
+<h3 id="simple-poles-on-the-imaginary-axis">Simple poles on the imaginary axis</h3>
+<p>If a pole lies at <span class="math inline">\(p=j\omega\)</span> or <span class="math inline">\(p=-j\omega\)</span>, with no repetition, then the associated response contains sustained sinusoidal terms such as <span class="math display">\[\begin{equation}
+    A\cos \omega t + B\sin \omega t.
+\end{equation}\]</span> These oscillations remain bounded, but they do not decay. The same idea applies to a simple pole at the origin, which produces a constant mode. In either case, the natural response persists indefinitely, so the system is marginally stable rather than asymptotically stable.</p>
+<div class="examplebox">
+<p><span>Step response of a system with simple poles on the imaginary axis</span> Consider the transfer function <span class="math display">\[\begin{equation}
+        G(s)=\frac{1}{s^2+4}.
+\end{equation}\]</span> The poles are at <span class="math display">\[\begin{equation}
+        s=\pm j2,
+\end{equation}\]</span> so they are simple poles on the imaginary axis. We determine the response to a unit step input <span class="math display">\[\begin{equation}
+        r(t)=u(t), \qquad R(s)=\frac{1}{s}.
+\end{equation}\]</span></p>
+<p>The output in the Laplace domain is <span class="math display">\[\begin{equation}
+        Y(s)=G(s)R(s)=\frac{1}{s(s^2+4)}.
+\end{equation}\]</span></p>
+<p>Using partial fractions, <span class="math display">\[\begin{equation}
+        \frac{1}{s(s^2+4)}=\frac{1}{4s}-\frac{s}{4(s^2+4)}.
+\end{equation}\]</span></p>
+<p>Taking the inverse Laplace transform gives <span class="math display">\[\begin{equation}
+        y(t)=\frac{1}{4}-\frac{1}{4}\cos(2t), \qquad t\geq 0.
+\end{equation}\]</span></p>
+<p>This response remains bounded for all time, but it does not settle to a fixed value in the usual decaying sense, because the oscillatory term <span class="math display">\[\begin{equation}
+        -\frac{1}{4}\cos(2t)
+\end{equation}\]</span> persists indefinitely.</p>
+<p>The non-decaying oscillation is a direct consequence of the simple poles at <span class="math inline">\(\pm j2\)</span> on the imaginary axis, so this is a marginally stable case.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Marginally stable systems are neither asymptotically stable nor unstable in the strict natural-response sense. Nevertheless, they are generally not desirable in control engineering.</p>
+<p>The main reason is that poles on the imaginary axis lie exactly on the boundary between stability and instability. Therefore, even a small modelling error, parameter variation, neglected dynamic effect, or unmodelled disturbance may shift such a pole into the right half-plane. If this happens, the corresponding mode grows with time and the system becomes unstable. For this reason, marginal stability offers no real robustness margin.</p>
+<p>By contrast, if all poles lie strictly in the open left half-plane, then the system is asymptotically stable, and for a standard rational LTI system every bounded input produces a bounded output. In other words, asymptotically stable systems are BIBO stable.</p>
+<p>Marginally stable systems do not enjoy this property in general: a bounded input at an imaginary-axis pole frequency can make <span class="math display">\[\begin{equation}
+        Y(s)=G(s)U(s)
+\end{equation}\]</span> contain repeated imaginary-axis poles, producing terms whose amplitude grows with time.</p>
+</div>
+<div class="examplebox">
+<p><span>Marginally stable system</span> Consider the transfer function <span class="math display">\[\begin{equation}
+        G(s)=\frac{1}{s^2+1}.
+\end{equation}\]</span> The poles are at <span class="math display">\[\begin{equation}
+        s=\pm j,
+\end{equation}\]</span> so the system has simple poles on the imaginary axis and is marginally stable in the natural-response sense.</p>
+<p>Now apply the bounded input <span class="math display">\[\begin{equation}
+        u(t)=\sin t, \qquad t\geq 0.
+\end{equation}\]</span> Its Laplace transform is <span class="math display">\[\begin{equation}
+        U(s)=\frac{1}{s^2+1}.
+\end{equation}\]</span></p>
+<p>The output in the Laplace domain is <span class="math display">\[\begin{equation}
+        Y(s)=G(s)U(s)=\frac{1}{s^2+1}\cdot\frac{1}{s^2+1}
+        =\frac{1}{(s^2+1)^2}.
+\end{equation}\]</span> Hence the poles of <span class="math inline">\(Y(s)\)</span> are now repeated at <span class="math inline">\(s=\pm j\)</span>. Taking the inverse Laplace transform, <span class="math display">\[\begin{equation}
+        y(t)=\frac{1}{2}\sin t-\frac{1}{2}t\cos t, \qquad t\geq 0.
+\end{equation}\]</span></p>
+<p>The first term is bounded, but the second term, <span class="math display">\[\begin{equation}
+        -\frac{1}{2}t\cos t,
+\end{equation}\]</span> has an amplitude that grows linearly with time. Therefore, although the input <span class="math inline">\(u(t)=\sin t\)</span> is bounded, the output <span class="math inline">\(y(t)\)</span> is unbounded.</p>
+</div>
+<h3 id="repeated-poles-on-the-imaginary-axis">Repeated poles on the imaginary axis</h3>
+<p>A repeated pole on the imaginary axis changes the situation completely. If <span class="math inline">\(p=j\omega\)</span> is repeated, then the natural response includes terms such as <span class="math display">\[\begin{equation}
+    t e^{j\omega t}, \qquad t^2 e^{j\omega t},
+\end{equation}\]</span> whose real and imaginary parts are of the form <span class="math display">\[\begin{equation}
+    t\cos \omega t, \qquad t\sin \omega t, \qquad t^2\cos \omega t, \qquad t^2\sin \omega t.
+\end{equation}\]</span> These terms grow in amplitude with time, even though the oscillation frequency remains fixed. Therefore, the response becomes unbounded, and the system is unstable.</p>
+<p>A repeated pole at the origin is a special case of the same phenomenon. For example, a double pole at <span class="math inline">\(s=0\)</span> produces ramp-type terms, which also become unbounded.</p>
+<h3 id="poles-in-the-right-half-plane">Poles in the right half-plane</h3>
+<p>If a pole lies in the right half-plane, then its real part is positive. The corresponding mode contains the factor <span class="math inline">\(e^{\sigma t}\)</span> with <span class="math inline">\(\sigma&gt;0\)</span>, so the response grows exponentially. If the pole is complex, the response is an exponentially growing oscillation; if the pole is real, the response grows monotonically. In either case, the system is unstable.</p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Why right-half-plane poles are unacceptable</div>
+<p>A right-half-plane pole represents an internally amplifying mode. Even if the initial condition is small, that mode grows rather than decays, so the system cannot be regarded as dynamically well behaved.</p>
+</div>
+<div class="examplebox">
+<p><span>Step response of a system with a right-half-plane pole</span> Consider the transfer function <span class="math display">\[G(s)=\frac{1}{s-2}.\]</span> The system has a pole at <span class="math display">\[s=2,\]</span> which lies in the right half-plane. We determine the response to a unit step input <span class="math display">\[r(t)=u(t), \qquad R(s)=\frac{1}{s}.\]</span></p>
+<p>The output in the Laplace domain is <span class="math display">\[Y(s)=G(s)R(s)=\frac{1}{s(s-2)}.\]</span> Using partial fractions, <span class="math display">\[\frac{1}{s(s-2)}=-\frac{1}{2s}+\frac{1}{2(s-2)}.\]</span> Taking the inverse Laplace transform gives <span class="math display">\[y(t)=-\frac{1}{2}+\frac{1}{2}e^{2t}, \qquad t\geq 0.\]</span></p>
+<p>The response contains the term <span class="math display">\[\frac{1}{2}e^{2t},\]</span> and since the exponent is positive, this term grows without bound as <span class="math inline">\(t\to\infty\)</span>. Therefore, <span class="math display">\[y(t)\to\infty.\]</span></p>
+<p>The right-half-plane pole therefore makes the system unstable.</p>
+</div>
+<h2 id="a-useful-summary-of-the-cases">A Useful Summary of the Cases</h2>
+<div class="summarybox">
+<p><span>Stability classification in the <span class="math inline">\(s\)</span>-plane</span> For a continuous-time LTI system:</p>
+<ul>
+<li><p><strong>All poles in the open left half-plane</strong> <span class="math inline">\(\Rightarrow\)</span> asymptotically stable.</p></li>
+<li><p><strong>Simple isolated poles on the imaginary axis, all other poles in the left half-plane</strong> <span class="math inline">\(\Rightarrow\)</span> marginally stable.</p></li>
+<li><p><strong>Any repeated pole on the imaginary axis</strong> <span class="math inline">\(\Rightarrow\)</span> unstable.</p></li>
+<li><p><strong>Any pole in the right half-plane</strong> <span class="math inline">\(\Rightarrow\)</span> unstable.</p></li>
+</ul>
+</div>
+<h2 id="worked-examples">Worked Examples</h2>
+<div class="examplebox">
+<p><span>Classifying systems from their poles</span> Determine the stability of the following transfer functions: <span class="math display">\[\begin{align}
+        G_1(s) &amp;= \frac{4}{(s+2)(s+5)}, \\
+        G_2(s) &amp;= \frac{3}{s^2+9}, \\
+        G_3(s) &amp;= \frac{1}{s^2(s+1)}, \\
+        G_4(s) &amp;= \frac{2}{(s-1)(s+4)}.
+\end{align}\]</span></p>
+<p>For <span class="math display">\[G_1(s)=\frac{4}{(s+2)(s+5)},\]</span> the poles are at <span class="math inline">\(s=-2\)</span> and <span class="math inline">\(s=-5\)</span>. Both lie in the open left half-plane, so the system is asymptotically stable.</p>
+<p>For <span class="math display">\[G_2(s)=\frac{3}{s^2+9},\]</span> the poles are at <span class="math inline">\(s=\pm j3\)</span>. These are simple poles on the imaginary axis. The response remains oscillatory and bounded, but it does not decay. Hence the system is marginally stable.</p>
+<p>For <span class="math display">\[G_3(s)=\frac{1}{s^2(s+1)},\]</span> there is a repeated pole at the origin and one pole at <span class="math inline">\(s=-1\)</span>. Because the pole on the imaginary axis is repeated, the response contains unbounded polynomial terms in time. Therefore, the system is unstable.</p>
+<p>For <span class="math display">\[G_4(s)=\frac{2}{(s-1)(s+4)},\]</span> the poles are at <span class="math inline">\(s=1\)</span> and <span class="math inline">\(s=-4\)</span>. Since one pole lies in the right half-plane, the system is unstable.</p>
+</div>
+<div class="examplebox">
+<p><span>Why repeated left-half-plane poles are still acceptable</span> Consider <span class="math display">\[G(s)=\frac{1}{(s+2)^2}.\]</span> The system has a repeated pole at <span class="math inline">\(s=-2\)</span>. Its natural response contains terms proportional to <span class="math display">\[e^{-2t} \quad \text{(decaying exponential)}\]</span> and <span class="math display">\[te^{-2t} \quad \text{(rises then decays to zero)}.\]</span></p>
+<p>Although the factor <span class="math inline">\(t\)</span> grows, the exponential decay dominates, and both terms tend to zero as <span class="math inline">\(t\to\infty\)</span>. In general, an exponential decay term dominates any polynomial growth term in a product of the form <span class="math inline">\(t^n e^{-at}\)</span> with <span class="math inline">\(a&gt;0\)</span>. Therefore, repeated left-half-plane poles are still asymptotically stable.</p>
+</div>
+<h2 id="sec:routh_hurwitz">The Routh–Hurwitz Criterion</h2>
+<p>For low-order systems, the poles can be found directly by factoring the characteristic polynomial. For higher-order systems, explicit factorisation may be tedious or impossible by hand. The Routh-Hurwitz provides a test that determines how many roots lie in the right half-plane using only the coefficients of the characteristic polynomial, without computing the roots themselves.</p>
+<p>The criterion is named after <strong>Edward John Routh</strong> (1876) and <strong>Adolf Hurwitz</strong> (1895). They did not produce the result jointly. Routh developed a recursive tabular procedure for testing stability, whereas Hurwitz developed an equivalent formulation based on determinants. In control engineering, the tabular form is usually preferred for hand calculations, and this is the form referred to as the <em>Routh criterion</em> or the <em>Routh–Hurwitz criterion</em>.</p>
+<p>Instead of calculating all poles of <span class="math display">\[\begin{equation}
+    P(s)=a_n s^n + a_{n-1}s^{n-1} + \cdots + a_1 s + a_0,
+\end{equation}\]</span> we construct an array from the coefficients and examine the signs of the entries in its first column.</p>
+<p>This is useful for three reasons: it allows stability to be checked quickly even for higher-order systems; it tells us <em>how many</em> roots lie in the right half-plane, not merely whether the system is stable or unstable; and it is especially valuable in design problems where coefficients depend on a controller parameter such as a gain <span class="math inline">\(K\)</span>, because the Routh array can determine the range of <span class="math inline">\(K\)</span> for which the system remains stable.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The Routh–Hurwitz criterion determines the number of right-half-plane roots of the characteristic polynomial directly from its coefficients, without explicitly finding the roots.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Before constructing the array, one simple observation is worth making. If all roots of the polynomial are to lie in the open left half-plane, then all coefficients of the characteristic polynomial must be present and must have the same sign. For first- and second-order polynomials this condition is also sufficient. For third-order and higher polynomials, however, it is only necessary. A polynomial may have all positive coefficients and still possess right-half-plane roots, so the Routh array is needed to complete the test.</p>
+</div>
+<div class="result"><div class="env-label env-label-result">Result: Routh–Hurwitz criterion</div>
+<p>Consider the characteristic polynomial <span class="math display">\[\begin{equation}
+        P(s)=a_n s^n + a_{n-1}s^{n-1} + \cdots + a_1 s + a_0,
+        \qquad a_n&gt;0.
+\end{equation}\]</span> After constructing the Routh array, the number of sign changes in the first column is equal to the number of roots of <span class="math inline">\(P(s)\)</span> that lie in the right half-plane.</p>
+<p>Consequently, the system is asymptotically stable if and only if there are no sign changes in the first column and no row of zeros indicating poles on the imaginary axis.</p>
+</div>
+<h3 id="construction-of-the-routh-array">Construction of the Routh array</h3>
+<p>The routh array is formed from the coefficients of the characteristic polynomial. The first two rows are written directly from the coefficients by alternating powers of <span class="math inline">\(s\)</span>: <span class="math display">\[\begin{array}{c|cccc}
+    s^n     &amp; a_n     &amp; a_{n-2} &amp; a_{n-4} &amp; \cdots \\
+    s^{n-1} &amp; a_{n-1} &amp; a_{n-3} &amp; a_{n-5} &amp; \cdots
+\end{array}\]</span> where any missing coefficients are taken as zero.</p>
+<p>The remaining rows are generated recursively. If two consecutive rows begin as <span class="math display">\[\begin{array}{c|cccc}
+    s^k     &amp; a &amp; b &amp; c &amp; \cdots \\
+    s^{k-1} &amp; d &amp; e &amp; f &amp; \cdots
+\end{array}\]</span> then the next row begins with <span class="math display">\[\begin{array}{l|lcr}
+    s^{k-2} &amp;
+    \dfrac{d\cdot b-a\cdot e}{d} &amp;
+    \dfrac{d\cdot c-a\cdot f}{d} &amp;
+    \cdots
+\end{array}\]</span> and the process continues until the <span class="math inline">\(s^0\)</span> row is reached.</p>
+<p>Once the table has been completed, the first column is inspected.</p>
+<ul>
+<li><p>If all entries in the first column are positive, there are no right-half-plane roots.</p></li>
+<li><p>Each sign change in the first column corresponds to one right-half-plane root.</p></li>
+</ul>
+<h3 id="special-cases">Special cases</h3>
+<p>Two special cases can arise during the construction.</p>
+<ol>
+<li><p><strong>A zero appears as the first element of a row, but the row is not entirely zero.</strong> In this case, the zero is replaced temporarily by a small positive number <span class="math inline">\(\varepsilon\)</span>, and the sign changes are determined in the limit as <span class="math inline">\(\varepsilon \to 0^+\)</span>.</p></li>
+<li><p><strong>An entire row becomes zero.</strong> This indicates a symmetric root pattern with respect to origin and usually signals the presence of roots on the imaginary axis (If the system is stable). In this case, an <strong>auxiliary polynomial</strong> is formed from the row above the zero row. The zero row is then replaced by the coefficients of the derivative of that auxiliary polynomial with respect to <span class="math inline">\(s\)</span>, after which the Routh process continues.</p></li>
+</ol>
+<div class="notebox">
+<p><span>Important interpretation</span> The Routh array is not merely a computational trick. A row of zeros is highly informative: it indicates that the polynomial contains a factor with roots symmetrically located about the origin, and in control problems this commonly reveals poles on the imaginary axis.</p>
+</div>
+<div class="examplebox">
+<p><span>Using the Routh array to confirm stability</span> Consider the characteristic polynomial <span class="math display">\[\begin{equation}
+        P(s)=s^3+6s^2+11s+6.
+\end{equation}\]</span> Determine whether all roots lie in the open left half-plane.</p>
+<p>The Routh array begins with <span class="math display">\[\begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 11 \\
+        s^2 &amp; 6 &amp; 6
+    \end{array}\]</span> The next row is <span class="math display">\[\begin{array}{c|cc}
+        s^1 &amp; \frac{6\cdot 11 - 1\cdot 6}{6} &amp; 0
+    \end{array}
+    =
+    \begin{array}{c|cc}
+        s^1 &amp; 10 &amp; 0
+    \end{array}\]</span> and the final row is <span class="math display">\[\begin{array}{c|cc}
+        s^0 &amp; 6 &amp; 0
+    \end{array}\]</span> Hence the full array is <span class="math display">\[\begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 11 \\
+        s^2 &amp; 6 &amp; 6 \\
+        s^1 &amp; 10 &amp; 0 \\
+        s^0 &amp; 6 &amp; 0
+    \end{array}\]</span></p>
+<p>The first column is <span class="math display">\[{1,\quad 6,\quad 10,\quad 6}\]</span> and all entries are positive. Therefore, there are no sign changes, so there are no right-half-plane roots. The polynomial is stable, and the corresponding system is asymptotically stable.</p>
+</div>
+<div class="examplebox">
+<p><span>Finding the range of <span class="math inline">\(K\)</span> for stability</span> Consider the characteristic polynomial <span class="math display">\[\begin{equation*}
+        P(s)=s^3+3s^2+2s+K.
+\end{equation*}\]</span> Determine the values of <span class="math inline">\(K\)</span> for which the system is asymptotically stable.</p>
+<p>The first two rows of the Routh array are <span class="math display">\[\begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 2 \\
+        s^2 &amp; 3 &amp; K
+    \end{array}\]</span> The next row is <span class="math display">\[\begin{array}{c|cc}
+        s^1 &amp; \frac{3\cdot 2 - 1\cdot K}{3} &amp; 0
+    \end{array}
+    =
+    \begin{array}{c|cc}
+        s^1 &amp; \frac{6-K}{3} &amp; 0
+    \end{array}\]</span> and the final row is <span class="math display">\[\begin{array}{c|cc}
+        s^0 &amp; K &amp; 0
+    \end{array}\]</span> Thus the first column is <span class="math display">\[\left \{1,\quad 3,\quad \frac{6-K}{3},\quad K\right \}.\]</span></p>
+<p>For asymptotic stability, every element in the first column must be positive. Therefore, <span class="math display">\[\begin{align*}
+        K &amp;&gt; 0, \\
+        \frac{6-K}{3} &amp;&gt; 0.
+\end{align*}\]</span> The second inequality gives <span class="math inline">\(K&lt;6\)</span>. Hence the stable range is <span class="math display">\[\begin{equation*}
+        0&lt;K&lt;6.
+\end{equation*}\]</span></p>
+<p>It is also worth noting that when <span class="math inline">\(K=6\)</span>, the <span class="math inline">\(s^1\)</span> row begins with zero, which indicates that the system lies on the boundary of stability.</p>
+</div>
+<div class="examplebox">
+<p><span>A Routh array with a zero as the first element of a row</span> Consider the characteristic polynomial <span class="math display">\[\begin{equation*}
+        P(s)=s^6+2s^5+5s^4+6s^3+7s^2+2s+1.
+\end{equation*}\]</span> Use the Routh–Hurwitz criterion to determine the number of right-half-plane roots.</p>
+<p>The first two rows of the Routh array are formed directly from the coefficients: <span class="math display">\[\begin{array}{c|cccc}
+        s^6 &amp; 1 &amp; 5 &amp; 7 &amp; 1 \\
+        s^5 &amp; 2 &amp; 6 &amp; 2 &amp; 0
+    \end{array}\]</span></p>
+<p>The <span class="math inline">\(s^4\)</span> row is <span class="math display">\[\begin{array}{c|ccc}
+        s^4 &amp;
+        \dfrac{2\cdot 5 - 1\cdot 6}{2} &amp;
+        \dfrac{2\cdot 7 - 1\cdot 2}{2} &amp;
+        \dfrac{2\cdot 1 - 1\cdot 0}{2}
+    \end{array}
+    =
+    \begin{array}{c|ccc}
+        s^4 &amp; 2 &amp; 6 &amp; 1
+    \end{array}\]</span></p>
+<p>Now form the <span class="math inline">\(s^3\)</span> row: <span class="math display">\[\begin{array}{c|ccc}
+        s^3 &amp;
+        \dfrac{2\cdot 6 - 2\cdot 6}{2} &amp;
+        \dfrac{2\cdot 2 - 2\cdot 1}{2} &amp;
+        0
+    \end{array}
+    =
+    \begin{array}{c|ccc}
+        s^3 &amp; 0 &amp; 1 &amp; 0
+    \end{array}\]</span></p>
+<p>At this stage, the first element of the row is zero, but the row is not entirely zero. This is a special case. We replace the zero temporarily by a small positive number <span class="math inline">\(\varepsilon\)</span>, where <span class="math display">\[\varepsilon&gt;0, \qquad \varepsilon \to 0^+.\]</span> Hence we write the <span class="math inline">\(s^3\)</span> row as <span class="math display">\[\begin{array}{c|ccc}
+        s^3 &amp; \varepsilon &amp; 1 &amp; 0
+    \end{array}\]</span></p>
+<p>The next row is then computed in the usual way: <span class="math display">\[\begin{array}{c|ccc}
+        s^2 &amp;
+        \dfrac{\varepsilon\cdot 6 - 2\cdot 1}{\varepsilon} &amp;
+        \dfrac{\varepsilon\cdot 1 - 2\cdot 0}{\varepsilon} &amp;
+        0
+    \end{array}
+    =
+    \begin{array}{c|ccc}
+        s^2 &amp; 6-\dfrac{2}{\varepsilon} &amp; 1 &amp; 0
+    \end{array}\]</span></p>
+<p>The <span class="math inline">\(s^1\)</span> row becomes <span class="math display">\[\begin{array}{c|cc}
+        s^1 &amp;
+        \dfrac{\left(6-\dfrac{2}{\varepsilon}\right)\cdot 1 - \varepsilon\cdot 1}
+        {\,6-\dfrac{2}{\varepsilon}\,}
+        &amp; 0
+    \end{array}
+    =
+    \begin{array}{c|cc}
+        s^1 &amp;
+        \dfrac{6-\dfrac{2}{\varepsilon}-\varepsilon}{\,6-\dfrac{2}{\varepsilon}\,}
+        &amp; 0
+    \end{array}\]</span> and the last row is <span class="math display">\[\begin{array}{c|cc}
+        s^0 &amp; 1 &amp; 0
+    \end{array}\]</span></p>
+<p>Thus the first column is <span class="math display">\[1,\quad 2,\quad 2,\quad \varepsilon,\quad 6-\frac{2}{\varepsilon},\quad
+    \dfrac{6-\dfrac{2}{\varepsilon}-\varepsilon}{\,6-\dfrac{2}{\varepsilon}\,},\quad 1.\]</span></p>
+<p>Now consider the signs as <span class="math inline">\(\varepsilon \to 0^+\)</span>: <span class="math display">\[1&gt;0,\qquad 2&gt;0,\qquad 2&gt;0,\qquad \varepsilon&gt;0,\]</span> while <span class="math display">\[6-\frac{2}{\varepsilon}&lt;0\]</span> for sufficiently small positive <span class="math inline">\(\varepsilon\)</span>, and <span class="math display">\[\dfrac{6-\dfrac{2}{\varepsilon}-\varepsilon}{\,6-\dfrac{2}{\varepsilon}\,}&gt;0.\]</span></p>
+<p>Therefore, the signs in the first column are <span class="math display">\[+,\quad +,\quad +,\quad +,\quad -,\quad +,\quad +.\]</span></p>
+<p>The two sign changes show that the polynomial has <span class="math display">\[\begin{equation*}
+        \boxed{2 \text{ roots in the right half-plane}.}
+\end{equation*}\]</span></p>
+<p>Hence the system is <strong>unstable</strong>.</p>
+</div>
+<div class="examplebox">
+<p><span>Detecting imaginary-axis poles from a row of zeros</span> Consider the characteristic polynomial <span class="math display">\[\begin{equation*}
+        P(s)=s^4+2s^3+2s^2+2s+1.
+\end{equation*}\]</span> Use the Routh criterion to investigate its stability.</p>
+<p>The first two rows are <span class="math display">\[\begin{array}{c|ccc}
+        s^4 &amp; 1 &amp; 2 &amp; 1 \\
+        s^3 &amp; 2 &amp; 2 &amp; 0
+    \end{array}\]</span> The next row is <span class="math display">\[\begin{array}{c|ccc}
+        s^2 &amp;
+        \dfrac{2\cdot 2 - 1\cdot 2}{2} &amp;
+        \dfrac{2\cdot 1 - 1\cdot 0}{2} &amp;
+        0
+    \end{array}
+    =
+    \begin{array}{c|ccc}
+        s^2 &amp; 1 &amp; 1 &amp; 0
+    \end{array}\]</span> The next row becomes <span class="math display">\[\begin{array}{c|ccc}
+        s^1 &amp;
+        \dfrac{1\cdot 2 - 2\cdot 1}{1} &amp;
+        \dfrac{1\cdot 0 - 2\cdot 0}{1} &amp;
+        0
+    \end{array}
+    =
+    \begin{array}{c|ccc}
+        s^1 &amp; 0 &amp; 0 &amp; 0
+    \end{array}\]</span> so an entire row of zeros appears.</p>
+<p>We therefore form the auxiliary polynomial from the row above, namely <span class="math display">\[\begin{equation*}
+        A(s)=s^2+1.
+\end{equation*}\]</span> Differentiating with respect to <span class="math inline">\(s\)</span> gives <span class="math display">\[\begin{equation*}
+        A&#39;(s)=2s.
+\end{equation*}\]</span> The zero row is replaced by the coefficients of <span class="math inline">\(A&#39;(s)\)</span>, so the array continues as <span class="math display">\[\begin{array}{c|ccc}
+        s^4 &amp; 1 &amp; 2 &amp; 1 \\
+        s^3 &amp; 2 &amp; 2 &amp; 0 \\
+        s^2 &amp; 1 &amp; 1 &amp; 0 \\
+        s^1 &amp; 2 &amp; 0 &amp; 0 \\
+        s^0 &amp; 1 &amp; 0 &amp; 0
+    \end{array}\]</span></p>
+<p>The first column now contains no sign change. Hence there are no right-half-plane roots. However, the row of zeros revealed the presence of imaginary-axis roots. Indeed, the auxiliary polynomial <span class="math display">\[A(s)=s^2+1\]</span> has roots at <span class="math display">\[s=\pm j.\]</span> These simple imaginary-axis roots make the system marginally stable.</p>
+</div>
+<div class="examplebox">
+<p><span>Finding the range of gain <span class="math inline">\(K\)</span> using the Routh–Hurwitz criterion</span> For the unity-feedback system shown in <a href="#fig:routh_gain_example" data-reference-type="ref+label" data-reference="fig:routh_gain_example">[fig:routh_gain_example]</a>, determine the range of <span class="math inline">\(K\)</span> for which the closed-loop system is stable, unstable, and marginally stable. Assume <span class="math inline">\(K&gt;0\)</span>.</p>
+<div class="center">
+<p></p>
+</div>
+<p>The open-loop transfer function is <span class="math display">\[G(s)=\frac{K}{s(s+7)(s+11)}.\]</span> Since the feedback is unity and negative, the closed-loop characteristic equation is <span class="math display">\[1+G(s)=0.\]</span> Hence, <span class="math display">\[1+\frac{K}{s(s+7)(s+11)}=0.\]</span> Multiplying through by <span class="math inline">\(s(s+7)(s+11)\)</span> gives <span class="math display">\[s(s+7)(s+11)+K=0.\]</span></p>
+<p>Expanding the polynomial leads to <span class="math display">\[s^3+18s^2+77s+K=0.\]</span></p>
+<p>We now form the Routh array: <span class="math display">\[\begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 77 \\
+        s^2 &amp; 18 &amp; K \\
+        s^1 &amp; \dfrac{18\cdot 77 - K}{18} &amp; 0 \\
+        s^0 &amp; K &amp; 0
+    \end{array}
+    \quad = \quad 
+    \begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 77 \\
+        s^2 &amp; 18 &amp; K \\
+        s^1 &amp; \dfrac{1386-K}{18} &amp; 0 \\
+        s^0 &amp; K &amp; 0
+    \end{array}\]</span></p>
+<p>For asymptotic stability, every entry in the first column must be positive. Therefore, <span class="math display">\[1&gt;0,\qquad
+    18&gt;0,\qquad
+    \frac{1386-K}{18}&gt;0,\qquad
+    K&gt;0.\]</span> Since <span class="math inline">\(K&gt;0\)</span> is already assumed, the remaining condition is <span class="math display">\[1386-K&gt;0,\]</span> which gives <span class="math display">\[K&lt;1386.\]</span></p>
+<p>Therefore, the closed-loop system is <span>stable</span> for <span class="math display">\[\boxed{0&lt;K&lt;1386.}\]</span></p>
+<p>Now consider the boundary case <span class="math inline">\(K=1386.\)</span> Then the <span class="math inline">\(s^1\)</span> row becomes zero, so the system lies on the boundary of stability. Substituting <span class="math inline">\(K=1386\)</span> into the characteristic polynomial gives <span class="math display">\[s^3+18s^2+77s+1386=0.\]</span> This factors as <span class="math display">\[(s+18)(s^2+77)=0.\]</span> Hence the poles are <span class="math display">\[s=-18,\qquad s=\pm j\sqrt{77}.\]</span> The closed-loop system therefore has a simple pair of poles on the imaginary axis, so it is <span>marginally stable</span> when <span class="math display">\[\boxed{K=1386.}\]</span></p>
+<p>Finally, if <span class="math display">\[K&gt;1386,\]</span> then <span class="math display">\[\frac{1386-K}{18}&lt;0,\]</span> so the first column contains the sign pattern <span class="math display">\[+,\quad +,\quad -,\quad +,\]</span> which has <span>two sign changes</span>. Therefore, there are two poles in the right half-plane, and the system is <span>unstable</span> for <span class="math display">\[\boxed{K&gt;1386.}\]</span></p>
+<p>Thus, the complete answer is <span class="math display">\[\boxed{
+        \begin{aligned}
+            &amp;\text{Stable:} &amp;&amp; 0&lt;K&lt;1386,\\
+            &amp;\text{Marginally stable:} &amp;&amp; K=1386,\\
+            &amp;\text{Unstable:} &amp;&amp; K&gt;1386.
+    \end{aligned}}\]</span></p>
+</div>
+<div class="examplebox">
+<p><span>Using the Routh test for variation of a system parameter</span> Consider an industrial servo positioning table that moves a payload along a rail. The feedback controller is fixed after tuning, but the payload mass varies from job to job. As the payload becomes heavier, the dynamics of the plant change.</p>
+<p>A simplified normalised closed-loop characteristic equation for the position loop is <span class="math display">\[P(s)=s^3+(4+m)s^2+(6-m)s+2,\]</span> where <span class="math inline">\(m&gt;0\)</span> is an effective payload parameter.</p>
+<p>Use the Routh–Hurwitz criterion to determine the range of <span class="math inline">\(m\)</span> for which the closed-loop system is stable. Explain what happens when this range is exceeded.</p>
+<p>The characteristic polynomial is <span class="math display">\[P(s)=s^3+(4+m)s^2+(6-m)s+2.\]</span></p>
+<p>We now form the Routh array: <span class="math display">\[\begin{array}{c|cc}
+        s^3 &amp; 1 &amp; 6-m \\
+        s^2 &amp; 4+m &amp; 2 \\
+        s^1 &amp; \dfrac{(4+m)(6-m)-2}{4+m} &amp; 0 \\
+        s^0 &amp; 2 &amp; 0
+    \end{array}\]</span></p>
+<p>Simplifying the <span class="math inline">\(s^1\)</span> entry gives <span class="math display">\[\frac{(4+m)(6-m)-2}{4+m}
+    =
+    \frac{24+2m-m^2-2}{4+m}
+    =
+    \frac{22+2m-m^2}{4+m}.\]</span></p>
+<p>Hence the first column is <span class="math display">\[1,\qquad 4+m,\qquad \frac{22+2m-m^2}{4+m},\qquad 2.\]</span></p>
+<p>For asymptotic stability, all entries in the first column must be positive. Therefore, <span class="math display">\[1&gt;0,\qquad 4+m&gt;0,\qquad \frac{22+2m-m^2}{4+m}&gt;0,\qquad 2&gt;0.\]</span></p>
+<p>Since <span class="math inline">\(m&gt;0\)</span>, the terms <span class="math inline">\(1\)</span>, <span class="math inline">\(4+m\)</span>, and <span class="math inline">\(2\)</span> are automatically positive. The only nontrivial condition is <span class="math display">\[22+2m-m^2&gt;0.\]</span> Rearranging, <span class="math display">\[m^2-2m-22&lt;0.\]</span></p>
+<p>The roots of the quadratic equation <span class="math display">\[m^2-2m-22=0\]</span> are <span class="math display">\[m=1\pm \sqrt{23}.\]</span></p>
+<p>Therefore, <span class="math display">\[1-\sqrt{23}&lt;m&lt;1+\sqrt{23}.\]</span> Since <span class="math inline">\(m&gt;0\)</span>, the admissible range is <span class="math display">\[\boxed{0&lt;m&lt;1+\sqrt{23}.}\]</span></p>
+<p>Numerically, <span class="math display">\[1+\sqrt{23}\approx 5.80.\]</span></p>
+<p>Hence the closed-loop system is <strong>stable</strong> for <span class="math display">\[\boxed{0&lt;m&lt;1+\sqrt{23}\approx 5.80.}\]</span></p>
+<p><strong>Boundary of stability.</strong> When <span class="math display">\[m=1+\sqrt{23},\]</span> the <span class="math inline">\(s^1\)</span> row becomes zero, so the system is on the boundary of stability. At this value, <span class="math display">\[P(s)=s^3+(5+\sqrt{23})s^2+(5-\sqrt{23})s+2.\]</span> Because <span class="math display">\[(5+\sqrt{23})(5-\sqrt{23})=2,\]</span> the polynomial factors as <span class="math display">\[P(s)=\bigl(s+5+\sqrt{23}\bigr)\bigl(s^2+5-\sqrt{23}\bigr).\]</span> Thus the poles are <span class="math display">\[s=-(5+\sqrt{23}),\qquad s=\pm j\sqrt{\,5-\sqrt{23}\,}.\]</span> So the system has a simple pair of poles on the imaginary axis and is therefore <strong>marginally stable</strong> at <span class="math display">\[\boxed{m=1+\sqrt{23}.}\]</span></p>
+<p><strong>When the payload exceeds the safe range.</strong> If <span class="math display">\[m&gt;1+\sqrt{23},\]</span> then <span class="math display">\[\frac{22+2m-m^2}{4+m}&lt;0,\]</span> so the first column has the sign pattern <span class="math display">\[+,\quad +,\quad -,\quad +.\]</span> This gives <strong>two sign changes</strong>, so the system is <strong>unstable</strong> for <span class="math display">\[\boxed{m&gt;1+\sqrt{23}.}\]</span></p>
+<p><strong>Physical interpretation.</strong> This example represents a practical limitation of a fixed controller. The table may behave well for light and moderate payloads, but if the payload becomes too heavy, the closed-loop dynamics change enough to destroy stability. In practice, the motion would become increasingly oscillatory, and beyond the stability limit the table would fail to settle at the commanded position. This is why control systems are usually designed not only for nominal parameters, but also for the expected range of plant variation.</p>
+</div>
+<div class="examplebox">
+<p><span>Maximum allowable measurement delay for stability</span> Consider the standard negative-feedback system in Figure <a href="#fig:delay-feedback" data-reference-type="ref" data-reference="fig:delay-feedback">[fig:delay-feedback]</a></p>
+<div class="center">
+<p></p>
+</div>
+<p>where <span class="math display">\[G(s)=\frac{1}{s(s+1)},
+    \qquad
+    H(s)=e^{-Ts},\]</span> where <span class="math inline">\(T&gt;0\)</span> is a time delay in the feedback path. The delay may represent sensing, communication, or computation lag.</p>
+<p>Using the first two terms of the Taylor expansion of the delay, <span class="math display">\[e^{-Ts}\approx 1-Ts,\]</span> find an approximate value of the maximum allowable delay <span class="math inline">\(T\)</span> for stability. For this value of <span class="math inline">\(T\)</span>, determine the frequency of the sustained oscillations. Finally, confirm the result in MATLAB (Listing <a href="#lst:delay_margin_example" data-reference-type="ref" data-reference="lst:delay_margin_example">[lst:delay_margin_example]</a>).</p>
+<p>For a standard negative-feedback system, the closed-loop characteristic equation is <span class="math display">\[1+G(s)H(s)=0.\]</span> Substituting the given transfer functions gives <span class="math display">\[1+\frac{e^{-Ts}}{s(s+1)}=0.\]</span> Multiplying through by <span class="math inline">\(s(s+1)\)</span>, <span class="math display">\[s(s+1)+e^{-Ts}=0.\]</span> Using the first-order Taylor approximation <span class="math display">\[e^{-Ts}\approx 1-Ts,\]</span> we obtain the approximate characteristic equation <span class="math display">\[s(s+1)+1-Ts=0.\]</span> Expanding, <span class="math display">\[s^2+s+1-Ts=0,\]</span> so <span class="math display">\[\begin{equation}
+        s^2+(1-T)s+1=0.
+        \label{eq:delay_example_charpoly}
+\end{equation}\]</span></p>
+<p>We now apply the Routh–Hurwitz criterion. The Routh array for is <span class="math display">\[\begin{array}{c|cc}
+        s^2 &amp; 1 &amp; 1 \\
+        s^1 &amp; 1-T &amp; 0 \\
+        s^0 &amp; 1 &amp; 0
+    \end{array}\]</span></p>
+<p>For stability, all entries in the first column must be positive. Therefore, <span class="math display">\[1&gt;0,\qquad 1-T&gt;0,\qquad 1&gt;0.\]</span> Hence the approximate stability condition is <span class="math display">\[T&lt;1.\]</span> Therefore, the <strong>maximum allowable delay</strong> predicted by the linear approximation is <span class="math display">\[\boxed{T_{\max}\approx 1~\text{s}.}\]</span></p>
+<p>At the boundary of stability, <span class="math inline">\(T=1\)</span>. Substituting this into <a href="#eq:delay_example_charpoly" data-reference-type="eqref" data-reference="eq:delay_example_charpoly">[eq:delay_example_charpoly]</a> gives <span class="math display">\[s^2+1=0.\]</span> Hence the poles are <span class="math display">\[s=\pm j.\]</span> These poles lie on the imaginary axis, so the system is marginally stable and exhibits sustained oscillation. The angular frequency of oscillation is therefore <span class="math display">\[\boxed{\omega=1~\text{rad/s}.}\]</span> The corresponding oscillation period is <span class="math display">\[\boxed{T_{\mathrm{osc}}=\frac{2\pi}{\omega}=2\pi~\text{s}.}\]</span></p>
+</div>
+<div class="listing">
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 1/(s*(s+1))
+
+# Approximate critical delay from Taylor expansion
+Tcrit_approx = 1
+
+# Approximate feedback path: exp(-Ts) ~ 1 - Ts
+Hlin = 1 - Tcrit_approx*s
+
+# Closed-loop system using the approximate delay model
+Tlin = ctrl.feedback(G, Hlin)
+
+print('Approximate closed-loop transfer function:')
+print(Tlin)
+
+p = ctrl.poles(Tlin)
+print('Poles of the approximate closed-loop system:')
+print(p)
+
+_resp = ctrl.step_response(Tlin, 25)
+
+
+t, y = _resp.time, _resp.outputs
+plt.figure()
+plt.plot(t, y)
+plt.grid(True)
+plt.title('Approximate model at T = 1 s')
+plt.xlabel('Time (s)')
+plt.ylabel('Output')
+plt.show()
+
+# Gain and phase margins of the open-loop
+gm, pm, wcg, wcp = ctrl.margin(G)
+print("Approximate delay margin from Taylor model = %.4f s" % Tcrit_approx)
+if wcg is not None and wcg &gt; 0:
+    delay_margin = np.pi / wcg
+    print("Estimated delay margin from phase crossover = %.4f s" % delay_margin)
+    print("Phase crossover frequency                   = %.4f rad/s" % wcg)</code></pre>
+</div>
+<pre class="matlab"><code>clc; clear; close all;
+        
+        s = tf('s');
+        G = 1/(s*(s+1));
+        
+        % Approximate critical delay from Taylor expansion
+        Tcrit_approx = 1;
+        
+        % Approximate feedback path: exp(-Ts) ~ 1 - Ts
+        Hlin = 1 - Tcrit_approx*s;
+        
+        % Closed-loop system using the approximate delay model
+        Tlin = feedback(G,Hlin);
+        
+        disp('Approximate closed-loop transfer function:')
+        Tlin
+        
+        disp('Poles of the approximate closed-loop system:')
+        pole(Tlin)
+        
+        figure;
+        step(Tlin,25);
+        grid on;
+        title('Approximate model at T = 1 s');
+        xlabel('Time (s)');
+        ylabel('Output');
+        
+        % Exact delayed system for comparison
+        Hexact = tf(1,1,'InputDelay',Tcrit_approx);
+        Texact = feedback(G,Hexact);
+        M = allmargin(G*Hexact);
+        
+        figure;
+        step(Texact,40);
+        grid on;
+        title('Exact delayed system at T = 1 s');
+        xlabel('Time (s)');
+        ylabel('Output');
+        
+        fprintf('Approximate delay margin from Taylor model = %.4f s\n', Tcrit_approx);
+        fprintf('Exact delay margin from MATLAB            = %.4f s\n', M.DelayMargin(1));
+        fprintf('Exact oscillation frequency               = %.4f rad/s\n', M.DMFrequency(1));</code></pre>
+</div>
+<h2 id="sec:state_space_stability">Stability of State-Space Models</h2>
+<p>Many practical systems are more conveniently described in <strong>state-space form</strong> than by a transfer function. A continuous-time LTI system in state-space form is written as <span class="math display">\[\begin{align}
+    \dot{x}(t) &amp;= Ax(t)+Bu(t), \\
+    y(t) &amp;= Cx(t)+Du(t),
+\end{align}\]</span> where <span class="math inline">\(x(t)\in\mathbb{R}^n\)</span> is the state vector, <span class="math inline">\(u(t)\)</span> is the input, <span class="math inline">\(y(t)\)</span> is the output, and <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, <span class="math inline">\(D\)</span> are constant matrices of appropriate dimensions.</p>
+<p>The stability of the state-space model is determined by the eigenvalues of the system matrix <span class="math inline">\(A\)</span>.</p>
+<h3 id="why-the-matrix-a-determines-stability">Why the matrix <span class="math inline">\(A\)</span> determines stability</h3>
+<p>Consider the unforced system <span class="math display">\[\begin{equation}
+    \dot{x}(t)=Ax(t).
+\end{equation}\]</span> Its solution is <span class="math display">\[\begin{equation}
+    x(t)=e^{At}x(0),
+\end{equation}\]</span> where <span class="math inline">\(e^{At}\)</span> is the matrix exponential. The behaviour of <span class="math inline">\(x(t)\)</span> therefore depends on how the matrix exponential evolves with time, and this in turn is determined by the eigenvalues of <span class="math inline">\(A\)</span>.</p>
+<p>If all eigenvalues of <span class="math inline">\(A\)</span> have negative real part, then every natural mode decays with time, and the state tends to zero. If any eigenvalue has positive real part, then at least one mode grows exponentially, and the system is unstable. If eigenvalues lie on the imaginary axis, then marginal or unstable behaviour may arise depending on whether those modes are repeated.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Asymptotic stability of a state-space model</div>
+<p>The continuous-time LTI system <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t)\]</span> is said to be <strong>asymptotically stable</strong> if the state of the unforced system <span class="math display">\[\dot{x}(t)=Ax(t)\]</span> satisfies <span class="math display">\[x(t)\to 0 \qquad \text{as } t\to \infty\]</span> for every initial condition <span class="math inline">\(x(0)\)</span>.</p>
+</div>
+<h3 id="eigenvalues-and-the-characteristic-equation">Eigenvalues and the characteristic equation</h3>
+<p>Let <span class="math inline">\(\lambda\)</span> be an eigenvalue of the matrix <span class="math inline">\(A\)</span>. By definition, <span class="math inline">\(\lambda\)</span> satisfies <span class="math display">\[\begin{equation}
+    Av=\lambda v
+\end{equation}\]</span> for some nonzero vector <span class="math inline">\(v\)</span>, called an eigenvector. Rearranging gives <span class="math display">\[\begin{equation}
+    (\lambda I-A)v=0.
+\end{equation}\]</span> For a nonzero vector <span class="math inline">\(v\)</span> to exist, the matrix <span class="math inline">\(\lambda I-A\)</span> must be singular, so <span class="math display">\[\begin{equation}
+    \det(\lambda I-A)=0.
+\end{equation}\]</span></p>
+<p>In control engineering, it is common to use the variable <span class="math inline">\(s\)</span> instead of <span class="math inline">\(\lambda\)</span>, so the characteristic equation is written as <span class="math display">\[\begin{equation}
+    \det(sI-A)=0.
+\end{equation}\]</span> The roots of this equation are the eigenvalues of <span class="math inline">\(A\)</span>.</p>
+<div class="result"><div class="env-label env-label-result">Result: State-space stability test</div>
+<p>A continuous-time LTI system <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t)\]</span> is asymptotically stable if and only if all eigenvalues of <span class="math inline">\(A\)</span> lie in the open left half-plane, that is, <span class="math display">\[\Re(\lambda_i)&lt;0
+    \qquad \text{for all eigenvalues } \lambda_i \text{ of } A.\]</span></p>
+</div>
+<h3 id="connection-with-transfer-function-poles">Connection with transfer-function poles</h3>
+<p>The poles of the transfer function are precisely the roots of <span class="math display">\[\begin{equation}
+    \det(sI-A)=0,
+\end{equation}\]</span> provided the state-space realisation is minimal. The transfer function of the state-space model is <span class="math display">\[\begin{equation}
+    G(s)=C(sI-A)^{-1}B+D.
+\end{equation}\]</span> The inverse <span class="math inline">\((sI-A)^{-1}\)</span> exists only when <span class="math inline">\(\det(sI-A)\neq 0\)</span>. Therefore, the values of <span class="math inline">\(s\)</span> for which <span class="math inline">\(\det(sI-A)=0\)</span> are exactly the singularities of the transfer function, that is, the poles.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>For a minimal realisation, the eigenvalues of the matrix <span class="math inline">\(A\)</span> are exactly the poles of the transfer function. Thus, studying the eigenvalues of <span class="math inline">\(A\)</span> is equivalent to studying the poles of the system.</p>
+</div>
+<h3 id="how-to-find-eigenvalues-by-hand">How to find eigenvalues by hand</h3>
+<p>For small systems, the eigenvalues can be found directly from the characteristic equation <span class="math display">\[\det(sI-A)=0.\]</span></p>
+<div class="examplebox">
+<p><span>Finding eigenvalues from <span class="math inline">\(\det(sI-A)=0\)</span></span> Consider the system matrix <span class="math display">\[A=\begin{bmatrix}
+        0 &amp; 1 \\
+        -2 &amp; -3
+    \end{bmatrix}.\]</span> To determine stability, we form <span class="math display">\[sI-A=
+    \begin{bmatrix}
+        s &amp; 0 \\
+        0 &amp; s
+    \end{bmatrix}
+    -
+    \begin{bmatrix}
+        0 &amp; 1 \\
+        -2 &amp; -3
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        s &amp; -1 \\
+        2 &amp; s+3
+    \end{bmatrix}.\]</span> Hence, <span class="math display">\[\det(sI-A)=
+    \begin{vmatrix}
+        s &amp; -1 \\
+        2 &amp; s+3
+    \end{vmatrix}
+    =s(s+3)+2.\]</span> Therefore, the characteristic equation is <span class="math display">\[s^2+3s+2=0.\]</span> Factoring gives <span class="math display">\[(s+1)(s+2)=0,\]</span> so the eigenvalues are <span class="math display">\[\lambda_1=-1,\qquad \lambda_2=-2.\]</span></p>
+<p>Both eigenvalues lie in the open left half-plane. Therefore, the state-space model is asymptotically stable.</p>
+</div>
+<div class="examplebox">
+<p><span>A state-space model with an unstable eigenvalue</span> Consider <span class="math display">\[A=\begin{bmatrix}
+        0 &amp; 1 \\
+        2 &amp; -1
+    \end{bmatrix}.\]</span> Then <span class="math display">\[sI-A=
+    \begin{bmatrix}
+        s &amp; -1 \\
+        -2 &amp; s+1
+    \end{bmatrix},\]</span> and <span class="math display">\[\det(sI-A)=
+    \begin{vmatrix}
+        s &amp; -1 \\
+        -2 &amp; s+1
+    \end{vmatrix}
+    =s(s+1)-2.\]</span> Thus the characteristic equation is <span class="math display">\[s^2+s-2=0.\]</span> Factoring gives <span class="math display">\[(s+2)(s-1)=0.\]</span> Hence the eigenvalues are <span class="math display">\[\lambda_1=-2,\qquad \lambda_2=1.\]</span></p>
+<p>Since one eigenvalue lies in the right half-plane, the system is unstable.</p>
+</div>
+<h3 id="finding-eigenvalues-in-matlab">Finding eigenvalues in MATLAB</h3>
+<p>In practice, eigenvalues are usually computed numerically. MATLAB provides a direct command for this. If the state matrix is <span class="math inline">\(A\)</span>, then the eigenvalues are found using</p>
+<div class="center">
+<p><code>eig(A)</code></p>
+</div>
+<p>This command returns all eigenvalues of the matrix <span class="math inline">\(A\)</span>, as shown in Listing <a href="#lst:ch7_eig_state_matrix" data-reference-type="ref" data-reference="lst:ch7_eig_state_matrix">[lst:ch7_eig_state_matrix]</a>.</p>
+<div class="listing">
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+
+A = np.array([[0, 1],
+              [-2, -3]])
+
+eigenvalues, _ = np.linalg.eig(A)
+print("Eigenvalues:", eigenvalues)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1;
+        -2 -3];
+
+        lambda = eig(A)</code></pre>
+</div>
+<p>The output is <span class="math display">\[\lambda =
+\begin{bmatrix}
+    -1 \\
+    -2
+\end{bmatrix}.\]</span></p>
+<p>Since both eigenvalues are negative, the system is asymptotically stable.</p>
+<p>If a full state-space model is defined in MATLAB, the poles can also be obtained directly using the <code>pole</code> command (Listing <a href="#lst:ch7_poles_ss_model" data-reference-type="ref" data-reference="lst:ch7_poles_ss_model">[lst:ch7_poles_ss_model]</a>).</p>
+<div class="listing">
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1],
+              [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+sys = ctrl.ss(A, B, C, D)
+
+eigenvalues, _ = np.linalg.eig(A)
+p = ctrl.poles(sys)
+print("Eigenvalues of A:", eigenvalues)
+print("Poles of sys:    ", p)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1;
+        -2 -3];
+        B = [0; 1];
+        C = [1 0];
+        D = 0;
+        
+        sys = ss(A,B,C,D);
+        
+        eig_A = eig(A)
+        p = pole(sys)</code></pre>
+</div>
+<p>For a minimal realisation, the vectors <code>eig(A)</code> and <code>pole(sys)</code> are identical.</p>
+<div class="examplebox">
+<p><span>A marginal stability case in MATLAB</span></p>
+<p>What does MATLAB return when eigenvalues lie on the imaginary axis? See Listing <a href="#lst:ch7_marginal_eig" data-reference-type="ref" data-reference="lst:ch7_marginal_eig">[lst:ch7_marginal_eig]</a>.</p>
+<div class="listing">
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+
+A = np.array([[0, 1],
+              [-4, 0]])
+
+eigenvalues, _ = np.linalg.eig(A)
+print("Eigenvalues:", eigenvalues)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1;
+        -4 0];
+
+        lambda = eig(A)</code></pre>
+</div>
+<p>The characteristic equation is <span class="math display">\[\det(sI-A)=s^2+4=0,\]</span> so the eigenvalues are <span class="math display">\[\lambda=\pm 2j.\]</span></p>
+<p>These imaginary-axis eigenvalues make the system marginally stable in the natural-response sense.</p>
+</div>
+<p>When a system is given in state-space form, its stability can be checked systematically as follows:</p>
+<ol>
+<li><p>write down the state matrix <span class="math inline">\(A\)</span>;</p></li>
+<li><p>form the characteristic equation <span class="math inline">\(\det(sI-A)=0\)</span>;</p></li>
+<li><p>solve for the eigenvalues of <span class="math inline">\(A\)</span>;</p></li>
+<li><p>inspect the real parts of the eigenvalues.</p></li>
+</ol>
+<p>If all eigenvalues have negative real part, the system is asymptotically stable. If any eigenvalue has positive real part, the system is unstable. If eigenvalues lie on the imaginary axis, the system lies on the boundary of stability.</p>
+<div class="summarybox">
+<p><span>Stability of state-space models</span> For a continuous-time LTI state-space model, stability is determined by the eigenvalues of the system matrix <span class="math inline">\(A\)</span>. These eigenvalues are found from the characteristic equation <span class="math display">\[\det(sI-A)=0.\]</span> For a minimal realisation, they are exactly the poles of the transfer function. Therefore, the pole-based and state-space stability tests are completely consistent.</p>
+<p>In practice, the eigenvalues can be found by hand for small matrices or numerically in MATLAB using the command <code>eig(A)</code>. This makes state-space stability analysis both conceptually clear and computationally straightforward.</p>
+</div>
+<h3 class="unnumbered" id="matlab-companion-checking-stability">MATLAB Companion: Checking Stability</h3>
+<div class="notebox">
+<p><span>Try it yourself</span> MATLAB offers several quick ways to check whether a system is stable. The script in Listing <a href="#lst:ch7_stability_check_methods" data-reference-type="ref" data-reference="lst:ch7_stability_check_methods">[lst:ch7_stability_check_methods]</a> demonstrates the most useful commands: <code>roots()</code>, <code>pole()</code>, <code>eig()</code>, and <code>isstable()</code>.</p>
+</div>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB methods for checking stability.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+# Example: s^3 + 6s^2 + 11s + 6
+p = np.roots(np.array([1, 6, 11, 6]))        # returns [-3, -2, -1] =&gt; stable
+print("Method 1 - Roots:", p)
+
+# --- Method 2: Find poles from a transfer function ---
+G = ctrl.tf(2, np.array([1, -1, 4]))          # G(s) = 2 / (s**2 - s + 4)
+print("Method 2 - Poles:", ctrl.poles(G))      # shows the poles directly
+
+# --- Method 3: Find eigenvalues from a state matrix ---
+A = np.array([[0, 1], [-2, -3]])
+eigenvalues, _ = np.linalg.eig(A)             # returns [-1, -2] =&gt; stable
+print("Method 3 - Eigenvalues:", eigenvalues)
+
+# --- Method 4: One-line stability check ---
+sys = ctrl.ss(A, np.array([[0], [1]]), np.array([[1, 0]]), np.array([[0]]))
+# Check if all poles have negative real parts
+poles = ctrl.poles(sys)
+is_stable = all(np.real(poles) &lt; 0)
+print("Method 4 - All poles stable:", is_stable)</code></pre>
+</div>
+<pre class="matlab"><code>% Example: s^3 + 6s^2 + 11s + 6
+p = roots([1 6 11 6])        % returns [-3; -2; -1] =&gt; stable
+
+% --- Method 2: Find poles from a transfer function ---
+G = tf(2, [1 -1 4]);         % G(s) = 2 / (s^2 - s + 4)
+pole(G)                       % shows the poles directly
+
+% --- Method 3: Find eigenvalues from a state matrix ---
+A = [0 1; -2 -3];
+eig(A)                        % returns [-1; -2] =&gt; stable
+
+% --- Method 4: One-line stability check ---
+sys = ss(A, [0;1], [1 0], 0);
+isstable(sys)                 % returns 1 (true) if stable, 0 if not</code></pre>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>A continuous-time LTI system is asymptotically stable if and only if all poles lie in the open left half-plane (<span class="math inline">\(\Re(p_i) &lt; 0\)</span> for all <span class="math inline">\(i\)</span>).</p></li>
+<li><p>Simple poles on the imaginary axis give marginal stability (bounded but non-decaying oscillations); repeated imaginary-axis poles or any right-half-plane pole means instability.</p></li>
+<li><p>The Routh–Hurwitz criterion counts right-half-plane roots from the polynomial coefficients alone — no root-finding needed.</p></li>
+<li><p>The Routh array is especially powerful for finding the range of a design parameter (e.g. gain <span class="math inline">\(K\)</span>) that keeps the system stable.</p></li>
+<li><p>A row of zeros in the Routh array signals poles symmetrically placed about the origin, often indicating imaginary-axis roots.</p></li>
+<li><p>For state-space models, stability is determined by the eigenvalues of the system matrix <span class="math inline">\(A\)</span>, found from <span class="math inline">\(\det(sI - A) = 0\)</span>. For a minimal realisation, these are exactly the transfer-function poles.</p></li>
+<li><p>MATLAB commands <code>roots()</code>, <code>pole()</code>, <code>eig()</code>, and <code>isstable()</code> provide quick numerical verification.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="end-of-chapter-exercises">End-of-Chapter Exercises</h2>
+<ol>
+<li><p>A system has the characteristic equation <span class="math display">\[s^3+4s^2+5s+2=0.\]</span></p>
+<ol>
+<li><p>Find the roots (poles) by factoring or using MATLAB <code>roots()</code>.</p></li>
+<li><p>State whether the system is stable, unstable, or marginally stable, and explain why.</p></li>
+</ol></li>
+<li><p>For each of the following sets of pole locations, classify the system as asymptotically stable, marginally stable, or unstable. Briefly justify each answer.</p>
+<ol>
+<li><p><span class="math inline">\(s=-1,\;s=-3\)</span></p></li>
+<li><p><span class="math inline">\(s=-2\pm j3\)</span></p></li>
+<li><p><span class="math inline">\(s=+1,\;s=-5\)</span></p></li>
+<li><p><span class="math inline">\(s=\pm j2\)</span></p></li>
+<li><p><span class="math inline">\(s=-1,\;s=-1,\;s=0\)</span></p></li>
+</ol></li>
+<li><p>Construct the Routh array for the characteristic equation <span class="math display">\[s^3+3s^2+3s+1=0.\]</span> Determine the number of roots in the right-half plane. Is the system stable?</p></li>
+<li><p>A unity negative-feedback system has the open-loop transfer function <span class="math display">\[G(s)=\frac{K}{s(s+2)(s+5)}.\]</span></p>
+<ol>
+<li><p>Write the closed-loop characteristic equation.</p></li>
+<li><p>Construct the Routh array in terms of <span class="math inline">\(K\)</span>.</p></li>
+<li><p>Find the range of <span class="math inline">\(K&gt;0\)</span> for which the closed-loop system is stable.</p></li>
+</ol></li>
+<li><p>Consider the characteristic equation <span class="math display">\[s^4+2s^3+3s^2+2s+1=0.\]</span></p>
+<ol>
+<li><p>Build the Routh array. You will encounter a special case (row of zeros). Show how to handle it.</p></li>
+<li><p>How many roots are in the right-half plane?</p></li>
+<li><p>Verify your result using <code>roots([1 2 3 2 1])</code> in MATLAB.</p></li>
+</ol></li>
+<li><p>A system has the characteristic equation <span class="math display">\[s^3+2s^2+s+K=0.\]</span></p>
+<ol>
+<li><p>Use the Routh criterion to find the maximum value of <span class="math inline">\(K\)</span> for stability.</p></li>
+<li><p>For <span class="math inline">\(K\)</span> equal to that maximum value, find the frequency of the sustained oscillation.</p></li>
+<li><p>Verify with MATLAB by computing <code>roots([1 2 1 K])</code> for your critical <span class="math inline">\(K\)</span>.</p></li>
+</ol></li>
+<li><p>A state-space model has the system matrix <span class="math display">\[A=\begin{bmatrix}0 &amp; 1 &amp; 0\\0 &amp; 0 &amp; 1\\-6 &amp; -11 &amp; -6\end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Compute the eigenvalues of <span class="math inline">\(A\)</span> by hand (hint: expand <span class="math inline">\(\det(sI-A)\)</span> and factor).</p></li>
+<li><p>Is the system stable?</p></li>
+<li><p>Verify using <code>eig(A)</code> in MATLAB.</p></li>
+</ol></li>
+<li><p>Use MATLAB to check the stability of the system with transfer function <span class="math display">\[G(s)=\frac{10(s+1)}{s^4+3s^3+5s^2+4s+2}.\]</span> Write a short script that creates the transfer function, finds its poles, and uses <code>isstable()</code> to confirm. Are any poles close to the imaginary axis?</p></li>
+</ol>

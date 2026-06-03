@@ -1,0 +1,1124 @@
+<h1 id="ch:state_space">State-Space Modelling</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Explain why state-space models are used instead of (or alongside) transfer functions</p></li>
+<li><p>Identify state variables for mechanical, electrical, and thermal systems</p></li>
+<li><p>Convert higher-order ODEs into first-order state-space form <span class="math inline">\(\dot{x}=Ax+Bu\)</span>, <span class="math inline">\(y=Cx+Du\)</span></p></li>
+<li><p>Derive state-space models from physical system equations, including coupled and nonlinear systems</p></li>
+<li><p>Compute the transfer function from a state-space model using <span class="math inline">\(G(s)=C(sI-A)^{-1}B+D\)</span></p></li>
+<li><p>Create, simulate, and convert state-space models in MATLAB using <code>ss</code>, <code>tf</code>, <code>lsim</code>, and related commands</p></li>
+</ul>
+</div>
+<h2 id="introduction-to-state-space-modelling">Introduction to State-Space Modelling</h2>
+<p>Earlier chapters described dynamic systems using differential equations and transfer functions. Transfer functions are a powerful tool for analysing linear time-invariant systems, but they emphasise input–output behaviour and can be awkward to use for systems with multiple inputs and outputs or when the internal dynamics matter.</p>
+<p>Modern control therefore often uses the state space, which models a system through a set of state variables that summarise its internal condition (or memory) at a given time. The collection of these variables forms the state vector <span class="math display">\[x(t)=
+\begin{bmatrix}
+    x_1(t)\\
+    x_2(t)\\
+    \vdots\\
+    x_n(t)
+\end{bmatrix}.\]</span> A key idea is that, given the current state <span class="math inline">\(x(t_0)\)</span> and the input <span class="math inline">\(u(t)\)</span> for <span class="math inline">\(t\ge t_0\)</span>, the future behaviour of the system is determined.</p>
+<p>For a linear time-invariant system, the state-space model is written as two matrix equations. The state equation describes how the state evolves, <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t),\]</span> and the <em>output equation</em> relates the state to the measured output, <span class="math display">\[y(t)=Cx(t)+Du(t).\]</span> The matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span> capture the system dynamics and how the input influences both the state and the output.</p>
+<h2 id="motivation-for-the-state-space-approach">Motivation for the State-Space Approach</h2>
+<p>Transfer functions are particularly convenient for frequency-domain input–output analysis. However, they do not explicitly encode the system’s internal dynamics, and extending the framework beyond SISO systems can be cumbersome. Many modelling and control tasks are also most naturally stated in terms of time-domain state trajectories and constraints.</p>
+<p>The state-space approach resolves these issues by introducing a vector of state variables and rewriting the dynamics as a set of coupled first-order differential equations. This formulation</p>
+<ul>
+<li><p>makes the internal behaviour explicit,</p></li>
+<li><p>extends naturally to multi-input multi-output systems,</p></li>
+<li><p>is well suited to simulation and digital implementation, and</p></li>
+<li><p>underpins modern analysis and design techniques such as linear quadratic control, model predictive control, and sliding mode control.</p></li>
+</ul>
+<h2 id="sec:state-variables">State Variables and the State Vector</h2>
+<div class="definition"><div class="env-label env-label-definition">Definition: State of a dynamical system</div>
+<p>More formally, the <em>state</em> of a system at time <span class="math inline">\(t_0\)</span> is defined as the minimum set of variables such that knowledge of these variables at <span class="math inline">\(t_0\)</span>, together with the input <span class="math inline">\(u(t)\)</span> for <span class="math inline">\(t \geq t_0\)</span>, uniquely determines the system’s future response.</p>
+</div>
+<p>If <span class="math inline">\(n\)</span> state variables are required, they are typically denoted by <span class="math inline">\(x_1(t), x_2(t), \dots, x_n(t)\)</span> and collected into the <em>state vector</em> <span class="math display">\[x(t)=
+\begin{bmatrix}
+    x_1(t)\\
+    x_2(t)\\
+    \vdots\\
+    x_n(t)
+\end{bmatrix}\in\mathbb{R}^{n}.\]</span> The number of state variables <span class="math inline">\(n\)</span> is called the <em>order</em> of the system. For a single-input single-output linear system described by an <span class="math inline">\(n\)</span>th-order ordinary differential equation, the state dimension is typically <span class="math inline">\(n\)</span>.</p>
+<h3 id="subsec:choosing-states">Choosing states</h3>
+<p>Different (but equivalent) state choices are possible for the same physical system. A good choice typically:</p>
+<ul>
+<li><p>uses physically meaningful variables (often energy-storing quantities),</p></li>
+<li><p>leads to a compact first-order model,</p></li>
+<li><p>aligns with what can be measured or estimated in practice.</p></li>
+</ul>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>In practice, when you write the dynamic (motion/energy-balance) equations of a physical system, the variables whose derivatives appear are natural candidates for the state variables. The state vector is then formed by collecting these variables (often energy-storing quantities) and rewriting the model as a set of <em>first-order</em> differential equations.</p>
+</div>
+<h3 id="subsec:first-order-rewrite">From higher-order dynamics to first-order state equations</h3>
+<p>A recurring step in state–space modelling is to convert higher-order dynamics into an equivalent first-order form by defining appropriate states. The next three examples illustrate the process for mechanical, electrical, and thermal systems.</p>
+<h4 id="subsubsec:mech-example">Mechanical example: mass–spring–damper</h4>
+<p>Consider a translational mass–spring–damper system shown in Figure <a href="#fig:mass_damper_spring_ss" data-reference-type="ref" data-reference="fig:mass_damper_spring_ss">1.1</a> driven by an external force <span class="math inline">\(u(t)\)</span>, with displacement <span class="math inline">\(y(t)\)</span>: <span class="math display">\[\begin{equation}
+    m\ddot y(t) + c\dot y(t) + k y(t) = u(t).
+    \label{eq:msd-ode}
+\end{equation}\]</span> The derivatives in <a href="#eq:msd-ode" data-reference-type="eqref" data-reference="eq:msd-ode">[eq:msd-ode]</a> suggest selecting displacement and velocity as states: <span class="math display">\[x_1(t)=y(t),\qquad x_2(t)=\dot y(t).\]</span> Then <span class="math inline">\(\dot x_1(t)=x_2(t)\)</span> and, rearranging <a href="#eq:msd-ode" data-reference-type="eqref" data-reference="eq:msd-ode">[eq:msd-ode]</a>, <span class="math display">\[\dot x_2(t)=\ddot y(t)= -\frac{k}{m}x_1(t) - \frac{c}{m}x_2(t) + \frac{1}{m}u(t).\]</span> Hence the mechanical dynamics can be written in state form as <span class="math display">\[\dot x(t)=
+\begin{bmatrix}
+    0 &amp; 1\\
+    -\frac{k}{m} &amp; -\frac{c}{m}
+\end{bmatrix}x(t)+
+\begin{bmatrix}
+    0\\[2pt]
+    \frac{1}{m}
+\end{bmatrix}u(t),
+\qquad
+y(t)=
+\begin{bmatrix}
+    1 &amp; 0
+\end{bmatrix}x(t),\]</span> where <span class="math inline">\(x=[x_1\;x_2]^\top\)</span>.</p>
+<figure id="fig:mass_damper_spring_ss" data-latex-placement="H">
+
+<img src="figures/ch04_tikz_01.png" style="max-width:85%;" />
+<figcaption>Simple mass-damper-spring system.</figcaption>
+</figure>
+<h4 id="subsubsec:elec-example">Electrical example: series RLC circuit</h4>
+<p>Consider a series RLC circuit shown in Figure <a href="#fig:series-rlc" data-reference-type="ref" data-reference="fig:series-rlc">1.2</a> driven by an input voltage <span class="math inline">\(u(t)\)</span>, and let the output be the capacitor voltage <span class="math inline">\(y(t)=v_C(t)\)</span>.</p>
+<figure id="fig:series-rlc" data-latex-placement="H">
+<div class="circuitikz">
+<p>(0,0) to[V, l=<span class="math inline">\(u(t)\)</span>, invert] (0,3) to[R, l=<span class="math inline">\(R\)</span>] (3,3) to[L, l=<span class="math inline">\(L\)</span>] (6,3) to[C, l=<span class="math inline">\(C\)</span>] (6,0) – (0,0);</p>
+<p>(7,3) – (7,0) node[midway, above, right] <span><span class="math inline">\(y(t)=v_C(t)\)</span></span>;</p>
+<p>(1.2,2.5) – (2.2,2.5) node[midway, below] <span><span class="math inline">\(i(t)\)</span></span>;</p>
+</div>
+<img src="figures/ch04_tikz_02.png" style="max-width:85%;" />
+<figcaption>Series RLC circuit with input voltage <span class="math inline">\(u(t)\)</span> and output capacitor voltage <span class="math inline">\(y(t)=v_C(t)\)</span>.</figcaption>
+</figure>
+<p>With series current <span class="math inline">\(i(t)\)</span>, KVL gives <span class="math display">\[\begin{equation}
+    u(t)=v_R(t)+v_L(t)+v_C(t)=R i(t)+L\dot i(t)+v_C(t),
+    \label{eq:rlc-kvl}
+\end{equation}\]</span> and the capacitor relation is <span class="math display">\[\begin{equation}
+    i(t)=C\dot v_C(t).
+    \label{eq:cap}
+\end{equation}\]</span> Here the energy-storing elements are the inductor and capacitor, so a standard choice of states is <span class="math display">\[x_1(t)=v_C(t),\qquad x_2(t)=i(t).\]</span> From <a href="#eq:cap" data-reference-type="eqref" data-reference="eq:cap">[eq:cap]</a> we obtain <span class="math display">\[\dot x_1(t)=\dot v_C(t)=\frac{1}{C}i(t)=\frac{1}{C}x_2(t).\]</span> From <a href="#eq:rlc-kvl" data-reference-type="eqref" data-reference="eq:rlc-kvl">[eq:rlc-kvl]</a> we solve for <span class="math inline">\(\dot i(t)\)</span>: <span class="math display">\[L\dot i(t)=u(t)-R i(t)-v_C(t)
+\quad\Rightarrow\quad
+\dot x_2(t)= -\frac{1}{L}x_1(t)-\frac{R}{L}x_2(t)+\frac{1}{L}u(t).\]</span> Thus the electrical dynamics are <span class="math display">\[\dot x(t)=
+\begin{bmatrix}
+    0 &amp; \frac{1}{C}\\[2pt]
+    -\frac{1}{L} &amp; -\frac{R}{L}
+\end{bmatrix}x(t)+
+\begin{bmatrix}
+    0\\[2pt]
+    \frac{1}{L}
+\end{bmatrix}u(t),
+\qquad
+y(t)=
+\begin{bmatrix}
+    1 &amp; 0
+\end{bmatrix}x(t),\]</span> with <span class="math inline">\(x=[x_1\;x_2]^\top=[v_C\; i]^\top\)</span>.</p>
+<h4 id="subsubsec:thermal-example">Thermal example: lumped thermal mass</h4>
+<p>Consider a single lumped thermal mass with temperature <span class="math inline">\(T(t)\)</span>, thermal capacity <span class="math inline">\(C_{\mathrm{th}}\)</span>, and heat loss to ambient temperature <span class="math inline">\(T_a\)</span> through thermal resistance <span class="math inline">\(R_{\mathrm{th}}\)</span>. Let the input be applied heat rate <span class="math inline">\(u(t)\)</span> (W). An energy balance gives <span class="math display">\[\begin{equation}
+    C_{\mathrm{th}}\dot T(t)= -\frac{1}{R_{\mathrm{th}}}\bigl(T(t)-T_a\bigr)+u(t).
+    \label{eq:thermal-balance}
+\end{equation}\]</span> This model is already first-order, so a natural state choice is the temperature: <span class="math display">\[x_1(t)=T(t).\]</span> Then <a href="#eq:thermal-balance" data-reference-type="eqref" data-reference="eq:thermal-balance">[eq:thermal-balance]</a> becomes <span class="math display">\[\dot x_1(t)= -\frac{1}{C_{\mathrm{th}}R_{\mathrm{th}}}x_1(t)
++\frac{1}{C_{\mathrm{th}}R_{\mathrm{th}}}T_a
++\frac{1}{C_{\mathrm{th}}}u(t).\]</span> If <span class="math inline">\(T_a\)</span> is constant, it can be treated as a known bias term; alternatively, one may model <span class="math inline">\((T-T_a)\)</span> as the state. With output <span class="math inline">\(y(t)=T(t)\)</span>, we have <span class="math inline">\(y(t)=x_1(t)\)</span>.</p>
+<h2 id="sec:ss-representation">State-Space Representation of Dynamic Systems</h2>
+<p>The <em>state-space representation</em> expresses a dynamic system as a set of first-order differential equations together with an algebraic output relation. It extends naturally to multiple-input multiple-output (MIMO) systems.</p>
+<p>Throughout this chapter we consider continuous-time linear time-invariant (LTI) systems and use the notation <span class="math display">\[x(t)\in\mathbb{R}^{n},\qquad u(t)\in\mathbb{R}^{m},\qquad y(t)\in\mathbb{R}^{p}.\]</span> In this module we will mainly focus on the single-input single-output (SISO) case, i.e. <span class="math inline">\(m=1\)</span> and <span class="math inline">\(p=1\)</span>, but the formulas are presented in the general form to keep the notation consistent with modern control texts.</p>
+<h3 id="subsec:state-equation">State Equation</h3>
+<p>The <em>state equation</em> describes how the internal state evolves over time. For a continuous-time LTI system it is written as <span class="math display">\[\begin{equation}
+    \dot{x}(t)=Ax(t)+Bu(t),
+    \label{eq:state-equation}
+\end{equation}\]</span> where <span class="math display">\[A\in\mathbb{R}^{n\times n},\qquad B\in\mathbb{R}^{n\times m}.\]</span> The matrix <span class="math inline">\(A\)</span> is called the state matrix (or <em>system</em> matrix) and captures the intrinsic dynamics of the system (how the state evolves when <span class="math inline">\(u(t)=0\)</span>). The matrix <span class="math inline">\(B\)</span> is the <em>input</em> matrix and determines how the input drives the state.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>For a continuous-time model, the state equation is always <em>first order</em> in time. Higher-order dynamics are represented by increasing the dimension <span class="math inline">\(n\)</span> of the state vector.</p>
+</div>
+<p>In practice, <a href="#eq:state-equation" data-reference-type="eqref" data-reference="eq:state-equation">[eq:state-equation]</a> is obtained by selecting states and rewriting the original governing equations (often higher-order ODEs) as a set of coupled first-order equations, as shown in the earlier mechanical, electrical, and thermal examples.</p>
+<h3 id="subsec:output-equation">Output Equation</h3>
+<p>The <em>output equation</em> specifies which variables are measured or of interest as outputs, and how they depend on the state and input: <span class="math display">\[\begin{equation}
+    y(t)=Cx(t)+Du(t),
+    \label{eq:output-equation}
+\end{equation}\]</span> where <span class="math display">\[C\in\mathbb{R}^{p\times n},\qquad D\in\mathbb{R}^{p\times m}.\]</span> The matrix <span class="math inline">\(C\)</span> is the <em>output</em> matrix: it selects and combines state variables to form the outputs. The matrix <span class="math inline">\(D\)</span> is the feedthrough (or <em>direct transmission</em>) matrix: it represents any instantaneous effect of the input on the output.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>If <span class="math inline">\(D\neq 0\)</span>, then the output depends <em>instantaneously</em> on the input. Many physical systems have <span class="math inline">\(D=0\)</span>, but direct feedthrough can arise when the measured output includes a component of the input (for example, certain sensor/actuator models).</p>
+</div>
+<p>For the SISO case used most often in this module, <span class="math inline">\(y(t)\in\mathbb{R}\)</span> and <a href="#eq:output-equation" data-reference-type="eqref" data-reference="eq:output-equation">[eq:output-equation]</a> becomes <span class="math display">\[y(t)=Cx(t)+Du(t),\qquad C\in\mathbb{R}^{1\times n},\ \ D\in\mathbb{R}.\]</span></p>
+<h3 id="subsec:compact-matrix-form">Compact Matrix Form</h3>
+<p>Equations <a href="#eq:state-equation" data-reference-type="eqref" data-reference="eq:state-equation">[eq:state-equation]</a>–<a href="#eq:output-equation" data-reference-type="eqref" data-reference="eq:output-equation">[eq:output-equation]</a> together define the state-space model: <span class="math display">\[\begin{equation}
+        \begin{aligned}
+            \dot{x}(t) &amp;= Ax(t)+Bu(t),\\
+            y(t) &amp;= Cx(t)+Du(t).
+    \end{aligned}
+    \label{eq:ss-compact}
+\end{equation}\]</span></p>
+<p>We state the general multi-input multi-output (MIMO) case first: <span class="math display">\[x(t)\in\mathbb{R}^{n},\qquad u(t)\in\mathbb{R}^{m},\qquad y(t)\in\mathbb{R}^{p},\]</span> with <span class="math display">\[A\in\mathbb{R}^{n\times n},\quad
+B\in\mathbb{R}^{n\times m},\quad
+C\in\mathbb{R}^{p\times n},\quad
+D\in\mathbb{R}^{p\times m}.\]</span></p>
+<p>To make the structure explicit, write the vectors and matrices in terms of their entries: <span class="math display">\[x(t)=
+\begin{bmatrix}
+    x_1(t)\\
+    x_2(t)\\
+    \vdots\\
+    x_n(t)
+\end{bmatrix},
+\qquad
+u(t)=
+\begin{bmatrix}
+    u_1(t)\\
+    u_2(t)\\
+    \vdots\\
+    u_m(t)
+\end{bmatrix},
+\qquad
+y(t)=
+\begin{bmatrix}
+    y_1(t)\\
+    y_2(t)\\
+    \vdots\\
+    y_p(t)
+\end{bmatrix}.\]</span></p>
+<p><span class="math display">\[A=
+\begin{bmatrix}
+    a_{11} &amp; a_{12} &amp; \cdots &amp; a_{1n}\\
+    a_{21} &amp; a_{22} &amp; \cdots &amp; a_{2n}\\
+    \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+    a_{n1} &amp; a_{n2} &amp; \cdots &amp; a_{nn}
+\end{bmatrix},
+\qquad
+B=
+\begin{bmatrix}
+    b_{11} &amp; b_{12} &amp; \cdots &amp; b_{1m}\\
+    b_{21} &amp; b_{22} &amp; \cdots &amp; b_{2m}\\
+    \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+    b_{n1} &amp; b_{n2} &amp; \cdots &amp; b_{nm}
+\end{bmatrix},\]</span> <span class="math display">\[C=
+\begin{bmatrix}
+    c_{11} &amp; c_{12} &amp; \cdots &amp; c_{1n}\\
+    c_{21} &amp; c_{22} &amp; \cdots &amp; c_{2n}\\
+    \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+    c_{p1} &amp; c_{p2} &amp; \cdots &amp; c_{pn}
+\end{bmatrix},
+\qquad
+D=
+\begin{bmatrix}
+    d_{11} &amp; d_{12} &amp; \cdots &amp; d_{1m}\\
+    d_{21} &amp; d_{22} &amp; \cdots &amp; d_{2m}\\
+    \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+    d_{p1} &amp; d_{p2} &amp; \cdots &amp; d_{pm}
+\end{bmatrix}.\]</span></p>
+<p>With this notation, the <span class="math inline">\(i\)</span>th component of the state equation is <span class="math display">\[\dot{x}_i(t)=\sum_{j=1}^{n} a_{ij}\,x_j(t) \;+\; \sum_{\ell=1}^{m} b_{i\ell}\,u_\ell(t),
+\qquad i=1,\dots,n,\]</span> and the <span class="math inline">\(r\)</span>th component of the output equation is <span class="math display">\[y_r(t)=\sum_{j=1}^{n} c_{rj}\,x_j(t) \;+\; \sum_{\ell=1}^{m} d_{r\ell}\,u_\ell(t),
+\qquad r=1,\dots,p.\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>We present the state-space equations in the general MIMO form because the notation is standard in modern control. However, in this module we will primarily focus on the single-input single-output (SISO) case, where <span class="math inline">\(m=1\)</span> and <span class="math inline">\(p=1\)</span>.</p>
+</div>
+<p>For SISO, <span class="math inline">\(u(t)\in\mathbb{R}\)</span> and <span class="math inline">\(y(t)\in\mathbb{R}\)</span>, so <span class="math inline">\(B\in\mathbb{R}^{n\times 1}\)</span>, <span class="math inline">\(C\in\mathbb{R}^{1\times n}\)</span>, and <span class="math inline">\(D\in\mathbb{R}\)</span>, and <a href="#eq:ss-compact" data-reference-type="eqref" data-reference="eq:ss-compact">[eq:ss-compact]</a> becomes <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t),\qquad y(t)=Cx(t)+Du(t).\]</span> Figure <a href="#fig:ss-block-diagram" data-reference-type="ref" data-reference="fig:ss-block-diagram">1.3</a> shows the signal flow diagram for a state-space system.</p>
+<figure id="fig:ss-block-diagram" data-latex-placement="H">
+
+<img src="figures/ch04_tikz_03.png" style="max-width:85%;" />
+<figcaption>Block diagram of a continuous-time state-space realisation. Thick lines denote vector (bus) signals.</figcaption>
+</figure>
+<h2 id="deriving-state-space-models-from-physical-systems-complex-examples">Deriving State-Space Models from Physical Systems:<br />
+Complex Examples</h2>
+<div class="example"><div class="env-label env-label-example">Example: Two-mass spring–damper system: state-space derivation</div>
+
+<p><strong>System and modelling assumptions.</strong> Consider the two-degree-of-freedom translational system in Fig. <a href="#fig:2mass_ss" data-reference-type="ref" data-reference="fig:2mass_ss">1.4</a>. Let <span class="math inline">\(x_1(t)\)</span> and <span class="math inline">\(x_2(t)\)</span> denote the displacements of masses <span class="math inline">\(m_1\)</span> and <span class="math inline">\(m_2\)</span> from their equilibrium positions (positive to the right). The input is the external force <span class="math inline">\(u(t)=F(t)\)</span> applied to <span class="math inline">\(m_1\)</span>. Springs are linear with stiffness <span class="math inline">\(k_1,k_2,k_3\)</span>, and the damper between the masses is viscous with coefficient <span class="math inline">\(b\)</span>.</p>
+<p><strong>Step 1: Write Newton’s second law for each mass.</strong> Forces on <span class="math inline">\(m_1\)</span> (all terms with negative sign are forces opposing the positive direction of motion trying to slow down the mass):</p>
+<ul>
+<li><p>Spring to the left wall: <span class="math inline">\(-k_1 x_1\)</span></p></li>
+<li><p>Coupling spring: <span class="math inline">\(-k_2(x_1-x_2)\)</span></p></li>
+<li><p>Coupling damper: <span class="math inline">\(-b(\dot x_1-\dot x_2)\)</span></p></li>
+<li><p>External input: <span class="math inline">\(+u\)</span></p></li>
+</ul>
+<p>Hence, <span class="math display">\[\begin{equation}
+        m_1 \ddot x_1 = -k_1 x_1 - k_2(x_1-x_2) - b(\dot x_1-\dot x_2) + u.
+        \label{eq:2mass-eom1}
+\end{equation}\]</span></p>
+<p>Forces on <span class="math inline">\(m_2\)</span>:</p>
+<ul>
+<li><p>Spring to the right wall: <span class="math inline">\(-k_3 x_2\)</span></p></li>
+<li><p>Coupling spring: <span class="math inline">\(-k_2(x_2-x_1)\)</span></p></li>
+<li><p>Coupling damper: <span class="math inline">\(-b(\dot x_2-\dot x_1)\)</span></p></li>
+</ul>
+<p>Hence, <span class="math display">\[\begin{equation}
+        m_2 \ddot x_2 = -k_3 x_2 - k_2(x_2-x_1) - b(\dot x_2-\dot x_1).
+        \label{eq:2mass-eom2}
+\end{equation}\]</span></p>
+<p><strong>Step 2: Choose states suggested by the derivatives.</strong> A standard choice is displacement and velocity for each mass: <span class="math display">\[z_1=x_1,\quad z_2=\dot x_1,\quad z_3=x_2,\quad z_4=\dot x_2,
+    \qquad
+    z=\begin{bmatrix}z_1&amp;z_2&amp;z_3&amp;z_4\end{bmatrix}^\top.\]</span></p>
+<p><strong>Step 3: Rewrite the dynamics as first-order equations.</strong> By definition, <span class="math display">\[\dot z_1 = z_2,\qquad \dot z_3 = z_4.\]</span> From <a href="#eq:2mass-eom1" data-reference-type="eqref" data-reference="eq:2mass-eom1">[eq:2mass-eom1]</a>–<a href="#eq:2mass-eom2" data-reference-type="eqref" data-reference="eq:2mass-eom2">[eq:2mass-eom2]</a>, <span class="math display">\[\begin{align}
+        \dot z_2
+        &amp;= \ddot x_1
+        = -\frac{k_1+k_2}{m_1}z_1 - \frac{b}{m_1}z_2 + \frac{k_2}{m_1}z_3 + \frac{b}{m_1}z_4 + \frac{1}{m_1}u, \label{eq:2mass-z2}\\[4pt]
+        \dot z_4
+        &amp;= \ddot x_2
+        = \frac{k_2}{m_2}z_1 + \frac{b}{m_2}z_2 - \frac{k_2+k_3}{m_2}z_3 - \frac{b}{m_2}z_4. \label{eq:2mass-z4}
+\end{align}\]</span></p>
+<p><strong>Step 4: Assemble the state-space model.</strong> Collecting <a href="#eq:2mass-z2" data-reference-type="eqref" data-reference="eq:2mass-z2">[eq:2mass-z2]</a>–<a href="#eq:2mass-z4" data-reference-type="eqref" data-reference="eq:2mass-z4">[eq:2mass-z4]</a> with <span class="math inline">\(\dot z_1=z_2\)</span> and <span class="math inline">\(\dot z_3=z_4\)</span> gives <span class="math display">\[\dot z = Az + Bu,\]</span> where <span class="math display">\[A=
+    \begin{bmatrix}
+        0 &amp; 1 &amp; 0 &amp; 0\\[2pt]
+        -\frac{k_1+k_2}{m_1} &amp; -\frac{b}{m_1} &amp; \frac{k_2}{m_1} &amp; \frac{b}{m_1}\\[6pt]
+        0 &amp; 0 &amp; 0 &amp; 1\\[2pt]
+        \frac{k_2}{m_2} &amp; \frac{b}{m_2} &amp; -\frac{k_2+k_3}{m_2} &amp; -\frac{b}{m_2}
+    \end{bmatrix},
+    \qquad
+    B=
+    \begin{bmatrix}
+        0\\[2pt]
+        \frac{1}{m_1}\\[2pt]
+        0\\[2pt]
+        0
+    \end{bmatrix}.\]</span></p>
+<p><strong>Step 5: Define the output equation.</strong> The measured output depends on the application. Two common choices are:</p>
+<ul>
+<li><p>displacement of the first mass: <span class="math inline">\(y=x_1=z_1\)</span>, giving <span class="math display">\[y = Cz + Du,\quad C=\begin{bmatrix}1&amp;0&amp;0&amp;0\end{bmatrix},\quad D=0;\]</span></p></li>
+<li><p>both displacements (a MIMO output): <span class="math inline">\(y=\begin{bmatrix}x_1&amp;x_2\end{bmatrix}^\top=\begin{bmatrix}z_1&amp;z_3\end{bmatrix}^\top\)</span>, giving <span class="math display">\[C=\begin{bmatrix}1&amp;0&amp;0&amp;0\\0&amp;0&amp;1&amp;0\end{bmatrix},\quad D=\begin{bmatrix}0\\0\end{bmatrix}.\]</span></p></li>
+</ul>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>For mechanical systems, the state variables are typically the quantities whose derivatives appear in the equations of motion. Practically, once you have the dynamic equations, a reliable default is: <em>choose each displacement as a state, and each corresponding velocity as its derivative state</em>, then rewrite the model as a first-order system.</p>
+</div>
+</div>
+<figure id="fig:2mass_ss" data-latex-placement="!htb">
+
+<img src="figures/ch04_tikz_04.png" style="max-width:85%;" />
+<figcaption>Mechanical system consisting of two masses <span class="math inline">\(m_1\)</span> and <span class="math inline">\(m_2\)</span>, connected by springs and a viscous damper, subject to an external force <span class="math inline">\(F\)</span>.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Inverted pendulum on a cart (nonlinear, coupled dynamics)</div>
+
+<p><strong>System description.</strong> Consider a cart of mass <span class="math inline">\(M\)</span> moving horizontally with position <span class="math inline">\(x(t)\)</span>, carrying a rigid pendulum of mass <span class="math inline">\(m\)</span> and length <span class="math inline">\(\ell\)</span> (distance from pivot to centre of mass). Let <span class="math inline">\(\theta(t)\)</span> be the pendulum angle measured from the upright vertical (so <span class="math inline">\(\theta=0\)</span> is the unstable upright equilibrium). The input is a horizontal force <span class="math inline">\(u(t)\)</span> applied to the cart. Viscous friction on the cart is modelled by a coefficient <span class="math inline">\(d\ge 0\)</span>.</p>
+<p><strong>Step 1: Equations of motion (coupled second-order ODEs).</strong> A standard nonlinear model is <span class="math display">\[\begin{align}
+        (M+m)\ddot x + d\,\dot x + m\ell\ddot\theta\cos\theta - m\ell\dot\theta^{2}\sin\theta &amp;= u, 
+        \label{eq:cp-eom1}\\
+        m\ell^{2}\ddot\theta + m\ell\ddot x\cos\theta &amp;= m g \ell \sin\theta.
+        \label{eq:cp-eom2}
+\end{align}\]</span></p>
+<p><strong>Step 2: Choose states suggested by the derivatives.</strong> Select cart position/velocity and pendulum angle/angular velocity: <span class="math display">\[z_1=x,\quad z_2=\dot x,\quad z_3=\theta,\quad z_4=\dot\theta,
+    \qquad
+    z=\begin{bmatrix}z_1&amp;z_2&amp;z_3&amp;z_4\end{bmatrix}^\top.\]</span> Then <span class="math inline">\(\dot z_1=z_2\)</span> and <span class="math inline">\(\dot z_3=z_4\)</span>. It remains to express <span class="math inline">\(\dot z_2=\ddot x\)</span> and <span class="math inline">\(\dot z_4=\ddot\theta\)</span>.</p>
+<p><strong>Step 3: Solve <a href="#eq:cp-eom1" data-reference-type="eqref" data-reference="eq:cp-eom1">[eq:cp-eom1]</a>–<a href="#eq:cp-eom2" data-reference-type="eqref" data-reference="eq:cp-eom2">[eq:cp-eom2]</a> for <span class="math inline">\(\ddot x\)</span> and <span class="math inline">\(\ddot\theta\)</span>.</strong> Rewrite the dynamics as a linear system in the unknown accelerations: <span class="math display">\[\underbrace{\begin{bmatrix}
+            M+m &amp; m\ell\cos z_3\\
+            m\ell\cos z_3 &amp; m\ell^2
+    \end{bmatrix}}_{=: \; \mathcal{M}(z_3)}
+    \begin{bmatrix}
+        \ddot x\\
+        \ddot\theta
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        u - d z_2 + m\ell z_4^2\sin z_3\\
+        m g \ell \sin z_3
+    \end{bmatrix}.\]</span> Define the determinant (non-zero for typical parameter values and away from singular configurations) <span class="math display">\[\Delta(z_3)=\det\mathcal{M}(z_3)=m\ell^2\bigl(M+m-m\cos^2 z_3\bigr).\]</span> Using the <span class="math inline">\(2\times 2\)</span> inverse formula, <span class="math display">\[\mathcal{M}(z_3)^{-1}=\frac{1}{\Delta(z_3)}
+    \begin{bmatrix}
+        m\ell^2 &amp; -m\ell\cos z_3\\
+        -m\ell\cos z_3 &amp; M+m
+    \end{bmatrix}.\]</span></p>
+<p>Hence, <span class="math display">\[\begin{align}
+        \ddot x
+        &amp;= \frac{1}{\Delta(z_3)}\Bigl(
+        m\ell^2\bigl[u-d z_2 + m\ell z_4^2\sin z_3\bigr]
+        - m\ell\cos z_3 \cdot m g \ell \sin z_3
+        \Bigr),
+        \label{eq:cp-xdd}\\[4pt]
+        \ddot\theta
+        &amp;= \frac{1}{\Delta(z_3)}\Bigl(
+        - m\ell\cos z_3 \bigl[u-d z_2 + m\ell z_4^2\sin z_3\bigr]
+        + (M+m)\, m g \ell \sin z_3
+        \Bigr).
+        \label{eq:cp-thdd}
+\end{align}\]</span></p>
+<p><strong>Step 4: State-space form (nonlinear).</strong> The nonlinear state-space model <span class="math inline">\(\dot z = f(z,u)\)</span> is <span class="math display">\[\begin{align}
+        \dot z_1 &amp;= z_2, \label{eq:cp-ss1}\\
+        \dot z_2 &amp;= \ddot x \ \text{given by \eqref{eq:cp-xdd}}, \label{eq:cp-ss2}\\
+        \dot z_3 &amp;= z_4, \label{eq:cp-ss3}\\
+        \dot z_4 &amp;= \ddot\theta \ \text{given by \eqref{eq:cp-thdd}}. \label{eq:cp-ss4}
+\end{align}\]</span></p>
+<p><strong>Step 5: Output equation.</strong> Depending on sensing, common choices include: <span class="math display">\[y = x \quad (\Rightarrow \; y = \begin{bmatrix}1&amp;0&amp;0&amp;0\end{bmatrix}z),
+    \qquad \text{or} \qquad
+    y=\begin{bmatrix}x\\\theta\end{bmatrix}
+    \quad (\Rightarrow \; y = \begin{bmatrix}1&amp;0&amp;0&amp;0\\0&amp;0&amp;1&amp;0\end{bmatrix}z).\]</span></p>
+<p><strong>Step 6: Small-angle approximation and linear state-space model</strong></p>
+<p>The equations of motion obtained above are nonlinear because they contain <span class="math inline">\(\sin\theta(t)\)</span> and <span class="math inline">\(\cos\theta(t)\)</span>. To obtain a linear model, we assume the pendulum remains close to the upright position so that <span class="math inline">\(|\theta(t)|\ll 1\)</span> (in radians). Using the small-angle approximations <span class="math display">\[\sin\theta(t)\approx \theta(t), \qquad \cos\theta(t)\approx 1,\]</span> (and neglecting higher-order terms), the nonlinear dynamics reduce to a linear set of differential equations.</p>
+<p>With the state choice <span class="math display">\[x_1(t)=x(t),\qquad x_2(t)=\dot x(t),\qquad x_3(t)=\theta(t),\qquad x_4(t)=\dot\theta(t),\]</span> we have <span class="math display">\[\dot x_1(t)=x_2(t),\qquad \dot x_3(t)=x_4(t),\]</span> and the remaining two state derivatives take the linear form <span class="math display">\[\dot x_2(t)= -\frac{d}{M}x_2(t)-\frac{mg}{M}x_3(t)+\frac{1}{M}u(t),\]</span> <span class="math display">\[\dot x_4(t)= \frac{d}{M\ell}x_2(t)+\frac{(M+m)g}{M\ell}x_3(t)-\frac{1}{M\ell}u(t).\]</span></p>
+<p>Hence the linearised state-space model can be written compactly as <span class="math display">\[\dot x(t)=
+    \underbrace{\begin{bmatrix}
+            0 &amp; 1 &amp; 0 &amp; 0\\
+            0 &amp; -\frac{d}{M} &amp; -\frac{mg}{M} &amp; 0\\
+            0 &amp; 0 &amp; 0 &amp; 1\\
+            0 &amp; \frac{d}{M\ell} &amp; \frac{(M+m)g}{M\ell} &amp; 0
+    \end{bmatrix}}_{A}\,x(t)
+    +
+    \underbrace{\begin{bmatrix}
+            0\\[2pt] \frac{1}{M}\\[2pt] 0\\[2pt] -\frac{1}{M\ell}
+    \end{bmatrix}}_{B}\,u(t),
+    \qquad
+    y(t)=Cx(t)+Du(t),\]</span> with <span class="math inline">\(x=[x_1\;x_2\;x_3\;x_4]^\top\)</span>.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Even for strongly coupled nonlinear dynamics, the workflow is the same: (i) write the coupled equations of motion, (ii) choose states as the variables whose derivatives appear, and (iii) solve the equations for the highest derivatives to obtain a first-order state model <span class="math inline">\(\dot z=f(z,u)\)</span>.</p>
+</div>
+</div>
+<figure id="fig:cart-pendulum" data-latex-placement="H">
+
+<img src="figures/ch04_tikz_05.png" style="max-width:85%;" />
+<figcaption>Inverted pendulum on a cart: input <span class="math inline">\(u(t)\)</span>, cart position <span class="math inline">\(x(t)\)</span>, and pendulum angle <span class="math inline">\(\theta(t)\)</span> (measured from the upright vertical).</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Planar duorotor model and hover linearisation</div>
+
+<p><strong>System description.</strong> Consider a planar duorotor vehicle moving in the vertical plane. Let <span class="math inline">\(x(t)\)</span> be the horizontal position, <span class="math inline">\(z(t)\)</span> the vertical position, and <span class="math inline">\(\theta(t)\)</span> the pitch angle measured clockwise from the vertical. The left and right rotors generate thrusts <span class="math inline">\(f_L(t)\)</span> and <span class="math inline">\(f_R(t)\)</span> along the body vertical axis. The vehicle has mass <span class="math inline">\(m\)</span>, pitch moment of inertia <span class="math inline">\(J\)</span>, and half-arm length <span class="math inline">\(\ell\)</span>.</p>
+<div class="center">
+
+</div>
+<p>Define the total thrust magnitude and pitch torque as <span class="math display">\[F(t)=f_L(t)+f_R(t), \qquad \tau(t)=\ell\bigl(f_L(t)-f_R(t)\bigr).\]</span> Here <span class="math inline">\(F(t)\)</span> is the scalar sum of the two rotor thrust magnitudes, acting along the body thrust axis. With the sign convention above, positive <span class="math inline">\(\theta\)</span> tilts the thrust vector towards positive <span class="math inline">\(x\)</span>, and positive <span class="math inline">\(\tau\)</span> increases <span class="math inline">\(\theta\)</span>. Thus <span class="math inline">\(f_L&gt;f_R\)</span> gives a positive pitch torque. If the opposite angle convention is used, the signs of the horizontal and torque equations must be changed consistently.</p>
+<p><strong>Step 1: Write the nonlinear equations of motion.</strong> Resolving the thrust vector into inertial <span class="math inline">\(x\)</span> and <span class="math inline">\(z\)</span> components gives <span class="math display">\[\begin{align}
+        m\ddot x &amp;= F\sin\theta, \label{eq:duorotor-x}\\
+        m\ddot z &amp;= F\cos\theta - mg, \label{eq:duorotor-z}\\
+        J\ddot\theta &amp;= \tau. \label{eq:duorotor-theta}
+\end{align}\]</span> These equations are nonlinear because the translational accelerations depend on <span class="math inline">\(\sin\theta\)</span> and <span class="math inline">\(\cos\theta\)</span>.</p>
+<p><strong>Step 2: Choose states.</strong> Select each configuration variable and its velocity as a state: <span class="math display">\[x_1=x,\quad x_2=\dot x,\quad x_3=z,\quad x_4=\dot z,\quad
+    x_5=\theta,\quad x_6=\dot\theta,
+    \qquad
+    \mathbf{x}=\begin{bmatrix}x_1&amp;x_2&amp;x_3&amp;x_4&amp;x_5&amp;x_6\end{bmatrix}^\top.\]</span></p>
+<p><strong>Step 3: Rewrite as a first-order nonlinear state model.</strong> Using <a href="#eq:duorotor-x" data-reference-type="eqref" data-reference="eq:duorotor-x">[eq:duorotor-x]</a>–<a href="#eq:duorotor-theta" data-reference-type="eqref" data-reference="eq:duorotor-theta">[eq:duorotor-theta]</a>, <span class="math display">\[\begin{align}
+        \dot x_1 &amp;= x_2, &amp;
+        \dot x_2 &amp;= \frac{F}{m}\sin x_5, \nonumber\\
+        \dot x_3 &amp;= x_4, &amp;
+        \dot x_4 &amp;= \frac{F}{m}\cos x_5-g, \label{eq:duorotor-nonlinear-ss}\\
+        \dot x_5 &amp;= x_6, &amp;
+        \dot x_6 &amp;= \frac{\tau}{J}. \nonumber
+\end{align}\]</span> This is a nonlinear state-space model <span class="math inline">\(\dot{\mathbf{x}}=f(\mathbf{x},F,\tau)\)</span>.</p>
+<p><strong>Step 4: Linearise about hover.</strong> At hover, the vehicle is level and has zero acceleration, so <span class="math display">\[\theta_0=0,\qquad \dot{\mathbf{x}}_0=0,\qquad F_0=mg,\qquad \tau_0=0.\]</span> Introduce small input deviations from hover: <span class="math display">\[u_1(t)=F(t)-mg,\qquad u_2(t)=\tau(t).\]</span> These are <em>virtual inputs</em>: <span class="math inline">\(u_1\)</span> represents the change in total thrust from the hover value, while <span class="math inline">\(u_2\)</span> represents the applied pitch torque. For small pitch angles, use <span class="math display">\[\sin\theta \approx \theta,\qquad \cos\theta \approx 1.\]</span> Substituting <span class="math inline">\(F=mg+u_1\)</span> into <a href="#eq:duorotor-nonlinear-ss" data-reference-type="eqref" data-reference="eq:duorotor-nonlinear-ss">[eq:duorotor-nonlinear-ss]</a> and neglecting products of small quantities such as <span class="math inline">\(u_1\theta\)</span> gives <span class="math display">\[\ddot x \approx g\theta,\qquad
+    \ddot z \approx \frac{1}{m}u_1,\qquad
+    \ddot\theta = \frac{1}{J}u_2.\]</span> Therefore the hover-linearised state-space model is <span class="math display">\[\dot{\mathbf{x}} =
+    \underbrace{\begin{bmatrix}
+            0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0\\
+            0 &amp; 0 &amp; 0 &amp; 0 &amp; g &amp; 0\\
+            0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0\\
+            0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0\\
+            0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1\\
+            0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0
+    \end{bmatrix}}_{A}
+    \mathbf{x}
+    +
+    \underbrace{\begin{bmatrix}
+            0 &amp; 0\\
+            0 &amp; 0\\
+            0 &amp; 0\\
+            \frac{1}{m} &amp; 0\\
+            0 &amp; 0\\
+            0 &amp; \frac{1}{J}
+    \end{bmatrix}}_{B}
+    \begin{bmatrix}u_1\\u_2\end{bmatrix}.\]</span> If the measured outputs are horizontal position, altitude, and pitch angle, then <span class="math display">\[y=
+    \begin{bmatrix}
+        x\\ z\\ \theta
+    \end{bmatrix}
+    =
+    \underbrace{\begin{bmatrix}
+            1&amp;0&amp;0&amp;0&amp;0&amp;0\\
+            0&amp;0&amp;1&amp;0&amp;0&amp;0\\
+            0&amp;0&amp;0&amp;0&amp;1&amp;0
+    \end{bmatrix}}_{C}\mathbf{x},
+    \qquad D=0.\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The hover model separates altitude and attitude inputs at first order: <span class="math inline">\(u_1\)</span> changes vertical acceleration, while <span class="math inline">\(u_2\)</span> changes angular acceleration. Horizontal acceleration appears indirectly through pitch, since <span class="math inline">\(\ddot x \approx g\theta\)</span>.</p>
+</div>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: DC–DC buck converter (averaged model in CCM)</div>
+
+<p>A highly practical state-space example is the buck (step-down) converter, used in laptops, EV auxiliary power, robotics, and embedded systems to regulate a DC output voltage from a higher DC supply.</p>
+<figure id="fig:buck-ccm" data-latex-placement="H">
+<div class="circuitikz">
+<p>(0,0) node[ground] (0,0) to[V, l=<span class="math inline">\(V_{\mathrm{in}}\)</span>, invert] (0,3) – (1.2,3);</p>
+<p>(sw) at (3,3) ; (1.2,3) to[spst, l=<span class="math inline">\(S\)</span>] (sw);</p>
+<p>at (3,3) <span><span class="math inline">\(v_s(t)\)</span></span>;</p>
+<p>(3,0) node[ground] to[D*, l_=<span class="math inline">\(D\)</span>] (sw);</p>
+<p>(sw) to[L, l=<span class="math inline">\(L\)</span>] (6,3);</p>
+<p>(6,3) to[C, l=<span class="math inline">\(C\)</span>] (6,0) node[ground] ; (6,3) – (8,3) to[R, l=<span class="math inline">\(R\)</span>] (8,0) node[ground] ; at (8.2,3) <span><span class="math inline">\(y(t)=v_o(t)\)</span></span>;</p>
+<p>(4,4) – (4.9,4) node[midway, above] <span><span class="math inline">\(i_L(t)\)</span></span>;</p>
+<p>at (2.2,4.2) <span><span class="math inline">\(d(t)\in[0,1]\)</span><br />
+(PWM duty ratio)</span>;</p>
+</div>
+<img src="figures/ch04_tikz_07.png" style="max-width:85%;" />
+<figcaption>Buck converter. In continuous conduction mode (CCM), an averaged model yields a linear state-space form in terms of <span class="math inline">\(d(t)\)</span>. Assume voltage drop across the diode <span class="math inline">\(V_D=0\)</span> when it conducts.</figcaption>
+</figure>
+<h5 id="step-1-choose-states-energy-storing-variables.">Step 1: Choose states (energy-storing variables).</h5>
+<p>A natural choice is <span class="math display">\[x_1(t)=i_L(t),\qquad x_2(t)=v_o(t)=v_C(t).\]</span></p>
+<h5 id="step-2-write-the-switching-piecewise-dynamics.">Step 2: Write the switching (piecewise) dynamics.</h5>
+<p>Let <span class="math inline">\(v_s(t)\)</span> be the switch-node voltage applied to the inductor. For an ideal buck: <span class="math display">\[v_s(t)=
+\begin{cases}
+    V_{\mathrm{in}}, &amp; \text{switch ON}\\
+    0, &amp; \text{switch OFF (diode conducts)}
+\end{cases}\]</span> The inductor and capacitor relations give <span class="math display">\[L\dot i_L(t)=v_s(t)-v_o(t), \qquad
+C\dot v_o(t)= i_L(t) - \frac{v_o(t)}{R}.\]</span></p>
+<h5 id="step-3-average-the-model-over-one-pwm-period-ccm.">Step 3: Average the model over one PWM period (CCM).</h5>
+<p>With duty ratio <span class="math inline">\(d(t)\)</span>, the averaged switch-node voltage is <span class="math display">\[\overline{v_s}(t) = d(t)\,V_{\mathrm{in}}.\]</span> Hence the averaged (continuous-time) state equations become <span class="math display">\[\dot x_1(t)=\frac{1}{L}\Big(\overline{v_s}(t)-x_2(t)\Big)
+=-\frac{1}{L}x_2(t)+\frac{V_{\mathrm{in}}}{L}d(t),\]</span> <span class="math display">\[\dot x_2(t)=\frac{1}{C}\Big(x_1(t)-\frac{x_2(t)}{R}\Big)
+=\frac{1}{C}x_1(t)-\frac{1}{RC}x_2(t).\]</span></p>
+<figure id="fig:buck-averaged" data-latex-placement="H">
+<div class="circuitikz">
+<p>(0,0) node[ground] (0,0) to[V, l=<span class="math inline">\(\overline{ V_{s}}\)</span>, invert] (0,3) – (1.5,3);</p>
+<p>(sw) at (2.6,3) ; (1.5,3) – (sw);</p>
+<p>(2.6,3) to[L, l=<span class="math inline">\(L\)</span>] (6,3);</p>
+<p>(6,3) to[C, l=<span class="math inline">\(C\)</span>] (6,0) node[ground] ; (6,3) – (8,3) to[R, l=<span class="math inline">\(R\)</span>] (8,0) node[ground] ; at (8.2,3) <span><span class="math inline">\(y(t)=v_o(t)\)</span></span>;</p>
+<p>(4,4) – (4.9,4) node[midway, above] <span><span class="math inline">\(i_L(t)\)</span></span>;</p>
+<p>at (2.2,4.2) <span><span class="math inline">\(d(t)\in[0,1]\)</span><br />
+(PWM duty ratio)</span>;</p>
+</div>
+<img src="figures/ch04_tikz_08.png" style="max-width:85%;" />
+<figcaption>Averaged buck converter model used for state-space derivation. The switching network is replaced by the averaged source <span class="math inline">\(\bar v_s(t)=d(t)V_{\mathrm{in}}\)</span>.</figcaption>
+</figure>
+<h5 id="step-4-state-space-form-mimo-ready-notation-siso-used-here.">Step 4: State-space form (MIMO-ready notation; SISO used here).</h5>
+<p>Define input <span class="math inline">\(u(t)=d(t)\)</span> and output <span class="math inline">\(y(t)=v_o(t)=x_2(t)\)</span>. Then <span class="math display">\[\dot x(t)=Ax(t)+Bu(t),\qquad y(t)=Cx(t)+Du(t),\]</span> with <span class="math display">\[A=
+\begin{bmatrix}
+    a_{11} &amp; a_{12}\\
+    a_{21} &amp; a_{22}
+\end{bmatrix}
+=
+\begin{bmatrix}
+    0 &amp; -\dfrac{1}{L}\\[6pt]
+    \dfrac{1}{C} &amp; -\dfrac{1}{RC}
+\end{bmatrix},
+\qquad
+B=
+\begin{bmatrix}
+    b_{11}\\
+    b_{21}
+\end{bmatrix}
+=
+\begin{bmatrix}
+    \dfrac{V_{\mathrm{in}}}{L}\\[6pt]
+    0
+\end{bmatrix}.\]</span> For the output, <span class="math display">\[C=
+\begin{bmatrix}
+    c_{11} &amp; c_{12}
+\end{bmatrix}
+=
+\begin{bmatrix}
+    0 &amp; 1
+\end{bmatrix},
+\qquad
+D=\begin{bmatrix} d_{11}\end{bmatrix}=\begin{bmatrix}0\end{bmatrix}.\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Power-electronics circuits are naturally modelled in state space because they are <em>switching systems</em>. In Continuous Conduction Mode (CCM), an averaged model gives a compact continuous-time state-space description with states <span class="math inline">\((i_L, v_o)\)</span> and control input <span class="math inline">\(d(t)\)</span> (the duty ratio).</p>
+</div>
+</div>
+<div class="examplebox">
+<p><span>Multi-loop electrical network with two inputs</span></p>
+<p>Derive the state-space model for the electrical network shown in Figure <a href="#fig:multi-loop-network" data-reference-type="ref" data-reference="fig:multi-loop-network">1.8</a>, where the inputs are the voltage source <span class="math inline">\(v(t)\)</span> and the current source <span class="math inline">\(i_s(t)\)</span>, and the output is the capacitor voltage <span class="math inline">\(v_2\)</span>.</p>
+<figure id="fig:multi-loop-network" data-latex-placement="H">
+<div class="circuitikz">
+<p>(0,0) to[V, v=<span class="math inline">\(v(t)\)</span>, invert] (0,3); (0,3) to[R, l=<span class="math inline">\(R_1{=}2\,\Omega\)</span>, i=<span class="math inline">\(i_1\)</span>, -o] (3,3) node[above]<span><span class="math inline">\(v_1\)</span></span>; (3,3) to[C, l_=<span class="math inline">\(C_1{=}0.5\,\)</span>F, i&gt;_=<span class="math inline">\(i_2\)</span>] (3,0); (3,3) to[L, l=<span class="math inline">\(L{=}1\,\)</span>H, i=<span class="math inline">\(i_3\)</span>, -o] (7,3) node[above]<span><span class="math inline">\(v_2\)</span></span>; (7,3) to[C, l_=<span class="math inline">\(C_2{=}0.25\,\)</span>F, i&gt;_=<span class="math inline">\(i_4\)</span>] (7,0); (7,3) – (9,3) to[R, l=<span class="math inline">\(R_2{=}4\,\Omega\)</span>, i&gt;_=<span class="math inline">\(i_5\)</span>] (9,0); (11,0) to[I, i^=<span class="math inline">\(i_s(t)\)</span>] (11,3); (11,3) – (9,3); (0,0) – (11,0); (5.5,0) node[ground];</p>
+</div>
+<img src="figures/ch04_tikz_09.png" style="max-width:85%;" />
+<figcaption>Two-loop electrical network with voltage source <span class="math inline">\(v(t)\)</span> and current source <span class="math inline">\(i_s(t)\)</span>.</figcaption>
+</figure>
+<p><strong>Step 1 — Identify energy-storing elements and state variables.</strong> There are three independent energy-storing elements: <span class="math inline">\(C_1\)</span>, <span class="math inline">\(C_2\)</span>, and <span class="math inline">\(L\)</span>. Therefore three state variables are needed: <span class="math display">\[x_1 = v_1, \qquad x_2 = v_2, \qquad x_3 = i_3.\]</span></p>
+<p><strong>Step 2 — KCL at node <span class="math inline">\(v_1\)</span>.</strong> The current entering node <span class="math inline">\(v_1\)</span> through <span class="math inline">\(R_1\)</span> equals the sum of the current into <span class="math inline">\(C_1\)</span> and the current into <span class="math inline">\(L\)</span>: <span class="math display">\[\frac{v - v_1}{R_1} = C_1\,\frac{dv_1}{dt} + i_3.\]</span> Solving for <span class="math inline">\(\dot{x}_1\)</span>: <span class="math display">\[\dot{x}_1
+  = -\frac{1}{R_1 C_1}\,x_1
+    - \frac{1}{C_1}\,x_3
+    + \frac{1}{R_1 C_1}\,v.\]</span></p>
+<p><strong>Step 3 — KCL at node <span class="math inline">\(v_2\)</span>.</strong> The current from <span class="math inline">\(L\)</span> plus the current source equals the current into <span class="math inline">\(C_2\)</span> plus the current through <span class="math inline">\(R_2\)</span>: <span class="math display">\[i_3 + i_s = C_2\,\frac{dv_2}{dt} + \frac{v_2}{R_2}.\]</span> Solving for <span class="math inline">\(\dot{x}_2\)</span>: <span class="math display">\[\dot{x}_2
+  = -\frac{1}{R_2 C_2}\,x_2
+    + \frac{1}{C_2}\,x_3
+    + \frac{1}{C_2}\,i_s.\]</span></p>
+<p><strong>Step 4 — Voltage across <span class="math inline">\(L\)</span>.</strong> <span class="math display">\[L\,\frac{di_3}{dt} = v_1 - v_2
+\qquad\Longrightarrow\qquad
+\dot{x}_3 = \frac{1}{L}\,x_1 - \frac{1}{L}\,x_2.\]</span></p>
+<p><strong>Step 5 — Assemble the parametric state-space model.</strong> Combining the three state equations with the output <span class="math inline">\(y = v_2 = x_2\)</span>: <span class="math display">\[\dot{x}(t)
+=\begin{bmatrix}
+-\dfrac{1}{R_1 C_1} &amp; 0 &amp; -\dfrac{1}{C_1} \\[8pt]
+0 &amp; -\dfrac{1}{R_2 C_2} &amp; \dfrac{1}{C_2} \\[8pt]
+\dfrac{1}{L} &amp; -\dfrac{1}{L} &amp; 0
+\end{bmatrix} x(t)
++\begin{bmatrix}
+\dfrac{1}{R_1 C_1} &amp; 0 \\[8pt]
+0 &amp; \dfrac{1}{C_2} \\[8pt]
+0 &amp; 0
+\end{bmatrix}
+\begin{bmatrix} v(t) \\[4pt] i_s(t) \end{bmatrix},
+\qquad
+y(t) = \begin{bmatrix} 0 &amp; 1 &amp; 0 \end{bmatrix} x(t).\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The two zeros in the third row of <span class="math inline">\(B\)</span> reflect the fact that neither input connects directly to the inductor — the inductor current changes only through the voltage difference <span class="math inline">\(v_1 - v_2\)</span> across it.</p>
+</div>
+<p><strong>Step 6 — Substitute the numerical values.</strong> With <span class="math inline">\(R_1=2\,\Omega\)</span>, <span class="math inline">\(C_1=0.5\,\)</span>F, <span class="math inline">\(L=1\,\)</span>H, <span class="math inline">\(C_2=0.25\,\)</span>F, <span class="math inline">\(R_2=4\,\Omega\)</span>: <span class="math display">\[\dot{x}(t)
+=\begin{bmatrix}
+-1 &amp;  0 &amp; -2 \\
+ 0 &amp; -1 &amp;  4 \\
+ 1 &amp; -1 &amp;  0
+\end{bmatrix} x(t)
++\begin{bmatrix}
+1 &amp; 0 \\
+0 &amp; 4 \\
+0 &amp; 0
+\end{bmatrix}
+\begin{bmatrix} v(t) \\ i_s(t) \end{bmatrix},
+\qquad
+y(t) = \begin{bmatrix} 0 &amp; 1 &amp; 0 \end{bmatrix} x(t).\]</span></p>
+</div>
+<h2 id="sec:ss-solution">Solution of State-Space Equations</h2>
+<p>Consider the continuous-time LTI state-space model <span class="math display">\[\begin{align}
+    \dot{x}(t) &amp;= A x(t) + B u(t), \qquad x(0)=x_0, \label{eq:ss-state}\\
+    y(t) &amp;= C x(t) + D u(t). \label{eq:ss-output}
+\end{align}\]</span></p>
+<h3 id="subsec:time-domain-solution">Time-domain solution and the state transition matrix</h3>
+<p>The solution of <a href="#eq:ss-state" data-reference-type="eqref" data-reference="eq:ss-state">[eq:ss-state]</a> is most naturally expressed using the state transition <span class="math display">\[\Phi(t) \triangleq e^{At}.\]</span> With this notation, the state trajectory is <span class="math display">\[\begin{equation}
+    x(t) = e^{At}x_0 + \int_{0}^{t} e^{A(t-\tau)}B\,u(\tau)\,d\tau.
+    \label{eq:ss-solution-time}
+\end{equation}\]</span> Substituting <a href="#eq:ss-solution-time" data-reference-type="eqref" data-reference="eq:ss-solution-time">[eq:ss-solution-time]</a> into <a href="#eq:ss-output" data-reference-type="eqref" data-reference="eq:ss-output">[eq:ss-output]</a> gives the output <span class="math display">\[\begin{equation}
+    y(t) = C e^{At}x_0 + \int_{0}^{t} C e^{A(t-\tau)}B\,u(\tau)\,d\tau + D u(t).
+    \label{eq:ss-output-solution-time}
+\end{equation}\]</span> The integral term is called the convolution integral and it is generally very difficult to calculate even for simple input signals <span class="math inline">\(u(t)\)</span>.</p>
+<h4 id="subsubsec:matrix-exponential">Definition of the matrix exponential</h4>
+<p>The matrix exp is defined by the convergent power series <span class="math display">\[\begin{equation}
+    e^{At} \triangleq \sum_{k=0}^{\infty}\frac{(At)^k}{k!}
+    = I + At + \frac{(At)^2}{2!} + \frac{(At)^3}{3!} + \cdots,
+    \label{eq:matrix-exponential-series}
+\end{equation}\]</span> where <span class="math inline">\(I\)</span> is the <span class="math inline">\(n\times n\)</span> identity matrix. In practice, <span class="math inline">\(e^{At}\)</span> is computed numerically (for example, using <code>expm</code> in MATLAB).</p>
+<h3 id="subsec:laplace-solution">Laplace-domain solution and obtaining<br />
+transfer functions from state-space</h3>
+<p>Taking the Laplace transform of <a href="#eq:ss-state" data-reference-type="eqref" data-reference="eq:ss-state">[eq:ss-state]</a> and using <span class="math inline">\(\mathcal{L}\{\dot{x}(t)\} = sX(s) - x(0)\)</span> yields <span class="math display">\[sX(s) - x_0 = AX(s) + BU(s).\]</span> Rearranging gives <span class="math display">\[\begin{equation}
+    (sI-A)X(s) = x_0 + BU(s),
+    \qquad
+    X(s) = (sI-A)^{-1}x_0 + (sI-A)^{-1}B\,U(s).
+    \label{eq:ss-solution-laplace}
+\end{equation}\]</span> Taking the Laplace transform of <a href="#eq:ss-output" data-reference-type="eqref" data-reference="eq:ss-output">[eq:ss-output]</a> gives <span class="math display">\[\begin{equation}
+    Y(s) = CX(s) + D U(s).
+    \label{eq:ss-output-laplace}
+\end{equation}\]</span> Substituting <a href="#eq:ss-solution-laplace" data-reference-type="eqref" data-reference="eq:ss-solution-laplace">[eq:ss-solution-laplace]</a> into <a href="#eq:ss-output-laplace" data-reference-type="eqref" data-reference="eq:ss-output-laplace">[eq:ss-output-laplace]</a>, <span class="math display">\[\begin{equation}
+    Y(s)
+    = C(sI-A)^{-1}x_0
+    + \Big(C(sI-A)^{-1}B + D\Big)U(s).
+    \label{eq:ss-output-laplace-expanded}
+\end{equation}\]</span></p>
+<h4 id="subsubsec:tf-from-ss">Transfer function from state-space</h4>
+<p>For zero initial conditions (<span class="math inline">\(x_0=0\)</span>), the input–output relationship becomes <span class="math display">\[Y(s) = G(s)U(s),\]</span> where the transfer function is <span class="math display">\[\begin{equation}
+    G(s) = C(sI-A)^{-1}B + D.
+    \label{eq:ss-transfer-function}
+\end{equation}\]</span> This formula is particularly useful for converting state-space models to transfer functions for frequency-domain analysis and for checking consistency with models obtained via differential equations.</p>
+<h4 id="subsubsec:connection-time-laplace">Connection to the time-domain solution</h4>
+<p>The Laplace-domain expressions are consistent with the time-domain solution: <span class="math display">\[\mathcal{L}\{e^{At}\} = (sI-A)^{-1},\]</span> so <span class="math inline">\((sI-A)^{-1}\)</span> may be viewed as the Laplace transform of the state transition matrix. In many problems, solving <a href="#eq:ss-solution-laplace" data-reference-type="eqref" data-reference="eq:ss-solution-laplace">[eq:ss-solution-laplace]</a> and then applying an inverse Laplace transform is the quickest way to obtain <span class="math inline">\(x(t)\)</span> and <span class="math inline">\(y(t)\)</span>, especially when <span class="math inline">\(u(t)\)</span> is a standard input (step, impulse, sinusoid, or an exponential) and partial fraction expansion can be used.</p>
+<div class="example"><div class="env-label env-label-example">Example: State-space solution via Laplace transform and MATLAB verification</div>
+<p><strong>Question.</strong> Consider the state-space model <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t),\qquad y(t)=Cx(t)+Du(t),\]</span> with <span class="math display">\[A=\begin{bmatrix}-2 &amp; 1\\ 0 &amp; -3\end{bmatrix},\quad
+    B=\begin{bmatrix}1\\ 2\end{bmatrix},\quad
+    C=\begin{bmatrix}1 &amp; 0\end{bmatrix},\quad
+    D=0,\]</span> initial condition <span class="math display">\[x(0)=x_0=\begin{bmatrix}0\\ 1\end{bmatrix},\]</span> and input <span class="math display">\[u(t)=1 \quad (\text{unit step}).\]</span></p>
+<ol>
+<li><p>Solve for <span class="math inline">\(X(s)\)</span> using the Laplace transform and obtain closed-form expressions for <span class="math inline">\(x_1(t)\)</span> and <span class="math inline">\(x_2(t)\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(Y(s)\)</span> and obtain <span class="math inline">\(y(t)\)</span> in the time domain.</p></li>
+<li><p>Verify your result using MATLAB by simulating the state response and output for <span class="math inline">\(0\le t\le 5\)</span>.</p></li>
+</ol>
+<p><strong>(a) Laplace-domain state solution.</strong> Taking the Laplace transform of <span class="math inline">\(\dot{x}(t)=Ax(t)+Bu(t)\)</span> gives <span class="math display">\[sX(s)-x_0=AX(s)+BU(s)
+    \quad\Rightarrow\quad
+    (sI-A)X(s)=x_0+BU(s).\]</span> For the unit step input, <span class="math inline">\(U(s)=\dfrac{1}{s}\)</span>. Hence <span class="math display">\[X(s)=(sI-A)^{-1}x_0+(sI-A)^{-1}B\frac{1}{s}.\]</span> Compute <span class="math display">\[sI-A=
+    \begin{bmatrix}
+        s+2 &amp; -1\\
+        0 &amp; s+3
+    \end{bmatrix},
+    \qquad
+    (sI-A)^{-1}=
+    \begin{bmatrix}
+        \dfrac{1}{s+2} &amp; \dfrac{1}{(s+2)(s+3)}\\[8pt]
+        0 &amp; \dfrac{1}{s+3}
+    \end{bmatrix}.\]</span> Now evaluate each term.</p>
+<p><em>Term 1:</em> <span class="math inline">\((sI-A)^{-1}x_0\)</span>: <span class="math display">\[(sI-A)^{-1}x_0=
+    \begin{bmatrix}
+        \dfrac{1}{s+2} &amp; \dfrac{1}{(s+2)(s+3)}\\[6pt]
+        0 &amp; \dfrac{1}{s+3}
+    \end{bmatrix}
+    \begin{bmatrix}0\\ 1\end{bmatrix}
+    =
+    \begin{bmatrix}
+        \dfrac{1}{(s+2)(s+3)}\\[8pt]
+        \dfrac{1}{s+3}
+    \end{bmatrix}.\]</span></p>
+<p><em>Term 2:</em> <span class="math inline">\((sI-A)^{-1}B\frac{1}{s}\)</span>: first compute <span class="math inline">\((sI-A)^{-1}B\)</span>: <span class="math display">\[(sI-A)^{-1}B
+    =
+    \begin{bmatrix}
+        \dfrac{1}{s+2} &amp; \dfrac{1}{(s+2)(s+3)}\\[8pt]
+        0 &amp; \dfrac{1}{s+3}
+    \end{bmatrix}
+    \begin{bmatrix}1\\ 2\end{bmatrix}
+    =
+    \begin{bmatrix}
+        \dfrac{1}{s+2}+\dfrac{2}{(s+2)(s+3)}\\[10pt]
+        \dfrac{2}{s+3}
+    \end{bmatrix}.\]</span> Therefore <span class="math display">\[(sI-A)^{-1}B\frac{1}{s}
+    =
+    \begin{bmatrix}
+        \dfrac{1}{s(s+2)}+\dfrac{2}{s(s+2)(s+3)}\\[10pt]
+        \dfrac{2}{s(s+3)}
+    \end{bmatrix}.\]</span></p>
+<p>Combine the terms to obtain <span class="math inline">\(X(s)=[X_1(s)\;X_2(s)]^\top\)</span>:</p>
+<p><span class="math display">\[X_2(s)=\frac{1}{s+3}+\frac{2}{s(s+3)}
+    =\frac{s}{s(s+3)}+\frac{2}{s(s+3)}
+    =\frac{s+2}{s(s+3)}.\]</span> Partial fractions: <span class="math display">\[\frac{s+2}{s(s+3)}=\frac{A}{s}+\frac{B}{s+3}
+    \Rightarrow s+2=A(s+3)+Bs
+    \Rightarrow
+    \begin{cases}
+        A+B=1\\
+        3A=2
+    \end{cases}
+    \Rightarrow A=\frac{2}{3},\; B=\frac{1}{3}.\]</span> Thus <span class="math display">\[\begin{equation}
+        x_2(t)=\frac{2}{3}+\frac{1}{3}e^{-3t}.
+        \label{eq:ex-x2}
+\end{equation}\]</span></p>
+<p>For <span class="math inline">\(X_1(s)\)</span>: <span class="math display">\[X_1(s)=\frac{1}{(s+2)(s+3)}+\frac{1}{s(s+2)}+\frac{2}{s(s+2)(s+3)}.\]</span> Write the third term using partial fractions: <span class="math display">\[\frac{2}{s(s+2)(s+3)}=\frac{A}{s}+\frac{B}{s+2}+\frac{C}{s+3}.\]</span> Solving <span class="math display">\[2=A(s+2)(s+3)+Bs(s+3)+Cs(s+2)\]</span> by substitution gives: <span class="math display">\[\begin{aligned}
+s=0 &amp;: \quad 2=6A \Rightarrow A=\frac{1}{3},\\
+s=-2 &amp;: \quad 2=-2B \Rightarrow B=-1,\\
+s=-3 &amp;: \quad 2=3C \Rightarrow C=\frac{2}{3}.
+\end{aligned}\]</span> Hence <span class="math display">\[\frac{2}{s(s+2)(s+3)}=\frac{1}{3}\frac{1}{s}-\frac{1}{s+2}+\frac{2}{3}\frac{1}{s+3}.\]</span> Also <span class="math display">\[\frac{1}{(s+2)(s+3)}=\frac{1}{s+2}-\frac{1}{s+3},
+    \qquad
+    \frac{1}{s(s+2)}=\frac{1}{2}\frac{1}{s}-\frac{1}{2}\frac{1}{s+2}.\]</span> Therefore <span class="math display">\[X_1(s)=
+    \left(\frac{1}{2}+\frac{1}{3}\right)\frac{1}{s}
+    +\left(1-\frac{1}{2}-1\right)\frac{1}{s+2}
+    +\left(-1+\frac{2}{3}\right)\frac{1}{s+3}.\]</span> So <span class="math display">\[X_1(s)=\frac{5}{6}\frac{1}{s}-\frac{1}{2}\frac{1}{s+2}-\frac{1}{3}\frac{1}{s+3}.\]</span> Taking the inverse Laplace transform gives <span class="math display">\[\begin{equation}
+        x_1(t)=\frac{5}{6}-\frac{1}{2}e^{-2t}-\frac{1}{3}e^{-3t}.
+        \label{eq:ex-x1}
+\end{equation}\]</span></p>
+<p><strong>(b) Output.</strong> Since <span class="math inline">\(y(t)=Cx(t)=x_1(t)\)</span> (because <span class="math inline">\(C=[1\;0]\)</span> and <span class="math inline">\(D=0\)</span>), <span class="math display">\[\begin{equation}
+        y(t)=\frac{5}{6}-\frac{1}{2}e^{-2t}-\frac{1}{3}e^{-3t}.
+        \label{eq:ex-y}
+\end{equation}\]</span></p>
+<p><strong>(c) MATLAB verification.</strong> Use <code>lsim</code> with a unit-step input and the given initial condition, as shown in Listing <a href="#lst:ex:ss-laplace-matlab" data-reference-type="ref" data-reference="lst:ex:ss-laplace-matlab">[lst:ex:ss-laplace-matlab]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB verification of the Laplace-domain solution.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[-2, 1], [0, -3]])
+B = np.array([[1], [2]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+x0 = np.array([0, 1])
+
+t = np.linspace(0, 5, 1001)
+u = np.ones_like(t)   # unit step
+
+sys = ctrl.ss(A, B, C, D)
+
+# Simulate
+_resp = ctrl.forced_response(sys, t, u, X0=x0, return_x=True)
+
+tout, yout, xout = _resp.time, _resp.outputs, _resp.states
+
+# Closed-form expressions
+x1_ana = 5/6 - 0.5*np.exp(-2*t) - (1/3)*np.exp(-3*t)
+x2_ana = 2/3 + (1/3)*np.exp(-3*t)
+y_ana  = x1_ana
+
+# Plot comparisons
+plt.figure()
+plt.plot(tout, xout[0, :], linewidth=1.5, label='Simulation')
+plt.plot(t, x1_ana, '--', linewidth=1.5, label='Analytical')
+plt.grid(True)
+plt.xlabel('Time (s)')
+plt.ylabel('x_1(t)')
+plt.legend(loc='best')
+plt.title('State x_1(t): simulation vs analytical')
+plt.show()
+
+plt.figure()
+plt.plot(tout, xout[1, :], linewidth=1.5, label='Simulation')
+plt.plot(t, x2_ana, '--', linewidth=1.5, label='Analytical')
+plt.grid(True)
+plt.xlabel('Time (s)')
+plt.ylabel('x_2(t)')
+plt.legend(loc='best')
+plt.title('State x_2(t): simulation vs analytical')
+plt.show()
+
+plt.figure()
+plt.plot(tout, yout, linewidth=1.5, label='Simulation')
+plt.plot(t, y_ana, '--', linewidth=1.5, label='Analytical')
+plt.grid(True)
+plt.xlabel('Time (s)')
+plt.ylabel('y(t)')
+plt.legend(loc='best')
+plt.title('Output y(t): simulation vs analytical')
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>clear; clc; close all;
+        
+        A = [-2  1; 0 -3];
+        B = [1; 2];
+        C = [1 0];
+        D = 0;
+        
+        x0 = [0; 1];
+        
+        t = linspace(0,5,1001);
+        u = ones(size(t));  % unit step
+        
+        sys = ss(A,B,C,D);
+        
+        % Simulate
+        [y,tout,x] = lsim(sys,u,t,x0);
+        
+        % Closed-form expressions
+        x1_ana = 5/6 - 0.5*exp(-2*t) - (1/3)*exp(-3*t);
+        x2_ana = 2/3 + (1/3)*exp(-3*t);
+        y_ana  = x1_ana;
+        
+        % Plot comparisons
+        figure;
+        plot(tout, x(:,1), 'LineWidth', 1.5); hold on;
+        plot(t,   x1_ana, '--', 'LineWidth', 1.5);
+        grid on;
+        xlabel('Time (s)'); ylabel('x_1(t)');
+        legend('MATLAB lsim','Analytical','Location','best');
+        title('State x_1(t): MATLAB vs analytical');
+        
+        figure;
+        plot(tout, x(:,2), 'LineWidth', 1.5); hold on;
+        plot(t,   x2_ana, '--', 'LineWidth', 1.5);
+        grid on;
+        xlabel('Time (s)'); ylabel('x_2(t)');
+        legend('MATLAB lsim','Analytical','Location','best');
+        title('State x_2(t): MATLAB vs analytical');
+        
+        figure;
+        plot(tout, y, 'LineWidth', 1.5); hold on;
+        plot(t,   y_ana, '--', 'LineWidth', 1.5);
+        grid on;
+        xlabel('Time (s)'); ylabel('y(t)');
+        legend('MATLAB lsim','Analytical','Location','best');
+        title('Output y(t): MATLAB vs analytical');</code></pre>
+<p>The MATLAB simulation traces should overlap the analytical curves <a href="#eq:ex-x1" data-reference-type="eqref" data-reference="eq:ex-x1">[eq:ex-x1]</a>–<a href="#eq:ex-y" data-reference-type="eqref" data-reference="eq:ex-y">[eq:ex-y]</a>, confirming the Laplace-domain solution.</p>
+</div>
+<h3 id="subsec:eigenvalues-poles">Eigenvalues of <span class="math inline">\(A\)</span> and system poles</h3>
+<p>There is a direct connection between the state matrix <span class="math inline">\(A\)</span> and the poles of the transfer function <span class="math inline">\(G(s)\)</span>. The poles are the values of <span class="math inline">\(s\)</span> where <span class="math inline">\((sI-A)\)</span> is singular, i.e. the roots of <span class="math display">\[\det(sI - A) = 0.\]</span> These are exactly the <strong>eigenvalues</strong> of <span class="math inline">\(A\)</span>. In other words:</p>
+<div class="result"><div class="env-label env-label-result">Result: Eigenvalues = system poles</div>
+<p>The poles of the transfer function <span class="math inline">\(G(s) = C(sI-A)^{-1}B + D\)</span> are a subset of the eigenvalues of <span class="math inline">\(A\)</span>. If there are no pole-zero cancellations, they are identical.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Poles from eigenvalues and from the transfer function</div>
+<p>A mass–spring–damper with <span class="math inline">\(m=1\)</span> kg, <span class="math inline">\(b=3\)</span> Ns/m, <span class="math inline">\(k=2\)</span> N/m has the state-space model <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad
+    B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad
+    C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}, \quad
+    D = 0.\]</span> Find the system poles (a) from the eigenvalues of <span class="math inline">\(A\)</span>, and (b) from the transfer function.</p>
+<p><strong>(a) Eigenvalue approach.</strong> Solve <span class="math inline">\(\det(sI - A) = 0\)</span>: <span class="math display">\[\det\!\begin{bmatrix} s &amp; -1 \\ 2 &amp; s+3 \end{bmatrix}
+    = s(s+3) + 2 = s^2 + 3s + 2 = (s+1)(s+2) = 0.\]</span> The eigenvalues are <span class="math inline">\(\lambda_1 = -1\)</span> and <span class="math inline">\(\lambda_2 = -2\)</span>.</p>
+<p><strong>(b) Transfer function approach.</strong> Compute <span class="math inline">\(G(s) = C(sI-A)^{-1}B\)</span>: <span class="math display">\[(sI-A)^{-1} = \frac{1}{s^2+3s+2}
+    \begin{bmatrix} s+3 &amp; 1 \\ -2 &amp; s \end{bmatrix},\]</span> so <span class="math display">\[G(s) = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}
+    \frac{1}{s^2+3s+2}
+    \begin{bmatrix} s+3 &amp; 1 \\ -2 &amp; s \end{bmatrix}
+    \begin{bmatrix} 0 \\ 1 \end{bmatrix}
+    = \frac{1}{s^2+3s+2}
+    = \frac{1}{(s+1)(s+2)}.\]</span> The transfer function poles are <span class="math inline">\(s=-1\)</span> and <span class="math inline">\(s=-2\)</span>, matching the eigenvalues exactly.</p>
+<p>Both poles are in the left-half plane, so the system is stable. The pole at <span class="math inline">\(-1\)</span> is the slower mode (time constant <span class="math inline">\(\tau = 1\)</span> s) and dominates the transient response.</p>
+</div>
+<p>Stability, natural frequency, and damping can all be read directly from the eigenvalues of <span class="math inline">\(A\)</span>, without first converting to a transfer function. Listing <a href="#lst:ch4_eig_pole" data-reference-type="ref" data-reference="lst:ch4_eig_pole">[lst:ch4_eig_pole]</a> verifies this in MATLAB.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Comparing eigenvalues of <span class="math inline">\(A\)</span> with transfer-function poles.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+sys = ctrl.ss(A, B, C, D)
+
+eigvals = np.linalg.eigvals(A)
+print('Eigenvalues of A:', eigvals)       # -1, -2
+
+tf_poles = ctrl.poles(ctrl.tf(sys))
+print('TF poles:', tf_poles)              # -1, -2 (should match)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3]; B = [0; 1]; C = [1 0]; D = 0;
+sys = ss(A, B, C, D);
+
+eig(A)           % eigenvalues of A: -1, -2
+pole(tf(sys))    % TF poles: -1, -2 (should match)</code></pre>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>If a mode is uncontrollable or unobservable (Chapter <a href="#chap:ctrl_obs" data-reference-type="ref" data-reference="chap:ctrl_obs">[chap:ctrl_obs]</a>), the corresponding eigenvalue will not appear as a transfer function pole — it is “hidden” by a pole-zero cancellation. The eigenvalues of <span class="math inline">\(A\)</span> always reveal the full picture.</p>
+</div>
+<h2 id="sec:ss-matlab">Implementation in MATLAB</h2>
+<p>This section shows how to work with state-space models in MATLAB in a way that matches the notation used throughout the chapter. We use the Control System Toolbox functions <code>ss</code>, <code>tf</code>, <code>ss2tf</code>, <code>step</code>, <code>impulse</code>, and <code>lsim</code>. Unless stated otherwise, we assume continuous-time LTI systems.</p>
+<h3 id="subsec:ss-create-matlab">Creating State-Space Models</h3>
+<p>A continuous-time state-space model has the form <span class="math display">\[\dot{x}(t)=Ax(t)+Bu(t),\qquad y(t)=Cx(t)+Du(t),\]</span> where <span class="math inline">\(A\in\mathbb{R}^{n\times n}\)</span>, <span class="math inline">\(B\in\mathbb{R}^{n\times m}\)</span>, <span class="math inline">\(C\in\mathbb{R}^{p\times n}\)</span>, and <span class="math inline">\(D\in\mathbb{R}^{p\times m}\)</span>.</p>
+<h4 id="subsubsec:ss-from-matrices">Defining an <code>ss</code> model from matrices</h4>
+<p>In MATLAB, the most direct way to create a state-space model is shown in Listing <a href="#lst:ch4_ss_create" data-reference-type="ref" data-reference="lst:ch4_ss_create">[lst:ch4_ss_create]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Creating a continuous-time state-space model in MATLAB.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[-2, 1], [0, -3]])
+B = np.array([[1], [2]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+sys = ctrl.ss(A, B, C, D)
+print(sys)</code></pre>
+</div>
+<pre class="matlab"><code>A = [-2  1; 0 -3];
+    B = [1; 2];
+    C = [1 0];
+    D = 0;
+    
+    sys = ss(A,B,C,D);</code></pre>
+<p>You can check the dimensions and inspect the model using Listing <a href="#lst:ch4_ss_inspect" data-reference-type="ref" data-reference="lst:ch4_ss_inspect">[lst:ch4_ss_inspect]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Inspecting a state-space model.</p>
+<pre class="python"><code>print('A:', A.shape, 'B:', B.shape, 'C:', C.shape, 'D:', D.shape)
+print(sys)</code></pre>
+<pre class="matlab"><code>size(A), size(B), size(C), size(D)
+    sys</code></pre>
+<h4 id="subsubsec:ss-names">Naming inputs, outputs, and states</h4>
+<p>For clarity in plots and model inspection, assign names as in Listing <a href="#lst:ch4_ss_names" data-reference-type="ref" data-reference="lst:ch4_ss_names">[lst:ch4_ss_names]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Naming states, inputs, and outputs.</p>
+<pre class="python"><code># Note: python-control does not support InputName/StateName
+# attributes in the same way as MATLAB. You can set names
+# when creating the system or print them manually.
+print('Input:  u')
+print('Output: y')
+print('States: x1, x2')</code></pre>
+<pre class="matlab"><code>sys.InputName  = "u";
+    sys.OutputName = "y";
+    sys.StateName  = ["x1"; "x2"];</code></pre>
+<h4 id="subsubsec:ss-sim">Simulating time responses</h4>
+<h5 id="step-and-impulse-responses.">Step and impulse responses.</h5>
+<p>For an LTI system, the standard responses are obtained as in Listing <a href="#lst:ch4_step_impulse" data-reference-type="ref" data-reference="lst:ch4_step_impulse">[lst:ch4_step_impulse]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Step and impulse responses.</p>
+<pre class="python"><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+t1, y1 = ctrl.step_response(sys)
+plt.figure()
+plt.plot(t1, y1)
+plt.title('Step Response')
+plt.grid(True)
+plt.show()
+
+t2, y2 = ctrl.impulse_response(sys)
+plt.figure()
+plt.plot(t2, y2)
+plt.title('Impulse Response')
+plt.grid(True)
+plt.show()</code></pre>
+<pre class="matlab"><code>figure; step(sys); grid on;
+    figure; impulse(sys); grid on;</code></pre>
+<h5 id="response-to-an-arbitrary-input-with-initial-conditions.">Response to an arbitrary input with initial conditions.</h5>
+<p>To simulate with a given input signal <span class="math inline">\(u(t)\)</span> and an initial condition <span class="math inline">\(x(0)=x_0\)</span>, use <code>lsim</code> as in Listing <a href="#lst:ch4_lsim" data-reference-type="ref" data-reference="lst:ch4_lsim">[lst:ch4_lsim]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Simulation with lsim and nonzero initial condition.</p>
+<pre class="python"><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+t  = np.linspace(0, 5, 1001)
+u  = np.ones_like(t)    # unit step input
+x0 = np.array([0, 1])
+
+tout, yout = ctrl.forced_response(sys, t, u, X0=x0)[:2]
+
+plt.figure()
+plt.plot(tout, yout, linewidth=1.5)
+plt.grid(True)
+plt.xlabel('Time (s)')
+plt.ylabel('y(t)')
+plt.title('Output response')
+plt.show()</code></pre>
+<pre class="matlab"><code>t  = linspace(0,5,1001);
+    u  = ones(size(t));   % unit step input
+    x0 = [0; 1];
+    
+    [y,tout,x] = lsim(sys,u,t,x0);
+    
+    figure; plot(tout,y,'LineWidth',1.5); grid on;
+    xlabel('Time (s)'); ylabel('y(t)'); title('Output response');</code></pre>
+<h4 id="subsubsec:ss-discrete">Discrete-time state-space models</h4>
+<p>A discrete-time state-space model has the form <span class="math display">\[x_{k+1}=Ax_k+Bu_k,\qquad y_k=Cx_k+Du_k.\]</span> In MATLAB, specify the sample time <span class="math inline">\(T_s\)</span> as in Listing <a href="#lst:ch4_ss_discrete" data-reference-type="ref" data-reference="lst:ch4_ss_discrete">[lst:ch4_ss_discrete]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Creating a discrete-time state-space model.</p>
+<pre class="python"><code>import control as ctrl
+
+Ts = 0.05                 # sample time
+sysd = ctrl.ss(A, B, C, D, Ts)
+print(sysd)</code></pre>
+<pre class="matlab"><code>Ts  = 0.05;              % sample time
+    sysd = ss(A,B,C,D,Ts);</code></pre>
+<p>You may discretise a continuous-time model using <code>c2d</code> (Listing <a href="#lst:ch4_c2d" data-reference-type="ref" data-reference="lst:ch4_c2d">[lst:ch4_c2d]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Discretising a continuous-time model.</p>
+<pre class="python"><code>import control as ctrl
+
+Ts = 0.05
+sysd = ctrl.c2d(sys, Ts, method='zoh')   # zero-order hold
+print(sysd)</code></pre>
+<pre class="matlab"><code>Ts   = 0.05;
+    sysd = c2d(sys,Ts,'zoh');   % zero-order hold</code></pre>
+<h3 id="subsec:ss-to-tf">Converting State-Space Models to Transfer Functions</h3>
+<p>Although state-space is the preferred representation for modern control design, it is often useful to obtain transfer functions for classical analysis (poles/zeros, frequency response, Bode/Nyquist plots, etc.).</p>
+<h4 id="subsubsec:tf-sys">Using <code>tf(sys)</code></h4>
+<p>The simplest conversion is shown in Listing <a href="#lst:ch4_ss_to_tf" data-reference-type="ref" data-reference="lst:ch4_ss_to_tf">[lst:ch4_ss_to_tf]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">State-space to transfer function using tf(sys).</p>
+<pre class="python"><code>import control as ctrl
+
+G = ctrl.tf(sys)
+print(G)</code></pre>
+<pre class="matlab"><code>G = tf(sys)</code></pre>
+<p>If <code>sys</code> is MIMO, then <code>G</code> is a transfer-function matrix. Individual channels are indexed as <code>G(i,j)</code> (Listing <a href="#lst:ch4_mimo_channel" data-reference-type="ref" data-reference="lst:ch4_mimo_channel">[lst:ch4_mimo_channel]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Selecting a SISO channel from a MIMO transfer function matrix.</p>
+<pre class="python"><code># For MIMO, index channels using Python indexing (0-based)
+# G11 = G[0, 0]
+print(G)</code></pre>
+<pre class="matlab"><code>    G11 = G(1,1);</code></pre>
+<h4 id="subsubsec:ss2tf">Using <code>ss2tf</code></h4>
+<p>The command <code>ss2tf</code> returns numerator and denominator polynomials (Listing <a href="#lst:ch4_ss2tf" data-reference-type="ref" data-reference="lst:ch4_ss2tf">[lst:ch4_ss2tf]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">State-space to transfer function using ss2tf.</p>
+<pre class="python"><code>import control as ctrl
+from scipy.signal import ss2tf
+
+num, den = ss2tf(A, B, C, D)  # SISO: num is 1-by-(n+1)
+G2 = ctrl.tf(num[0], den)
+print(G2)</code></pre>
+<pre class="matlab"><code>[num,den] = ss2tf(A,B,C,D);   % SISO: num is 1-by-(n+1)
+    G2 = tf(num,den);</code></pre>
+<p>For MIMO systems, <code>ss2tf</code> can be used per input channel by selecting a particular input index (Listing <a href="#lst:ch4_ss2tf_mimo" data-reference-type="ref" data-reference="lst:ch4_ss2tf_mimo">[lst:ch4_ss2tf_mimo]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Using ss2tf for a chosen input channel in a MIMO model.</p>
+<pre class="python"><code>from scipy.signal import ss2tf
+
+inputIndex = 0   # Python uses 0-based indexing
+num, den = ss2tf(A, B, C, D, input=inputIndex)
+print('num:', num)
+print('den:', den)</code></pre>
+<pre class="matlab"><code>inputIndex = 1;
+    [num,den] = ss2tf(A,B,C,D,inputIndex);</code></pre>
+<h4 id="subsubsec:pz-dcgain">Poles, zeros, and DC gain</h4>
+<p>Once you have <code>sys</code> (or <code>G</code>), typical checks are shown in Listing <a href="#lst:ch4_pz_dcgain" data-reference-type="ref" data-reference="lst:ch4_pz_dcgain">[lst:ch4_pz_dcgain]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Basic analysis: poles, zeros, and DC gain.</p>
+<pre class="python"><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+print('Poles:', ctrl.poles(sys))
+print('Zeros:', ctrl.zeros(sys))
+print('DC gain:', ctrl.dcgain(sys))
+
+# Frequency response plots
+ctrl.bode_plot(sys)
+plt.show()
+
+ctrl.nyquist_plot(sys)
+plt.show()</code></pre>
+<pre class="matlab"><code>pole(sys)
+    tzero(sys)
+    dcgain(sys)
+    
+    % Frequency response plots
+    figure; bode(sys); grid on;
+    figure; nyquist(sys); grid on;</code></pre>
+<h3 id="subsec:tf2ss-canonical">Converting Transfer Functions to State-Space: Canonical Forms</h3>
+<p>The choice of state variables is not unique — different choices give different <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, <span class="math inline">\(D\)</span> matrices for the same input–output behaviour. Two standard choices are particularly useful:</p>
+<h4 id="controllable-canonical-form-ccf">Controllable canonical form (CCF)</h4>
+<p>Given a transfer function <span class="math display">\[G(s) = \frac{b_1 s^{n-1} + b_2 s^{n-2} + \cdots + b_n}{s^n + a_1 s^{n-1} + \cdots + a_n},\]</span> the controllable canonical form is <span class="math display">\[A = \begin{bmatrix}
+0 &amp; 1 &amp; 0 &amp; \cdots &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; \cdots &amp; 0 \\
+\vdots &amp; &amp; &amp; \ddots &amp; \vdots \\
+0 &amp; 0 &amp; 0 &amp; \cdots &amp; 1 \\
+-a_n &amp; -a_{n-1} &amp; -a_{n-2} &amp; \cdots &amp; -a_1
+\end{bmatrix}, \quad
+B = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}, \quad
+C = \begin{bmatrix} b_n &amp; b_{n-1} &amp; \cdots &amp; b_1 \end{bmatrix}.\]</span> This form is always controllable (the controllability matrix has full rank).</p>
+<h4 id="observable-canonical-form-ocf">Observable canonical form (OCF)</h4>
+<p>The observable canonical form is the transpose of the CCF: <span class="math inline">\(A_o = A_c^T\)</span>, <span class="math inline">\(B_o = C_c^T\)</span>, <span class="math inline">\(C_o = B_c^T\)</span>. This form is always observable.</p>
+<p>In MATLAB, <code>tf2ss</code> returns a form similar to the CCF (with coefficients in the first row rather than the last), as illustrated in Listing <a href="#lst:ch4_tf2ss" data-reference-type="ref" data-reference="lst:ch4_tf2ss">[lst:ch4_tf2ss]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Converting a transfer function to state-space using tf2ss.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+from scipy.signal import tf2ss
+
+G = ctrl.tf([1, 3], [1, 5, 6])       # G(s) = (s+3)/(s**2+5s+6)
+A, B, C, D = tf2ss([1, 3], [1, 5, 6])
+sys_ss = ctrl.ss(A, B, C, D)
+print(sys_ss)</code></pre>
+</div>
+<pre class="matlab"><code>G = tf([1 3], [1 5 6]);       % G(s) = (s+3)/(s^2+5s+6)
+[A,B,C,D] = tf2ss([1 3], [1 5 6]);
+sys_ss = ss(A,B,C,D);</code></pre>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>MATLAB’s <code>tf2ss</code> places the denominator coefficients in the <em>first</em> row of <span class="math inline">\(A\)</span>, not the last. This is a transposed convention compared to many textbooks. Use <code>canon(sys,’companion’)</code> to get the standard companion form.</p>
+</div>
+<h2 id="sec:ss-simulink">Simulink Representation of State-Space Systems</h2>
+<p>Simulink provides a natural environment for implementing and simulating state-space models, especially when block-diagram integration with nonlinearities, saturations, disturbances, measurement noise, or multi-rate components is required.</p>
+<h3 id="state-space-block">State-Space block</h3>
+<p>The most direct representation is the <strong>State-Space</strong> block:</p>
+<ul>
+<li><p>Library: <code>Simulink </code><span class="math inline">\(\rightarrow\)</span><code> Continuous </code><span class="math inline">\(\rightarrow\)</span><code> State-Space</code></p></li>
+<li><p>Parameters: matrices <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code> entered in the block dialog</p></li>
+<li><p>Input: <span class="math inline">\(u(t)\)</span>, Output: <span class="math inline">\(y(t)\)</span>, with internal state <span class="math inline">\(x(t)\)</span> managed by the solver</p></li>
+</ul>
+<p>Figure <a href="#fig:simulink_ss_block" data-reference-type="ref" data-reference="fig:simulink_ss_block">1.9</a> shows a minimal Simulink model using the State-Space block.</p>
+<figure id="fig:simulink_ss_block" data-latex-placement="ht">
+
+<img src="figures/ch04_tikz_10.png" style="max-width:85%;" />
+<figcaption>Minimal Simulink model: a Step input drives the State-Space block, and the output is displayed on a Scope.</figcaption>
+</figure>
+<p>A standard workflow is:</p>
+<ol>
+<li><p>Define the matrices <span class="math inline">\(A,B,C,D\)</span> in the MATLAB workspace (script or Live Script).</p></li>
+<li><p>Insert a <strong>State-Space</strong> block and set its parameters to <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>.</p></li>
+<li><p>Provide an input signal (e.g., <strong>Step</strong>, <strong>Signal Builder</strong>, <strong>From Workspace</strong>).</p></li>
+<li><p>Add a <strong>Scope</strong> (or <strong>To Workspace</strong>) to view/log outputs.</p></li>
+<li><p>Configure solver settings: <strong>Model Settings</strong> <span class="math inline">\(\rightarrow\)</span> <strong>Solver</strong>.</p></li>
+</ol>
+<h3 id="realising-state-space-with-integrators-and-gains">Realising state-space with integrators and gains</h3>
+<p>Sometimes it is helpful pedagogically (or for custom architectures) to implement <span class="math display">\[\dot{x}=Ax+Bu,\qquad y=Cx+Du\]</span> using basic blocks:</p>
+<ul>
+<li><p><strong>Integrator</strong> blocks to obtain <span class="math inline">\(x\)</span> from <span class="math inline">\(\dot{x}\)</span>,</p></li>
+<li><p><strong>Gain</strong> blocks to implement <span class="math inline">\(Ax\)</span>, <span class="math inline">\(Bu\)</span>, <span class="math inline">\(Cx\)</span>, and <span class="math inline">\(Du\)</span>,</p></li>
+<li><p>a <strong>Sum</strong> block to form <span class="math inline">\(\dot{x}=Ax+Bu\)</span> (and another to form <span class="math inline">\(y=Cx+Du\)</span>).</p></li>
+</ul>
+<p>This construction makes the signal flow explicit: the integrator output is the state vector <span class="math inline">\(x(t)\)</span>, which feeds back through <span class="math inline">\(A\)</span> and forward through <span class="math inline">\(C\)</span>, while the input <span class="math inline">\(u(t)\)</span> is injected through <span class="math inline">\(B\)</span> and <span class="math inline">\(D\)</span>.</p>
+<h3 id="logging-states-and-setting-initial-conditions">Logging states and setting initial conditions</h3>
+<p>Two common tasks in Simulink are:</p>
+<ul>
+<li><p><strong>Initial conditions:</strong> set the initial condition of the state vector either in the <strong>State-Space</strong> block (if available) or by specifying the initial condition inside the integrator blocks when using an integrator realisation.</p></li>
+<li><p><strong>State logging:</strong> use <strong>To Workspace</strong> blocks (or enable signal logging) to record <span class="math inline">\(x(t)\)</span> and <span class="math inline">\(y(t)\)</span> for post-processing in MATLAB.</p></li>
+</ul>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>The state-space model <span class="math inline">\(\dot{x}=Ax+Bu\)</span>, <span class="math inline">\(y=Cx+Du\)</span> describes a system’s internal dynamics, not just its input–output behaviour.</p></li>
+<li><p>State variables are typically energy-storing quantities (displacement, velocity, voltage, current, temperature).</p></li>
+<li><p>Higher-order ODEs are converted to state-space form by defining each derivative as a new state variable.</p></li>
+<li><p>The transfer function is obtained from state-space via <span class="math inline">\(G(s)=C(sI-A)^{-1}B+D\)</span>.</p></li>
+<li><p>The eigenvalues of <span class="math inline">\(A\)</span> are the system poles (assuming no pole-zero cancellations).</p></li>
+<li><p>Nonlinear systems can be linearised about an operating point to obtain a linear state-space model.</p></li>
+<li><p>MATLAB commands <code>ss</code>, <code>tf</code>, <code>ss2tf</code>, <code>tf2ss</code>, and <code>lsim</code> handle all standard conversions and simulations.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="end-of-chapter-exercises">End-of-Chapter Exercises</h2>
+<ol>
+<li><p>A mass-spring-damper system is described by the ODE <span class="math display">\[m\ddot{y}+b\dot{y}+ky=f(t),\]</span> where <span class="math inline">\(m=2\,\text{kg}\)</span>, <span class="math inline">\(b=3\,\text{Ns/m}\)</span>, and <span class="math inline">\(k=5\,\text{N/m}\)</span>. Choose <span class="math inline">\(x_1=y\)</span> and <span class="math inline">\(x_2=\dot{y}\)</span> as state variables and write the system in standard state-space form <span class="math inline">\(\dot{x}=Ax+Bu\)</span>, <span class="math inline">\(y=Cx+Du\)</span>. Clearly state the matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span>.</p></li>
+<li><p>Consider a second-order ODE <span class="math display">\[\ddot{y}+4\dot{y}+3y=2u(t).\]</span></p>
+<ol>
+<li><p>Write this as a state-space model using the standard choice <span class="math inline">\(x_1=y\)</span>, <span class="math inline">\(x_2=\dot{y}\)</span>.</p></li>
+<li><p>Compute the eigenvalues of the <span class="math inline">\(A\)</span> matrix by hand.</p></li>
+<li><p>What do these eigenvalues tell you about the system’s natural behaviour?</p></li>
+</ol></li>
+<li><p>A system has the transfer function <span class="math display">\[G(s)=\frac{5}{s^2+6s+8}.\]</span></p>
+<ol>
+<li><p>Convert this to a state-space model by hand using the controllable canonical form.</p></li>
+<li><p>Verify your answer in MATLAB using <code>[A,B,C,D] = tf2ss([5],[1 6 8])</code>.</p></li>
+</ol></li>
+<li><p>Given the state-space model <span class="math display">\[A=\begin{bmatrix}0 &amp; 1\\-2 &amp; -3\end{bmatrix},\quad B=\begin{bmatrix}0\\1\end{bmatrix},\quad C=\begin{bmatrix}1 &amp; 0\end{bmatrix},\quad D=0,\]</span></p>
+<ol>
+<li><p>Find the transfer function <span class="math inline">\(G(s)=C(sI-A)^{-1}B+D\)</span> by hand.</p></li>
+<li><p>Verify your result in MATLAB using <code>sys = ss(A,B,C,D)</code> followed by <code>tf(sys)</code>.</p></li>
+</ol></li>
+<li><p>An RLC series circuit with input voltage <span class="math inline">\(v_{in}(t)\)</span> and output voltage <span class="math inline">\(v_C(t)\)</span> across the capacitor satisfies <span class="math display">\[L\ddot{v}_C+R\dot{v}_C+\frac{1}{C}v_C=\frac{1}{C}v_{in}.\]</span> With <span class="math inline">\(L=1\,\text{H}\)</span>, <span class="math inline">\(R=4\,\Omega\)</span>, <span class="math inline">\(C=0.5\,\text{F}\)</span>, choose appropriate state variables and write the state-space matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, <span class="math inline">\(D\)</span>.</p></li>
+<li><p>Write a short MATLAB script that:</p>
+<ol>
+<li><p>defines the state-space model from Exercise 1 using <code>sys = ss(A,B,C,D)</code>;</p></li>
+<li><p>converts it to a transfer function using <code>tf(sys)</code>;</p></li>
+<li><p>computes the eigenvalues of <span class="math inline">\(A\)</span> using <code>eig(A)</code>;</p></li>
+<li><p>plots the unit step response using <code>step(sys)</code>.</p></li>
+</ol>
+<p>Run your script and briefly describe the shape of the step response.</p></li>
+<li><p>A system is described by two coupled first-order ODEs: <span class="math display">\[\dot{x}_1=-x_1+2x_2+u,\qquad \dot{x}_2=3x_1-4x_2,\]</span> with output <span class="math inline">\(y=x_1\)</span>.</p>
+<ol>
+<li><p>Write down the matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, <span class="math inline">\(D\)</span>.</p></li>
+<li><p>Find the eigenvalues of <span class="math inline">\(A\)</span>. Is the system stable?</p></li>
+<li><p>Use MATLAB to plot the step response and confirm your stability prediction.</p></li>
+</ol></li>
+<li><p>A third-order system has the transfer function <span class="math display">\[G(s)=\frac{10}{s^3+5s^2+8s+4}.\]</span> Use MATLAB to:</p>
+<ol>
+<li><p>convert this to state-space form using <code>tf2ss</code>;</p></li>
+<li><p>find the eigenvalues of <span class="math inline">\(A\)</span>;</p></li>
+<li><p>convert back to a transfer function using <code>ss2tf</code> and verify you recover the original <span class="math inline">\(G(s)\)</span>.</p></li>
+</ol></li>
+</ol>

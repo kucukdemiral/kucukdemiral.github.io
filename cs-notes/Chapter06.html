@@ -1,0 +1,1258 @@
+<h1 id="ch:time_response">Time Response of Systems</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Derive and sketch the step response of first-order systems, identifying gain <span class="math inline">\(K\)</span> and time constant <span class="math inline">\(\tau\)</span></p></li>
+<li><p>Compute rise time and settling time for first-order systems from <span class="math inline">\(\tau\)</span></p></li>
+<li><p>Classify second-order systems by damping ratio: underdamped, critically damped, overdamped</p></li>
+<li><p>Compute <span class="math inline">\(\omega_n\)</span>, <span class="math inline">\(\zeta\)</span>, <span class="math inline">\(\omega_d\)</span>, peak time, percentage overshoot, rise time, and settling time for underdamped second-order systems</p></li>
+<li><p>Relate pole locations on the <span class="math inline">\(s\)</span>-plane to transient response characteristics</p></li>
+<li><p>Determine steady-state error for step, ramp, and parabolic inputs using the final value theorem and system type</p></li>
+</ul>
+</div>
+<p>A stable control system must also respond in a predictable, satisfactory way. By studying how outputs evolve after standard test inputs, we quantify performance: speed of response, overshoot, oscillation, and settling behaviour. This chapter focuses primarily on the step response, which reveals the transient characteristics most important for control design.</p>
+<h2 id="sec:first_order_systems">First-Order Systems</h2>
+<p>first order systems arise in thermal processes, liquid-level systems, RC circuits, and low-pass filtering.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: General first-order system</div>
+<p>A linear time-invariant first-order system can be written in the differential-equation form <span class="math display">\[\begin{equation}
+        \tau \frac{dy(t)}{dt} + y(t) = K\,u(t),
+        \label{eq:first_order_ode}
+\end{equation}\]</span> where</p>
+<ul>
+<li><p><span class="math inline">\(u(t)\)</span> is the input,</p></li>
+<li><p><span class="math inline">\(y(t)\)</span> is the output,</p></li>
+<li><p><span class="math inline">\(K\)</span> is the steady-state gain,</p></li>
+<li><p><span class="math inline">\(\tau&gt;0\)</span> is the time constant.</p></li>
+</ul>
+</div>
+<p>Taking the Laplace transform of <a href="#eq:first_order_ode" data-reference-type="eqref" data-reference="eq:first_order_ode">[eq:first_order_ode]</a> under zero initial conditions gives <span class="math display">\[\tau sY(s)+Y(s)=KU(s),\]</span> hence the transfer function is <span class="math display">\[\begin{equation}
+    G(s)=\frac{Y(s)}{U(s)}=\frac{K}{\tau s+1}.
+    \label{eq:first_order_tf}
+\end{equation}\]</span></p>
+<p>Many physical systems have one dominant storage mechanism (e.g. thermal energy in a heated body, charge in a capacitor), and a first-order model often captures the main transient behaviour well, even as a first approximation for higher-order systems.</p>
+<h3 id="step-response-of-a-first-order-system">Step response of a first-order system</h3>
+<p>To understand the meaning of the time constant, consider the response of <a href="#eq:first_order_tf" data-reference-type="eqref" data-reference="eq:first_order_tf">[eq:first_order_tf]</a> to a step input of magnitude <span class="math inline">\(A\)</span>, namely <span class="math display">\[u(t)=A\,u_0(t)\]</span></p>
+<div class="center"><img src="figures/ch06_tikz_01.png" style="max-width:15%;" /></div>
+<p>where <span class="math inline">\(u_0(t)\)</span> denotes the unit step.</p>
+<p>The Laplace transform of the input is <span class="math display">\[U(s)=\frac{A}{s}.\]</span> Therefore, <span class="math display">\[Y(s)=G(s)U(s)=\frac{K}{\tau s+1}\cdot \frac{A}{s}
+= \frac{KA}{s(\tau s+1)}.\]</span></p>
+<p>Using partial fractions, <span class="math display">\[\frac{KA}{s(\tau s+1)}
+=
+\frac{KA}{s}-\frac{KA\tau}{\tau s+1}.\]</span> Since <span class="math display">\[\frac{1}{\tau s+1}=\frac{1}{\tau}\frac{1}{s+\frac{1}{\tau}},\]</span> the inverse Laplace transform gives <span class="math display">\[\begin{equation}
+    y(t)=KA\left(1-e^{-t/\tau}\right)u_0(t).
+    \label{eq:first_order_step_response}
+\end{equation}\]</span></p>
+<p>Thus the response starts from zero and approaches <span class="math inline">\(KA\)</span>. The quantity <span class="math inline">\(K\)</span> sets the final value for a unit input, while <span class="math inline">\(\tau\)</span> controls how quickly the exponential term decays.</p>
+<h3 id="meaning-of-the-time-constant">Meaning of the time constant</h3>
+<p>Evaluate <a href="#eq:first_order_step_response" data-reference-type="eqref" data-reference="eq:first_order_step_response">[eq:first_order_step_response]</a> at <span class="math inline">\(t=\tau\)</span>: <span class="math display">\[y(\tau)=KA\left(1-e^{-1}\right).\]</span> Since <span class="math display">\[e^{-1}\approx 0.3679,\]</span> we obtain <span class="math display">\[\begin{equation}
+    y(\tau)\approx 0.632\,KA.
+    \label{eq:63percent}
+\end{equation}\]</span></p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Time constant</div>
+<p>The <strong>time constant</strong> <span class="math inline">\(\tau\)</span> of a first-order system is the time required for the step response to complete approximately <span class="math inline">\(63.2\%\)</span> of its total change from the initial value to the final value. For a zero-initial-condition response, this is the same as reaching <span class="math inline">\(63.2\%\)</span> of the final value.</p>
+</div>
+<p>A small <span class="math inline">\(\tau\)</span> means the output reaches its final value quickly; a large <span class="math inline">\(\tau\)</span> means it takes longer.</p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation</div>
+<p><span>How to estimate <span class="math inline">\(\tau\)</span> from a response plot</span> If the step response of a first-order system is known experimentally, the time constant can be estimated by:</p>
+<ol>
+<li><p>determining the initial value <span class="math inline">\(y_0\)</span> and final value <span class="math inline">\(y(\infty)\)</span>,</p></li>
+<li><p>computing the output change <span class="math inline">\(\Delta y=y(\infty)-y_0\)</span>,</p></li>
+<li><p>finding the time at which <span class="math inline">\(y(t)=y_0+0.632\,\Delta y\)</span>.</p></li>
+</ol>
+<p>If the response has no delay, that time is the estimated time constant <span class="math inline">\(\tau\)</span>. If the response has a visible delay <span class="math inline">\(\theta\)</span>, then the time constant is measured from the end of the delay, not from the instant at which the input was changed.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Estimating a delayed first-order model from step-test data</div>
+<p>A process is initially at steady state with input <span class="math inline">\(u_0=2\)</span> and output <span class="math inline">\(y_0=1\)</span>. At <span class="math inline">\(t=0\)</span>, the input is changed to <span class="math inline">\(u_1=5\)</span>. The following stored data are obtained from the output response.</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Time <span class="math inline">\(t\)</span> (s)</th>
+<th style="text-align: center;">Input <span class="math inline">\(u(t)\)</span></th>
+<th style="text-align: center;">Output <span class="math inline">\(y(t)\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><span class="math inline">\(-0.5\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1.000</td>
+</tr>
+<tr>
+<td style="text-align: center;">0.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1.000</td>
+</tr>
+<tr>
+<td style="text-align: center;">0.5</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1.000</td>
+</tr>
+<tr>
+<td style="text-align: center;">1.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1.000</td>
+</tr>
+<tr>
+<td style="text-align: center;">1.5</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">2.327</td>
+</tr>
+<tr>
+<td style="text-align: center;">2.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">3.361</td>
+</tr>
+<tr>
+<td style="text-align: center;">2.5</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">4.166</td>
+</tr>
+<tr>
+<td style="text-align: center;">3.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">4.793</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">5.661</td>
+</tr>
+<tr>
+<td style="text-align: center;">5.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6.188</td>
+</tr>
+<tr>
+<td style="text-align: center;">6.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6.507</td>
+</tr>
+<tr>
+<td style="text-align: center;">8.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6.819</td>
+</tr>
+<tr>
+<td style="text-align: center;">10.0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6.933</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The response plot is shown below. The dashed horizontal line marks the <span class="math inline">\(63.2\%\)</span> point of the output change. Obtain the mathematical model of the process as a first-order system with time delay, and write the time-domain response for this particular step test.</p>
+<div class="center">
+
+</div>
+<p>The input step size is <span class="math display">\[\Delta u = u_1-u_0 = 5-2 = 3.\]</span> The output starts at <span class="math inline">\(y_0=1\)</span> and settles close to <span class="math display">\[y(\infty)\approx 7.\]</span> Hence the output change is <span class="math display">\[\Delta y = y(\infty)-y_0 = 7-1 = 6.\]</span> The steady-state gain is therefore <span class="math display">\[K=\frac{\Delta y}{\Delta u}=\frac{6}{3}=2.\]</span></p>
+<p>From the data, the output does not begin to change until approximately <span class="math inline">\(t=1~\text{s}\)</span>. Thus the process delay is estimated as <span class="math display">\[\theta \approx 1~\text{s}.\]</span></p>
+<p>The <span class="math inline">\(63.2\%\)</span> point must be computed from the output change, not from zero: <span class="math display">\[y_{63}=y_0+0.632\,\Delta y
+    =1+0.632(6)
+    =4.792.\]</span> From the stored data, <span class="math inline">\(y(t)\approx 4.792\)</span> at <span class="math inline">\(t=3~\text{s}\)</span>. Since the response starts after the delay, <span class="math display">\[\tau = 3-1 = 2~\text{s}.\]</span></p>
+<p>The identified first-order plus time-delay model is therefore <span class="math display">\[G(s)=\frac{\Delta Y(s)}{\Delta U(s)}
+    \approx
+    \frac{2e^{-s}}{2s+1}.\]</span> In time-domain form, for this particular step test, <span class="math display">\[y(t)=
+    \begin{cases}
+        1, &amp; 0\leq t&lt;1,\\[2mm]
+        1+6\left(1-e^{-(t-1)/2}\right), &amp; t\geq 1.
+    \end{cases}\]</span></p>
+</div>
+<h3 id="rise-time-and-settling-time">Rise time and settling time</h3>
+<p>Two additional measures of response speed are commonly used.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Rise time</div>
+<p>The rise time is the time required for the response to rise from a lower percentage to a higher percentage of its final value.</p>
+<p>For first-order systems, rise time is commonly defined as the time taken to go from <span class="math inline">\(10\%\)</span> to <span class="math inline">\(90\%\)</span> of the final value.</p>
+</div>
+<p>Let <span class="math inline">\(t_{10}\)</span> denote the time at which the response reaches <span class="math inline">\(10\%\)</span> of the final value, and <span class="math inline">\(t_{90}\)</span> the time at which it reaches <span class="math inline">\(90\%\)</span>.</p>
+<p>From <span class="math display">\[\frac{y(t)}{KA}=1-e^{-t/\tau},\]</span> for <span class="math inline">\(10\%\)</span> of final value, <span class="math display">\[0.1=1-e^{-t_{10}/\tau}
+\quad \Rightarrow \quad
+e^{-t_{10}/\tau}=0.9
+\quad \Rightarrow \quad
+t_{10}=-\tau \ln(0.9).\]</span> Similarly, for <span class="math inline">\(90\%\)</span> of final value, <span class="math display">\[0.9=1-e^{-t_{90}/\tau}
+\quad \Rightarrow \quad
+e^{-t_{90}/\tau}=0.1
+\quad \Rightarrow \quad
+t_{90}=-\tau \ln(0.1).\]</span> Hence the rise time is <span class="math display">\[\begin{align}
+    t_r &amp;= t_{90}-t_{10}
+    \nonumber\\
+    &amp;= -\tau \ln(0.1)+\tau \ln(0.9)
+    \nonumber\\
+    &amp;= \tau \ln\!\left(\frac{0.9}{0.1}\right)
+    = \tau \ln 9.
+\end{align}\]</span> Numerically, <span class="math display">\[\begin{equation}
+    t_r \approx 2.2\tau.
+    \label{eq:rise_time_first_order}
+\end{equation}\]</span></p>
+<p>For the <span class="math inline">\(10\%\)</span>–<span class="math inline">\(90\%\)</span> convention, the result is therefore <span class="math inline">\(t_r=\tau\ln 9\approx 2.2\tau\)</span>. Other conventions exist, so any quoted rise time should be interpreted together with the percentage levels used to define it.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Settling time</div>
+<p>The settling time is the time required for the response to enter and remain within a specified band around the final value.</p>
+<p>Common engineering definitions use either the <span class="math inline">\(\pm 2\%\)</span> band or the <span class="math inline">\(\pm 5\%\)</span> band.</p>
+</div>
+<p>For a first-order system, the error from final value is <span class="math display">\[e(t)=KA-y(t)=KAe^{-t/\tau}.\]</span></p>
+<p>For the <span class="math inline">\(2\%\)</span> settling-time criterion, <span class="math display">\[\frac{|e(t_s)|}{|KA|}\le 0.02
+\quad \Rightarrow \quad
+e^{-t_s/\tau}\le 0.02.\]</span> Therefore, <span class="math display">\[t_s \ge -\tau \ln(0.02).\]</span> Numerically, <span class="math display">\[\begin{equation}
+    t_s \approx 3.9\tau \approx 4\tau.
+    \label{eq:settling_time_2percent}
+\end{equation}\]</span></p>
+<p>For the <span class="math inline">\(5\%\)</span> settling-time criterion, <span class="math display">\[e^{-t_s/\tau}\le 0.05
+\quad \Rightarrow \quad
+t_s \ge -\tau\ln(0.05),\]</span> hence <span class="math display">\[\begin{equation}
+    t_s \approx 3\tau.
+    \label{eq:settling_time_5percent}
+\end{equation}\]</span></p>
+<p>For a stable first-order system with <span class="math inline">\(\tau&gt;0\)</span>, the step response is monotonic. It does not oscillate, it does not overshoot, and it has no peak time in the sense used for underdamped second-order systems. The useful rules of thumb are <span class="math display">\[t_r \approx 2.2\tau \quad \text{(10\%--90\% rise time)},\qquad
+t_s \approx 4\tau \quad \text{(2\% settling)},\qquad
+t_s \approx 3\tau \quad \text{(5\% settling)}.\]</span></p>
+<h3 id="graphical-interpretation-of-the-response">Graphical interpretation of the response</h3>
+<p>The step response <span class="math display">\[y(t)=KA\left(1-e^{-t/\tau}\right)\]</span> starts at zero, rises rapidly at first, and then gradually approaches the final value <span class="math inline">\(KA\)</span>. The slope is largest at the beginning because the output is still far from its final value. As the output gets closer to <span class="math inline">\(KA\)</span>, the remaining error <span class="math inline">\(KA-y(t)\)</span> becomes smaller, so the curve flattens. Figure <a href="#fig:firstordersysresp" data-reference-type="ref" data-reference="fig:firstordersysresp">1.1</a> marks the most commonly used time-domain measurements: one time constant, the <span class="math inline">\(10\%\)</span>–<span class="math inline">\(90\%\)</span> rise time, and the <span class="math inline">\(2\%\)</span> settling time.</p>
+<figure id="fig:firstordersysresp" data-latex-placement="htbp">
+
+<img src="figures/ch06_tikz_03.png" style="max-width:85%;" />
+<figcaption>Step response of a first-order system (<span class="math inline">\(\tau=3\)</span> s, <span class="math inline">\(K=1\)</span>) showing the time constant, <span class="math inline">\(10\%\)</span>–<span class="math inline">\(90\%\)</span> rise time, and <span class="math inline">\(2\%\)</span> settling time.</figcaption>
+</figure>
+<h3 id="subsec:first_order_poles_s_plane">Pole location of first-order systems on the <span class="math inline">\(s\)</span>-plane</h3>
+<p>The transfer function of a standard first-order system is <span class="math display">\[G(s)=\frac{K}{\tau s+1}.\]</span> The pole is obtained by setting the denominator equal to zero: <span class="math display">\[\tau s+1=0
+\qquad \Rightarrow \qquad
+s=-\frac{1}{\tau}.\]</span></p>
+<p>Therefore, a first-order system has a single pole, and its location is determined entirely by the time constant <span class="math inline">\(\tau\)</span>. This simple relation is important because it connects the algebraic form of the transfer function with both stability and response speed.</p>
+<h4 class="unnumbered" id="stability-from-pole-location">1. Stability from pole location</h4>
+<p>For a standard first-order system, the time constant is defined with <span class="math inline">\(\tau&gt;0\)</span>, so the pole <span class="math display">\[s=-\frac{1}{\tau}\]</span> lies in the left-half plane and the system is stable. More generally, any first-order transfer function with a pole in the right-half plane is unstable, because its response grows with time.</p>
+<h4 class="unnumbered" id="response-speed-from-pole-location">2. Response speed from pole location</h4>
+<p>Since the pole is located at <span class="math display">\[s=-\frac{1}{\tau},\]</span> large values of <span class="math inline">\(\tau\)</span> place the pole close to the origin, while small values of <span class="math inline">\(\tau\)</span> move the pole further to the left. This agrees with the time-domain result: a smaller time constant produces a faster response. Conversely, as <span class="math inline">\(\tau\)</span> becomes larger, the pole approaches the origin and the response becomes slower.</p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation</div>
+<p><span>Geometric meaning on the <span class="math inline">\(s\)</span>-plane</span> For first-order systems, the distance of the pole from the origin along the negative real axis gives a direct indication of the speed of response:</p>
+<ul>
+<li><p>poles far to the left correspond to fast responses,</p></li>
+<li><p>poles near the origin correspond to slow responses.</p></li>
+</ul>
+</div>
+<p>For example, consider several values of <span class="math inline">\(\tau\)</span>: <span class="math display">\[\tau=4,\qquad \tau=2,\qquad \tau=1,\qquad \tau=0.5.\]</span> The corresponding poles are <span class="math display">\[s=-\frac{1}{4}=-0.25,\qquad
+s=-\frac{1}{2}=-0.5,\qquad
+s=-1,\qquad
+s=-2.\]</span></p>
+<p>These poles all lie on the negative real axis, but the one corresponding to <span class="math inline">\(\tau=0.5\)</span> is furthest to the left. Hence that system is the fastest among them.</p>
+<figure id="fig:first_order_poles" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_04.png" style="max-width:85%;" />
+<figcaption>Pole locations of first-order systems for different time constants on the <span class="math inline">\(s\)</span>-plane</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Pole location and speed of first-order systems</div>
+<p>Consider the following first-order transfer functions: <span class="math display">\[G_1(s)=\frac{1}{4s+1},\qquad
+    G_2(s)=\frac{1}{2s+1},\qquad
+    G_3(s)=\frac{1}{s+1},\qquad
+    G_4(s)=\frac{1}{0.5s+1}.\]</span> Determine the poles and compare the speed of response.</p>
+<p>The poles are found from the denominators: <span class="math display">\[4s+1=0 \Rightarrow s=-0.25,\]</span> <span class="math display">\[2s+1=0 \Rightarrow s=-0.5,\]</span> <span class="math display">\[s+1=0 \Rightarrow s=-1,\]</span> <span class="math display">\[0.5s+1=0 \Rightarrow s=-2.\]</span></p>
+<p>Thus the poles are: <span class="math display">\[-0.25,\quad -0.5,\quad -1,\quad -2.\]</span></p>
+<p>All poles are in the left-half plane, so all four systems are stable.</p>
+<p>Since the pole at <span class="math inline">\(-2\)</span> is furthest to the left, the system <span class="math display">\[G_4(s)=\frac{1}{0.5s+1}\]</span> has the fastest response.</p>
+<p>Since the pole at <span class="math inline">\(-0.25\)</span> is closest to the origin, the system <span class="math display">\[G_1(s)=\frac{1}{4s+1}\]</span> has the slowest response.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Step response of a first-order system</div>
+<p>Consider the system <span class="math display">\[G(s)=\frac{5}{2s+1}.\]</span> Find the response to a unit-step input and determine:</p>
+<ol>
+<li><p>the final value,</p></li>
+<li><p>the time constant,</p></li>
+<li><p>the approximate rise time,</p></li>
+<li><p>the approximate settling time using the <span class="math inline">\(2\%\)</span> criterion.</p></li>
+</ol>
+<p>Comparing <span class="math display">\[G(s)=\frac{5}{2s+1}\]</span> with the standard form <span class="math display">\[G(s)=\frac{K}{\tau s+1},\]</span> we identify <span class="math display">\[K=5, \qquad \tau=2.\]</span></p>
+<p>For a unit-step input, <span class="math display">\[U(s)=\frac{1}{s}.\]</span> Hence <span class="math display">\[Y(s)=\frac{5}{2s+1}\cdot \frac{1}{s}
+    = \frac{5}{s(2s+1)}.\]</span> The time-domain response is <span class="math display">\[y(t)=5\left(1-e^{-t/2}\right), \qquad t\ge 0.\]</span></p>
+<p>Therefore:</p>
+<ol>
+<li><p>The final value is <span class="math display">\[y(\infty)=5.\]</span></p></li>
+<li><p>The time constant is <span class="math display">\[\tau=2~\text{s}.\]</span></p></li>
+<li><p>The rise time is approximately <span class="math display">\[t_r\approx 2.2\tau = 2.2(2)=4.4~\text{s}.\]</span></p></li>
+<li><p>The <span class="math inline">\(2\%\)</span> settling time is approximately <span class="math display">\[t_s\approx 4\tau=4(2)=8~\text{s}.\]</span></p></li>
+</ol>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Determining the time constant from the 63% criterion</div>
+<p>A first-order system has a unit-step response with final value equal to <span class="math inline">\(10\)</span>. From an experimental plot, the output reaches <span class="math inline">\(6.32\)</span> at <span class="math inline">\(t=1.8~\text{s}\)</span>. Determine the time constant and estimate the <span class="math inline">\(2\%\)</span> settling time.</p>
+<p>Since <span class="math display">\[6.32 = 0.632 \times 10,\]</span> the given output corresponds to <span class="math inline">\(63.2\%\)</span> of the final value. Therefore, by definition of the time constant, <span class="math display">\[\tau = 1.8~\text{s}.\]</span></p>
+<p>The <span class="math inline">\(2\%\)</span> settling time is approximately <span class="math display">\[t_s \approx 4\tau = 4(1.8)=7.2~\text{s}.\]</span></p>
+<p>Hence, <span class="math display">\[\boxed{\tau=1.8~\text{s}}, \qquad \boxed{t_s\approx 7.2~\text{s}}.\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Response to a non-unit step</div>
+<p>Consider the first-order system <span class="math display">\[G(s)=\frac{3}{4s+1}.\]</span> Find the response to an input step of magnitude <span class="math inline">\(2\)</span>.</p>
+<p>Here, <span class="math display">\[K=3, \qquad \tau=4, \qquad A=2.\]</span></p>
+<p>The general step-response formula is <span class="math display">\[y(t)=KA\left(1-e^{-t/\tau}\right).\]</span> Substituting the values gives <span class="math display">\[y(t)=3\times 2\left(1-e^{-t/4}\right)
+    =6\left(1-e^{-t/4}\right), \qquad t\ge 0.\]</span></p>
+<p>The final value is <span class="math display">\[y(\infty)=6.\]</span> At <span class="math inline">\(t=\tau=4~\text{s}\)</span>, <span class="math display">\[y(4)=6\left(1-e^{-1}\right)\approx 3.79.\]</span> So after <span class="math inline">\(4\)</span> seconds the response has reached approximately <span class="math inline">\(63.2\%\)</span> of the final value.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Finding system parameters from the response expression</div>
+<p>A system has the unit-step response <span class="math display">\[y(t)=8\left(1-e^{-t/5}\right), \qquad t\ge 0.\]</span> Find:</p>
+<ol>
+<li><p>the steady-state gain,</p></li>
+<li><p>the time constant,</p></li>
+<li><p>the transfer function.</p></li>
+</ol>
+<p>The standard unit-step response of a first-order system is <span class="math display">\[y(t)=K\left(1-e^{-t/\tau}\right).\]</span> Comparing with <span class="math display">\[y(t)=8\left(1-e^{-t/5}\right),\]</span> we identify <span class="math display">\[K=8, \qquad \tau=5.\]</span></p>
+<p>Therefore:</p>
+<ol>
+<li><p>The steady-state gain is <span class="math display">\[K=8.\]</span></p></li>
+<li><p>The time constant is <span class="math display">\[\tau=5~\text{s}.\]</span></p></li>
+<li><p>The transfer function is <span class="math display">\[G(s)=\frac{K}{\tau s+1}
+        =\frac{8}{5s+1}.\]</span></p></li>
+</ol>
+</div>
+<h2 id="sec:second_order_systems">Second-Order Systems</h2>
+<p>Mechanical vibration systems, RLC circuits, servo mechanisms, and many closed-loop control systems require a <em>second-order model</em>. Such systems can exhibit oscillation, overshoot, and varying degrees of damping.</p>
+<p>The transient-specification formulae below are exact for the standard second-order model. For higher-order systems, they serve as approximations based on dominant poles.</p>
+<h3 id="general-second-order-model">General second-order model</h3>
+<p>A general linear time-invariant second order may be written as <span class="math display">\[\begin{equation}
+    a_2 \ddot y(t) + a_1 \dot y(t) + a_0 y(t) = b_0 u(t),
+    \label{eq:general_second_order_ode}
+\end{equation}\]</span> where <span class="math inline">\(a_2&gt;0\)</span>, <span class="math inline">\(a_1\)</span>, <span class="math inline">\(a_0\)</span>, and <span class="math inline">\(b_0\)</span> are constants.</p>
+<p>Under zero initial conditions, the transfer function becomes <span class="math display">\[G(s)=\frac{Y(s)}{U(s)}=\frac{b_0}{a_2 s^2+a_1 s+a_0}.\]</span></p>
+<p>In control engineering, it is customary to express a second-order system in the <em>standard form</em> <span class="math display">\[\begin{equation}
+    G(s)=\frac{K\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2},
+    \label{eq:standard_second_order_tf}
+\end{equation}\]</span> where:</p>
+<ul>
+<li><p><span class="math inline">\(K\)</span> is the steady-state gain,</p></li>
+<li><p><span class="math inline">\(\omega_n\)</span> is the undamped natural freq,</p></li>
+<li><p><span class="math inline">\(\zeta\)</span> is the damping ratio.</p></li>
+</ul>
+<p><span class="math inline">\(\omega_n\)</span>, measured in radians per second, is the frequency at which the system would oscillate if no damping were present. The damping ratio <span class="math inline">\(\zeta\)</span> is dimensionless and describes how strongly the transient oscillation is suppressed. Small <span class="math inline">\(\zeta\)</span> gives a lightly damped, oscillatory response; larger <span class="math inline">\(\zeta\)</span> produces less overshoot and eventually removes oscillation altogether.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Damped natural frequency</div>
+<p>For an underdamped second-order system <span class="math inline">\((0&lt;\zeta&lt;1)\)</span>, the oscillation occurs at the damped freq <span class="math display">\[\begin{equation}
+        \omega_d=\omega_n\sqrt{1-\zeta^2},
+        \label{eq:damped_natural_frequency}
+\end{equation}\]</span> measured in radians per second.</p>
+</div>
+<p>The symbol <span class="math inline">\(\omega_n\)</span> is often called simply the natural frequency, but in the underdamped case the visible oscillation occurs at <span class="math inline">\(\omega_d\)</span>, not at <span class="math inline">\(\omega_n\)</span>. Damping reduces the oscillation frequency because <span class="math inline">\(\omega_d=\omega_n\sqrt{1-\zeta^2}&lt;\omega_n\)</span> when <span class="math inline">\(0&lt;\zeta&lt;1\)</span>.</p>
+<h3 id="poles-of-the-standard-second-order-system">Poles of the standard second-order system</h3>
+<p>The poles of <a href="#eq:standard_second_order_tf" data-reference-type="eqref" data-reference="eq:standard_second_order_tf">[eq:standard_second_order_tf]</a> are the roots of <span class="math display">\[s^2+2\zeta\omega_n s+\omega_n^2=0.\]</span> Using the quadratic formula, <span class="math display">\[\begin{equation}
+    s=-\zeta\omega_n \pm \omega_n\sqrt{\zeta^2-1}.
+    \label{eq:second_order_poles_general}
+\end{equation}\]</span></p>
+<p>The parameter <span class="math inline">\(\zeta\)</span> mainly determines the shape of the transient response, while <span class="math inline">\(\omega_n\)</span> scales it in time.</p>
+<h3 id="classification-according-to-the-damping-ratio">Classification according to the damping ratio</h3>
+<h4 class="unnumbered" id="undamped-system-zeta0">Undamped system <span class="math inline">\((\zeta=0)\)</span></h4>
+<p>If <span class="math inline">\(\zeta=0\)</span>, then <span class="math display">\[G(s)=\frac{K\omega_n^2}{s^2+\omega_n^2},\]</span> and the poles are <span class="math display">\[s=\pm j\omega_n.\]</span> The poles lie on the imaginary axis and the system oscillates indefinitely. An undamped second-order system does not settle to its final value in the usual transient-response sense. Instead, it exhibits sustained oscillation. Figure <a href="#fig:undamped_step_response" data-reference-type="ref" data-reference="fig:undamped_step_response">1.3</a> shows the step response of the undamped second-order system, which continuously oscillates about the final value of the step response.</p>
+<figure id="fig:undamped_step_response" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_05.png" style="max-width:85%;" />
+<figcaption>Undamped second-order system: the step response oscillates indefinitely and does not settle, while the poles lie on the imaginary axis at <span class="math inline">\(s=\pm j\omega_n\)</span>.</figcaption>
+</figure>
+<h4 class="unnumbered" id="underdamped-system-0zeta1">Underdamped system <span class="math inline">\((0&lt;\zeta&lt;1)\)</span></h4>
+<p>If <span class="math inline">\(0&lt;\zeta&lt;1\)</span>, then <span class="math display">\[s=-\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2}
+= -\zeta\omega_n \pm j\omega_d.\]</span> The poles are complex conjugates in the left-half plane. The response is oscillatory, but the oscillations decay with time. Figure <a href="#fig:underdamped_response_and_poles" data-reference-type="ref" data-reference="fig:underdamped_response_and_poles">1.4</a> shows the unit-step response of an underdamped second-order system and the corresponding pole locations on the <span class="math inline">\(s\)</span>-plane.</p>
+<figure id="fig:underdamped_response_and_poles" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_06.png" style="max-width:85%;" />
+<figcaption>Underdamped second-order system: decaying oscillatory step response and complex-conjugate poles in the left-half plane</figcaption>
+</figure>
+<h4 class="unnumbered" id="critically-damped-system-zeta1">Critically damped system <span class="math inline">\((\zeta=1)\)</span></h4>
+<p>If <span class="math inline">\(\zeta=1\)</span>, then the characteristic equation has a repeated real root at <span class="math display">\[s=-\omega_n.\]</span> Thus, both poles coincide on the negative real axis. The response is non-oscillatory and, among the standard second-order cases, gives the fastest approach to the steady-state value without overshoot. Figure <a href="#fig:critical_response_and_poles" data-reference-type="ref" data-reference="fig:critical_response_and_poles">1.5</a> illustrates the corresponding unit-step response and pole locations.</p>
+<figure id="fig:critical_response_and_poles" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_07.png" style="max-width:85%;" />
+<figcaption>Critically damped second-order system: non-oscillatory step response and repeated real pole at <span class="math inline">\(s=-\omega_n\)</span></figcaption>
+</figure>
+<h4 class="unnumbered" id="overdamped-system-zeta1">Overdamped system <span class="math inline">\((\zeta&gt;1)\)</span></h4>
+<p>If <span class="math inline">\(\zeta&gt;1\)</span>, then the characteristic equation has two distinct real negative roots. More explicitly, the poles are <span class="math display">\[p_{1,2}=-\omega_n\left(\zeta \mp \sqrt{\zeta^2-1}\right), \qquad \zeta&gt;1.\]</span> Hence, the poles lie at separate locations on the negative real axis. The response is non-oscillatory because there is no imaginary part, but it is usually slower than the critically damped response because the slower real pole dominates the tail of the transient. Figure <a href="#fig:overdamped_response_and_poles" data-reference-type="ref" data-reference="fig:overdamped_response_and_poles">1.6</a> shows the unit-step response and the corresponding pole locations.</p>
+<figure id="fig:overdamped_response_and_poles" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_08.png" style="max-width:85%;" />
+<figcaption>Overdamped second-order system: non-oscillatory unit-step response and two distinct real negative poles</figcaption>
+</figure>
+<h4 class="unnumbered" id="unstable-system-zeta0">Unstable system <span class="math inline">\((\zeta&lt;0)\)</span></h4>
+<p>Within the standard second-order form with <span class="math inline">\(\omega_n&gt;0\)</span>, a negative damping ratio gives poles with positive real part, so the response grows with time and the system is unstable.</p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Effect of damping ratio on pole locations</div>
+<p>Changing <span class="math inline">\(\zeta\)</span> moves the poles through a sequence of qualitatively different cases. At <span class="math inline">\(\zeta=0\)</span>, the poles lie on the imaginary axis and the response does not decay. For <span class="math inline">\(0&lt;\zeta&lt;1\)</span>, the poles are complex conjugates in the left-half plane and the response oscillates with decaying amplitude. At <span class="math inline">\(\zeta=1\)</span>, the poles meet as a repeated real pole. For <span class="math inline">\(\zeta&gt;1\)</span>, they split into two distinct negative real poles and the response remains non-oscillatory.</p>
+</div>
+<h3 id="step-response-of-the-standard-second-order-system">Step response of the standard second-order system</h3>
+<p>Consider the unit-step input <span class="math display">\[u(t)=u_0(t),
+\qquad
+U(s)=\frac{1}{s}.\]</span> For the system <a href="#eq:standard_second_order_tf" data-reference-type="eqref" data-reference="eq:standard_second_order_tf">[eq:standard_second_order_tf]</a>, <span class="math display">\[Y(s)=\frac{K\omega_n^2}{s\left(s^2+2\zeta\omega_n s+\omega_n^2\right)}.\]</span></p>
+<p>The exact time-domain expression depends on <span class="math inline">\(\zeta\)</span>, but the final value is simple: for a stable standard second-order system and a unit-step input, <span class="math inline">\(y(\infty)=K\)</span>.</p>
+<h4 class="unnumbered" id="undamped-case-zeta0">Undamped case <span class="math inline">\((\zeta=0)\)</span></h4>
+<p>When <span class="math inline">\(\zeta=0\)</span>, the standard second-order transfer function <span class="math display">\[G(s)=\frac{K\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}\]</span> reduces to <span class="math display">\[\begin{equation}
+    G(s)=\frac{K\omega_n^2}{s^2+\omega_n^2}.
+    \label{eq:undamped_second_order_tf}
+\end{equation}\]</span></p>
+<p>For a unit-step input, <span class="math display">\[U(s)=\frac{1}{s},\]</span> so the output in the Laplace domain is <span class="math display">\[Y(s)=G(s)U(s)
+=\frac{K\omega_n^2}{s(s^2+\omega_n^2)}.\]</span></p>
+<p>Using partial fractions, write <span class="math display">\[\frac{K\omega_n^2}{s(s^2+\omega_n^2)}
+=
+\frac{A}{s}+\frac{Bs+C}{s^2+\omega_n^2}.\]</span> Multiplying through by <span class="math inline">\(s(s^2+\omega_n^2)\)</span> gives <span class="math display">\[K\omega_n^2=A(s^2+\omega_n^2)+(Bs+C)s.\]</span> Expanding, <span class="math display">\[K\omega_n^2=(A+B)s^2+Cs+A\omega_n^2.\]</span> Equating coefficients yields <span class="math display">\[A+B=0,\qquad C=0,\qquad A\omega_n^2=K\omega_n^2.\]</span> Hence <span class="math display">\[A=K,\qquad B=-K,\qquad C=0.\]</span> Therefore, <span class="math display">\[Y(s)=\frac{K}{s}-\frac{Ks}{s^2+\omega_n^2}.\]</span></p>
+<p>Taking the inverse Laplace transform, <span class="math display">\[\begin{equation}
+    y(t)=K\left(1-\cos \omega_n t\right), \qquad t\ge 0.
+    \label{eq:undamped_step_response}
+\end{equation}\]</span></p>
+<p>This response oscillates indefinitely because there is no damping term to dissipate energy. For a unit-step input, the output oscillates about the level <span class="math inline">\(K\)</span>, but it never settles to that value.</p>
+<h4 class="unnumbered" id="underdamped-case-0zeta1">Underdamped case <span class="math inline">\((0&lt;\zeta&lt;1)\)</span></h4>
+<p>This is the most important case in control applications. The unit-step response is <span class="math display">\[\begin{equation}
+    y(t)=K\left[1-e^{-\zeta\omega_n t}
+    \left(
+    \cos(\omega_d t)
+    +\frac{\zeta}{\sqrt{1-\zeta^2}}\sin(\omega_d t)
+    \right)\right], \qquad t\ge 0,
+    \label{eq:step_response_underdamped}
+\end{equation}\]</span> where <span class="math display">\[\omega_d=\omega_n\sqrt{1-\zeta^2}.\]</span></p>
+<p>An equivalent form is <span class="math display">\[\begin{equation}
+    y(t)=K\left[1-\frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}
+    \sin(\omega_d t+\phi)\right], \qquad
+    \phi=\arccos(\zeta).
+    \label{eq:step_response_underdamped_alt}
+\end{equation}\]</span></p>
+<p>The expression has two parts: an oscillatory term at frequency <span class="math inline">\(\omega_d\)</span>, and an exponential envelope <span class="math inline">\(e^{-\zeta\omega_n t}\)</span> that gradually removes the oscillation. This is why the response can overshoot and still settle to <span class="math inline">\(K\)</span> in the long run.</p>
+<h4 class="unnumbered" id="critically-damped-case-zeta1">Critically damped case <span class="math inline">\((\zeta=1)\)</span></h4>
+<p>For <span class="math inline">\(\zeta=1\)</span>, the unit-step response is <span class="math display">\[\begin{equation}
+    y(t)=K\left[1-e^{-\omega_n t}(1+\omega_n t)\right], \qquad t\ge 0.
+    \label{eq:step_response_critical}
+\end{equation}\]</span></p>
+<h4 class="unnumbered" id="overdamped-case-zeta1">Overdamped case <span class="math inline">\((\zeta&gt;1)\)</span></h4>
+<p>For <span class="math inline">\(\zeta&gt;1\)</span>, the poles are real and distinct: <span class="math inline">\(p_{1,2} = -\zeta\omega_n \pm \omega_n\sqrt{\zeta^2-1}\)</span>. The unit-step response is a sum of two decaying exponentials: <span class="math display">\[\begin{equation}
+    y(t)=K\left[1-c_1 e^{p_1 t}-c_2 e^{p_2 t}\right], \qquad t\ge 0,
+    \label{eq:step_response_overdamped}
+\end{equation}\]</span> where the constants are <span class="math display">\[c_1 = \frac{p_2}{p_2 - p_1}, \qquad c_2 = \frac{-p_1}{p_2 - p_1}.\]</span> The response is non-oscillatory. The pole closer to the imaginary axis (the “slow” pole) dominates the settling behaviour.</p>
+<p>The most widely used transient-response formulae for overshoot, peak time, rise time, and settling time are normally stated for the underdamped case <span class="math inline">\(0&lt;\zeta&lt;1\)</span>, because that is the case in which these quantities are most informative.</p>
+<h3 id="transient-response-characteristics">Transient-response characteristics</h3>
+<p>For underdamped second-order systems, the following quantities are especially important.</p>
+<h4 class="unnumbered" id="peak-time">Peak time</h4>
+<p>The peak time is the time taken for the response to reach its first maximum value. It is given by <span class="math display">\[\begin{equation}
+    t_p=\frac{\pi}{\omega_d}
+    =\frac{\pi}{\omega_n\sqrt{1-\zeta^2}}.
+    \label{eq:peak_time}
+\end{equation}\]</span></p>
+<h4 class="unnumbered" id="percentage-overshoot">Percentage overshoot</h4>
+<p>The overshoot is the amount by which the response exceeds the final value, expressed as a percentage. For an underdamped second-order system <span class="math inline">\((0&lt;\zeta&lt;1)\)</span>, it is given by <span class="math display">\[\begin{equation}
+    \%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.
+    \label{eq:percent_overshoot}
+\end{equation}\]</span></p>
+<p>This expression shows that the overshoot depends only on the damping ratio <span class="math inline">\(\zeta\)</span>. In particular, it decreases monotonically as <span class="math inline">\(\zeta\)</span> increases, as shown in Figure <a href="#fig:overshoot_vs_zeta" data-reference-type="ref" data-reference="fig:overshoot_vs_zeta">1.7</a>.</p>
+<p>In design problems, however, the situation is often reversed. A designer may begin with a transient-response specification such as <span class="math display">\[\%OS \leq 10\%\]</span> or <span class="math display">\[\%OS \leq 5\%,\]</span> and must then determine the damping ratio required to satisfy that specification. Rearranging <a href="#eq:percent_overshoot" data-reference-type="eqref" data-reference="eq:percent_overshoot">[eq:percent_overshoot]</a> gives the corresponding formula for <span class="math inline">\(\zeta\)</span>.</p>
+<p>Let <span class="math display">\[M_p=\frac{\%OS}{100}.\]</span> Then <span class="math display">\[M_p=e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.\]</span> Taking natural logarithms, <span class="math display">\[\ln(M_p)=-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}.\]</span> Solving for <span class="math inline">\(\zeta\)</span> yields <span class="math display">\[\begin{equation}
+    \zeta
+    =
+    \frac{-\ln\!\left(\frac{\%OS}{100}\right)}
+    {\sqrt{\pi^2+\left[\ln\!\left(\frac{\%OS}{100}\right)\right]^2}}.
+    \label{eq:zeta_from_percent_overshoot}
+\end{equation}\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The formula <span class="math display">\[\%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}\]</span> is mainly used for <strong>analysis</strong>, whereas <span class="math display">\[\zeta
+    =
+    \frac{-\ln\!\left(\frac{\%OS}{100}\right)}
+    {\sqrt{\pi^2+\left[\ln\!\left(\frac{\%OS}{100}\right)\right]^2}}\]</span> is especially useful for <strong>design</strong>, when the overshoot specification is known in advance.</p>
+</div>
+<figure id="fig:overshoot_vs_zeta" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_09.png" style="max-width:85%;" />
+<figcaption>Percentage overshoot as a function of damping ratio for an underdamped second-order system</figcaption>
+</figure>
+<p>Figure <a href="#fig:overshoot_vs_zeta" data-reference-type="ref" data-reference="fig:overshoot_vs_zeta">1.7</a> shows that the percentage overshoot drops rapidly as the damping ratio increases. Small values of <span class="math inline">\(\zeta\)</span> lead to highly oscillatory responses with large overshoot, whereas moderate damping significantly reduces the first peak. For example, <span class="math inline">\(\zeta\approx 0.6\)</span> gives an overshoot of less than <span class="math inline">\(10\%\)</span>, while for <span class="math inline">\(\zeta\)</span> close to <span class="math inline">\(1\)</span> the overshoot approaches zero.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>As <span class="math inline">\(\zeta\)</span> increases, the overshoot decreases. When <span class="math inline">\(\zeta\ge 1\)</span>, the standard second-order step response does not overshoot, because the response is no longer underdamped and becomes non-oscillatory.</p>
+</div>
+<h4 class="unnumbered" id="rise-time">Rise time</h4>
+<p>The <strong>rise time</strong> is taken as the time required for the response to rise from <span class="math inline">\(10\%\)</span> to <span class="math inline">\(90\%\)</span> of its final value. For a standard underdamped second-order system, an exact closed-form expression for this <span class="math inline">\(10\%\)</span>–<span class="math inline">\(90\%\)</span> rise time is not especially convenient. Different textbooks use different empirical approximations. One commonly used approximation, valid reasonably well for <span class="math display">\[0.3 \leq \zeta \leq 0.8,\]</span> is <span class="math display">\[\begin{equation}
+    t_r \approx \frac{2.16\zeta+0.6}{\omega_n}.
+    \label{eq:rise_time_second_order}
+\end{equation}\]</span></p>
+<p>This approximation is particularly useful in preliminary design and analysis, since it relates the rise time directly to the damping ratio <span class="math inline">\(\zeta\)</span> and the undamped natural frequency <span class="math inline">\(\omega_n\)</span>.</p>
+<p>For fixed <span class="math inline">\(\zeta\)</span>, a larger <span class="math inline">\(\omega_n\)</span> reduces the rise time and makes the response faster. For fixed <span class="math inline">\(\omega_n\)</span>, a smaller <span class="math inline">\(\zeta\)</span> usually gives a faster initial rise, but this comes at the cost of more oscillation and overshoot.</p>
+<h4 class="unnumbered" id="settling-time">Settling time</h4>
+<p>Using the <span class="math inline">\(2\%\)</span> criterion, the settling time is commonly approximated by <span class="math display">\[\begin{equation}
+    t_s \approx \frac{4}{\zeta\omega_n}.
+    \label{eq:settling_time_second_order}
+\end{equation}\]</span></p>
+<p>For the <span class="math inline">\(5\%\)</span> criterion, a common approximation is <span class="math display">\[\begin{equation}
+    t_s \approx \frac{3}{\zeta\omega_n}.
+    \label{eq:settling_time_second_order_5percent}
+\end{equation}\]</span></p>
+<p>For an underdamped second-order system, the main approximations used in this chapter are <span class="math display">\[\omega_d=\omega_n\sqrt{1-\zeta^2},\qquad
+t_p=\frac{\pi}{\omega_d},\qquad
+\%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}},\]</span> <span class="math display">\[t_r \approx \frac{2.16\zeta+0.6}{\omega_n}\quad \text{for } 0.3\leq \zeta \leq 0.8,\qquad
+t_s \approx \frac{4}{\zeta\omega_n}\quad \text{(2\% criterion)}.\]</span></p>
+<p>Figure <a href="#fig:underdamped_transient_specs" data-reference-type="ref" data-reference="fig:underdamped_transient_specs">1.8</a> illustrates the main transient-response characteristics of an underdamped second-order system. In particular, it shows the rise time <span class="math inline">\(t_r\)</span>, the peak time <span class="math inline">\(t_p\)</span>, the percentage overshoot, and the settling time <span class="math inline">\(t_s\)</span> based on the <span class="math inline">\(2\%\)</span> criterion.</p>
+<figure id="fig:underdamped_transient_specs" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_10.png" style="max-width:85%;" />
+<figcaption>Transient-response characteristics of an underdamped second-order step response, showing the rise time <span class="math inline">\(t_r=t_{90}-t_{10}\)</span>, peak time <span class="math inline">\(t_p\)</span>, settling time <span class="math inline">\(t_s\)</span>, and percentage overshoot <span class="math inline">\(\%\!OS\)</span>. The <span class="math inline">\(2\%\)</span> settling band is visually enlarged for clarity.</figcaption>
+</figure>
+<h3 id="effect-of-pole-locations-on-transient-response">Effect of pole locations on transient response</h3>
+<p>The poles provide immediate insight into the response characteristics.</p>
+<p>For underdamped systems, poles are located at <span class="math display">\[s=-\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2}.\]</span></p>
+<figure id="fig:second_order_splane_geometry">
+
+<img src="figures/ch06_tikz_11.png" style="max-width:85%;" />
+<figcaption>Geometric interpretation of the dominant poles of an underdamped second-order system on the <span class="math inline">\(s\)</span>-plane</figcaption>
+</figure>
+<p>Hence:</p>
+<ul>
+<li><p>the real part <span class="math inline">\(-\zeta\omega_n\)</span> governs the rate of decay,</p></li>
+<li><p>the imaginary part <span class="math inline">\(\omega_d\)</span> governs the oscillation frequency.</p></li>
+</ul>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation</div>
+<p><span>How <span class="math inline">\(\zeta\)</span> and <span class="math inline">\(\omega_n\)</span> affect the response</span> Increasing <span class="math inline">\(\omega_n\)</span> generally makes the response faster because the poles move further from the origin. Increasing <span class="math inline">\(\zeta\)</span> reduces oscillation and overshoot because the poles move toward the negative real axis. Very small <span class="math inline">\(\zeta\)</span> gives a lightly damped response with large overshoot, while <span class="math inline">\(\zeta=1\)</span> gives the fastest non-oscillatory response in the standard second-order family.</p>
+</div>
+<p>Figure <a href="#fig:second_order_splane_geometry" data-reference-type="ref" data-reference="fig:second_order_splane_geometry">1.9</a> shows the pole locations and their geometric relations with transient-response characteristics. Figure <a href="#fig:pole_location_comparison_matrix" data-reference-type="ref" data-reference="fig:pole_location_comparison_matrix">1.10</a> compares these effects for three different families of pole motions. When the poles move horizontally with a constant imaginary part, the oscillation frequency remains unchanged because <span class="math inline">\(\omega_d\)</span> is fixed, and therefore the peak time stays the same, while the settling time and overshoot vary according to the changing real part.</p>
+<p>When the poles move vertically with a constant real part, the exponential decay rate remains unchanged, so the systems have essentially the same settling behaviour, whereas the oscillation frequency, peak time, and overshoot change as the imaginary part varies.</p>
+<p>Finally, when the poles move along a ray from the origin corresponding to constant damping ratio, the systems have the same damping ratio and therefore exhibit similar overshoot and overall oscillatory character, while their speed changes with distance from the origin: moving further from the origin increases <span class="math inline">\(\omega_n\)</span>, making both the peak time and settling time smaller.</p>
+<figure id="fig:pole_location_comparison_matrix" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_12.png" style="max-width:85%;" />
+<figcaption>Comparison of transient responses and corresponding pole motions for second-order systems: same real part, same imaginary part, and same damping ratio.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p><span>Identifying <span class="math inline">\(\zeta\)</span>, <span class="math inline">\(\omega_n\)</span>, and the poles</span> Consider the system <span class="math display">\[G(s)=\frac{25}{s^2+4s+25}.\]</span> Find:</p>
+<ol>
+<li><p>the damping ratio,</p></li>
+<li><p>the undamped natural frequency,</p></li>
+<li><p>the damped natural frequency,</p></li>
+<li><p>the poles,</p></li>
+<li><p>the type of transient response.</p></li>
+</ol>
+<p>Compare the denominator <span class="math display">\[s^2+4s+25\]</span> with the standard form <span class="math display">\[s^2+2\zeta\omega_n s+\omega_n^2.\]</span></p>
+<p>Equating coefficients gives <span class="math display">\[\omega_n^2=25
+    \quad \Rightarrow \quad
+    \omega_n=5 \ \text{rad/s},\]</span> and <span class="math display">\[2\zeta\omega_n=4.\]</span> Substituting <span class="math inline">\(\omega_n=5\)</span>, <span class="math display">\[2\zeta(5)=4
+    \quad \Rightarrow \quad
+    \zeta=0.4.\]</span></p>
+<p>The damped natural frequency is <span class="math display">\[\omega_d=\omega_n\sqrt{1-\zeta^2}
+    =5\sqrt{1-0.4^2}
+    =5\sqrt{0.84}
+    \approx 4.583 \ \text{rad/s}.\]</span></p>
+<p>The poles are <span class="math display">\[s=-\zeta\omega_n \pm j\omega_d
+    =-2 \pm j4.583.\]</span></p>
+<p>Since <span class="math inline">\(0&lt;\zeta&lt;1\)</span>, the system is underdamped. Therefore the response is oscillatory with decaying amplitude.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Computing percentage overshoot</div>
+<p>A second-order system has damping ratio <span class="math inline">\(\zeta=0.5\)</span>. Determine the percentage overshoot.</p>
+<p>Using <span class="math display">\[\%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}},\]</span> we obtain <span class="math display">\[\%OS = 100\,e^{-\frac{0.5\pi}{\sqrt{1-0.5^2}}}.\]</span></p>
+<p>Since <span class="math display">\[\sqrt{1-0.25}= 0.8660,\]</span> <span class="math display">\[\%OS \approx 100\,e^{-\frac{0.5\pi}{0.8660}}
+    =100\,e^{-1.8138}
+    = 16.3\%.\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Computing peak time, rise time, and settling time</div>
+<p>Consider the standard second-order system with <span class="math inline">\(\zeta=0.3,\)</span> and <span class="math inline">\(\omega_n=8 \; \text{rad/s}\)</span>.</p>
+<p>Find:</p>
+<ol>
+<li><p>the damped natural frequency,</p></li>
+<li><p>the peak time,</p></li>
+<li><p>the approximate rise time,</p></li>
+<li><p>the approximate settling time using the <span class="math inline">\(2\%\)</span> criterion.</p></li>
+</ol>
+<p>First, <span class="math display">\[\omega_d=\omega_n\sqrt{1-\zeta^2}
+    =8\sqrt{1-0.3^2}
+    =8\sqrt{0.91}
+    \approx 7.631 \ \text{rad/s}.\]</span></p>
+<p>Thus, <span class="math display">\[\boxed{\omega_d \approx 7.631 \ \text{rad/s}}.\]</span></p>
+<p>The peak time is <span class="math display">\[t_p=\frac{\pi}{\omega_d}
+    =\frac{\pi}{7.631}
+    \approx 0.412 \ \text{s}.\]</span></p>
+<p>Since <span class="math inline">\(0.3 \leq \zeta \leq 0.8\)</span>, we may use the rise-time approximation <span class="math display">\[t_r \approx \frac{2.16\zeta+0.6}{\omega_n}.\]</span> Substituting <span class="math inline">\(\zeta=0.3\)</span> and <span class="math inline">\(\omega_n=8\)</span>, <span class="math display">\[t_r \approx \frac{2.16(0.3)+0.6}{8}
+    =\frac{0.648+0.6}{8}
+    =\frac{1.248}{8}
+    =0.156 \ \text{s}.\]</span></p>
+<p>Hence, <span class="math display">\[\boxed{t_r \approx 0.156 \ \text{s}}.\]</span></p>
+<p>The settling time is <span class="math display">\[t_s \approx \frac{4}{\zeta\omega_n}
+    =\frac{4}{0.3\times 8}
+    =\frac{4}{2.4}
+    \approx 1.667 \ \text{s}.\]</span></p>
+<p>Therefore, <span class="math display">\[\boxed{t_p \approx 0.412 \ \text{s}},\qquad
+    \boxed{t_r \approx 0.156 \ \text{s}},\qquad
+    \boxed{t_s \approx 1.667 \ \text{s}}.\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p><span>Finding <span class="math inline">\(\zeta\)</span> from a specified overshoot</span> A designer requires that the percentage overshoot of a closed-loop second-order system should not exceed <span class="math inline">\(10\%\)</span>. Estimate the required damping ratio.</p>
+<p>We use <span class="math display">\[10 = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.\]</span> Thus <span class="math display">\[0.1=e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.\]</span> Taking natural logarithms, <span class="math display">\[\ln(0.1)=-2.3026.\]</span> Hence <span class="math display">\[-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}=-2.3026.\]</span> Solving gives approximately <span class="math display">\[\zeta \approx 0.591.\]</span></p>
+<p>Hence a damping ratio of about <span class="math display">\[\boxed{\zeta \approx 0.59}\]</span> is required to keep the overshoot near or below <span class="math inline">\(10\%\)</span>.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Classifying the response from pole locations</div>
+<p>The poles of a second-order system are <span class="math display">\[s=-3\pm j4.\]</span> Discuss the likely transient response.</p>
+<p>The poles are complex conjugates in the left-half plane. Therefore the system is stable and underdamped. The real part <span class="math inline">\(-3\)</span> indicates exponential decay, while the imaginary part <span class="math inline">\(4\)</span> indicates oscillation. Hence the transient response will:</p>
+<ul>
+<li><p>oscillate,</p></li>
+<li><p>exhibit overshoot,</p></li>
+<li><p>decay to the steady-state value as time increases.</p></li>
+</ul>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Controller design from settling-time and overshoot specifications</div>
+<p>Consider the unity-feedback system shown below, where <span class="math display">\[C(s)=\frac{K}{s+a},
+    \qquad
+    G(s)=\frac{1}{s+2}.\]</span></p>
+<p>Determine the controller parameters <span class="math inline">\(K\)</span> and <span class="math inline">\(a\)</span> such that the closed-loop system satisfies <span class="math display">\[{T_s}^{5\%}\leq 1~\text{s},
+    \qquad
+    \%OS \leq 10\%.\]</span> Then verify the design in MATLAB.</p>
+<p>The open-loop transfer function is <span class="math display">\[C(s)G(s)=\frac{K}{(s+a)(s+2)}.\]</span> With unity feedback, the closed-loop transfer function becomes <span class="math display">\[\begin{align}
+        G_{cl}(s)
+        &amp;=\frac{C(s)G(s)}{1+C(s)G(s)}
+        =\frac{\dfrac{K}{(s+a)(s+2)}}{1+\dfrac{K}{(s+a)(s+2)}}
+        \nonumber\\
+        &amp;=\frac{K}{s^2+(a+2)s+(2a+K)}.
+        \label{eq:example_cl_tf}
+\end{align}\]</span></p>
+<p>We compare the <em>denominator</em> with the standard second-order characteristic polynomial <span class="math display">\[s^2+2\zeta\omega_n s+\omega_n^2.\]</span> Hence, by equating coefficients, <span class="math display">\[\begin{equation}
+        2\zeta\omega_n=a+2,
+        \qquad
+        \omega_n^2=2a+K.
+        \label{eq:coeff_matching_example}
+\end{equation}\]</span></p>
+<p><strong>Step 1: Use the settling-time specification.</strong></p>
+<p>For the <span class="math inline">\(5\%\)</span> settling-time criterion, <span class="math display">\[{T_s}^{5\%}\approx \frac{3}{\zeta\omega_n}.\]</span> The requirement <span class="math inline">\({T_s}^{5\%}\leq 1\)</span> gives <span class="math display">\[\frac{3}{\zeta\omega_n}\leq 1
+    \qquad \Rightarrow \qquad
+    \zeta\omega_n \geq 3.\]</span> For a design on the specification boundary, we choose <span class="math display">\[\begin{equation}
+        \zeta\omega_n=3.
+        \label{eq:zeta_wn_eq_3}
+\end{equation}\]</span></p>
+<p><strong>Step 2: Use the overshoot specification.</strong></p>
+<p>For a standard underdamped second-order system, <span class="math display">\[\%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.\]</span> Setting <span class="math inline">\(\%OS=10\%\)</span> gives the minimum damping ratio required: <span class="math display">\[\zeta
+    =
+    \frac{-\ln(0.1)}{\sqrt{\pi^2+\ln^2(0.1)}}
+    \approx 0.591.\]</span> Thus any <span class="math display">\[\zeta \geq 0.591\]</span> satisfies the overshoot requirement. For convenience, choose <span class="math display">\[\begin{equation}
+        \zeta=0.6.
+        \label{eq:zeta_choice_example}
+\end{equation}\]</span></p>
+<p><strong>Step 3: Determine <span class="math inline">\(\omega_n\)</span>.</strong></p>
+<p>From <a href="#eq:zeta_wn_eq_3" data-reference-type="eqref" data-reference="eq:zeta_wn_eq_3">[eq:zeta_wn_eq_3]</a>, <span class="math display">\[\zeta\omega_n=3.\]</span> With <span class="math inline">\(\zeta=0.6\)</span>, <span class="math display">\[0.6\,\omega_n=3
+    \qquad \Rightarrow \qquad
+    \omega_n=5~\text{rad/s}.\]</span></p>
+<p><strong>Step 4: Match coefficients to find <span class="math inline">\(a\)</span> and <span class="math inline">\(K\)</span>.</strong></p>
+<p>From <a href="#eq:coeff_matching_example" data-reference-type="eqref" data-reference="eq:coeff_matching_example">[eq:coeff_matching_example]</a>, <span class="math display">\[a+2=2\zeta\omega_n=2(0.6)(5)=6.\]</span> Hence <span class="math display">\[a=4.\]</span> Also, <span class="math display">\[2a+K=\omega_n^2=25.\]</span> Substituting <span class="math inline">\(a=4\)</span>, <span class="math display">\[2(4)+K=25
+    \qquad \Rightarrow \qquad
+    K=17.\]</span></p>
+<p>Therefore, the controller parameters are <span class="math display">\[\boxed{a=4},
+    \qquad
+    \boxed{K=17}.\]</span></p>
+<p>The resulting controller is <span class="math display">\[\boxed{C(s)=\frac{17}{s+4}}.\]</span></p>
+<p><strong>Step 5: Write the closed-loop transfer function.</strong></p>
+<p>Substituting <span class="math inline">\(a=4\)</span> and <span class="math inline">\(K=17\)</span> into <a href="#eq:example_cl_tf" data-reference-type="eqref" data-reference="eq:example_cl_tf">[eq:example_cl_tf]</a>, <span class="math display">\[G_{cl}(s)=\frac{17}{s^2+6s+25}.\]</span> The denominator matches the standard second-order characteristic polynomial with <span class="math display">\[\omega_n=5,
+    \qquad
+    \zeta=0.6.\]</span> Therefore, the pole-based transient characteristics are expected to be <span class="math display">\[{T_s}^{5\%}\approx \frac{3}{\zeta\omega_n}
+    =\frac{3}{0.6\times 5}
+    =1~\text{s},\]</span> and <span class="math display">\[\%OS
+    =
+    100\,e^{-\frac{0.6\pi}{\sqrt{1-0.6^2}}}
+    \approx 9.48\%.\]</span> So the settling-time and overshoot specifications are satisfied.</p>
+<p>However, note that the numerator is not equal to <span class="math inline">\(\omega_n^2\)</span>, so the closed-loop transfer function is not exactly the canonical standard second-order form with unit DC gain. In fact, <span class="math display">\[G_{cl}(0)=\frac{17}{25},\]</span> so a unit-step input produces a final value of <span class="math inline">\(17/25\)</span>, not <span class="math inline">\(1\)</span>.</p>
+<p><strong>MATLAB verification</strong></p>
+<p>The MATLAB script Listing <a href="#lst:controller_design_verification" data-reference-type="ref" data-reference="lst:controller_design_verification">[lst:controller_design_verification]</a> can be used to verify the design. The MATLAB results should confirm that the closed-loop system has a <span class="math inline">\(5\%\)</span> settling time close to <span class="math inline">\(1\)</span> second and an overshoot below <span class="math inline">\(10\%\)</span>.</p>
+</div>
+<div class="listing">
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+
+K = 17
+a = 4
+
+Gc = K/(s+a)
+G  = 1/(s+2)
+
+T = ctrl.feedback(Gc*G, 1)
+
+print('Closed-loop transfer function:')
+print(T)
+
+_resp = ctrl.step_response(T)
+
+
+t, y = _resp.time, _resp.outputs
+plt.plot(t, y)
+plt.grid(True)
+plt.title('Closed-Loop Step Response')
+plt.xlabel('Time (s)')
+plt.ylabel('Output')
+plt.show()
+
+info = ctrl.step_info(T)
+print('Step response information:')
+for key, val in info.items():
+    print(f"  {key}: {val:.4f}" if isinstance(val, float) else f"  {key}: {val}")
+
+zeta = 0.6
+OS = 100*np.exp(-(zeta*np.pi)/np.sqrt(1-zeta**2))
+print("Predicted overshoot = %.2f %%" % OS)</code></pre>
+</div>
+<pre class="matlab"><code>clc; clear; close all;
+        
+        s = tf('s');
+        
+        K = 17;
+        a = 4;
+        
+        Gc = K/(s+a);
+        G  = 1/(s+2);
+        
+        T = feedback(Gc*G,1);
+        
+        disp('Closed-loop transfer function:')
+        T
+        
+        figure;
+        step(T);
+        grid on;
+        title('Closed-Loop Step Response');
+        xlabel('Time (s)');
+        ylabel('Output');
+        
+        info = stepinfo(T,'SettlingTimeThreshold',0.05);
+        disp('Step response information (5% settling criterion):')
+        disp(info)
+        
+        zeta = 0.6;
+        OS = 100*exp(-(zeta*pi)/sqrt(1-zeta^2));
+        fprintf('Predicted overshoot = %.2f %%\n', OS);</code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Design of a rotational second-order system</div>
+<p>Consider the rotational mechanical system shown in Figure <a href="#fig:torsional_system_design" data-reference-type="ref" data-reference="fig:torsional_system_design">1.11</a>, where the torsional stiffness is <span class="math display">\[K=5~\text{N}\,\text{m/rad}.\]</span> Determine the inertia <span class="math inline">\(J\)</span> and damping coefficient <span class="math inline">\(D\)</span> such that the response to a unit-step torque input <span class="math inline">\(T(t)\)</span> has <span class="math display">\[\%OS=20\%,
+    \qquad
+    T_s^{2\%}=2~\text{s}.\]</span></p>
+<p>Let <span class="math inline">\(\theta(t)\)</span> denote the angular displacement. The equation of motion of the rotational spring–mass–damper system is <span class="math display">\[\begin{equation}
+        J\ddot{\theta}(t)+D\dot{\theta}(t)+K\theta(t)=T(t).
+        \label{eq:rotational_system_eom}
+\end{equation}\]</span></p>
+<p>Taking the Laplace transform under zero initial conditions gives <span class="math display">\[(Js^2+Ds+K)\Theta(s)=T(s).\]</span> Hence the transfer function from input torque to angular displacement is <span class="math display">\[\begin{equation}
+        \frac{\Theta(s)}{T(s)}=\frac{1}{Js^2+Ds+K}.
+        \label{eq:rotational_tf}
+\end{equation}\]</span></p>
+<p>Dividing numerator and denominator by <span class="math inline">\(J\)</span>, <span class="math display">\[\frac{\Theta(s)}{T(s)}
+    =
+    \frac{1/J}{s^2+\dfrac{D}{J}s+\dfrac{K}{J}}.\]</span> Comparing the denominator with the standard second-order form <span class="math display">\[s^2+2\zeta\omega_n s+\omega_n^2,\]</span> we identify <span class="math display">\[\begin{equation}
+        2\zeta\omega_n=\frac{D}{J},
+        \qquad
+        \omega_n^2=\frac{K}{J}.
+        \label{eq:rotational_parameter_matching}
+\end{equation}\]</span></p>
+<p><strong>Step 1: Find the damping ratio from the overshoot specification.</strong></p>
+<p>For an underdamped second-order system, <span class="math display">\[\%OS = 100\,e^{-\frac{\zeta\pi}{\sqrt{1-\zeta^2}}}.\]</span> With <span class="math inline">\(\%OS=20\%\)</span>, <span class="math display">\[\zeta=
+    \frac{-\ln(0.2)}{\sqrt{\pi^2+\ln^2(0.2)}}.\]</span> Since <span class="math display">\[\ln(0.2)\approx -1.6094,\]</span> we obtain <span class="math display">\[\zeta \approx \frac{1.6094}{\sqrt{\pi^2+1.6094^2}}
+    \approx 0.456.\]</span> Thus, <span class="math display">\[\boxed{\zeta \approx 0.456}.\]</span></p>
+<p><strong>Step 2: Use the settling-time specification to find <span class="math inline">\(\omega_n\)</span>.</strong></p>
+<p>For the <span class="math inline">\(2\%\)</span> settling-time criterion, <span class="math display">\[T_s^{2\%}\approx \frac{4}{\zeta\omega_n}.\]</span> Given that <span class="math inline">\(T_s^{2\%}=2~\text{s}\)</span>, <span class="math display">\[2=\frac{4}{\zeta\omega_n}
+    \qquad \Rightarrow \qquad
+    \zeta\omega_n=2.\]</span> Hence <span class="math display">\[\omega_n=\frac{2}{\zeta}
+    =\frac{2}{0.456}
+    \approx 4.386~\text{rad/s}.\]</span> Therefore, <span class="math display">\[\boxed{\omega_n \approx 4.386~\text{rad/s}}.\]</span></p>
+<p><strong>Step 3: Determine the inertia <span class="math inline">\(J\)</span>.</strong></p>
+<p>From <a href="#eq:rotational_parameter_matching" data-reference-type="eqref" data-reference="eq:rotational_parameter_matching">[eq:rotational_parameter_matching]</a>, <span class="math display">\[\omega_n^2=\frac{K}{J}
+    \qquad \Rightarrow \qquad
+    J=\frac{K}{\omega_n^2}.\]</span> Substituting <span class="math inline">\(K=5\)</span> and <span class="math inline">\(\omega_n\approx 4.386\)</span>, <span class="math display">\[J=\frac{5}{(4.386)^2}= 0.260~\text{kg}\,\text{m}^2.\]</span></p>
+<p><strong>Step 4: Determine the damping coefficient <span class="math inline">\(D\)</span>.</strong></p>
+<p>Again from <a href="#eq:rotational_parameter_matching" data-reference-type="eqref" data-reference="eq:rotational_parameter_matching">[eq:rotational_parameter_matching]</a>, <span class="math display">\[2\zeta\omega_n=\frac{D}{J}.\]</span> Since <span class="math inline">\(\zeta\omega_n=2\)</span>, <span class="math display">\[2\zeta\omega_n=4.\]</span> Thus <span class="math inline">\(D=4J\)</span>.</p>
+<p>Substituting <span class="math inline">\(J= 0.260\)</span>, <span class="math display">\[D= 4(0.260)=1.040~\text{N}\,\text{m}\,\text{s/rad}.\]</span> Hence, <span class="math display">\[\boxed{D = 1.04~\text{N}\,\text{m}\,\text{s/rad}}.\]</span></p>
+<p><strong>Check of the design</strong></p>
+<p>Using these values, <span class="math display">\[\omega_n=\sqrt{\frac{K}{J}}
+    =\sqrt{\frac{5}{0.260}}
+    \approx 4.386~\text{rad/s},\]</span> and <span class="math display">\[\zeta=\frac{D}{2\sqrt{KJ}}
+    =\frac{1.04}{2\sqrt{5\times 0.260}}
+    \approx 0.456.\]</span> Therefore, <span class="math display">\[\%OS \approx 20\%,
+    \qquad
+    {T_s}^{2\%}\approx \frac{4}{\zeta\omega_n}
+    =\frac{4}{2}
+    =2~\text{s},\]</span> which confirms that the specifications are satisfied.</p>
+</div>
+<figure id="fig:torsional_system_design" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_14.png" style="max-width:85%;" />
+<figcaption>Rotational spring–inertia–damper system driven by the input torque <span class="math inline">\(T(t)\)</span></figcaption>
+</figure>
+<h2 id="sec:steady_state_error">Steady-State Error</h2>
+<p>The transient-response measures above describe how a system reaches its final value. Equally important is how <em>accurate</em> that final value is. The sse measures the remaining difference between the reference input and the output after transients have died away.</p>
+<h3 id="why-steady-state-error-matters">Why steady-state error matters</h3>
+<p>A system may be stable with acceptable transient behaviour, yet settle with a significant offset from the desired value.</p>
+<ul>
+<li><p>In a temperature-control system, the user may request <span class="math inline">\(22^\circ\text{C}\)</span>, but the room may settle at <span class="math inline">\(20^\circ\text{C}\)</span>. The system is stable, yet it has a steady-state error.</p></li>
+<li><p>In a cruise-control system, the vehicle may settle below the commanded speed when travelling uphill if the controller cannot remove the offset.</p></li>
+<li><p>In a position-control system, a motor may move close to the demanded angle but stop short of the exact target.</p></li>
+</ul>
+<h3 id="definition-of-steady-state-error-in-the-time-domain">Definition of steady-state error in the time domain</h3>
+<p>For a unity-feedback system, the tracking error is <span class="math display">\[e(t)=r(t)-y(t),\]</span> where <span class="math inline">\(r(t)\)</span> is the reference input and <span class="math inline">\(y(t)\)</span> is the output. For a non-unity feedback system, the signal entering the summing junction is instead <span class="math display">\[e(t)=r(t)-y_m(t),\]</span> where <span class="math inline">\(y_m(t)\)</span> is the measured output returned by the feedback path. These two definitions coincide only when the feedback path has unity gain.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Steady-state error</div>
+<p>The <strong>steady-state error</strong> is the limiting value of the error signal as time tends to infinity: <span class="math display">\[e_{ss}=\lim_{t\to\infty} e(t),\]</span> provided this limit exists.</p>
+</div>
+<p>If <span class="math inline">\(e_{ss}=0\)</span>, the system tracks the input exactly in steady state. If <span class="math inline">\(e_{ss}\neq 0\)</span>, the system settles with a residual offset. If the limit does not exist, then a constant steady-state error cannot be defined.</p>
+<figure id="fig:steady_state_error_illustration" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_15.png" style="max-width:85%;" />
+<figcaption>Illustration of the tracking error and steady-state error. The reference <span class="math inline">\(r(t)\)</span> is the desired signal, the output <span class="math inline">\(y(t)\)</span> is the actual system response, and the vertical gap between their final values is the steady-state error <span class="math inline">\(e_{ss}\)</span>.</figcaption>
+</figure>
+<p>Figure <a href="#fig:steady_state_error_illustration" data-reference-type="ref" data-reference="fig:steady_state_error_illustration">1.12</a> illustrates the tracking error for the unity-feedback case. The steady-state error is meaningful only if the error signal approaches a constant value; if the system is unstable or oscillates indefinitely, <span class="math inline">\(e_{ss}\)</span> does not exist.</p>
+<h3 id="steady-state-error-in-the-laplace-domain">Steady-state error in the Laplace domain</h3>
+<p>If <span class="math inline">\(E(s)\)</span> is the Laplace transform of <span class="math inline">\(e(t)\)</span>, the final value theorem gives <span class="math display">\[e_{ss}=\lim_{t\to\infty}e(t)=\lim_{s\to 0}sE(s),\]</span> provided the final value theorem is applicable.</p>
+<p>The final value theorem requires that all poles of <span class="math inline">\(sE(s)\)</span> lie in the open left half-plane — in particular, the closed-loop system must be stable.</p>
+<h3 id="error-transfer-function-for-a-feedback-system">Error transfer function for a feedback system</h3>
+<p>Consider the standard feedback system shown in Figure <a href="#fig:error_transfer_feedback" data-reference-type="ref" data-reference="fig:error_transfer_feedback">1.13</a>, with forward transfer function <span class="math inline">\(G(s)\)</span> and feedback transfer function <span class="math inline">\(H(s)\)</span>. Here <span class="math inline">\(E(s)\)</span> denotes the error at the summing junction, namely the difference between the reference and the measured feedback signal <span class="math inline">\(B(s)\)</span>.</p>
+<figure id="fig:error_transfer_feedback" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_16.png" style="max-width:85%;" />
+<figcaption>Standard feedback system showing the reference <span class="math inline">\(R(s)\)</span>, error <span class="math inline">\(E(s)\)</span>, output <span class="math inline">\(Y(s)\)</span>, and feedback signal <span class="math inline">\(B(s)\)</span>. Note that when <span class="math inline">\(H(s)=1\)</span>, the feedback connection is called <em>unity-feedback system</em>.</figcaption>
+</figure>
+<p>Since <span class="math display">\[Y(s)=G(s)E(s),
+\qquad
+B(s)=H(s)Y(s),
+\qquad
+E(s)=R(s)-B(s),\]</span> we obtain <span class="math display">\[E(s)=R(s)-H(s)Y(s)=R(s)-H(s)G(s)E(s).\]</span> Hence, <span class="math display">\[E(s)\bigl(1+G(s)H(s)\bigr)=R(s),\]</span> so <span class="math display">\[\begin{equation}
+    E(s)=\frac{R(s)}{1+G(s)H(s)}.
+    \label{eq:ss_error_general_feedback}
+\end{equation}\]</span></p>
+<p>For the important special case of unity feedback, <span class="math inline">\(H(s)=1\)</span>, this becomes <span class="math display">\[\begin{equation}
+    E(s)=\frac{R(s)}{1+G(s)}.
+    \label{eq:ss_error_unity_feedback}
+\end{equation}\]</span></p>
+<p>Therefore, for a stable unity-feedback system, <span class="math display">\[\begin{equation}
+    e_{ss}=\lim_{s\to 0} s\,\frac{R(s)}{1+G(s)}.
+    \label{eq:ss_error_fvt_unity}
+\end{equation}\]</span></p>
+<h3 id="practical-meaning-for-standard-test-inputs">Practical meaning for standard test inputs</h3>
+<p>The steady-state error depends on both the system and the applied input. The standard test signals are: <span class="math display">\[\text{step: } R(s)=\frac{A}{s},
+\qquad
+\text{ramp: } R(s)=\frac{A}{s^2},
+\qquad
+\text{parabolic: } R(s)=\frac{A}{s^3}.\]</span></p>
+<p>Equivalently, in the time domain these may be written as <span class="math display">\[r(t)=A\,u_0(t),
+\qquad
+r(t)=At\,u_0(t),
+\qquad
+r(t)=\frac{A}{2}t^2\,u_0(t).\]</span></p>
+<ul>
+<li><p>A <strong>step input</strong> models a sudden change in the desired value, such as a new temperature set-point or a new speed command.</p></li>
+<li><p>A <strong>ramp input</strong> models a command that changes at a constant rate, such as a position reference generated by constant desired velocity.</p></li>
+<li><p>A <strong>parabolic input</strong> models an accelerating command.</p></li>
+</ul>
+<div class="examplebox">
+<p><span>Finite steady-state error to a step input</span> Consider a unity-feedback system with forward transfer function <span class="math display">\[G(s)=\frac{10}{s+2}.\]</span> Find the steady-state error at the summing junction for a unit-step input.</p>
+<p>For a unit-step input, <span class="math display">\[R(s)=\frac{1}{s}.\]</span> Since the system has unity feedback, <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}
+    =
+    \frac{\frac{1}{s}}{1+\frac{10}{s+2}}.\]</span> Simplifying, <span class="math display">\[E(s)=\frac{1}{s}\cdot \frac{s+2}{s+12}
+    =
+    \frac{s+2}{s(s+12)}.\]</span> Using the final value theorem, <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s)
+    =
+    \lim_{s\to 0}\frac{s+2}{s+12}
+    =
+    \frac{2}{12}
+    =
+    \frac{1}{6}.\]</span> Hence, <span class="math display">\[e_{ss}=\frac{1}{6}.\]</span></p>
+<p>The system is stable, but it does not remove the final offset completely. In practice, this means that the output settles near the demanded value, but not exactly at it.</p>
+</div>
+<div class="examplebox">
+<p><span>Zero steady-state error to a step input</span> Consider a unity-feedback system with forward transfer function <span class="math display">\[G(s)=\frac{10}{s(s+2)}.\]</span> Find the steady-state error for a unit-step input.</p>
+<p>For a unit-step input, <span class="math display">\[R(s)=\frac{1}{s}.\]</span> Then <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}
+    =
+    \frac{\frac{1}{s}}{1+\frac{10}{s(s+2)}}.\]</span> Simplifying, <span class="math display">\[E(s)=\frac{1}{s}\cdot \frac{s(s+2)}{s(s+2)+10}
+    =
+    \frac{s+2}{s^2+2s+10}.\]</span> Therefore, <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s)
+    =
+    \lim_{s\to 0}\frac{s(s+2)}{s^2+2s+10}
+    =
+    0.\]</span> Hence, <span class="math display">\[e_{ss}=0.\]</span></p>
+<p>The extra pole at the origin in the forward path allows the system to eliminate the steady-state error for a step input.</p>
+</div>
+<div class="examplebox">
+<p><span>Finite steady-state error to a ramp input</span> Consider again the unity-feedback system <span class="math display">\[G(s)=\frac{10}{s(s+2)}.\]</span> Find the steady-state error for a unit-ramp input.</p>
+<p>For a unit-ramp input, <span class="math display">\[R(s)=\frac{1}{s^2}.\]</span> Then <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}
+    =
+    \frac{\frac{1}{s^2}}{1+\frac{10}{s(s+2)}}.\]</span> Simplifying, <span class="math display">\[E(s)=\frac{1}{s^2}\cdot \frac{s(s+2)}{s(s+2)+10}
+    =
+    \frac{s+2}{s\bigl(s^2+2s+10\bigr)}.\]</span> Using the final value theorem, <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s)
+    =
+    \lim_{s\to 0}\frac{s+2}{s^2+2s+10}
+    =
+    \frac{2}{10}
+    =
+    \frac{1}{5}.\]</span> Hence, <span class="math display">\[e_{ss}=\frac{1}{5}.\]</span></p>
+<p>This means that the system cannot follow a ramp input perfectly. It tracks the ramp with a constant long-term lag.</p>
+</div>
+<div class="examplebox">
+<p><span>Zero steady-state error to a ramp input</span> Consider a unity-feedback system with forward transfer function <span class="math display">\[G(s)=\frac{10}{s^2(s+2)}.\]</span> Find the steady-state error for a unit-ramp input.</p>
+<p>For a unit-ramp input, <span class="math display">\[R(s)=\frac{1}{s^2}.\]</span> Hence, <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}
+    =
+    \frac{\frac{1}{s^2}}{1+\frac{10}{s^2(s+2)}}.\]</span> Simplifying, <span class="math display">\[E(s)=\frac{1}{s^2}\cdot \frac{s^2(s+2)}{s^2(s+2)+10}
+    =
+    \frac{s+2}{s^2(s+2)+10}.\]</span> Therefore, <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s)
+    =
+    \lim_{s\to 0}\frac{s(s+2)}{s^2(s+2)+10}
+    =
+    0.\]</span></p>
+<p>Hence, <span class="math display">\[\boxed{e_{ss}=0.}\]</span></p>
+<p>With two poles at the origin in the forward path, the system can track a ramp input without steady-state error.</p>
+</div>
+<div class="examplebox">
+<p><span>Unbounded steady-state error for an input that is too demanding</span> Consider the unity-feedback system <span class="math display">\[G(s)=\frac{10}{s(s+2)}.\]</span> Find the steady-state error for a unit-parabolic input.</p>
+<p>For a unit-parabolic input, <span class="math display">\[r(t)=\frac{1}{2}t^2\,u_0(t),
+    \qquad
+    R(s)=\frac{1}{s^3}.\]</span> Thus, <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}
+    =
+    \frac{\frac{1}{s^3}}{1+\frac{10}{s(s+2)}}.\]</span> Simplifying, <span class="math display">\[E(s)=\frac{1}{s^3}\cdot \frac{s(s+2)}{s(s+2)+10}
+    =
+    \frac{s+2}{s^2\bigl(s^2+2s+10\bigr)}.\]</span> Now, <span class="math display">\[sE(s)=\frac{s+2}{s\bigl(s^2+2s+10\bigr)}.\]</span> As <span class="math inline">\(s\to 0\)</span>, this expression becomes unbounded. Therefore, the steady-state error does not approach a finite constant; instead, it grows without bound.</p>
+<p>Hence the system cannot track a parabolic input satisfactorily. In practical terms, the reference changes too aggressively for the available low-frequency dynamics of the forward path.</p>
+</div>
+<div class="examplebox">
+<p><span>Steady-state error for a system with sensor dynamics</span> Consider the feedback system shown in Figure <a href="#fig:error_transfer_feedback" data-reference-type="ref" data-reference="fig:error_transfer_feedback">1.13</a>, where the forward transfer function is <span class="math display">\[G(s)=\frac{15}{s+3},\]</span> and the feedback path contains sensor dynamics described by <span class="math display">\[H(s)=\frac{2}{s+4}.\]</span> This is therefore <strong>not</strong> a unity-feedback system, because the measured output is modified by the sensor before it is fed back.</p>
+<p>Find the steady-state error for a unit-step input.</p>
+<p>Since the feedback path contains sensor dynamics, we must use the general error transfer function <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)H(s)}.\]</span></p>
+<p>For a unit-step input, <span class="math display">\[R(s)=\frac{1}{s}.\]</span> Hence <span class="math display">\[E(s)=\dfrac{\frac{1}{s}}{1+\frac{15}{s+3}\cdot \frac{2}{s+4}}.\]</span></p>
+<p>First simplify the loop term: <span class="math display">\[G(s)H(s)=\frac{30}{(s+3)(s+4)}.\]</span> Therefore, <span class="math display">\[E(s)=\frac{1}{s}\cdot
+    \frac{(s+3)(s+4)}{(s+3)(s+4)+30}.\]</span></p>
+<p>Expanding, <span class="math display">\[(s+3)(s+4)=s^2+7s+12,\]</span> so <span class="math display">\[E(s)=\frac{1}{s}\cdot \frac{s^2+7s+12}{s^2+7s+42}
+    =
+    \frac{s^2+7s+12}{s\left(s^2+7s+42\right)}.\]</span></p>
+<p>Using the final value theorem, <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s)
+    =
+    \lim_{s\to 0}\frac{s^2+7s+12}{s^2+7s+42}
+    =
+    \frac{12}{42}
+    =
+    \frac{2}{7}.\]</span> Hence, <span class="math display">\[e_{ss}=\frac{2}{7}.\]</span></p>
+<p>This example shows that when the sensor has its own dynamics, the feedback path is no longer unity. The sensor affects the loop transfer function through <span class="math inline">\(H(s)\)</span>, and therefore it also affects the error signal seen at the summing junction. In such cases, the shortcut <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)}\]</span> cannot be used; instead, the full expression <span class="math display">\[E(s)=\frac{R(s)}{1+G(s)H(s)}\]</span> must be applied.</p>
+</div>
+<h3 id="an-important-observation-about-input-poles-and-zero-steady-state-error">An important observation about input poles and zero steady-state error</h3>
+<p>The worked examples reveal an important pattern. For the standard polynomial test signals, <span class="math display">\[R(s)=\frac{A}{s},\qquad \frac{A}{s^2},\qquad \frac{A}{s^3},\]</span> the poles of the input all lie at the origin. Therefore, what matters is how many poles at the origin appear in the forward transfer function.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>To obtain zero steady-state error, the forward path must contain sufficient copies of the pole of the input signal. For the standard step, ramp, and parabolic inputs, this means sufficient poles at the origin in the forward transfer function.</p>
+<p>In particular:</p>
+<ul>
+<li><p>to obtain zero steady-state error for a step input, at least one pole at the origin is required in the forward path;</p></li>
+<li><p>to obtain zero steady-state error for a ramp input, at least two poles at the origin are required;</p></li>
+<li><p>to obtain zero steady-state error for a parabolic input, at least three poles at the origin are required.</p></li>
+</ul>
+</div>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Physical meaning of poles at the origin</div>
+<p>A pole at the origin corresponds to an integrating effect. Integrating action accumulates error over time and forces the controller or plant to continue acting until the offset is removed. More poles at the origin provide stronger low-frequency tracking capability, but they also make the system more demanding to stabilise.</p>
+</div>
+<h3 id="a-compact-procedure-for-finding-steady-state-error">A compact procedure for finding steady-state error</h3>
+<p>For a stable LTI feedback system, the steady-state error can be found systematically as follows.</p>
+<ol>
+<li><p>Write down the reference input <span class="math inline">\(R(s)\)</span>.</p></li>
+<li><p>Derive the error transfer function <span class="math inline">\(E(s)\)</span>.</p></li>
+<li><p>Compute <span class="math display">\[e_{ss}=\lim_{s\to 0}sE(s).\]</span></p></li>
+<li><p>Interpret the result:</p>
+<ul>
+<li><p><span class="math inline">\(e_{ss}=0\)</span>: exact tracking in steady state,</p></li>
+<li><p><span class="math inline">\(e_{ss}\neq 0\)</span>: finite offset remains,</p></li>
+<li><p><span class="math inline">\(e_{ss}\)</span> unbounded or limit does not exist: the input cannot be tracked with a finite constant steady-state error.</p></li>
+</ul></li>
+</ol>
+<h3 id="subsec:system-type">System type and static error constants</h3>
+<p>Steady-state error results can be summarised using system type and static error constants.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: System Type</div>
+<p>The <strong>type number</strong> of a unity-feedback system is the number of free integrators (poles at <span class="math inline">\(s=0\)</span>) in the open-loop transfer function <span class="math inline">\(G(s)\)</span>.</p>
+<ul>
+<li><p>Type 0: no integrator in <span class="math inline">\(G(s)\)</span>,</p></li>
+<li><p>Type 1: one integrator (<span class="math inline">\(1/s\)</span> factor),</p></li>
+<li><p>Type 2: two integrators (<span class="math inline">\(1/s^2\)</span> factor).</p></li>
+</ul>
+</div>
+<p>The <strong>static error constants</strong> are defined as: <span class="math display">\[K_p = \lim_{s \to 0} G(s), \qquad
+K_v = \lim_{s \to 0} s\,G(s), \qquad
+K_a = \lim_{s \to 0} s^2 G(s),\]</span> where <span class="math inline">\(K_p\)</span> is the <em>position error constant</em>, <span class="math inline">\(K_v\)</span> is the <em>velocity error constant</em>, and <span class="math inline">\(K_a\)</span> is the <em>acceleration error constant</em>.</p>
+<p>The steady-state errors for standard inputs in a stable unity-feedback system are summarised in Table <a href="#tab:ss_error_summary" data-reference-type="ref" data-reference="tab:ss_error_summary">1.1</a>.</p>
+<div id="tab:ss_error_summary">
+<table>
+<caption>Steady-state error <span class="math inline">\(e_{ss}\)</span> for unity-feedback systems by system type and input class</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Input</strong></th>
+<th style="text-align: center;"><strong>Type 0</strong></th>
+<th style="text-align: center;"><strong>Type 1</strong></th>
+<th style="text-align: center;"><strong>Type 2</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Step (<span class="math inline">\(1/s\)</span>)</td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{1}{1+K_p}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Ramp (<span class="math inline">\(1/s^2\)</span>)</td>
+<td style="text-align: center;"><span class="math inline">\(\infty\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{1}{K_v}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Parabolic (<span class="math inline">\(1/s^3\)</span>)</td>
+<td style="text-align: center;"><span class="math inline">\(\infty\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(\infty\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{1}{K_a}\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Increasing the system type (adding integrators) improves tracking accuracy for polynomial inputs, but makes stability harder to achieve. This is a fundamental trade-off in controller design.</p>
+</div>
+<div class="examplebox">
+<p><span>Rate feedback design with steady-state error analysis</span> Consider the rate feedback system shown in Figure <a href="#fig:rate-feedback-example" data-reference-type="ref" data-reference="fig:rate-feedback-example">1.14</a>. The plant transfer function is <span class="math inline">\(\dfrac{K}{s(s+5)}\)</span> and the inner (rate) feedback gain is <span class="math inline">\(K_t\,s\)</span>.</p>
+<figure id="fig:rate-feedback-example" data-latex-placement="H">
+
+<img src="figures/ch06_tikz_17.png" style="max-width:85%;" />
+<figcaption>Rate feedback system with plant <span class="math inline">\(K/[s(s+5)]\)</span> and derivative feedback <span class="math inline">\(K_t\,s\)</span>.</figcaption>
+</figure>
+<ol>
+<li><p>Find the values of <span class="math inline">\(K\)</span> and <span class="math inline">\(K_t\)</span> so that the closed-loop poles are at <span class="math inline">\(s_{1,2} = -3 \pm j4\)</span>.</p></li>
+<li><p>Determine the system type and order.</p></li>
+<li><p>Find the steady-state error for a unit ramp input.</p></li>
+<li><p>Verify the design in MATLAB by plotting the step response, ramp response, tracking error, and pole locations.</p></li>
+</ol>
+<p><strong>(a) Finding <span class="math inline">\(K\)</span> and <span class="math inline">\(K_t\)</span>.</strong></p>
+<p>First, reduce the inner loop. The forward path of the inner loop is <span class="math inline">\(G(s) = K/[s(s+5)]\)</span> and its feedback is <span class="math inline">\(H(s) = K_t\,s\)</span>, so the inner closed-loop transfer function is <span class="math display">\[G_{\mathrm{inner}}(s)
+      = \frac{K/[s(s+5)]}{1 + K_t\,s \cdot K/[s(s+5)]}
+      = \frac{K}{s^2 + (5 + K K_t)\,s}.\]</span> The outer loop has unity feedback, so the overall closed-loop transfer function is <span class="math display">\[T(s)
+      = \frac{G_{\mathrm{inner}}(s)}{1 + G_{\mathrm{inner}}(s)}
+      = \frac{K}{s^2 + (5 + K K_t)\,s + K}.\]</span> The desired characteristic equation from the specified poles is <span class="math display">\[(s + 3 - j4)(s + 3 + j4) = s^2 + 6s + 25 = 0.\]</span> Comparing coefficients: <span class="math display">\[K = 25, \qquad 5 + K K_t = 6
+    \quad\Longrightarrow\quad
+    K_t = \frac{1}{25} = 0.04.\]</span></p>
+<p><strong>(b) System type and order.</strong></p>
+<p>The open-loop transfer function of the outer loop is <span class="math display">\[G_{\mathrm{ol}}(s)
+      = G_{\mathrm{inner}}(s)
+      = \frac{25}{s(s + 6)}.\]</span> There is one free integrator (<span class="math inline">\(1/s\)</span>) in the forward path, so the system is <strong>type 1</strong> and <strong>order 2</strong>.</p>
+<p><strong>(c) Steady-state error.</strong></p>
+<p>For a type-1 system, the steady-state error to a unit ramp is <span class="math inline">\(e_{ss} = 1/K_v\)</span>, where <span class="math display">\[K_v = \lim_{s \to 0}\, s\,G_{\mathrm{ol}}(s)
+        = \lim_{s \to 0}\, s \cdot \frac{25}{s(s+6)}
+        = \frac{25}{6} \approx 4.17.\]</span> Therefore <span class="math display">\[e_{ss} = \frac{1}{K_v} = \frac{6}{25} = 0.24.\]</span></p>
+<p>As a consistency check, the closed-loop transfer function is <span class="math inline">\(T(s) = 25/(s^2+6s+25)\)</span>, which is a standard second-order system with <span class="math inline">\(\omega_n = 5\)</span> rad/s and <span class="math inline">\(\zeta = 0.6\)</span>, confirming the poles at <span class="math inline">\(s = -3 \pm j4\)</span>.</p>
+<p><strong>(d) MATLAB verification.</strong></p>
+<p>Write a MATLAB script to verify the design. The code should construct the closed-loop transfer function, confirm the pole locations, plot the step and ramp responses, and read off the steady-state error.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB verification of the rate feedback design.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+K  = 25
+Kt = 0.04
+
+# Inner-loop reduction
+G       = ctrl.tf(K, np.array([1, 5, 0]))        # K / [s(s+5)]
+H_inner = ctrl.tf(np.array([Kt, 0]), [1])         # Kt*s
+G_inner = ctrl.feedback(G, H_inner)
+
+# Outer closed-loop (unity feedback)
+T = ctrl.feedback(G_inner, 1)
+print('Closed-loop TF:')
+print(T)
+
+# Verify pole locations
+p = ctrl.poles(T)
+print("Poles:", p)
+
+# Step response
+plt.figure(figsize=(10, 8))
+plt.subplot(2, 2, 1)
+_resp = ctrl.step_response(T, 3)
+
+t_step, y_step = _resp.time, _resp.outputs
+plt.plot(t_step, y_step)
+plt.grid(True)
+plt.title('Step response')
+
+info = ctrl.step_info(T)
+print("Overshoot = %.1f%%, Ts = %.2f s" % (info['Overshoot'], info['SettlingTime']))
+
+# Ramp response
+plt.subplot(2, 2, 2)
+t = np.arange(0, 5.01, 0.01)
+r = t
+_resp = ctrl.forced_response(T, T=t, U=r)
+
+t_r, y_r = _resp.time, _resp.outputs
+plt.plot(t, r, 'r--', label='Reference')
+plt.plot(t_r, y_r, 'b', label='Output')
+plt.legend()
+plt.grid(True)
+plt.title('Ramp response')
+
+# Ramp tracking error
+plt.subplot(2, 2, 3)
+plt.plot(t_r, r - y_r, 'b', label='e(t)')
+plt.axhline(y=6/25, color='r', linestyle='--', label='e_ss = 6/25')
+plt.grid(True)
+plt.title('Ramp tracking error')
+plt.legend()
+
+# Pole-zero map
+plt.subplot(2, 2, 4)
+poles = ctrl.poles(T)
+zeros = ctrl.zeros(T)
+plt.plot(np.real(poles), np.imag(poles), 'rx', markersize=10, label='Poles')
+if len(zeros) &gt; 0:
+    plt.plot(np.real(zeros), np.imag(zeros), 'bo', markersize=10, label='Zeros')
+plt.axhline(y=0, color='k', linewidth=0.5)
+plt.axvline(x=0, color='k', linewidth=0.5)
+plt.grid(True)
+plt.title('Pole-zero map')
+plt.xlabel('Real')
+plt.ylabel('Imaginary')
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>K  = 25;
+Kt = 0.04;
+
+% Inner-loop reduction
+G     = tf(K, [1 5 0]);        % K / [s(s+5)]
+H_inner = tf([Kt 0], 1);      % Kt*s
+G_inner = feedback(G, H_inner);
+
+% Outer closed-loop (unity feedback)
+T = feedback(G_inner, 1);
+disp('Closed-loop TF:'); T
+
+% Verify pole locations
+p = pole(T);
+fprintf('Poles: %.2f +/- j%.2f\n', real(p(1)), abs(imag(p(1))));
+
+% Step response
+figure;
+subplot(2,2,1);  step(T, 3);  grid on;
+title('Step response');
+info = stepinfo(T);
+fprintf('Overshoot = %.1f%%, Ts = %.2f s\n', info.Overshoot, info.SettlingTime);
+
+% Ramp response
+subplot(2,2,2);
+t = 0:0.01:5;  r = t;
+y = lsim(T, r, t);
+plot(t, r, 'r--', t, y, 'b', 'LineWidth', 1.5);
+legend('Reference','Output'); grid on;
+title('Ramp response');
+
+% Ramp tracking error
+subplot(2,2,3);
+plot(t, r - y, 'b', 'LineWidth', 1.5); grid on;
+yline(6/25, 'r--', 'LineWidth', 1.5);
+title('Ramp tracking error');
+legend('e(t)', 'e_{ss} = 6/25');
+
+% Pole-zero map
+subplot(2,2,4);  pzmap(T);  grid on;
+title('Pole-zero map');</code></pre>
+<p>Figure <a href="#fig:rate-feedback-verification" data-reference-type="ref" data-reference="fig:rate-feedback-verification">1.15</a> shows the results. The step response confirms <span class="math inline">\(\%OS = 9.5\%\)</span> and <span class="math inline">\(T_s \approx 1.2\,\)</span>s, consistent with <span class="math inline">\(\zeta = 0.6\)</span>. The ramp error settles to <span class="math inline">\(e_{ss} = 6/25 = 0.24\)</span>, matching the analytical prediction.</p>
+<figure id="fig:rate-feedback-verification" data-latex-placement="H">
+<img src="figures/rate_feedback_verification.png" />
+<figcaption>MATLAB verification of the rate feedback design: (a) unit step response with <span class="math inline">\(9.5\%\)</span> overshoot, (b) unit ramp tracking showing the steady-state lag, (c) ramp error converging to <span class="math inline">\(e_{ss} = 0.24\)</span>, (d) closed-loop poles at <span class="math inline">\(s = -3 \pm j4\)</span>.</figcaption>
+</figure>
+</div>
+<h3 class="unnumbered" id="matlab-companion-analysing-first--and-second-order-systems">MATLAB Companion: Analysing First- and Second-Order Systems</h3>
+<div class="notebox">
+<p><span>Try it yourself</span> MATLAB can extract all the key time-response specifications automatically. Listing <a href="#lst:ch6_time_response_specs" data-reference-type="ref" data-reference="lst:ch6_time_response_specs">[lst:ch6_time_response_specs]</a> creates a first-order and a second-order system, plots their step responses, and reads off rise time, settling time, overshoot, damping ratio, and natural frequency.</p>
+</div>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Extracting time-response specifications in MATLAB.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+tau = 0.5
+G1 = ctrl.tf(1, np.array([tau, 1]))
+plt.figure()
+_resp = ctrl.step_response(G1, 5)
+
+t1, y1 = _resp.time, _resp.outputs
+plt.plot(t1, y1)
+plt.title('First-Order Step Response')
+plt.grid(True)
+plt.show()
+
+info1 = ctrl.step_info(G1)
+print('First-order: Rise time = %.2f s, Settling time = %.2f s' % (info1['RiseTime'], info1['SettlingTime']))
+
+# --- Second-order system: G2 = wn^2 / (s^2 + 2*zeta*wn*s + wn^2) ---
+wn = 4
+zeta = 0.3
+G2 = ctrl.tf(wn**2, [1, 2*zeta*wn, wn**2])
+plt.figure()
+_resp = ctrl.step_response(G2, 5)
+
+t2, y2 = _resp.time, _resp.outputs
+plt.plot(t2, y2)
+plt.title('Second-Order Step Response')
+plt.grid(True)
+plt.show()
+
+info2 = ctrl.step_info(G2)
+print('Second-order: Overshoot = %.1f%%, Settling time = %.2f s' % (info2['Overshoot'], info2['SettlingTime']))
+
+# --- Extract damping ratio and natural frequency from any system ---
+print('\nDamping and natural frequency:')
+ctrl.damp(G2)</code></pre>
+</div>
+<pre class="matlab"><code>tau = 0.5;
+G1 = tf(1, [tau 1]);
+figure;
+step(G1, 5);  title('First-Order Step Response');  grid on;
+info1 = stepinfo(G1);
+fprintf('First-order: Rise time = %.2f s, Settling time = %.2f s\n', ...
+         info1.RiseTime, info1.SettlingTime);
+
+% --- Second-order system: G2 = wn^2 / (s^2 + 2*zeta*wn*s + wn^2) ---
+wn = 4;  zeta = 0.3;
+G2 = tf(wn^2, [1  2*zeta*wn  wn^2]);
+figure;
+step(G2, 5);  title('Second-Order Step Response');  grid on;
+info2 = stepinfo(G2);
+fprintf('Second-order: Overshoot = %.1f%%, Settling time = %.2f s\n', ...
+         info2.Overshoot, info2.SettlingTime);
+
+% --- Extract damping ratio and natural frequency from any system ---
+damp(G2)   % prints zeta, wn, and poles in a table</code></pre>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>A first-order system <span class="math inline">\(G(s)=K/(\tau s+1)\)</span> has rise time <span class="math inline">\(t_r\approx 2.2\tau\)</span> and settling time <span class="math inline">\(t_s\approx 4\tau\)</span> (2% criterion).</p></li>
+<li><p>Second-order systems are classified by damping ratio: underdamped (<span class="math inline">\(0&lt;\zeta&lt;1\)</span>), critically damped (<span class="math inline">\(\zeta=1\)</span>), overdamped (<span class="math inline">\(\zeta&gt;1\)</span>).</p></li>
+<li><p>For underdamped systems: <span class="math inline">\(\%OS = 100\,e^{-\zeta\pi/\sqrt{1-\zeta^2}}\)</span>, <span class="math inline">\(t_p = \pi/\omega_d\)</span>, <span class="math inline">\(t_s \approx 4/(\zeta\omega_n)\)</span>.</p></li>
+<li><p>Pole locations on the <span class="math inline">\(s\)</span>-plane directly determine response character: real part controls decay rate, imaginary part controls oscillation frequency.</p></li>
+<li><p>Constant-<span class="math inline">\(\zeta\)</span> lines are rays from the origin; constant-<span class="math inline">\(\sigma\)</span> lines are vertical; constant-<span class="math inline">\(\omega_d\)</span> lines are horizontal.</p></li>
+<li><p>Steady-state error depends on both the system type (number of integrators in <span class="math inline">\(G(s)\)</span>) and the input signal.</p></li>
+<li><p>Each additional integrator in the forward path eliminates SSE for one higher power of <span class="math inline">\(s\)</span> in the input, but makes stability harder to achieve.</p></li>
+</ul>
+</div>
+<h2 class="unnumbered" id="end-of-chapter-exercises">End-of-Chapter Exercises</h2>
+<ol>
+<li><p>A first-order system has the transfer function <span class="math display">\[G(s)=\frac{8}{s+4}.\]</span></p>
+<ol>
+<li><p>Identify the time constant <span class="math inline">\(\tau\)</span> and the DC gain.</p></li>
+<li><p>What is the value of the output at <span class="math inline">\(t=\tau\)</span> when a unit step is applied?</p></li>
+<li><p>How long does it take for the output to reach 98% of its final value?</p></li>
+</ol></li>
+<li><p>A second-order system has the transfer function <span class="math display">\[G(s)=\frac{25}{s^2+6s+25}.\]</span></p>
+<ol>
+<li><p>Find the natural frequency <span class="math inline">\(\omega_n\)</span> and damping ratio <span class="math inline">\(\zeta\)</span>.</p></li>
+<li><p>Classify the system as underdamped, critically damped, or overdamped.</p></li>
+<li><p>Calculate the percentage overshoot and the approximate settling time (2% criterion).</p></li>
+</ol></li>
+<li><p>For the standard second-order transfer function <span class="math display">\[G(s)=\frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2},\]</span> a step response is observed with 16% overshoot and a peak time of <span class="math inline">\(t_p=0.5\,\text{s}\)</span>.</p>
+<ol>
+<li><p>Determine the damping ratio <span class="math inline">\(\zeta\)</span> from the overshoot.</p></li>
+<li><p>Determine the natural frequency <span class="math inline">\(\omega_n\)</span> from the peak time.</p></li>
+<li><p>Write the transfer function with the numerical values of <span class="math inline">\(\zeta\)</span> and <span class="math inline">\(\omega_n\)</span>.</p></li>
+</ol></li>
+<li><p>Consider a unity-feedback system with forward transfer function <span class="math display">\[G(s)=\frac{K}{s(s+5)}.\]</span></p>
+<ol>
+<li><p>Find the closed-loop transfer function.</p></li>
+<li><p>For <span class="math inline">\(K=20\)</span>, determine the damping ratio, natural frequency, overshoot, and settling time of the closed-loop step response.</p></li>
+<li><p>Verify your answers using the MATLAB commands <code>step()</code> and <code>stepinfo()</code>.</p></li>
+</ol></li>
+<li><p>A unity-feedback system has forward transfer function <span class="math display">\[G(s)=\frac{50}{s+10}.\]</span></p>
+<ol>
+<li><p>Compute the steady-state error for a unit step input.</p></li>
+<li><p>Compute the steady-state error for a unit ramp input.</p></li>
+<li><p>Explain physically why the ramp error is larger (or infinite).</p></li>
+</ol></li>
+<li><p>A unity negative-feedback system has the open-loop transfer function <span class="math display">\[G(s)=\frac{100}{s(s+4)(s+10)}.\]</span></p>
+<ol>
+<li><p>What is the system type?</p></li>
+<li><p>Find the steady-state error for a unit step input.</p></li>
+<li><p>Find the steady-state error for a unit ramp input.</p></li>
+</ol></li>
+<li><p>Use MATLAB to investigate the effect of the damping ratio on step response. Write a short script that plots the unit step response of <span class="math display">\[G(s)=\frac{16}{s^2+2\zeta(4)s+16}\]</span> for <span class="math inline">\(\zeta=0.1,\;0.3,\;0.5,\;0.7,\;1.0\)</span> on a single figure. Comment on how overshoot and settling time change as <span class="math inline">\(\zeta\)</span> increases.</p></li>
+<li><p>A system has the following step response characteristics: the output reaches a peak of 1.25 at <span class="math inline">\(t=1\,\text{s}\)</span> and settles to a final value of 1.0.</p>
+<ol>
+<li><p>Estimate the percentage overshoot.</p></li>
+<li><p>Estimate the damping ratio <span class="math inline">\(\zeta\)</span>.</p></li>
+<li><p>If the response appears to settle (within 2%) by <span class="math inline">\(t=4\,\text{s}\)</span>, estimate the natural frequency <span class="math inline">\(\omega_n\)</span>.</p></li>
+</ol></li>
+</ol>

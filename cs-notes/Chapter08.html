@@ -1,0 +1,1057 @@
+<h1 id="chap:pid">PID Control</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Explain the physical meaning of proportional, integral, and derivative control actions.</p></li>
+<li><p>Derive the effect of each PID term on tracking error and disturbance rejection.</p></li>
+<li><p>Predict qualitatively how changing each PID gain affects the closed-loop response.</p></li>
+<li><p>Design a PID controller using Ziegler–Nichols tuning rules (reaction curve and sustained oscillation methods).</p></li>
+<li><p>Explain Åström’s relay-feedback auto-tuning method and compute <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> from relay data.</p></li>
+<li><p>Implement and tune PID controllers in MATLAB and Simulink using <code>pidtune()</code>.</p></li>
+<li><p>Recognise when PID control is insufficient and state-space methods are needed.</p></li>
+</ul>
+</div>
+<blockquote>
+<p><em>“More than 90% of all control loops in industry use PID controllers. Understanding PID is not optional — it is the foundation of practical control engineering.”</em></p>
+</blockquote>
+<p>The Proportional–Integral–Derivative (PID) controller is by far the most widely used controller in industry. From regulating the temperature of a chemical reactor to controlling the speed of an electric motor, from maintaining water level in a tank to positioning a robot arm — PID controllers are everywhere. Their popularity comes from simplicity, effectiveness, and the fact that they can be tuned without a detailed mathematical model of the plant.</p>
+<p>Mass-produced electronic PID controllers have been accessible since the 1940s, initially as analogue op-amp circuits. Starting in the 1980s, microprocessor-based digital technology emerged, leading to Distributed Control Systems (DCS) and SCADA systems. Today, PID controllers appear in diverse configurations across all industries.</p>
+<h2 id="sec:pid_idea">The Idea Behind PID Control</h2>
+<p>Consider the everyday task of driving a car at a desired speed on a motorway. You look at the speedometer (measurement), compare the current speed with the speed limit (reference), and adjust the accelerator pedal (control action). How you adjust the pedal depends on several factors:</p>
+<ul>
+<li><p><strong>How far are you from the desired speed right now?</strong> If you are 20 mph below the limit, you press the pedal harder than if you are only 2 mph below. This is proportional action.</p></li>
+<li><p><strong>How long have you been below the desired speed?</strong> If you have been consistently slow for a long time (perhaps going uphill), you press the pedal even more. This is integral action — it accumulates past errors.</p></li>
+<li><p><strong>How fast is the error changing?</strong> If your speed is rising quickly towards the target, you ease off the pedal slightly to avoid overshooting. This is derivative action — it anticipates the future.</p></li>
+</ul>
+<p>A PID controller does exactly this, automatically and continuously.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The PID controller combines three actions:</p>
+<ul>
+<li><p><strong>P (Proportional):</strong> Reacts to the <em>present</em> error.</p></li>
+<li><p><strong>I (Integral):</strong> Reacts to the <em>accumulated past</em> error.</p></li>
+<li><p><strong>D (Derivative):</strong> Reacts to the <em>rate of change</em> (prediction of future) error.</p></li>
+</ul>
+</div>
+<h2 id="sec:pid_math">The PID Controller — Mathematical Formulation</h2>
+<p>Let <span class="math inline">\(r(t)\)</span> be the reference (desired output) and <span class="math inline">\(y(t)\)</span> be the measured output. The tracking error is <span class="math display">\[e(t) = r(t) - y(t).\]</span></p>
+<p>The PID controller generates a control signal <span class="math inline">\(u(t)\)</span> given by:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: PID Controller (Time Domain — Textbook Form)</div>
+<p><span class="math display">\[\begin{equation}
+        u(t) = K_p\, e(t) \;+\; K_I \int_0^t e(\tau)\,d\tau \;+\; K_D\, \frac{de(t)}{dt}
+        \label{eq:pid_time}
+\end{equation}\]</span> where <span class="math inline">\(K_p\)</span> is the proportional gain, <span class="math inline">\(K_I\)</span> is the integral gain, and <span class="math inline">\(K_D\)</span> is the derivative gain.</p>
+</div>
+<p>Taking the Laplace transform (with zero initial conditions), the PID transfer function is:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: PID Controller (Transfer Function — Textbook Form)</div>
+<p><span class="math display">\[\begin{equation}
+        C(s) = \frac{U(s)}{E(s)} = K_p + \frac{K_I}{s} + K_D s
+        \label{eq:pid_tf}
+\end{equation}\]</span></p>
+</div>
+<h3 id="industrial-standard-form">Industrial (Standard) Form</h3>
+<p>An alternative and very common parameterisation used in industry is obtained by factoring out <span class="math inline">\(K_p\)</span>: <span class="math display">\[\begin{equation}
+    u(t) = K_p\left(e(t) + \frac{1}{\tau_I}\int_0^t e(\tau)\,d\tau + \tau_D\,\frac{de(t)}{dt}\right)
+    \label{eq:pid_industrial_time}
+\end{equation}\]</span> In the Laplace domain this becomes: <span class="math display">\[\begin{equation}
+    C(s) = K_p\left(1 + \frac{1}{\tau_I s} + \tau_D s\right)
+    \label{eq:pid_standard}
+\end{equation}\]</span> where <span class="math inline">\(\tau_I = K_p/K_I\)</span> is the <em>integral time constant</em> and <span class="math inline">\(\tau_D = K_D/K_p\)</span> is the <em>derivative time constant</em>.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The two parameterisations are completely equivalent: <span class="math display">\[K_I = \frac{K_p}{\tau_I}, \qquad K_D = K_p\,\tau_D.\]</span> The textbook form is convenient for analysis; the industrial form is what you will see on real controller hardware and in tuning tables.</p>
+</div>
+<h2 id="sec:pid_opamp">Analogue Realisation of PID Using Operational Amplifiers</h2>
+<p>Before the digital era, PID controllers were built entirely from analogue electronic circuits. Understanding these realisations provides physical insight into what each term does.</p>
+<h3 id="proportional-controller">Proportional Controller</h3>
+<p>A proportional controller is simply an inverting amplifier:</p>
+<figure id="fig:opamp_P" data-latex-placement="htbp">
+<div class="circuitikz">
+<p>(0,0) node[op amp] (opamp) ; (opamp.+) – ++(0,-0.5) node[ground] ; (opamp.-) – ++(-0.5,0) coordinate(A) to[R, l=<span class="math inline">\(R_1\)</span>] ++(-2.5,0) node[left] <span><span class="math inline">\(V_{in}\)</span></span>; (A) – ++(0,1.5) coordinate(B) to[R, l=<span class="math inline">\(R_2\)</span>] ++(3,0) coordinate(C) – (C |- opamp.out) – (opamp.out); (opamp.out) – ++(1,0) node[right] <span><span class="math inline">\(V_{out}\)</span></span>;</p>
+</div>
+<img src="figures/ch08_tikz_01.png" style="max-width:85%;" />
+<figcaption>Proportional controller realised with an operational amplifier. The gain is <span class="math inline">\(V_{out}/V_{in} = -R_2/R_1 = -K_p\)</span>.</figcaption>
+</figure>
+<p>The transfer function is <span class="math inline">\(V_{out}(s)/V_{in}(s) = -R_2/R_1\)</span>. The negative sign can be removed by cascading with a unity-gain inverter.</p>
+<h3 id="integral-controller">Integral Controller</h3>
+<p>Replacing the feedback resistor with a capacitor gives an integrator:</p>
+<figure id="fig:opamp_I" data-latex-placement="htbp">
+<div class="circuitikz">
+<p>(0,0) node[op amp] (opamp) ; (opamp.+) – ++(0,-0.5) node[ground] ; (opamp.-) – ++(-0.5,0) coordinate(A) to[R, l=<span class="math inline">\(R\)</span>] ++(-2.5,0) node[left] <span><span class="math inline">\(V_{in}\)</span></span>; (A) – ++(0,1.5) coordinate(B) to[C, l=<span class="math inline">\(C\)</span>] ++(3,0) coordinate(C) – (C |- opamp.out) – (opamp.out); (opamp.out) – ++(1,0) node[right] <span><span class="math inline">\(V_{out}\)</span></span>;</p>
+</div>
+<img src="figures/ch08_tikz_02.png" style="max-width:85%;" />
+<figcaption>Integrator controller using an operational amplifier. The transfer function is <span class="math inline">\(V_{out}(s)/V_{in}(s) = -1/(RCs) = -K_I/s\)</span>.</figcaption>
+</figure>
+<p>In the time domain: <span class="math inline">\(V_{out}(t) = -\dfrac{1}{RC}\displaystyle\int V_{in}(t)\,dt\)</span>. In the Laplace domain: <span class="math inline">\(V_{out}(s) = -\dfrac{K_I}{s}V_{in}(s)\)</span> where <span class="math inline">\(K_I = 1/(RC)\)</span>.</p>
+<h3 id="derivative-controller">Derivative Controller</h3>
+<p>Swapping the resistor and capacitor positions gives a differentiator:</p>
+<figure id="fig:opamp_D" data-latex-placement="htbp">
+<div class="circuitikz">
+<p>(0,0) node[op amp] (opamp) ; (opamp.+) – ++(0,-0.5) node[ground] ; (opamp.-) – ++(-0.5,0) coordinate(A) to[C, l=<span class="math inline">\(C\)</span>] ++(-2.5,0) node[left] <span><span class="math inline">\(V_{in}\)</span></span>; (A) – ++(0,1.5) coordinate(B) to[R, l=<span class="math inline">\(R\)</span>] ++(3,0) coordinate(C) – (C |- opamp.out) – (opamp.out); (opamp.out) – ++(1,0) node[right] <span><span class="math inline">\(V_{out}\)</span></span>;</p>
+</div>
+<img src="figures/ch08_tikz_03.png" style="max-width:85%;" />
+<figcaption>Derivative controller using an operational amplifier. The transfer function is <span class="math inline">\(V_{out}(s)/V_{in}(s) = -RCs = -K_D s\)</span>.</figcaption>
+</figure>
+<p>In the time domain: <span class="math inline">\(V_{out}(t) = -RC\,\dfrac{dV_{in}(t)}{dt}\)</span>. In the Laplace domain: <span class="math inline">\(V_{out}(s) = -K_D s\, V_{in}(s)\)</span> where <span class="math inline">\(K_D = RC\)</span>.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>A complete analogue PID controller is constructed by connecting the three op-amp circuits (P, I, D) in parallel, summing their outputs. Each term takes the error signal <span class="math inline">\(e(t)\)</span> as input and generates its own control contribution.</p>
+</div>
+<h2 id="sec:pid_feedback_loop">PID Controller in a Feedback Loop</h2>
+<p>The general structure of a feedback control system with a PID controller is shown in Figure <a href="#fig:pid_block" data-reference-type="ref" data-reference="fig:pid_block">1.4</a>. The controller <span class="math inline">\(C(s)\)</span> acts on the error signal <span class="math inline">\(E(s) = R(s) - Y(s)\)</span> to produce the control signal <span class="math inline">\(U(s)\)</span>, which drives the plant <span class="math inline">\(G(s)\)</span>.</p>
+<figure id="fig:pid_block" data-latex-placement="htbp">
+
+<img src="figures/ch08_tikz_04.png" style="max-width:85%;" />
+<figcaption>Feedback control system with controller <span class="math inline">\(C(s)\)</span>, plant <span class="math inline">\(G(s)\)</span>, reference <span class="math inline">\(R(s)\)</span>, and disturbance <span class="math inline">\(D(s)\)</span>.</figcaption>
+</figure>
+<p>From Figure <a href="#fig:pid_block" data-reference-type="ref" data-reference="fig:pid_block">1.4</a>, using the superposition principle (since the system is linear), the output can be written as: <span class="math display">\[\begin{equation}
+    Y(s) = \frac{G(s)C(s)}{1+G(s)C(s)}\,R(s) + \frac{G(s)}{1+G(s)C(s)}\,D(s)
+    \label{eq:closed_loop_with_dist}
+\end{equation}\]</span></p>
+<p>The tracking error is: <span class="math display">\[\begin{equation}
+    E(s) = R(s) - Y(s) = \frac{1}{1+G(s)C(s)}\,R(s) - \frac{G(s)}{1+G(s)C(s)}\,D(s)
+    \label{eq:error_with_dist}
+\end{equation}\]</span></p>
+<h2 id="sec:pid_effects">Effects of P, I, and D Actions on Performance</h2>
+<h3 id="sec:p_control">Proportional Control</h3>
+<p>Let <span class="math inline">\(C(s) = K_p\)</span> and consider the plant <span class="math inline">\(G(s) = \dfrac{1}{s+2}\)</span>. From <a href="#eq:closed_loop_with_dist" data-reference-type="eqref" data-reference="eq:closed_loop_with_dist">[eq:closed_loop_with_dist]</a>: <span class="math display">\[Y(s) = \frac{K_p}{s + 2 + K_p}\,R(s) + \frac{1}{s + 2 + K_p}\,D(s)\]</span></p>
+<p>The tracking error becomes: <span class="math display">\[\begin{equation}
+    E(s) = \frac{s+2}{s+2+K_p}\,R(s) - \frac{1}{s+2+K_p}\,D(s)
+    \label{eq:error_P}
+\end{equation}\]</span></p>
+<p>For a unit step reference <span class="math inline">\(R(s) = 1/s\)</span> and a step disturbance <span class="math inline">\(D(s) = d/s\)</span>, the final value theorem gives: <span class="math display">\[\begin{equation}
+    e_{ss} = \lim_{s\to 0} sE(s) = \frac{2}{2+K_p} - \frac{d}{2+K_p}
+    \label{eq:ess_P}
+\end{equation}\]</span></p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: What does this tell us?</div>
+
+<ul>
+<li><p>As <span class="math inline">\(K_p\)</span> increases, both the tracking error and the effect of the disturbance decrease.</p></li>
+<li><p>However, the tracking error <em>cannot be reduced to zero</em>. Even with <span class="math inline">\(K_p = 100\)</span>, the error is <span class="math inline">\(2/102 \approx 2\%\)</span>.</p></li>
+<li><p>Using very high <span class="math inline">\(K_p\)</span> is impractical: it produces large control signals that may saturate actuators.</p></li>
+</ul>
+</div>
+<p>We can also rewrite the error as: <span class="math display">\[E(s) = \frac{\frac{s+2}{2+K_p}}{\frac{1}{2+K_p}s + 1}\,R(s) - \frac{\frac{1}{2+K_p}}{\frac{1}{2+K_p}s + 1}\,D(s)\]</span></p>
+<p>Each component is a first-order transfer function with time constant <span class="math inline">\(\tau_{cl} = \dfrac{1}{2+K_p}\)</span>. As <span class="math inline">\(K_p\)</span> increases, this time constant decreases, meaning faster response (shorter rise time and settling time).</p>
+<div class="examplebox">
+<p><span>Proportional Control — Effect of Gain on Step Response</span> Consider <span class="math inline">\(G(s) = \dfrac{1}{s+2}\)</span> with <span class="math inline">\(C(s) = K_p\)</span> in a unity-feedback loop. Compare the step responses for <span class="math inline">\(K_p = 1, 5, 20\)</span>.</p>
+<p>The closed-loop transfer function is: <span class="math display">\[T(s) = \frac{K_p}{s + 2 + K_p}\]</span></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: center;"><span class="math inline">\(K_p = 1\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(K_p = 5\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(K_p = 20\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Closed-loop pole</td>
+<td style="text-align: center;"><span class="math inline">\(-3\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-7\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-22\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Time constant <span class="math inline">\(\tau_{cl}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0.33\)</span> s</td>
+<td style="text-align: center;"><span class="math inline">\(0.14\)</span> s</td>
+<td style="text-align: center;"><span class="math inline">\(0.045\)</span> s</td>
+</tr>
+<tr>
+<td style="text-align: left;">DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(1/3\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(5/7\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(20/22\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Steady-state error</td>
+<td style="text-align: center;"><span class="math inline">\(67\%\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(29\%\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(9\%\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figure>
+<img src="figures/pid_proportional.png" style="max-width:75%;" />
+<figcaption>Effect of proportional gain on the step response.</figcaption>
+</figure>
+<p>The MATLAB code in Listing <a href="#lst:ch8_pid_proportional" data-reference-type="ref" data-reference="lst:ch8_pid_proportional">[lst:ch8_pid_proportional]</a> generates this comparison.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Step response comparison for proportional control</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(1, np.array([1, 2]))
+Kp_values = [1, 5, 20]
+
+plt.figure()
+for Kp in Kp_values:
+    T = ctrl.feedback(Kp*G, 1)
+    _resp = ctrl.step_response(T, 2)
+
+    t, y = _resp.time, _resp.outputs
+    plt.plot(t, y, label='Kp=%g' % Kp)
+plt.axhline(y=1, linestyle='--', color='k', label='Reference')
+plt.legend()
+plt.title('Effect of proportional gain')
+plt.xlabel('Time (s)')
+plt.ylabel('y(t)')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(1, [1 2]);
+Kp_values = [1, 5, 20];
+figure; hold on;
+for Kp = Kp_values
+    T = feedback(Kp*G, 1);
+    step(T, 2);
+end
+yline(1, '--k', 'Reference');
+legend('Kp=1','Kp=5','Kp=20','Reference');
+title('Effect of proportional gain');
+xlabel('Time (s)'); ylabel('y(t)');
+grid on;</code></pre>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p><strong>Proportional control:</strong></p>
+<ul>
+<li><p>Faster response with higher gain (pole moves further left).</p></li>
+<li><p>Reduces steady-state error but <em>cannot eliminate it</em> for type-0 systems.</p></li>
+<li><p>Reduces the effect of disturbances.</p></li>
+<li><p>Too much gain may saturate actuators or destabilise higher-order systems.</p></li>
+</ul>
+</div>
+<h3 id="sec:i_control">Integral Control</h3>
+<p>Now consider a pure integral controller <span class="math inline">\(C(s) = K_I/s\)</span> applied to the same plant <span class="math inline">\(G(s) = 1/(s+2)\)</span>. The output becomes: <span class="math display">\[Y(s) = \frac{K_I}{s^2 + 2s + K_I}\,R(s) + \frac{s}{s^2 + 2s + K_I}\,D(s)\]</span></p>
+<p>The error signal is: <span class="math display">\[E(s) = R(s) - Y(s) = \frac{s^2 + 2s}{s^2 + 2s + K_I}\,\frac{1}{s} - \frac{s}{s^2 + 2s + K_I}\,\frac{d}{s}\]</span></p>
+<p>When <span class="math inline">\(d = 0\)</span> and <span class="math inline">\(R(s) = 1/s\)</span>: <span class="math display">\[e_{ss} = \lim_{s\to 0} sE(s) = \lim_{s\to 0} \frac{s^2 + 2s}{s^2 + 2s + K_I} = \frac{0}{K_I} = 0\]</span></p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Why integral action eliminates steady-state error</div>
+<p>The integrator adds a pole at <span class="math inline">\(s = 0\)</span> to the forward path. This increases the system type by one, which is precisely what is needed to track a step input with zero steady-state error. Physically, even if the error is very small, the integral keeps accumulating until the error is driven to exactly zero.</p>
+</div>
+<p>However, examine the characteristic equation: <span class="math inline">\(s^2 + 2s + K_I = 0\)</span>. Comparing with the standard second-order form <span class="math inline">\(s^2 + 2\zeta\omega_n s + \omega_n^2 = 0\)</span>: <span class="math display">\[\omega_n = \sqrt{K_I}, \qquad 2\zeta\omega_n = 2 \quad\Rightarrow\quad \zeta = \frac{1}{\sqrt{K_I}}\]</span></p>
+<div class="alertbox">
+<p><span>The price of integral action</span> As <span class="math inline">\(K_I\)</span> increases:</p>
+<ul>
+<li><p><span class="math inline">\(\omega_n\)</span> increases (faster response).</p></li>
+<li><p><span class="math inline">\(\zeta\)</span> <em>decreases</em> (more oscillatory, larger overshoot).</p></li>
+<li><p>The system can become unstable if <span class="math inline">\(\zeta\)</span> drops too low in higher-order systems.</p></li>
+</ul>
+<p>This is why pure integral control is rarely used alone — it should be combined with proportional action.</p>
+</div>
+<div class="examplebox">
+<p><span>Integral Control — Eliminating Steady-State Error</span> Using <span class="math inline">\(G(s) = 1/(s+2)\)</span> and <span class="math inline">\(C(s) = K_I/s\)</span>, plot the step response for <span class="math inline">\(K_I = 1, 4, 10\)</span>.</p>
+<p>The closed-loop transfer function is: <span class="math display">\[T(s) = \frac{K_I}{s^2 + 2s + K_I}\]</span></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: center;"><span class="math inline">\(K_I = 1\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(K_I = 4\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(K_I = 10\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(\omega_n\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(1\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(2\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(3.16\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(\zeta\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(1\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0.5\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0.316\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Overshoot</td>
+<td style="text-align: center;"><span class="math inline">\(0\%\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(16\%\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(35\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(e_{ss}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figure>
+<img src="figures/pid_integral.png" style="max-width:75%;" />
+<figcaption>Effect of integral gain on the step response.</figcaption>
+</figure>
+<p>The MATLAB code in Listing <a href="#lst:ch8_pid_integral" data-reference-type="ref" data-reference="lst:ch8_pid_integral">[lst:ch8_pid_integral]</a> generates this comparison.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Step response comparison for integral control</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(1, np.array([1, 2]))
+KI_values = [1, 4, 10]
+
+plt.figure()
+for Ki in KI_values:
+    Gc = ctrl.tf([Ki], np.array([1, 0]))   # Ki/s
+    T = ctrl.feedback(Gc*G, 1)
+    _resp = ctrl.step_response(T, 8)
+
+    t, y = _resp.time, _resp.outputs
+    plt.plot(t, y, label='K_I=%g' % Ki)
+plt.axhline(y=1, linestyle='--', color='k', label='Reference')
+plt.legend()
+plt.title('Effect of integral gain')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(1, [1 2]);
+KI_values = [1, 4, 10];
+figure; hold on;
+for Ki = KI_values
+    Gc = tf(Ki, [1 0]);  % Ki/s
+    T = feedback(Gc*G, 1);
+    step(T, 8);
+end
+yline(1, '--k');
+legend('K_I=1','K_I=4','K_I=10','Reference');
+title('Effect of integral gain');
+grid on;</code></pre>
+</div>
+<h3 id="sec:d_control">Derivative Control</h3>
+<p>Now consider a pure derivative controller <span class="math inline">\(C(s) = K_D s\)</span> applied to a second-order plant <span class="math inline">\(G(s) = \dfrac{1}{s^2 + 2s + 1}\)</span>. The error signal (with no disturbance) is: <span class="math display">\[E(s) = \frac{s^2 + 2s + 1}{s^2 + (2+K_D)s + 1}\,R(s)\]</span></p>
+<p>For a unit step input <span class="math inline">\(R(s) = 1/s\)</span>: <span class="math display">\[e_{ss} = \lim_{s\to 0} sE(s) = \frac{1}{1} = 1\]</span></p>
+<p>The steady-state error is 100%! The output always returns to zero regardless of the reference. Derivative control alone is useless for tracking.</p>
+<p>However, comparing the characteristic equations:</p>
+<ul>
+<li><p>Without D: <span class="math inline">\(s^2 + 2s + 1 = 0 \Rightarrow \zeta = 1\)</span></p></li>
+<li><p>With D: <span class="math inline">\(s^2 + (2+K_D)s + 1 = 0 \Rightarrow \zeta = (2+K_D)/2\)</span></p></li>
+</ul>
+<p>Derivative action <em>increases damping</em>. It acts as a brake — anticipating where the output is heading and applying a corrective force proportionally to how fast the error is changing.</p>
+<div class="alertbox">
+<p><span>Derivative control cannot be used alone</span></p>
+<ul>
+<li><p>It produces 100% steady-state error for step inputs.</p></li>
+<li><p>Since <span class="math inline">\(|C(j\omega)| = K_D\omega\)</span>, the gain increases with frequency. This amplifies high-frequency measurement noise.</p></li>
+<li><p>Derivative action is always used <em>in combination</em> with P or PI control.</p></li>
+</ul>
+</div>
+<div class="alertbox">
+<p><span>Derivative kick</span> When the reference <span class="math inline">\(r(t)\)</span> changes as a step, the error <span class="math inline">\(e(t) = r(t) - y(t)\)</span> has a step discontinuity. The derivative term <span class="math inline">\(K_D\,\dfrac{de}{dt}\)</span> produces a very large spike at that instant (theoretically infinite for an ideal step). This spike drives the actuator momentarily to its limits — a phenomenon called derivative kick.</p>
+<p>The standard remedy is to differentiate only the <em>measurement</em> <span class="math inline">\(y(t)\)</span> instead of the error: <span class="math display">\[u_D(t) = -K_D\,\frac{dy(t)}{dt} \qquad \text{instead of} \qquad u_D(t) = K_D\,\frac{de(t)}{dt}.\]</span> Since <span class="math inline">\(r(t)\)</span> is removed from the derivative calculation, step changes in the reference no longer cause a spike. This is called <em>derivative on measurement</em> (or <em>derivative on process variable</em>). Most industrial PID controllers — and the MATLAB <code>pid</code> block — use this form by default.</p>
+</div>
+<h3 id="sec:pd_control">PD Control</h3>
+<p>Derivative control is combined with proportional action to give PD control: <span class="math display">\[C(s) = K_p + K_D s\]</span></p>
+<p>Using <span class="math inline">\(G(s) = \dfrac{1}{s^2 + 2s + 1}\)</span>, the error becomes: <span class="math display">\[E(s) = \frac{s^2 + 2s + 1}{s^2 + (2+K_D)s + (1+K_p)}\,R(s)\]</span></p>
+<p>For a unit step: <span class="math display">\[e_{ss} = \frac{1}{1+K_p}\]</span></p>
+<p>The characteristic equation is <span class="math inline">\(s^2 + (2+K_D)s + (1+K_p) = 0\)</span>, giving: <span class="math display">\[\omega_n = \sqrt{1+K_p}, \qquad \zeta = \frac{2+K_D}{2\sqrt{1+K_p}}\]</span></p>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: Physical meaning of PD control</div>
+
+<ul>
+<li><p><span class="math inline">\(K_p\)</span> determines the natural frequency (speed of response) and reduces steady-state error.</p></li>
+<li><p><span class="math inline">\(K_D\)</span> determines the damping ratio (reduces overshoot and oscillation).</p></li>
+<li><p>Unlike integral control which <em>destabilises</em>, derivative control has a <em>stabilising</em> effect.</p></li>
+<li><p>However, PD control cannot eliminate steady-state error for type-0 systems.</p></li>
+</ul>
+</div>
+<p>The settling time is approximately: <span class="math display">\[T_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{(2+K_D)/2} = \frac{8}{2+K_D}\]</span></p>
+<p>So increasing <span class="math inline">\(K_D\)</span> also reduces settling time.</p>
+<h3 id="sec:pi_control">PI Control</h3>
+<p>The PI controller <span class="math inline">\(C(s) = K_p + K_I/s\)</span> combines the speed benefit of proportional action with the zero-error guarantee of integral action. This is the most commonly used controller in process industries (temperature, flow, level, pressure control).</p>
+<div class="examplebox">
+<p><span>PI Control — Speed and Accuracy</span> Using <span class="math inline">\(G(s) = \dfrac{1}{s+2}\)</span> and <span class="math inline">\(C(s) = K_p + \dfrac{K_I}{s} = \dfrac{K_p s + K_I}{s}\)</span>, find the closed-loop transfer function and steady-state error.</p>
+<p><span class="math display">\[T(s) = \frac{C(s)G(s)}{1 + C(s)G(s)} = \frac{K_p s + K_I}{s^2 + (2+K_p)s + K_I}\]</span></p>
+<p>The characteristic equation is <span class="math inline">\(s^2 + (2+K_p)s + K_I = 0\)</span>, giving: <span class="math display">\[\omega_n = \sqrt{K_I}, \qquad \zeta = \frac{2+K_p}{2\sqrt{K_I}}\]</span></p>
+<p>For a unit step input: <span class="math display">\[e_{ss} = \lim_{s\to 0} \frac{s}{1 + C(s)G(s)} \cdot \frac{1}{s} = \lim_{s\to 0} \frac{s^2}{s^2 + (2+K_p)s + K_I} = 0\]</span></p>
+<p>Now we have two tuning knobs:</p>
+<ul>
+<li><p><span class="math inline">\(K_I\)</span> controls the speed (<span class="math inline">\(\omega_n\)</span>) and guarantees zero error.</p></li>
+<li><p><span class="math inline">\(K_p\)</span> controls the damping (<span class="math inline">\(\zeta\)</span>), reducing overshoot.</p></li>
+</ul>
+<p>For example, with <span class="math inline">\(K_I = 4\)</span> and <span class="math inline">\(K_p = 2\)</span>: <span class="math inline">\(\omega_n = 2\)</span>, <span class="math inline">\(\zeta = 1\)</span> (critically damped, no overshoot, zero steady-state error).</p>
+</div>
+<h3 id="sec:full_pid">Full PID Control</h3>
+<p>The full PID controller <span class="math inline">\(C(s) = K_p + K_I/s + K_D s\)</span> provides three independent tuning knobs:</p>
+<ul>
+<li><p><span class="math inline">\(K_p\)</span>: sets the overall gain level and response speed.</p></li>
+<li><p><span class="math inline">\(K_I\)</span>: eliminates steady-state error.</p></li>
+<li><p><span class="math inline">\(K_D\)</span>: adds damping, reducing overshoot and improving stability.</p></li>
+</ul>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p><strong>Summary of controller effects:</strong></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Controller</strong></th>
+<th style="text-align: center;"><strong>Rise time</strong></th>
+<th style="text-align: center;"><strong>Overshoot</strong></th>
+<th style="text-align: center;"><strong>Settling time</strong></th>
+<th style="text-align: center;"><strong>SS error</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Increase <span class="math inline">\(K_p\)</span></td>
+<td style="text-align: center;">Decreases</td>
+<td style="text-align: center;">Increases</td>
+<td style="text-align: center;">Small change</td>
+<td style="text-align: center;">Decreases</td>
+</tr>
+<tr>
+<td style="text-align: left;">Increase <span class="math inline">\(K_I\)</span></td>
+<td style="text-align: center;">Decreases</td>
+<td style="text-align: center;">Increases</td>
+<td style="text-align: center;">Increases</td>
+<td style="text-align: center;">Eliminates</td>
+</tr>
+<tr>
+<td style="text-align: left;">Increase <span class="math inline">\(K_D\)</span></td>
+<td style="text-align: center;">Small change</td>
+<td style="text-align: center;">Decreases</td>
+<td style="text-align: center;">Decreases</td>
+<td style="text-align: center;">No effect</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>These are general guidelines. In practice, increasing any gain too much will destabilise the system.</p>
+</div>
+<figure id="fig:controller_comparison" data-latex-placement="htbp">
+<img src="figures/pid_comparison.png" style="max-width:80%;" />
+<figcaption>Step responses comparing different controller structures applied to <span class="math inline">\(G(s) = 1/((s+1)(s+2))\)</span>. P and PD cannot eliminate steady-state error. PI eliminates it but may oscillate. PID achieves both zero error and good transient response.</figcaption>
+</figure>
+<h2 id="sec:pid_tuning">PID Tuning Methods</h2>
+<p>Large industrial plants may have thousands of control loops, making individual mathematical optimisation impractical. Generic tuning methods have been developed — mainly through empirical results — to quickly tune PID controllers to an acceptable level. We study three methods:</p>
+<ol>
+<li><p>ziegler nichols reaction curve method (open-loop experiment)</p></li>
+<li><p>Ziegler–Nichols sustained oscillation method (closed-loop experiment)</p></li>
+<li><p>Åström’s relay-feedback method (automated tuning)</p></li>
+</ol>
+<h3 id="sec:zn_step">Ziegler–Nichols Reaction Curve Method</h3>
+<p>This method does not require a mathematical model of the plant. It works for systems whose open-loop step response has an S-shaped curve (typical of many industrial processes).</p>
+<p><strong>Procedure:</strong></p>
+<ol>
+<li><p>Break the feedback loop (disconnect the controller).</p></li>
+<li><p>With the system at a settled condition, apply a small step change <span class="math inline">\(\Delta u\)</span> (typically around 10% of the operating range) to the plant input.</p></li>
+<li><p>Record the output response (the <em>reaction curve</em>).</p></li>
+<li><p>Draw a tangent line at the steepest part of the response curve.</p></li>
+<li><p>From the tangent, measure:</p>
+<ul>
+<li><p><span class="math inline">\(L\)</span> = time delay (where the tangent intersects the initial value line)</p></li>
+<li><p><span class="math inline">\(N\)</span> = normalised reaction rate, defined as <span class="math inline">\(N = \dfrac{\Delta y}{\Delta u \cdot \Delta T}\)</span>, where <span class="math inline">\(\Delta y\)</span> is the total output change, <span class="math inline">\(\Delta u\)</span> is the step size applied, and <span class="math inline">\(\Delta T\)</span> is the time interval over which the tangent rises by <span class="math inline">\(\Delta y\)</span>. Equivalently, <span class="math inline">\(N\)</span> is the slope of the tangent line divided by the input step size.</p></li>
+</ul></li>
+</ol>
+<figure id="fig:zn_reaction_curve" data-latex-placement="htbp">
+<img src="figures/pid_zn_reaction.png" style="max-width:75%;" />
+
+<figcaption>Ziegler–Nichols reaction curve method. (a) A step change <span class="math inline">\(\Delta u\)</span> is applied. (b) The reaction curve is recorded; a tangent at the inflection point gives the delay <span class="math inline">\(L\)</span> and normalised reaction rate <span class="math inline">\(N = \Delta y / (\Delta u \cdot \Delta T)\)</span>.</figcaption>
+</figure>
+<p>The recommended controller parameters are:</p>
+<div id="tab:zn_step">
+<table>
+<caption>Ziegler–Nichols reaction curve tuning rules. The controller is in standard form: <span class="math inline">\(C(s) = K_p\left(1 + \dfrac{1}{\tau_I s} + \tau_D s\right)\)</span>.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Controller</strong></th>
+<th style="text-align: center;"><span class="math inline">\(K_p\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(\tau_I\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(\tau_D\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">P</td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{1}{NL}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(\infty\)</span></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PI</td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{0.9}{NL}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(3L\)</span></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PID</td>
+<td style="text-align: center;"><span class="math inline">\(\dfrac{1.2}{NL}\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(2L\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(0.5L\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The Ziegler–Nichols design provides only a <em>starting point</em>. The resulting response typically has 25–60% overshoot (quarter-amplitude decay criterion). Further tuning is almost always needed. However, it gives a systematic first attempt without requiring a mathematical model.</p>
+</div>
+<h3 id="sec:zn_ultimate">Ziegler–Nichols Sustained Oscillation Method</h3>
+<p>In many industrial settings, operators are hesitant to open the feedback loop or to apply large step inputs to the process. The sustained oscillation method works with the loop <em>closed</em> and uses only proportional control.</p>
+<p>The idea is simple: for many industrial systems, increasing the proportional gain eventually causes sustained oscillations (the system reaches the boundary of stability). This critical gain value and the corresponding oscillation period contain enough information to tune a PID controller.</p>
+<p><strong>Procedure:</strong></p>
+<ol>
+<li><p><strong>Process setup:</strong> Ensure the system is in steady state under closed-loop control. Disengage integral and derivative actions (set <span class="math inline">\(\tau_I\)</span> very large, <span class="math inline">\(\tau_D = 0\)</span>).</p></li>
+<li><p><strong>Experiment:</strong> Carefully increment <span class="math inline">\(K_p\)</span> until sustained oscillations are observed in the output. These should be very slowly decaying (not growing!) to maintain safe operation.</p></li>
+<li><p><strong>Record:</strong></p>
+<ul>
+<li><p><span class="math inline">\(K_u\)</span> = the ultimate gain (gain at which sustained oscillation occurs)</p></li>
+<li><p><span class="math inline">\(P_u\)</span> = the ultimate period (period of the sustained oscillation)</p></li>
+</ul></li>
+<li><p><strong>Calculate PID parameters</strong> from Table <a href="#tab:zn_ultimate" data-reference-type="ref" data-reference="tab:zn_ultimate">1.2</a>.</p></li>
+</ol>
+<figure id="fig:zn_sustained" data-latex-placement="htbp">
+<img src="figures/pid_sustained_osc.png" style="max-width:75%;" />
+
+<figcaption>Sustained oscillation method applied to <span class="math inline">\(G(s) = 1/(s(s+1)(s+3))\)</span> with <span class="math inline">\(K_u = 12\)</span>: as <span class="math inline">\(K_p\)</span> increases from below <span class="math inline">\(K_u\)</span> (stable), through <span class="math inline">\(K_u\)</span> (sustained oscillation), to above <span class="math inline">\(K_u\)</span> (unstable). We record <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> from the middle case.</figcaption>
+</figure>
+<div id="tab:zn_ultimate">
+<table>
+<caption>Ziegler–Nichols sustained oscillation tuning rules.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Controller</strong></th>
+<th style="text-align: center;"><span class="math inline">\(K_p\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(\tau_I\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(\tau_D\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">P</td>
+<td style="text-align: center;"><span class="math inline">\(0.5\,K_u\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(\infty\)</span></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PI</td>
+<td style="text-align: center;"><span class="math inline">\(0.45\,K_u\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(P_u/1.2\)</span></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PID</td>
+<td style="text-align: center;"><span class="math inline">\(0.6\,K_u\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(P_u/2\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(P_u/8\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="examplebox">
+<p><span>Sustained Oscillation Method — Complete Design</span> A process has transfer function <span class="math inline">\(G(s) = \dfrac{1}{s(s+1)(s+3)}\)</span>. Design a PID controller using the sustained oscillation method.</p>
+<p><strong>Step 1:</strong> Find the ultimate gain <span class="math inline">\(K_u\)</span>.</p>
+<p>The closed-loop characteristic equation with <span class="math inline">\(C(s) = K_p\)</span> is: <span class="math display">\[1 + K_p G(s) = 0 \quad\Rightarrow\quad s(s+1)(s+3) + K_p = 0\]</span> <span class="math display">\[s^3 + 4s^2 + 3s + K_p = 0\]</span></p>
+<p>For sustained oscillation, substitute <span class="math inline">\(s = j\omega\)</span>: <span class="math display">\[-j\omega^3 - 4\omega^2 + 3j\omega + K_p = 0\]</span></p>
+<p>Separating real and imaginary parts: <span class="math display">\[\begin{align*}
+        \text{Real:} \quad &amp; K_p - 4\omega^2 = 0 \quad\Rightarrow\quad K_p = 4\omega^2 \\
+        \text{Imaginary:} \quad &amp; 3\omega - \omega^3 = 0 \quad\Rightarrow\quad \omega(\omega^2 - 3) = 0
+\end{align*}\]</span></p>
+<p>Since <span class="math inline">\(\omega \neq 0\)</span>: <span class="math inline">\(\omega = \sqrt{3}\)</span> rad/s. Therefore: <span class="math display">\[K_u = 4 \times 3 = 12, \qquad P_u = \frac{2\pi}{\omega} = \frac{2\pi}{\sqrt{3}} = 3.63 \text{ s}\]</span></p>
+<p><strong>Step 2:</strong> Apply Z–N PID rules: <span class="math display">\[\begin{align*}
+        K_p &amp;= 0.6 \times K_u = 0.6 \times 12 = 7.2 \\
+        \tau_I &amp;= P_u/2 = 3.63/2 = 1.815 \text{ s} \\
+        \tau_D &amp;= P_u/8 = 3.63/8 = 0.454 \text{ s}
+\end{align*}\]</span></p>
+<p>Converting to textbook form: <span class="math display">\[K_I = K_p/\tau_I = 7.2/1.815 = 3.97, \qquad K_D = K_p \cdot \tau_D = 7.2 \times 0.454 = 3.27\]</span></p>
+<p>The MATLAB verification is shown in Listing <a href="#lst:ch8_zn_sustained" data-reference-type="ref" data-reference="lst:ch8_zn_sustained">[lst:ch8_zn_sustained]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Z--N sustained oscillation PID design and verification</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(1, np.array([1, 4, 3, 0]))
+Kp = 7.2
+Ki = 3.97
+Kd = 3.27
+
+# Build PID: C(s) = Kp + Ki/s + Kd*s
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+
+T = ctrl.feedback(C*G, 1)
+_resp = ctrl.step_response(T, 10)
+
+t, y = _resp.time, _resp.outputs
+plt.plot(t, y)
+plt.title('Z-N PID Design via Sustained Oscillation Method')
+plt.grid(True)
+plt.show()
+
+info = ctrl.step_info(T)
+for key, val in info.items():
+    print(f"  {key}: {val:.4f}" if isinstance(val, float) else f"  {key}: {val}")</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(1, [1 4 3 0]);
+Kp = 7.2; Ki = 3.97; Kd = 3.27;
+C = pid(Kp, Ki, Kd);
+T = feedback(C*G, 1);
+step(T, 10);
+title('Z-N PID Design via Sustained Oscillation Method');
+grid on;
+stepinfo(T)</code></pre>
+</div>
+<h2 id="sec:relay_method">Åström’s Relay-Feedback Method (Auto-Tuning)</h2>
+<p>The sustained oscillation method requires manually adjusting <span class="math inline">\(K_p\)</span> to the stability boundary — a delicate and potentially dangerous procedure. Karl Johan Åström’s insight was to replace the controller with an ON–OFF relay, which <em>automatically</em> generates sustained oscillations at the critical frequency without ever making the system unstable.</p>
+<h3 id="how-it-works">How It Works</h3>
+<p>The relay controller is: <span class="math display">\[u(t) = \begin{cases}
+    +M &amp; \text{if } e(t) \geq 0 \\
+    -M &amp; \text{if } e(t) &lt; 0
+\end{cases}\]</span> where <span class="math inline">\(M\)</span> is the relay amplitude (chosen within the actuator’s safe range).</p>
+<figure id="fig:relay_autotune" data-latex-placement="htbp">
+
+
+<figcaption>Relay-feedback auto-tuning. The PID controller is temporarily replaced by an ON–OFF relay. The relay produces bounded sustained oscillations from which <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> are measured. After tuning, the relay is switched back to the PID controller.</figcaption>
+</figure>
+<p>When the relay is connected in the feedback loop and a brief disturbance is applied (a small step in <span class="math inline">\(r(t)\)</span>), the system naturally develops sustained oscillations. These oscillations are <em>stable by construction</em> — the relay keeps them bounded regardless of the plant dynamics. The amplitude never diverges.</p>
+<h3 id="extracting-k_u-and-p_u-from-the-relay-experiment">Extracting <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> from the Relay Experiment</h3>
+<p>From the sustained oscillation produced by the relay:</p>
+<ul>
+<li><p>Measure the <strong>ultimate period</strong> <span class="math inline">\(P_u\)</span> from the error signal <span class="math inline">\(e(t)\)</span> (time between successive zero crossings in the same direction).</p></li>
+<li><p>Measure the <strong>oscillation amplitude</strong> <span class="math inline">\(A_o\)</span> of the output.</p></li>
+</ul>
+<p>The ultimate gain is then calculated from the describing function of the relay: <span class="math display">\[\begin{equation}
+    K_u = \frac{4M}{\pi A_o}
+    \label{eq:relay_Ku}
+\end{equation}\]</span> where <span class="math inline">\(M\)</span> is the relay height.</p>
+<figure id="fig:relay_signals" data-latex-placement="htbp">
+<img src="figures/pid_relay_signals.png" style="max-width:75%;" />
+
+<figcaption>Signals during the relay-feedback experiment on <span class="math inline">\(G(s) = 1/((2s+1)(s+1)(0.5s+1))\)</span> with relay amplitude <span class="math inline">\(M = 1\)</span>. The relay output <span class="math inline">\(u(t)\)</span> is a square wave; the plant output <span class="math inline">\(y(t)\)</span> is approximately sinusoidal. Measure <span class="math inline">\(A_o\)</span> and <span class="math inline">\(P_u\)</span> from the output to compute <span class="math inline">\(K_u = 4M/(\pi A_o)\)</span>.</figcaption>
+</figure>
+<p>Once <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> are obtained, the standard Ziegler–Nichols sustained oscillation rules (Table <a href="#tab:zn_ultimate" data-reference-type="ref" data-reference="tab:zn_ultimate">1.2</a>) are applied to calculate the PID parameters.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p><strong>Advantages of the relay method over manual sustained oscillation:</strong></p>
+<ul>
+<li><p>The oscillation amplitude is bounded by the relay height <span class="math inline">\(M\)</span> — no risk of instability.</p></li>
+<li><p>The experiment is fast (typically 3–5 oscillation periods are sufficient).</p></li>
+<li><p>It can be fully automated — modern process controllers have an “Auto-Tune” button that implements exactly this procedure.</p></li>
+<li><p>The relay amplitude <span class="math inline">\(M\)</span> can be chosen within the actuator’s safe operating range.</p></li>
+</ul>
+</div>
+<div class="examplebox">
+<p><span>Relay Auto-Tuning in MATLAB</span> Demonstrate the relay-feedback experiment for <span class="math inline">\(G(s) = \dfrac{1}{(2s+1)(s+1)(0.5s+1)}\)</span>.</p>
+<p>Listing <a href="#lst:ch8_relay_autotune" data-reference-type="ref" data-reference="lst:ch8_relay_autotune">[lst:ch8_relay_autotune]</a> demonstrates the relay-feedback procedure.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Relay auto-tuning: finding <span class="math inline">\(K_u\)</span>, <span class="math inline">\(P_u\)</span> and designing a PID controller</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(1, np.convolve(np.convolve(np.array([2, 1]), np.array([1, 1])), np.array([0.5, 1])))
+
+# Find Ku and Pu from gain/phase margins
+gm, pm, wcg, wcp = ctrl.margin(G)
+Ku = gm               # Ultimate gain = gain margin
+Pu = 2*np.pi/wcg      # Ultimate period
+
+print("Ku = %.3f, Pu = %.3f s" % (Ku, Pu))
+
+# Z-N PID tuning from sustained oscillation rules
+Kp = 0.6*Ku
+Ti = Pu/2
+Td = Pu/8
+Ki = Kp/Ti
+Kd = Kp*Td
+
+# Build PID: C(s) = Kp + Ki/s + Kd*s
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+
+T = ctrl.feedback(C*G, 1)
+_resp = ctrl.step_response(T, 20)
+
+t, y = _resp.time, _resp.outputs
+plt.plot(t, y)
+plt.title('PID controller designed via relay method')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(1, conv(conv([2 1],[1 1]),[0.5 1]));
+
+% Simulate relay feedback using Simulink or manual code:
+% For illustration, find Ku and Pu analytically/numerically:
+% Use allmargin to find the gain crossover
+[Gm, Pm, Wcg, Wcp] = margin(G);
+Ku = Gm;          % Ultimate gain = gain margin
+Pu = 2*pi/Wcg;    % Ultimate period
+
+fprintf('Ku = %.3f, Pu = %.3f s\n', Ku, Pu);
+
+% Z-N PID tuning from sustained oscillation rules
+Kp = 0.6*Ku;
+Ti = Pu/2;
+Td = Pu/8;
+Ki = Kp/Ti;
+Kd = Kp*Td;
+
+C = pid(Kp, Ki, Kd);
+T = feedback(C*G, 1);
+step(T, 20);
+title('PID controller designed via relay method');
+grid on;</code></pre>
+<p>In practice with a real relay experiment, <span class="math inline">\(K_u\)</span> would be computed from <a href="#eq:relay_Ku" data-reference-type="eqref" data-reference="eq:relay_Ku">[eq:relay_Ku]</a> using the measured <span class="math inline">\(A_o\)</span> and <span class="math inline">\(M\)</span>.</p>
+</div>
+<h2 id="sec:pid_matlab">PID Tuning with MATLAB</h2>
+<p>Modern software tools can directly optimise PID gains for specified performance criteria, providing a more systematic alternative to hand-tuning methods.</p>
+<h3 id="the-pidtune-function">The <code>pidtune()</code> Function</h3>
+<p>MATLAB’s <code>pidtune()</code> automatically designs a PID controller that balances performance and robustness. Listing <a href="#lst:ch8_pidtune_compare" data-reference-type="ref" data-reference="lst:ch8_pidtune_compare">[lst:ch8_pidtune_compare]</a> shows how to compare P, PI, and PID designs.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Comparing P, PI, and PID controllers using <code>pidtune()</code></p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(1, np.array([1, 4, 3, 0]))     # Plant
+
+s = ctrl.tf('s')
+
+# Design different controller types manually
+# (pidtune is MATLAB-only; we use margin-based Z-N tuning here)
+gm, pm, wcg, wcp = ctrl.margin(G)
+Ku = gm
+Pu = 2*np.pi/wcg
+
+# P-only (Z-N rule)
+Kp_P = 0.5*Ku
+C_P  = Kp_P
+
+# PI (Z-N rule)
+Kp_PI = 0.45*Ku
+Ti_PI = Pu/1.2
+C_PI  = Kp_PI*(1 + 1/(Ti_PI*s))
+
+# PID (Z-N rule)
+Kp_PID = 0.6*Ku
+Ti_PID = Pu/2
+Td_PID = Pu/8
+C_PID  = Kp_PID*(1 + 1/(Ti_PID*s) + Td_PID*s)
+
+# Compare closed-loop responses
+T_P   = ctrl.feedback(C_P*G, 1)
+T_PI  = ctrl.feedback(C_PI*G, 1)
+T_PID = ctrl.feedback(C_PID*G, 1)
+
+plt.figure()
+for T_sys, lbl in [(T_P, 'P'), (T_PI, 'PI'), (T_PID, 'PID')]:
+    _resp = ctrl.step_response(T_sys, 10)
+
+    t, y = _resp.time, _resp.outputs
+    plt.plot(t, y, label=lbl)
+plt.legend()
+plt.title('Comparison of controller types (Z-N tuning)')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(1, [1 4 3 0]);    % Plant
+
+% Design different controller types
+C_P  = pidtune(G, 'P');   % P-only
+C_PI = pidtune(G, 'PI');  % PI
+C_PID = pidtune(G, 'PID'); % Full PID
+
+% Compare closed-loop responses
+T_P  = feedback(C_P*G, 1);
+T_PI = feedback(C_PI*G, 1);
+T_PID = feedback(C_PID*G, 1);
+
+figure;
+step(T_P, T_PI, T_PID, 10);
+legend('P','PI','PID');
+title('Comparison of controller types (pidtune)');
+grid on;</code></pre>
+<h3 id="adjusting-performance-with-bandwidth">Adjusting Performance with Bandwidth</h3>
+<p>The third argument of <code>pidtune()</code> specifies the desired crossover frequency (bandwidth). Higher bandwidth means faster response but less robustness, as shown in Listing <a href="#lst:ch8_pidtune_bandwidth" data-reference-type="ref" data-reference="lst:ch8_pidtune_bandwidth">[lst:ch8_pidtune_bandwidth]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Effect of target bandwidth on PID design</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(5, np.array([1, 6, 5]))
+
+s = ctrl.tf('s')
+
+# Design PID controllers with different bandwidths
+# using pole-placement-inspired gains
+# Conservative (slow, robust): low Kp
+Kp_s, Ki_s, Kd_s = 0.5, 0.3, 0.1
+C_slow = Kp_s + Ki_s/s + Kd_s*s
+
+# Default (moderate)
+Kp_d, Ki_d, Kd_d = 2.0, 1.5, 0.3
+C_default = Kp_d + Ki_d/s + Kd_d*s
+
+# Aggressive (fast, less robust): high Kp
+Kp_f, Ki_f, Kd_f = 8.0, 6.0, 0.8
+C_fast = Kp_f + Ki_f/s + Kd_f*s
+
+T_slow = ctrl.feedback(C_slow*G, 1)
+T_fast = ctrl.feedback(C_fast*G, 1)
+T_def  = ctrl.feedback(C_default*G, 1)
+
+plt.figure()
+for T_sys, lbl in [(T_slow, 'Slow'), (T_def, 'Default'), (T_fast, 'Fast')]:
+    _resp = ctrl.step_response(T_sys, 5)
+
+    t, y = _resp.time, _resp.outputs
+    plt.plot(t, y, label=lbl)
+plt.legend()
+plt.title('Effect of target bandwidth on PID design')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf(5, [1 6 5]);
+
+% Conservative (slow, robust)
+C_slow = pidtune(G, 'PID', 2);
+
+% Aggressive (fast, less robust)
+C_fast = pidtune(G, 'PID', 15);
+
+% Default
+C_default = pidtune(G, 'PID');
+
+T_slow = feedback(C_slow*G, 1);
+T_fast = feedback(C_fast*G, 1);
+T_def  = feedback(C_default*G, 1);
+
+step(T_slow, T_def, T_fast, 5);
+legend('Slow (wc=2)','Default','Fast (wc=15)');
+title('Effect of target bandwidth on PID design');</code></pre>
+<h3 id="pid-tuning-in-simulink">PID Tuning in Simulink</h3>
+<p>Simulink provides a dedicated PID Controller block (in the <em>Continuous</em> library) that includes:</p>
+<ul>
+<li><p>Derivative filtering (adjustable filter coefficient <span class="math inline">\(N\)</span>)</p></li>
+<li><p>Anti-windup (back-calculation or clamping)</p></li>
+<li><p>Output saturation limits</p></li>
+<li><p>Setpoint weighting</p></li>
+</ul>
+<p><strong>Building a PID loop in Simulink:</strong></p>
+<ol>
+<li><p>Add a <strong>Step</strong> block (reference input).</p></li>
+<li><p>Add a <strong>Sum</strong> block (error = reference <span class="math inline">\(-\)</span> output).</p></li>
+<li><p>Add a <strong>PID Controller</strong> block.</p></li>
+<li><p>Add a <strong>Transfer Fcn</strong> block (your plant).</p></li>
+<li><p>Connect in a feedback loop.</p></li>
+<li><p>Add <strong>Scope</strong> blocks to observe signals.</p></li>
+</ol>
+<p>Double-click the PID Controller block to enter gains manually, or click <strong>“Tune...”</strong> to open the interactive PID Tuner, which lets you adjust the speed–robustness tradeoff using a graphical slider.</p>
+<h2 id="sec:pid_practical">Practical Considerations</h2>
+<h3 id="sec:derivative_filter">Derivative Filtering</h3>
+<p>Pure differentiation (<span class="math inline">\(K_D s\)</span>) has infinite gain at high frequencies, making it impractical due to measurement noise. In all real implementations, the derivative term includes a low-pass filter: <span class="math display">\[\begin{equation}
+    D(s) = \frac{K_D s}{1 + s/N}
+    \label{eq:derivative_filter}
+\end{equation}\]</span> where <span class="math inline">\(N\)</span> is the filter coefficient (typically <span class="math inline">\(N = 10\)</span> to <span class="math inline">\(100\)</span>). This limits the high-frequency gain to <span class="math inline">\(K_D N\)</span> rather than infinity.</p>
+<p>The complete <em>practical PID</em> transfer function is: <span class="math display">\[\begin{equation}
+    C(s) = K_p + \frac{K_I}{s} + \frac{K_D s}{1 + s/N}
+    \label{eq:pid_practical}
+\end{equation}\]</span></p>
+<p>MATLAB’s <code>pid()</code> object uses this form by default with <span class="math inline">\(N = 100\)</span>.</p>
+<h3 id="sec:windup">Integral Windup and Anti-Windup</h3>
+<p>In real systems, actuators have physical limits (e.g., a motor can supply at most <span class="math inline">\(\pm 12\)</span> V, a valve opens between 0% and 100%). When the controller output saturates at these limits, the integrator continues to accumulate error, growing to a very large value. When the error finally changes sign, the large integral prevents the controller from responding quickly — this is called integral windup.</p>
+<figure id="fig:windup" data-latex-placement="htbp">
+<img src="figures/pid_antiwindup.png" style="max-width:80%;" />
+
+<figcaption>Integral windup demonstration: PI control of <span class="math inline">\(G(s) = 1/((10s+1)(2s+1))\)</span> with <span class="math inline">\(K_p=4\)</span>, <span class="math inline">\(K_i=2\)</span>, and actuator limit <span class="math inline">\(u_{\max} = 1.5\)</span>. A step reference is applied at <span class="math inline">\(t=0\)</span> and removed at <span class="math inline">\(t=35\)</span> s. Without anti-windup (red), the integrator winds up during prolonged saturation, causing 42% overshoot and a large undershoot on the step-down. With back-calculation anti-windup (green), the overshoot is reduced to under 7% and the step-down response is much cleaner.</figcaption>
+</figure>
+<p><strong>Remedies (antiwindup):</strong></p>
+<ul>
+<li><p><strong>Clamping:</strong> Stop integrating when the controller output hits the saturation limit.</p></li>
+<li><p><strong>Back-calculation:</strong> Feed back the difference between the saturated and unsaturated controller output to “unwind” the integrator.</p></li>
+</ul>
+<p>Both methods are available in Simulink’s PID Controller block, as illustrated in Listing <a href="#lst:ch8_antiwindup" data-reference-type="ref" data-reference="lst:ch8_antiwindup">[lst:ch8_antiwindup]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">PID with anti-windup in Simulink</p>
+<div class="pyodide-runner">
+<pre><code>import control as ctrl
+
+# Build a PID controller: C(s) = Kp + Ki/s + Kd*s
+# Example gains (replace with your values)
+Kp, Ki, Kd = 4.0, 2.0, 0.5
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+print('PID controller:')
+print(C)
+
+# Note: Anti-windup is a Simulink/implementation feature.
+# In Simulink: double-click PID block -&gt; Anti-Windup -&gt; Enable
+# Choose method: back-calculation or clamping
+# Set upper/lower saturation limits in the block parameters</code></pre>
+</div>
+<pre class="matlab"><code>C = pid(Kp, Ki, Kd);
+
+% In Simulink: double-click PID block -&gt; Anti-Windup -&gt; Enable
+% Choose method: back-calculation or clamping
+% Set upper/lower saturation limits in the block parameters</code></pre>
+<h2 id="sec:pid_limitations">Limitations of PID Control — Motivation for State-Space Methods</h2>
+<p>PID control has fundamental limitations that motivate the state-space techniques studied in the remaining chapters:</p>
+<ol>
+<li><p><strong>Single-loop only:</strong> PID is a single-input, single-output (SISO) controller. It cannot coordinate multiple actuators or handle strong coupling between variables.</p></li>
+<li><p><strong>Non-minimum phase systems:</strong> When a system has right-half-plane (RHP) zeros, the output initially moves in the <em>opposite</em> direction to the desired response. PID reacts to the error and cannot anticipate or compensate for this inverse-response behaviour. Increasing the gains makes the initial undershoot worse.</p></li>
+<li><p><strong>Only uses the output:</strong> PID acts on the measured output error. If important internal states are not directly measured, PID cannot address their dynamics.</p></li>
+<li><p><strong>No systematic pole placement:</strong> With PID, we have only 3 parameters (<span class="math inline">\(K_p, K_I, K_D\)</span>). For an <span class="math inline">\(n\)</span>-th order system with <span class="math inline">\(n &gt; 3\)</span>, we cannot place all closed-loop poles freely.</p></li>
+</ol>
+<div class="examplebox">
+<p><span>When PID Struggles: A Non-Minimum Phase System</span> Consider a system with a right-half-plane zero: <span class="math display">\[G(s) = \frac{1 - s}{(s+1)^2}\]</span> This is a <strong>non-minimum phase</strong> system. The zero at <span class="math inline">\(s = +1\)</span> causes the step response to initially dip <em>below zero</em> before rising toward the reference — an <strong>inverse response</strong>. Physically, such behaviour arises in systems where the initial reaction opposes the final steady-state direction (e.g., certain chemical processes, boiler water level dynamics, some aircraft manoeuvres).</p>
+<p>A PID controller only reacts to the error signal. It does not “understand” that the initial wrong-way response is temporary. As the gains are increased to improve tracking speed, the inverse-response dip becomes deeper and the overshoot grows larger, as shown in Listing <a href="#lst:ch8_nmp_limitation" data-reference-type="ref" data-reference="lst:ch8_nmp_limitation">[lst:ch8_nmp_limitation]</a>.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">PI control of a non-minimum phase plant</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+G = ctrl.tf(np.array([-1, 1]), np.array([1, 2, 1]))   # G(s) = (1-s)/(s+1)**2
+
+s = ctrl.tf('s')
+
+# Conservative PI
+C1 = 0.5 + 0.1/s
+T1 = ctrl.feedback(C1*G, 1)
+
+# Moderate PI
+C2 = 1.0 + 0.3/s
+T2 = ctrl.feedback(C2*G, 1)
+
+# Aggressive PI
+C3 = 1.5 + 0.5/s
+T3 = ctrl.feedback(C3*G, 1)
+
+plt.figure()
+for T_sys, lbl in [(T1, 'Conservative'), (T2, 'Moderate'), (T3, 'Aggressive')]:
+    _resp = ctrl.step_response(T_sys, 25)
+
+    t, y = _resp.time, _resp.outputs
+    plt.plot(t, y, label=lbl)
+plt.legend()
+plt.title('PI control of non-minimum phase plant')
+plt.grid(True)
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>G = tf([-1 1],[1 2 1]);  % G(s) = (1-s)/(s+1)^2
+
+% Conservative PI
+C1 = pid(0.5, 0.1);
+T1 = feedback(C1*G, 1);
+
+% Moderate PI
+C2 = pid(1.0, 0.3);
+T2 = feedback(C2*G, 1);
+
+% Aggressive PI
+C3 = pid(1.5, 0.5);
+T3 = feedback(C3*G, 1);
+
+step(T1, T2, T3, 25);
+legend('Conservative', 'Moderate', 'Aggressive');</code></pre>
+<figure>
+<img src="figures/pid_nmp_limitation.png" style="max-width:75%;" />
+<figcaption>PI control of a non-minimum phase plant: increasing gains deepens the inverse response.</figcaption>
+</figure>
+<p>The fundamental trade-off is clear: <em>increasing the gains to reduce the steady-state error unavoidably deepens the inverse response and increases the overshoot</em>. A model-based controller (Chapter 9) that knows about the internal plant structure can handle this situation far more effectively.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>PID control is highly effective for many low-order, well-damped SISO systems, but it is not universal. Systems with:</p>
+<ul>
+<li><p>Multiple inputs/outputs (MIMO)</p></li>
+<li><p>Right-half-plane zeros (non-minimum phase / inverse response)</p></li>
+<li><p>Important unmeasured internal states</p></li>
+<li><p>Actuator constraints (saturation, rate limits)</p></li>
+<li><p>More poles than tuning parameters</p></li>
+</ul>
+<p>require controllers that explicitly account for the model structure and constraints. The state-space control methods developed in Chapters 8–11 provide this capability.</p>
+</div>
+<h2 id="sec:pid_summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p>The PID controller generates control action based on the present error (<span class="math inline">\(K_p\)</span>), accumulated past error (<span class="math inline">\(K_I\)</span>), and rate of change of error (<span class="math inline">\(K_D\)</span>).</p></li>
+<li><p>Two equivalent forms: textbook (<span class="math inline">\(K_p + K_I/s + K_D s\)</span>) and industrial (<span class="math inline">\(K_p(1 + 1/\tau_I s + \tau_D s)\)</span>).</p></li>
+<li><p>Proportional action provides speed but cannot eliminate steady-state error.</p></li>
+<li><p>Integral action guarantees zero steady-state error but reduces damping (destabilising effect).</p></li>
+<li><p>Derivative action improves damping (stabilising effect) but amplifies noise and cannot be used alone.</p></li>
+<li><p>The Ziegler–Nichols reaction curve method uses an open-loop step experiment.</p></li>
+<li><p>The Ziegler–Nichols sustained oscillation method uses the critical gain <span class="math inline">\(K_u\)</span> and period <span class="math inline">\(P_u\)</span>.</p></li>
+<li><p>Åström’s relay method automates the sustained oscillation experiment safely.</p></li>
+<li><p>MATLAB <code>pidtune()</code> and Simulink PID Tuner provide modern alternatives.</p></li>
+<li><p>Practical issues include derivative filtering (coefficient <span class="math inline">\(N\)</span>) and integral windup (anti-windup schemes).</p></li>
+<li><p>PID has limitations for non-minimum phase, MIMO, and high-order systems — motivating state-space methods.</p></li>
+</ul>
+</div>
+<h2 id="sec:pid_problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>(Conceptual)</strong> Explain in your own words why:</p>
+<ol>
+<li><p>Proportional control cannot eliminate steady-state error for a type-0 plant.</p></li>
+<li><p>Integral action guarantees zero steady-state error but may destabilise the system.</p></li>
+<li><p>Derivative action has a stabilising effect but cannot be used alone.</p></li>
+</ol></li>
+<li><p><strong>(Analysis)</strong> Consider the system in Figure <a href="#fig:pid_block" data-reference-type="ref" data-reference="fig:pid_block">1.4</a> with <span class="math inline">\(G(s) = \dfrac{1}{s+2}\)</span> and no disturbance (<span class="math inline">\(D = 0\)</span>).</p>
+<ol>
+<li><p>With <span class="math inline">\(C(s) = K_p\)</span>: derive the closed-loop transfer function, find the steady-state error for a unit step, and determine how large <span class="math inline">\(K_p\)</span> must be to achieve <span class="math inline">\(e_{ss} &lt; 5\%\)</span>.</p></li>
+<li><p>With <span class="math inline">\(C(s) = K_p + K_I/s\)</span> (PI control): show that <span class="math inline">\(e_{ss} = 0\)</span> for any positive <span class="math inline">\(K_I\)</span>.</p></li>
+<li><p>For the PI case with <span class="math inline">\(K_p = 4\)</span> and <span class="math inline">\(K_I = 4\)</span>: find the closed-loop poles, damping ratio, and natural frequency. Is this design satisfactory?</p></li>
+</ol></li>
+<li><p><strong>(Analysis with disturbance)</strong> For the same plant <span class="math inline">\(G(s) = 1/(s+2)\)</span> with <span class="math inline">\(C(s) = K_p\)</span>, a unit step reference and a step disturbance of magnitude <span class="math inline">\(d = 0.5\)</span> are applied simultaneously.</p>
+<ol>
+<li><p>Derive the steady-state error as a function of <span class="math inline">\(K_p\)</span> and <span class="math inline">\(d\)</span>.</p></li>
+<li><p>What value of <span class="math inline">\(K_p\)</span> is needed to keep the total steady-state error below 10%?</p></li>
+<li><p>Explain why PI control would be superior for disturbance rejection.</p></li>
+</ol></li>
+<li><p><strong>(PD Control)</strong> A second-order plant <span class="math inline">\(G(s) = \dfrac{1}{s^2 + 2s + 1}\)</span> is controlled by <span class="math inline">\(C(s) = K_p + K_D s\)</span>.</p>
+<ol>
+<li><p>Derive the closed-loop characteristic equation.</p></li>
+<li><p>Express <span class="math inline">\(\omega_n\)</span> and <span class="math inline">\(\zeta\)</span> in terms of <span class="math inline">\(K_p\)</span> and <span class="math inline">\(K_D\)</span>.</p></li>
+<li><p>Design <span class="math inline">\(K_p\)</span> and <span class="math inline">\(K_D\)</span> to achieve <span class="math inline">\(\omega_n = 4\)</span> rad/s and <span class="math inline">\(\zeta = 0.7\)</span>.</p></li>
+<li><p>What is the steady-state error? Why can’t PD control eliminate it here?</p></li>
+</ol></li>
+<li><p><strong>(Ziegler–Nichols Step Response)</strong> A process has an S-shaped open-loop step response with the following measurements: step input magnitude <span class="math inline">\(\Delta u = 2\)</span>, final output change <span class="math inline">\(\Delta y = 3\)</span>, delay <span class="math inline">\(L = 1.5\)</span> s, and the tangent intersects the final value at <span class="math inline">\(t = 7.5\)</span> s (so <span class="math inline">\(\Delta T = 6\)</span> s).</p>
+<ol>
+<li><p>Calculate the reaction rate <span class="math inline">\(N\)</span>.</p></li>
+<li><p>Use the Z–N reaction curve rules to find P, PI, and PID controller parameters.</p></li>
+<li><p>Implement all three in MATLAB using the approximate model <span class="math inline">\(G(s) = \dfrac{1.5\,e^{-1.5s}}{6s+1}\)</span> and compare step responses.</p></li>
+</ol></li>
+<li><p><strong>(Ziegler–Nichols Sustained Oscillation)</strong> A wastewater treatment plant has the transfer function: <span class="math display">\[G(s) = \frac{1}{5s^3 + 15.5s^2 + 11.5s + 1}\]</span></p>
+<ol>
+<li><p>Find the ultimate gain <span class="math inline">\(K_u\)</span> and ultimate period <span class="math inline">\(P_u\)</span> using the Routh–Hurwitz criterion or by substituting <span class="math inline">\(s = j\omega\)</span> into <span class="math inline">\(1 + K_p G(s) = 0\)</span>.</p></li>
+<li><p>Design a PI controller using the Z–N sustained oscillation rules.</p></li>
+<li><p>Implement in MATLAB and assess the tracking response. Is it acceptable? If not, how would you modify the gains?</p></li>
+</ol></li>
+<li><p><strong>(Relay Method)</strong> For the same plant as Problem 6:</p>
+<ol>
+<li><p>If a relay experiment with <span class="math inline">\(M = 1\)</span> produces output oscillations of amplitude <span class="math inline">\(A_o = 0.8\)</span> and period <span class="math inline">\(P_u = 5.2\)</span> s, calculate <span class="math inline">\(K_u\)</span>.</p></li>
+<li><p>Design a PID controller using Z–N rules with these values.</p></li>
+<li><p>Compare this design with the one from Problem 6 in MATLAB.</p></li>
+</ol></li>
+<li><p><strong>(MATLAB)</strong> Consider the plant <span class="math inline">\(G(s) = \dfrac{10}{(s+2)(s+5)}\)</span>.</p>
+<ol>
+<li><p>Use <code>pidtune(G, ’P’)</code>, <code>pidtune(G, ’PI’)</code>, and <code>pidtune(G, ’PID’)</code> to design three controllers.</p></li>
+<li><p>Plot all three closed-loop step responses on one figure. Use <code>stepinfo()</code> to compare rise time, settling time, overshoot, and steady-state error.</p></li>
+<li><p>For the PID case, vary the target bandwidth (<span class="math inline">\(\omega_c = 2, 5, 10, 20\)</span> rad/s) and observe the tradeoff between speed and robustness.</p></li>
+</ol></li>
+<li><p><strong>(Integral Windup)</strong> A motor speed controller uses PI control with <span class="math inline">\(K_p = 2\)</span>, <span class="math inline">\(K_I = 10\)</span>. The motor input is limited to <span class="math inline">\(\pm 12\)</span> V.</p>
+<ol>
+<li><p>Build a Simulink model with a saturation block after the controller.</p></li>
+<li><p>Apply a step reference from 0 to 100 rad/s. Observe the output with and without anti-windup.</p></li>
+<li><p>Explain the difference in transient response.</p></li>
+</ol></li>
+<li><p><strong>(Limitations — Non-Minimum Phase)</strong> Consider the system <span class="math inline">\(G(s) = \dfrac{1 - s}{(s+1)^2}\)</span>.</p>
+<ol>
+<li><p>Where is the right-half-plane zero? What does it imply about the step response?</p></li>
+<li><p>Design PI controllers with <span class="math inline">\(K_p = 0.5, 1.0, 1.5\)</span> (with <span class="math inline">\(K_I = 0.1, 0.3, 0.5\)</span> respectively). Plot the closed-loop step responses and comment on the trade-off between tracking speed and the initial inverse response.</p></li>
+<li><p>Explain why increasing the gains makes the inverse response <em>worse</em>, and discuss what type of controller might handle this system better.</p></li>
+</ol></li>
+</ol>
+
+<h2 id="interactive-pid-simulator">Interactive PID Simulator</h2>
+<p>Use the interactive PID simulator below to experiment with controller tuning and observe system response characteristics in real time. Adjust the P, I, and D gains and see how they affect the step response, overshoot, settling time, and steady-state error.</p>
+<div class="tool-embed" id="pid-tool">
+<div class="tool-embed-header" onclick="this.parentElement.classList.toggle('collapsed')">
+<h4>Interactive PID Controller Simulator</h4>
+<span class="toggle-icon">&#9660;</span>
+</div>
+<div class="tool-embed-body">
+<iframe src="https://kucukdemiral.github.io/pid-simulation/" title="PID Simulator"></iframe>
+</div>
+</div>

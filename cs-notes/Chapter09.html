@@ -1,0 +1,1604 @@
+<h1 id="chap:frequency-domain">Frequency Domain: Analysis and Design</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Compute the sinusoidal steady-state output of a stable LTI system from <span class="math inline">\(G(j\omega)\)</span>.</p></li>
+<li><p>Convert between magnitude ratios and decibels, and use decades and octaves correctly.</p></li>
+<li><p>Sketch asymptotic Bode magnitude and phase plots from first-order and second-order building blocks.</p></li>
+<li><p>Read gain margin, phase margin, crossover frequencies, and bandwidth from a Bode plot.</p></li>
+<li><p>Translate time-domain specifications (overshoot, settling time, steady-state error) into frequency-domain targets (PM, <span class="math inline">\(\omega_{gc}\)</span>, <span class="math inline">\(K_v\)</span>).</p></li>
+<li><p>Design lead, lag, and lag–lead compensators using the systematic Bode-plot procedure.</p></li>
+<li><p>Verify frequency-domain designs in MATLAB using <code>margin()</code>, <code>bode()</code>, and step response simulation.</p></li>
+</ul>
+</div>
+<blockquote>
+<p><em>Frequency-domain methods show how a system treats slow, medium, and fast signals. That viewpoint is one of the most useful ways to understand feedback.</em></p>
+</blockquote>
+<h2 id="sec:freq-why">Why Frequency Methods Are Needed</h2>
+<p>In practice, signals and disturbances span a wide range of frequencies: a temperature sensor carries high-frequency noise, a vehicle sees low-frequency road undulations and higher-frequency vibration, and a motor drive contains periodic ripple from power electronics. Frequency-domain analysis asks: <em>how does the system respond at each frequency?</em></p>
+<p>Good tracking of slowly varying references requires large loop gain at low frequencies, while high-frequency sensor noise should not be amplified, so the loop gain must be small at high frequencies. Between these two extremes lies the crossover region, where gain and phase margins indicate how much modelling error the closed loop can tolerate before instability. The frequency-domain viewpoint makes all of these trade-offs visible on a single diagram.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Frequency-domain methods do not replace time-domain methods. They provide a different view of the same dynamics. Good control design usually requires both views.</p>
+</div>
+<h2 id="sec:sss-analysis">Sinusoidal Steady-State Response</h2>
+<p>Consider a stable continuous-time LTI system with transfer function <span class="math inline">\(G(s)\)</span>. If the input is a sinusoid <span class="math display">\[u(t)=A\sin(\omega t),\]</span> then, after transients have died away, the output settles to a sinusoid of the <em>same</em> frequency <span class="math inline">\(\omega\)</span>, but generally with a different amplitude and a phase shift: <span class="math display">\[y_{\mathrm{ss}}(t)=A\,|G(j\omega)|\sin\!\bigl(\omega t+\angle G(j\omega)\bigr).\]</span></p>
+<h3 id="derivation-for-a-first-order-system">Derivation for a first-order system</h3>
+<p>To see why, consider the simplest possible stable system, <span class="math display">\[G(s)=\frac{1}{s+a}, \qquad a&gt;0.\]</span> The Laplace transform of <span class="math inline">\(u(t)=A\sin(\omega t)\)</span> is <span class="math inline">\(U(s)=A\omega/(s^2+\omega^2)\)</span>, so <span class="math display">\[Y(s)=G(s)\,U(s)=\frac{A\omega}{(s+a)(s^2+\omega^2)}.\]</span> Expanding in partial fractions: <span class="math display">\[Y(s)=\frac{c_1}{s+a}+\frac{Bs+C}{s^2+\omega^2}.\]</span> Setting <span class="math inline">\(s=-a\)</span> gives <span class="math inline">\(c_1=A\omega/(a^2+\omega^2)\)</span>. Comparing coefficients of <span class="math inline">\(s^2\)</span> and <span class="math inline">\(s^0\)</span> yields <span class="math display">\[B=-\frac{A\omega}{a^2+\omega^2},
+\qquad
+C=\frac{A\omega\,a}{a^2+\omega^2}.\]</span> The first term inverts to <span class="math inline">\(c_1\,e^{-at}\)</span>, which decays to zero because <span class="math inline">\(a&gt;0\)</span>. The second term inverts using the standard pairs <span class="math inline">\(\mathcal{L}^{-1}\{s/(s^2+\omega^2)\}=\cos\omega t\)</span> and <span class="math inline">\(\mathcal{L}^{-1}\{\omega/(s^2+\omega^2)\}=\sin\omega t\)</span>: <span class="math display">\[y_{\mathrm{ss}}(t)
+  =B\cos\omega t+\frac{C}{\omega}\sin\omega t
+  =\frac{A}{a^2+\omega^2}\bigl(a\sin\omega t-\omega\cos\omega t\bigr).\]</span> The expression in brackets is a sum of a sine and a cosine at the same frequency. Any such combination can be written as a single sinusoid using the identity <span class="math display">\[\alpha\sin\theta-\beta\cos\theta = \sqrt{\alpha^2+\beta^2}\;\sin\!\bigl(\theta-\tan^{-1}(\beta/\alpha)\bigr).\]</span> With <span class="math inline">\(\alpha=a\)</span> and <span class="math inline">\(\beta=\omega\)</span>: <span class="math display">\[y_{\mathrm{ss}}(t)
+  =\frac{A}{\cancel{a^2+\omega^2}}\cdot\sqrt{\cancel{a^2+\omega^2}}\;\sin\!\bigl(\omega t-\tan^{-1}(\omega/a)\bigr)
+  =\frac{A}{\sqrt{a^2+\omega^2}}\;\sin\!\bigl(\omega t-\tan^{-1}(\omega/a)\bigr).\]</span> Recognising that <span class="math inline">\(|G(j\omega)|=1/\sqrt{a^2+\omega^2}\)</span> and <span class="math inline">\(\angle G(j\omega)=-\tan^{-1}(\omega/a)\)</span>, this is <span class="math display">\[\boxed{y_{\mathrm{ss}}(t)=A\,|G(j\omega)|\sin\bigl(\omega t+\angle G(j\omega)\bigr).}\]</span> The same argument extends to any stable rational transfer function: every pole of <span class="math inline">\(G(s)\)</span> in the left half-plane produces a decaying transient, and the only terms that persist come from the input poles at <span class="math inline">\(s=\pm j\omega\)</span>.</p>
+<div class="notebox">
+<p><span>Sinusoidal steady-state rule</span> For a stable LTI system, a sinusoidal input produces a sinusoidal output at the same frequency. The system changes only the amplitude (by the factor <span class="math inline">\(|G(j\omega)|\)</span>) and the phase (by the angle <span class="math inline">\(\angle G(j\omega)\)</span>). The function <span class="math inline">\(G(j\omega)\)</span> is called the freq response of the system.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Sinusoidal response of a first-order system</div>
+<p>Consider <span class="math display">\[G(s)=\frac{1}{s+1}.\]</span> At frequency <span class="math inline">\(\omega\)</span>, <span class="math display">\[G(j\omega)=\frac{1}{1+j\omega},
+    \qquad
+    |G(j\omega)|=\frac{1}{\sqrt{1+\omega^2}},
+    \qquad
+    \angle G(j\omega)=-\tan^{-1}(\omega).\]</span> If <span class="math inline">\(u(t)=2\sin(3t)\)</span>, then <span class="math inline">\(A=2\)</span> and <span class="math inline">\(\omega=3\)</span>. We compute <span class="math display">\[|G(j3)|=\frac{1}{\sqrt{10}}\approx 0.316,
+    \qquad
+    \angle G(j3)=-\tan^{-1}(3)\approx -71.6^\circ.\]</span> The steady-state output is therefore <span class="math display">\[y_{\mathrm{ss}}(t)=2\times 0.316\,\sin(3t-71.6^\circ)=0.632\sin(3t-71.6^\circ).\]</span> The amplitude has been reduced to about one-third of the input, and the output lags behind by nearly a quarter period. This is the filtering action of the first-order low-pass system. Listing <a href="#lst:matlab-sss-check" data-reference-type="ref" data-reference="lst:matlab-sss-check">[lst:matlab-sss-check]</a> shows how to verify this in MATLAB.</p>
+</div>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for checking sinusoidal steady-state response.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+import numpy as np
+
+s = ctrl.tf('s')
+G = 1/(s+1)
+w = 3
+resp = ctrl.frequency_response(G, [w])
+mag = np.abs(resp.fresp[0, 0, 0])     # magnitude ratio (linear)
+phase = np.degrees(np.angle(resp.fresp[0, 0, 0]))  # phase in degrees
+print("Amplitude = %.3f, Phase = %.1f deg" % (2*mag, phase))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 1/(s+1);
+w = 3;
+[mag, phase] = bode(G, w);
+mag = squeeze(mag);       % magnitude ratio
+phase = squeeze(phase);   % phase in degrees
+fprintf('Amplitude = %.3f, Phase = %.1f deg\n', 2*mag, phase)</code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Second-order system at resonance</div>
+<p>Consider <span class="math display">\[G(s)=\frac{100}{s^2+2s+100},\]</span> which has <span class="math inline">\(\omega_n=10\)</span> rad/s and <span class="math inline">\(\zeta=0.1\)</span>. At the natural frequency, <span class="math display">\[G(j10)=\frac{100}{(j10)^2+2(j10)+100}=\frac{100}{-100+j20+100}=\frac{100}{j20}=-j5.\]</span> Hence <span class="math inline">\(|G(j10)|=5\)</span> and <span class="math inline">\(\angle G(j10)=-90^\circ\)</span>. Although the DC gain of the system is equal to 1, a unit-amplitude sinusoid at <span class="math inline">\(\omega=10\)</span> rad/s produces a steady-state output with amplitude <span class="math inline">\(5\)</span> — the system <em>amplifies</em> inputs near its resonant frequency. This resonance amplification is one of the most important features that Bode plots reveal.</p>
+</div>
+<h2 id="sec:frequency-response-generation">How a Frequency Response Plot Is Generated</h2>
+<p>Conceptually, a frequency response plot is produced by applying many separate sinusoidal inputs, one frequency at a time, and recording the steady-state response.</p>
+<p>For a stable LTI system, the experiment at each test frequency <span class="math inline">\(\omega\)</span> is: <span class="math display">\[u(t)=A\sin(\omega t)
+\quad \Longrightarrow \quad
+y_{\mathrm{ss}}(t)=B(\omega)\sin(\omega t+\phi(\omega)).\]</span> We then record the gain and phase: <span class="math display">\[|G(j\omega)|=\frac{B(\omega)}{A},
+\qquad
+\angle G(j\omega)=\phi(\omega).\]</span> Repeating this at many frequencies gives a table of magnitude and phase values. Plotting the magnitude (in dB) and phase (in degrees) against frequency gives the bode plot.</p>
+<div class="example"><div class="env-label env-label-example">Example: Generating frequency-response data point by point</div>
+<p>Suppose a first-order system <span class="math inline">\(G(s)=1/(s+1)\)</span> is tested using sinusoidal inputs of amplitude <span class="math inline">\(A=1\)</span>. The measured steady-state output amplitudes and phase shifts are: <span class="math display">\[\begin{array}{c|ccccc}
+    \omega~(\mathrm{rad/s}) &amp; 0.1 &amp; 0.3 &amp; 1 &amp; 3 &amp; 10\\
+    \hline
+    B(\omega) &amp; 0.995 &amp; 0.958 &amp; 0.707 &amp; 0.316 &amp; 0.100\\
+    \phi(\omega) &amp; -5.7^\circ &amp; -16.7^\circ &amp; -45^\circ &amp; -71.6^\circ &amp; -84.3^\circ
+    \end{array}\]</span> The Bode magnitude values are not the amplitudes directly. They are the amplitudes converted to dB: <span class="math display">\[20\log_{10}B(\omega).\]</span> For example, at <span class="math inline">\(\omega=3\)</span> rad/s, <span class="math display">\[20\log_{10}(0.316)\approx -10~\mathrm{dB}.\]</span> At <span class="math inline">\(\omega=1\)</span> rad/s the magnitude is <span class="math inline">\(-3\)</span> dB and the phase is <span class="math inline">\(-45^\circ\)</span>. This frequency is the break frequency (or corner frequency) of the first-order system, and it marks the boundary between the low-frequency pass-band and the high-frequency roll-off.</p>
+</div>
+<p>Figure <a href="#fig:sin-response-overview" data-reference-type="ref" data-reference="fig:sin-response-overview">1.1</a> summarises the entire process: test the system at one frequency, record the steady-state gain and phase, then repeat at many frequencies to build the Bode plot.</p>
+<figure id="fig:sin-response-overview" data-latex-placement="htbp">
+<img src="figures/sin_response.png" style="max-width:95%;" />
+<figcaption>Overview of the frequency-response experiment. A sinusoidal input at frequency <span class="math inline">\(\omega\)</span> produces a sinusoidal steady-state output with modified amplitude and phase. Repeating at many frequencies and plotting the results gives the Bode plot.</figcaption>
+</figure>
+<figure id="fig:frequency-sweep-bode" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_01.png" style="max-width:85%;" />
+<figcaption>A Bode plot can be understood as a frequency sweep: apply one sinusoid, measure gain and phase, then repeat at many frequencies.</figcaption>
+</figure>
+<p>Figure <a href="#fig:frequency-sweep-bode" data-reference-type="ref" data-reference="fig:frequency-sweep-bode">1.2</a> shows the resulting Bode plot built from these five measured points together with the exact analytical curve. This experimental view is important. When MATLAB draws <code>bode(G)</code>, it is doing the same idea analytically: it evaluates <span class="math inline">\(G(j\omega)\)</span> at many frequencies and plots the resulting magnitude and phase.</p>
+<h2 id="sec:freq-basic-scales">Decades, Octaves, Decibels, and Semi-Log Graphs</h2>
+<p>Frequency responses often cover several orders of magnitude, so a linear frequency axis would either waste space at low frequencies or compress the high-frequency behaviour. Bode plots use a logarithmic frequency axis.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Decade and octave</div>
+<p>A <strong>decade</strong> is a factor of <span class="math inline">\(10\)</span> in frequency. Moving from <span class="math inline">\(1\)</span> rad/s to <span class="math inline">\(10\)</span> rad/s is one decade; moving from <span class="math inline">\(10\)</span> rad/s to <span class="math inline">\(1000\)</span> rad/s is two decades.</p>
+<p>An <strong>octave</strong> is a factor of <span class="math inline">\(2\)</span> in frequency. Moving from <span class="math inline">\(5\)</span> rad/s to <span class="math inline">\(10\)</span> rad/s is one octave.</p>
+</div>
+<p>Slopes in Bode magnitude plots are often described in dB/decade or dB/octave. A first-order pole contributes <span class="math inline">\(-20\)</span> dB/decade after its break frequency. Since one decade is about <span class="math inline">\(3.32\)</span> octaves, this is equivalently <span class="math inline">\(-6\)</span> dB/octave.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Decibel scale for Bode plots</div>
+<p>In a Bode magnitude plot, the transfer-function magnitude is an amplitude ratio: <span class="math display">\[M = |G(j\omega)|=\frac{\text{output amplitude}}{\text{input amplitude}}.\]</span></p>
+<p>This amplitude ratio is usually expressed in decibel units as <span class="math display">\[M_{\mathrm{dB}} = 20\log_{10}M.\]</span></p>
+<p>Thus: <span class="math display">\[M=1 \quad \Longrightarrow \quad 0\text{ dB},\]</span> <span class="math display">\[M=10 \quad \Longrightarrow \quad 20\text{ dB},\]</span> and <span class="math display">\[M=0.1 \quad \Longrightarrow \quad -20\text{ dB}.\]</span></p>
+<p>The factor <span class="math inline">\(20\)</span> appears because power is proportional to amplitude squared. The original decibel definition for power ratios uses <span class="math display">\[10\log_{10}\left(\frac{P_2}{P_1}\right).\]</span> If <span class="math inline">\(P\propto A^2\)</span>, then an amplitude ratio <span class="math inline">\(M\)</span> corresponds to a power ratio <span class="math inline">\(M^2\)</span>, so <span class="math display">\[10\log_{10}(M^2)=20\log_{10}M.\]</span></p>
+</div>
+<p>Some useful conversions worth remembering: <span class="math display">\[\begin{array}{c|ccccccc}
+M &amp; 0.01 &amp; 0.1 &amp; 0.5 &amp; 1 &amp; 2 &amp; 10 &amp; 100\\
+\hline
+M_{\mathrm{dB}} &amp; -40 &amp; -20 &amp; -6 &amp; 0 &amp; +6 &amp; +20 &amp; +40
+\end{array}\]</span></p>
+<figure id="fig:semilog-first-order" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_02.png" style="max-width:85%;" />
+<figcaption>A semi-log magnitude plot for a first-order low-pass response. The dashed lines show the asymptotic approximation.</figcaption>
+</figure>
+<h2 id="sec:bode-plots">Bode Plots</h2>
+<p>A <strong>Bode plot</strong> consists of two panels drawn on the same logarithmic frequency axis. The upper panel shows the magnitude <span class="math inline">\(20\log_{10}|G(j\omega)|\)</span> in decibels. The lower panel shows the phase <span class="math inline">\(\angle G(j\omega)\)</span> in degrees.</p>
+<p>To read the magnitude plot, choose a frequency on the horizontal axis and move vertically to the curve. A value of <span class="math inline">\(0\)</span> dB means the output sinusoid has the same amplitude as the input sinusoid. A value of <span class="math inline">\(+20\)</span> dB means the output amplitude is <span class="math inline">\(10\)</span> times larger. A value of <span class="math inline">\(-20\)</span> dB means the output amplitude is <span class="math inline">\(10\)</span> times smaller. Figure <a href="#fig:semilog-first-order" data-reference-type="ref" data-reference="fig:semilog-first-order">1.3</a> shows a typical example: the magnitude of a first-order low-pass system plotted on a semi-log frequency axis, together with its straight-line asymptotic approximation.</p>
+<p>To read the phase plot, use the same frequency and read the phase angle. A phase of <span class="math inline">\(-90^\circ\)</span> means the output sinusoid lags the input by one quarter of a period. The time lag corresponding to a phase angle <span class="math inline">\(\phi\)</span> (in degrees, negative for lag) at frequency <span class="math inline">\(\omega\)</span> is <span class="math display">\[\Delta t = \frac{|\phi|}{360^\circ}\cdot\frac{2\pi}{\omega}.\]</span> The same phase angle corresponds to a different time lag at a different frequency.</p>
+<div class="example"><div class="env-label env-label-example">Example: Reading a Bode plot point</div>
+<p>Suppose a Bode plot gives <span class="math inline">\(|G(j5)|_{\mathrm{dB}}=-6~\mathrm{dB}\)</span> and <span class="math inline">\(\angle G(j5)=-60^\circ\)</span>. The amplitude ratio is <span class="math display">\[|G(j5)|=10^{-6/20}\approx 0.50.\]</span> Thus an input <span class="math inline">\(u(t)=4\sin(5t)\)</span> gives the steady-state output <span class="math display">\[y_{\mathrm{ss}}(t)\approx 4\times 0.50\,\sin(5t-60^\circ)=2\sin(5t-60^\circ).\]</span> The time delay at this frequency is <span class="math display">\[\Delta t = \frac{60}{360}\cdot\frac{2\pi}{5}\approx 0.209~\text{s}.\]</span></p>
+</div>
+<p>Figure <a href="#fig:bode-reading-procedure" data-reference-type="ref" data-reference="fig:bode-reading-procedure">1.4</a> summarises this four-step procedure visually: locate the input frequency on the horizontal axis, read the magnitude and phase from the two panels, then construct the steady-state output.</p>
+<figure id="fig:bode-reading-procedure" data-latex-placement="htbp">
+<img src="figures/bode_reading_procedure.png" />
+<figcaption>Step-by-step procedure for using a Bode plot to determine the sinusoidal steady-state output. The input and output share the same frequency; only the amplitude and phase change.</figcaption>
+</figure>
+<h3 id="subsec:exact-asymptotic-bode">Exact and asymptotic Bode plots</h3>
+<p>The <strong>exact Bode plot</strong> is obtained by evaluating <span class="math inline">\(G(j\omega)\)</span> directly at every frequency — MATLAB does this. The <strong>asymptotic Bode plot</strong> is a hand-sketch approximation built from straight-line magnitude segments and approximate phase transitions. Its purpose is to reveal the structure of the transfer function quickly: where the break frequencies are, what the slopes are, and roughly what the margins look like. After drawing the asymptotic sketch, always check the exact response near break frequencies and lightly damped second-order modes where the approximation can be poor.</p>
+<h3 id="subsec:bode-form">Putting a transfer function into Bode form</h3>
+<p>Before drawing a Bode plot, write the transfer function using factors of the form <span class="math display">\[1+\frac{s}{a},
+\qquad
+1+2\zeta\frac{s}{\omega_n}+\left(\frac{s}{\omega_n}\right)^2,
+\qquad
+s.\]</span> The constants <span class="math inline">\(a\)</span> and <span class="math inline">\(\omega_n\)</span> are the <strong>break frequencies</strong>. This conversion is essential because the Bode sketch is drawn from the break frequencies, and each factor contributes independently to the overall magnitude and phase.</p>
+<div class="example"><div class="env-label env-label-example">Example: Converting polynomials into Bode form</div>
+<p>Consider <span class="math display">\[G(s)=\frac{5(s+2)}{s(s+10)(s+50)}.\]</span> Convert each polynomial factor by extracting the constant: <span class="math display">\[s+2=2\!\left(1+\frac{s}{2}\right),\quad
+    s+10=10\!\left(1+\frac{s}{10}\right),\quad
+    s+50=50\!\left(1+\frac{s}{50}\right).\]</span> Therefore <span class="math display">\[G(s)
+    =
+    \frac{5\cdot 2}{10\cdot 50}\cdot
+    \frac{1+s/2}{s\,(1+s/10)(1+s/50)}
+    =
+    0.02\,\frac{1+s/2}{s\,(1+s/10)(1+s/50)}.\]</span> The Bode-form gain is <span class="math inline">\(K_B=0.02\)</span>, giving a low-frequency starting magnitude of <span class="math inline">\(20\log_{10}(0.02)=-34\)</span> dB (before accounting for the integrator slope). The zero break frequency is <span class="math inline">\(2\)</span> rad/s, and the pole break frequencies are <span class="math inline">\(10\)</span> and <span class="math inline">\(50\)</span> rad/s.</p>
+</div>
+<div class="alertbox">
+<p><span>Common Bode-form mistake</span> A common mistake is to sketch from <span class="math inline">\(s+10\)</span> as if the gain were <span class="math inline">\(1\)</span>. The factor <span class="math inline">\(s+10\)</span> contains the constant <span class="math inline">\(10\)</span>, and ignoring it shifts the entire magnitude plot by <span class="math inline">\(20\)</span> dB. Always extract the constant from every factor before sketching.</p>
+</div>
+<h3 id="subsec:bode-building-blocks">Basic Bode building blocks</h3>
+<p>Multiplication of transfer functions becomes addition in logarithmic magnitude, so complicated Bode plots are obtained by adding the dB magnitudes and phases of simple factors: <span class="math display">\[20\log_{10}|G_1(j\omega)\,G_2(j\omega)|
+=20\log_{10}|G_1(j\omega)|+20\log_{10}|G_2(j\omega)|.\]</span> Every rational transfer function is a product of a few standard building blocks.</p>
+<h4 class="unnumbered" id="constant-gain">Constant gain</h4>
+<p>For <span class="math inline">\(G(s)=K\)</span>, the magnitude is <span class="math inline">\(20\log_{10}|K|\)</span> dB at all frequencies. If <span class="math inline">\(K&gt;0\)</span>, the phase is <span class="math inline">\(0^\circ\)</span>. If <span class="math inline">\(K&lt;0\)</span>, the phase is <span class="math inline">\(-180^\circ\)</span>.</p>
+<h4 class="unnumbered" id="integrator-and-differentiator">Integrator and differentiator</h4>
+<p>For an integrator <span class="math inline">\(G(s)=1/s\)</span>, we have <span class="math inline">\(G(j\omega)=1/(j\omega)\)</span>, so <span class="math display">\[20\log_{10}|G(j\omega)|=-20\log_{10}\omega,
+\qquad
+\angle G(j\omega)=-90^\circ.\]</span> The magnitude is a straight line with slope <span class="math inline">\(-20\)</span> dB/decade passing through <span class="math inline">\(0\)</span> dB at <span class="math inline">\(\omega=1\)</span> rad/s. The phase is a constant <span class="math inline">\(-90^\circ\)</span> at all frequencies.</p>
+<p>For a differentiator <span class="math inline">\(G(s)=s\)</span>, the magnitude slope is <span class="math inline">\(+20\)</span> dB/decade and the phase is <span class="math inline">\(+90^\circ\)</span> (Figure <a href="#fig:integrator-differentiator-bode" data-reference-type="ref" data-reference="fig:integrator-differentiator-bode">1.5</a>). Each additional integrator or differentiator adds another <span class="math inline">\(\pm 20\)</span> dB/decade to the slope and another <span class="math inline">\(\pm 90^\circ\)</span> to the phase.</p>
+<figure id="fig:integrator-differentiator-bode" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_03.png" style="max-width:85%;" />
+<figcaption>Magnitude plots of an integrator and a differentiator. These are already straight-line asymptotes, so the exact and asymptotic plots are identical.</figcaption>
+</figure>
+<h4 class="unnumbered" id="first-order-pole">First-order pole</h4>
+<p>A first-order pole in Bode form is <span class="math display">\[G_p(s)=\frac{1}{1+s/a}.\]</span> The break frequency is <span class="math inline">\(a\)</span>. Its exact frequency response is <span class="math display">\[G_p(j\omega)=\frac{1}{1+j\omega/a},\]</span> giving <span class="math display">\[20\log_{10}|G_p(j\omega)|
+=-10\log_{10}\!\left(1+\left(\frac{\omega}{a}\right)^2\right),
+\qquad
+\angle G_p(j\omega)=-\tan^{-1}\!\left(\frac{\omega}{a}\right).\]</span></p>
+<p>The asymptotic magnitude approximation is straightforward: the magnitude is <span class="math inline">\(0\)</span> dB for <span class="math inline">\(\omega \ll a\)</span> (the factor has not yet “turned on”), and it drops at <span class="math inline">\(-20\)</span> dB/decade for <span class="math inline">\(\omega \gg a\)</span>. The transition between these two regimes happens at the break frequency <span class="math inline">\(\omega = a\)</span>, where the exact magnitude is <span class="math inline">\(-3\)</span> dB while the asymptote still reads <span class="math inline">\(0\)</span> dB. This <span class="math inline">\(3\)</span> dB error at the corner is the largest discrepancy between the exact and asymptotic curves.</p>
+<p>The phase transitions more gradually. A useful hand-sketch rule places the phase at <span class="math inline">\(0^\circ\)</span> until one decade below the break frequency (<span class="math inline">\(0.1a\)</span>), draws a straight line from <span class="math inline">\(0^\circ\)</span> to <span class="math inline">\(-90^\circ\)</span> between <span class="math inline">\(0.1a\)</span> and <span class="math inline">\(10a\)</span>, and holds <span class="math inline">\(-90^\circ\)</span> after <span class="math inline">\(10a\)</span>. The exact phase at the break frequency itself is <span class="math inline">\(-45^\circ\)</span>. Figure <a href="#fig:first-order-pole-asymptotic" data-reference-type="ref" data-reference="fig:first-order-pole-asymptotic">1.6</a> illustrates both the magnitude and phase plots for a pole at <span class="math inline">\(a=10\)</span> rad/s, showing how the asymptotic straight-line approximation compares with the exact curves.</p>
+<figure id="fig:first-order-pole-asymptotic" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_04.png" style="max-width:85%;" />
+<figcaption>Exact and asymptotic Bode plots for a first-order pole <span class="math inline">\(1/(1+s/10)\)</span>. The break frequency is <span class="math inline">\(a=10\)</span> rad/s. At that frequency, the exact magnitude is <span class="math inline">\(-3\)</span> dB and the exact phase is <span class="math inline">\(-45^\circ\)</span>. The phase settles to <span class="math inline">\(-90^\circ\)</span> well above <span class="math inline">\(10a=100\)</span> rad/s.</figcaption>
+</figure>
+<h4 class="unnumbered" id="first-order-zero">First-order zero</h4>
+<p>A first-order zero in Bode form is <span class="math inline">\(G_z(s)=1+s/a\)</span>. Its magnitude and phase are the mirror images of the first-order pole: <span class="math display">\[20\log_{10}|G_z(j\omega)|
+=10\log_{10}\!\left(1+\left(\frac{\omega}{a}\right)^2\right),
+\qquad
+\angle G_z(j\omega)=+\tan^{-1}\!\left(\frac{\omega}{a}\right).\]</span> The asymptotic magnitude is <span class="math inline">\(0\)</span> dB before the break frequency and <span class="math inline">\(+20\)</span> dB/decade after it. The phase rises from <span class="math inline">\(0^\circ\)</span> to <span class="math inline">\(+90^\circ\)</span> between <span class="math inline">\(0.1a\)</span> and <span class="math inline">\(10a\)</span>. Figure <a href="#fig:first-order-zero-asymptotic" data-reference-type="ref" data-reference="fig:first-order-zero-asymptotic">1.7</a> confirms the mirror-image relationship with the first-order pole.</p>
+<figure id="fig:first-order-zero-asymptotic" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_05.png" style="max-width:85%;" />
+<figcaption>Exact and asymptotic Bode plots for a first-order zero <span class="math inline">\(1+s/10\)</span>. The phase settles to <span class="math inline">\(+90^\circ\)</span> above <span class="math inline">\(10a=100\)</span> rad/s.</figcaption>
+</figure>
+<h4 class="unnumbered" id="second-order-pole-pair">Second-order pole pair</h4>
+<p>A standard second-order pole pair is written as <span class="math display">\[G_{2p}(s)=
+\frac{1}{1+2\zeta(s/\omega_n)+(s/\omega_n)^2}.\]</span> The break frequency is the natural frequency <span class="math inline">\(\omega_n\)</span>. The exact magnitude is <span class="math display">\[20\log_{10}|G_{2p}(j\omega)|
+=
+-10\log_{10}
+\!\left[
+\left(1-\left(\frac{\omega}{\omega_n}\right)^{\!2}\right)^{\!2}
++
+\left(2\zeta\frac{\omega}{\omega_n}\right)^{\!2}
+\right].\]</span></p>
+<p>The asymptotic magnitude is <span class="math inline">\(0\)</span> dB for <span class="math inline">\(\omega&lt;\omega_n\)</span> and drops at <span class="math inline">\(-40\)</span> dB/decade for <span class="math inline">\(\omega&gt;\omega_n\)</span>. The phase moves from <span class="math inline">\(0^\circ\)</span> to <span class="math inline">\(-180^\circ\)</span>, passing through <span class="math inline">\(-90^\circ\)</span> at <span class="math inline">\(\omega_n\)</span>.</p>
+<p>The critical feature is the resonant peak. When the damping ratio <span class="math inline">\(\zeta\)</span> is small, the exact magnitude can rise well above <span class="math inline">\(0\)</span> dB near <span class="math inline">\(\omega_n\)</span>. The peak magnitude is approximately <span class="math inline">\(1/(2\zeta)\)</span>, or <span class="math inline">\(-20\log_{10}(2\zeta)\)</span> dB. For example, <span class="math inline">\(\zeta=0.1\)</span> gives a peak of about <span class="math inline">\(14\)</span> dB. The asymptotic plot does <em>not</em> show this peak, so the exact response must always be checked for lightly damped systems. Figure <a href="#fig:second-order-pole-asymptotic" data-reference-type="ref" data-reference="fig:second-order-pole-asymptotic">1.8</a> shows an example with <span class="math inline">\(\zeta=0.4\)</span>, where a moderate peak is visible near <span class="math inline">\(\omega_n\)</span>.</p>
+<figure id="fig:second-order-pole-asymptotic" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_06.png" style="max-width:85%;" />
+<figcaption>Exact and asymptotic Bode plots for a second-order pole pair with <span class="math inline">\(\omega_n=10\)</span> rad/s and <span class="math inline">\(\zeta=0.4\)</span>. The phase settles to <span class="math inline">\(-180^\circ\)</span> well above <span class="math inline">\(\omega_n\)</span>.</figcaption>
+</figure>
+<p>Figure <a href="#fig:second-order-pole-zeta-family" data-reference-type="ref" data-reference="fig:second-order-pole-zeta-family">1.9</a> shows how both the magnitude and phase change as <span class="math inline">\(\zeta\)</span> varies from <span class="math inline">\(0.05\)</span> to <span class="math inline">\(1.0\)</span>. Two trends are immediately visible. First, the resonant peak grows dramatically as <span class="math inline">\(\zeta\)</span> decreases: at <span class="math inline">\(\zeta=0.05\)</span> the peak is about <span class="math inline">\(20\)</span> dB, while at <span class="math inline">\(\zeta=0.7\)</span> it has essentially disappeared. Second, the phase transition near <span class="math inline">\(\omega_n\)</span> becomes increasingly abrupt for small <span class="math inline">\(\zeta\)</span> — at <span class="math inline">\(\zeta=0.05\)</span> the phase drops almost vertically through <span class="math inline">\(-90^\circ\)</span>, whereas at <span class="math inline">\(\zeta=1.0\)</span> the transition is gradual and spread over several decades. In all cases, the asymptotic approximation (dashed black) ignores these damping-dependent effects entirely.</p>
+<figure id="fig:second-order-pole-zeta-family" data-latex-placement="htbp">
+<img src="figures/second_order_pole_zeta_family.png" style="max-width:85%;" />
+<figcaption>Effect of damping ratio on the Bode plot of a second-order pole pair with <span class="math inline">\(\omega_n=10\)</span> rad/s. As <span class="math inline">\(\zeta\)</span> decreases, the resonant peak grows and the phase transition near <span class="math inline">\(\omega_n\)</span> becomes steeper. The asymptotic approximation (dashed) is independent of <span class="math inline">\(\zeta\)</span>.</figcaption>
+</figure>
+<h4 class="unnumbered" id="second-order-zero-pair">Second-order zero pair</h4>
+<p>A second-order zero pair <span class="math inline">\(G_{2z}(s)=1+2\zeta(s/\omega_n)+(s/\omega_n)^2\)</span> has the opposite frequency-response characteristics of a second-order pole pair: its magnitude and phase contributions are equal in size but opposite in sign. The asymptotic magnitude is <span class="math inline">\(0\)</span> dB before <span class="math inline">\(\omega_n\)</span> and <span class="math inline">\(+40\)</span> dB/decade after <span class="math inline">\(\omega_n\)</span>. The phase moves from <span class="math inline">\(0^\circ\)</span> to <span class="math inline">\(+180^\circ\)</span>. If the damping is light, there is a notch (dip) instead of a peak near <span class="math inline">\(\omega_n\)</span>. Figure <a href="#fig:second-order-zero-asymptotic" data-reference-type="ref" data-reference="fig:second-order-zero-asymptotic">1.10</a> shows the magnitude plot for this case.</p>
+<figure id="fig:second-order-zero-asymptotic" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_08.png" style="max-width:85%;" />
+<figcaption>Exact and asymptotic magnitude plots for a second-order zero pair.</figcaption>
+</figure>
+<p>Figure <a href="#fig:second-order-zero-zeta-family" data-reference-type="ref" data-reference="fig:second-order-zero-zeta-family">1.11</a> shows the mirror-image behaviour across a range of damping ratios: the notch deepens and the phase transition sharpens as <span class="math inline">\(\zeta\)</span> decreases, exactly the inverse of the pole pair.</p>
+<figure id="fig:second-order-zero-zeta-family" data-latex-placement="htbp">
+<img src="figures/second_order_zero_zeta_family.png" style="max-width:85%;" />
+<figcaption>Effect of damping ratio on the Bode plot of a second-order zero pair with <span class="math inline">\(\omega_n=10\)</span> rad/s. As <span class="math inline">\(\zeta\)</span> decreases, the anti-resonance notch deepens and the phase transition near <span class="math inline">\(\omega_n\)</span> becomes steeper.</figcaption>
+</figure>
+<p>Listing <a href="#lst:matlab-standard-bode-factors" data-reference-type="ref" data-reference="lst:matlab-standard-bode-factors">[lst:matlab-standard-bode-factors]</a> shows how to generate the exact Bode plots for all four standard factors in MATLAB.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for exact Bode plots of the standard factors.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+a = 10
+wn = 10
+zeta = 0.4
+
+# Use standard polynomial form: num=[...], den=[...] (highest power first)
+Gp1 = ctrl.tf([a], [1, a])                       # a/(s+a) = 1/(1+s/a)
+Gz1 = ctrl.tf([1, a], [a])                       # (s+a)/a = 1+s/a
+Gp2 = ctrl.tf([wn**2], [1, 2*zeta*wn, wn**2])   # wn^2/(s^2+2*z*wn*s+wn^2)
+Gz2 = ctrl.tf([1, 2*zeta*wn, wn**2], [wn**2])   # (s^2+2*z*wn*s+wn^2)/wn^2
+
+ctrl.bode_plot([Gp1, Gz1, Gp2, Gz2])
+plt.legend(['1st-order pole','1st-order zero',
+            '2nd-order pole pair','2nd-order zero pair'])</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+a = 10;
+wn = 10;
+zeta = 0.4;
+
+Gp1 = 1/(1+s/a);                         % first-order pole
+Gz1 = 1+s/a;                             % first-order zero
+Gp2 = 1/(1+2*zeta*(s/wn)+(s/wn)^2);      % second-order pole pair
+Gz2 = 1+2*zeta*(s/wn)+(s/wn)^2;          % second-order zero pair
+
+figure
+bode(Gp1, Gz1, Gp2, Gz2), grid on
+legend('1st-order pole','1st-order zero', ...
+       '2nd-order pole pair','2nd-order zero pair')</code></pre>
+</div>
+<h3 id="subsec:step-by-step-asymptotic">Step-by-step asymptotic Bode construction</h3>
+<p>The practical hand-sketch procedure is as follows.</p>
+<ol>
+<li><p>Convert the transfer function into Bode form.</p></li>
+<li><p>Mark every break frequency on the logarithmic axis.</p></li>
+<li><p>Start the magnitude at the low-frequency value, including the constant gain and any poles or zeros at the origin.</p></li>
+<li><p>Move from left to right. At each first-order zero, add <span class="math inline">\(+20\)</span> dB/decade to the slope. At each first-order pole, add <span class="math inline">\(-20\)</span> dB/decade. At each second-order zero, add <span class="math inline">\(+40\)</span> dB/decade. At each second-order pole, add <span class="math inline">\(-40\)</span> dB/decade.</p></li>
+<li><p>Sketch the phase by adding the phase contributions of all factors.</p></li>
+<li><p>Compare the final hand sketch with the exact Bode plot from MATLAB.</p></li>
+</ol>
+<div class="examplebox">
+<p><span>Complete asymptotic Bode sketch</span> Consider <span class="math display">\[G(s)=\frac{100(1+s/2)}{s(1+s/10)(1+s/50)}.\]</span></p>
+<p><strong>Step 1: Identify the components.</strong> The Bode-form gain is <span class="math inline">\(K_B=100\)</span> (<span class="math inline">\(40\)</span> dB). The factors are:</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Factor</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Break frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(K_B=100\)</span></td>
+<td style="text-align: left;">constant gain</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1/s\)</span></td>
+<td style="text-align: left;">integrator</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1+s/2\)</span></td>
+<td style="text-align: left;">zero</td>
+<td style="text-align: left;"><span class="math inline">\(2\)</span> rad/s</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1/(1+s/10)\)</span></td>
+<td style="text-align: left;">pole</td>
+<td style="text-align: left;"><span class="math inline">\(10\)</span> rad/s</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1/(1+s/50)\)</span></td>
+<td style="text-align: left;">pole</td>
+<td style="text-align: left;"><span class="math inline">\(50\)</span> rad/s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Step 2: Determine the slope in each frequency range.</strong> Starting from the integrator slope of <span class="math inline">\(-20\)</span> dB/decade: <span class="math display">\[\begin{array}{c|ccl}
+    \text{Range} &amp; \text{Slope change} &amp; \text{Net slope} &amp; \text{Reason}\\
+    \hline
+    \omega&lt;2 &amp; --- &amp; -20~\mathrm{dB/dec} &amp; \text{integrator only}\\
+    2&lt;\omega&lt;10 &amp; +20 &amp; 0~\mathrm{dB/dec} &amp; \text{zero at 2 cancels slope}\\
+    10&lt;\omega&lt;50 &amp; -20 &amp; -20~\mathrm{dB/dec} &amp; \text{pole at 10}\\
+    \omega&gt;50 &amp; -20 &amp; -40~\mathrm{dB/dec} &amp; \text{pole at 50}
+    \end{array}\]</span></p>
+<p><strong>Step 3: Fix the vertical position.</strong> At <span class="math inline">\(\omega=1\)</span> rad/s (before any break frequency), the magnitude is <span class="math display">\[20\log_{10}\!\left(\frac{100}{1}\right) = 40~\text{dB}.\]</span> From this anchor point, we draw the asymptotic segments with the slopes determined above.</p>
+<p><strong>Step 4: Sketch the phase.</strong> The integrator contributes <span class="math inline">\(-90^\circ\)</span> at all frequencies. The zero at <span class="math inline">\(2\)</span> adds positive phase between <span class="math inline">\(0.2\)</span> and <span class="math inline">\(20\)</span> rad/s. The poles at <span class="math inline">\(10\)</span> and <span class="math inline">\(50\)</span> each subtract phase in their respective transition bands. The total phase starts near <span class="math inline">\(-90^\circ\)</span> and eventually approaches <span class="math inline">\(-180^\circ\)</span> at high frequencies. Figure <a href="#fig:complex-asymptotic-example" data-reference-type="ref" data-reference="fig:complex-asymptotic-example">1.12</a> compares the resulting asymptotic sketch with the exact Bode plot, and Figure <a href="#fig:bode-construction-example1" data-reference-type="ref" data-reference="fig:bode-construction-example1">1.13</a> shows the individual factor contributions that build up the cumulative asymptote.</p>
+</div>
+<figure id="fig:complex-asymptotic-example" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_10.png" style="max-width:85%;" />
+<figcaption>Exact and asymptotic Bode plots for <span class="math inline">\(G(s)=100(1+s/2)/(s(1+s/10)(1+s/50))\)</span>.</figcaption>
+</figure>
+<p>Figure <a href="#fig:bode-construction-example1" data-reference-type="ref" data-reference="fig:bode-construction-example1">1.13</a> shows how each individual factor contributes its own asymptotic magnitude and phase segment, and how these are summed to produce the cumulative asymptotic Bode plot. Comparing the cumulative asymptote (dashed black) with the exact response confirms that the hand-sketch procedure captures the essential shape of the frequency response.</p>
+<figure id="fig:bode-construction-example1" data-latex-placement="htbp">
+<img src="figures/bode_construction_example1.png" style="max-width:92%;" />
+<figcaption>Asymptotic Bode construction for <span class="math inline">\(G(s)=100(1+s/2)/(s(1+s/10)(1+s/50))\)</span>. Thin coloured lines show the individual factor contributions; the dashed black line is the cumulative asymptotic approximation; the solid blue/red line is the exact response.</figcaption>
+</figure>
+<p>The exact Bode plot can be verified with Listing <a href="#lst:matlab-bode-complex-example" data-reference-type="ref" data-reference="lst:matlab-bode-complex-example">[lst:matlab-bode-complex-example]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the exact Bode plot of the complete example.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 100*(1+s/2)/(s*(1+s/10)*(1+s/50))
+ctrl.bode_plot(G), plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 100*(1+s/2)/(s*(1+s/10)*(1+s/50));
+bode(G), grid on</code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: A higher-order Bode plot</div>
+<p>Consider <span class="math display">\[G(s)=\frac{50(s+3)}{s(s+1)(s^2+4s+100)}.\]</span> To sketch by hand, first convert to Bode form. The numerator factor is <span class="math inline">\(s+3=3(1+s/3)\)</span>. The denominator quadratic is <span class="math inline">\(s^2+4s+100=100(1+0.4\cdot s/10+(s/10)^2)\)</span>, giving <span class="math inline">\(\omega_n=10\)</span> and <span class="math inline">\(\zeta=0.2\)</span>. The denominator constants are <span class="math inline">\(1\)</span> (from <span class="math inline">\(s+1\)</span>) and <span class="math inline">\(100\)</span> (from the quadratic), so the Bode-form gain is <span class="math inline">\(K_B=50\cdot 3/(1\cdot 100)=1.5\)</span>, or <span class="math inline">\(3.5\)</span> dB.</p>
+<p>The slope pattern is: <span class="math inline">\(-20\)</span> dB/dec (integrator) up to <span class="math inline">\(\omega=1\)</span>, then <span class="math inline">\(-40\)</span> dB/dec (pole at 1), then <span class="math inline">\(-20\)</span> dB/dec (zero at 3), then <span class="math inline">\(-60\)</span> dB/dec (second-order poles at 10). The lightly damped poles at <span class="math inline">\(\omega_n=10\)</span> will produce a resonant peak that the asymptotic sketch misses.</p>
+<p>Figure <a href="#fig:higher-order-bode-construction" data-reference-type="ref" data-reference="fig:higher-order-bode-construction">1.14</a> shows each factor’s individual contribution (coloured curves) together with the cumulative asymptotic and exact Bode plots (black dashed and solid). The resonant peak near <span class="math inline">\(\omega_n=10\)</span> rad/s in the exact total is clearly absent from the asymptotic total, illustrating why the exact plot must always be checked for lightly damped modes. Listing <a href="#lst:matlab-complex-bode" data-reference-type="ref" data-reference="lst:matlab-complex-bode">[lst:matlab-complex-bode]</a> reproduces the exact plot and computes the stability margins.</p>
+</div>
+<figure id="fig:higher-order-bode-construction" data-latex-placement="htbp">
+<img src="figures/higher_order_bode_construction.png" style="max-width:99%;" />
+<figcaption>Construction of the Bode plot for <span class="math inline">\(G(s)=50(s+3)/[s(s+1)(s^2+4s+100)]\)</span>. Each factor’s magnitude and phase contribution is shown individually (coloured curves), with asymptotic approximations as dashed lines. The thick black curves are the total exact and asymptotic Bode plots. Vertical dotted lines mark the break frequencies at <span class="math inline">\(1\)</span>, <span class="math inline">\(3\)</span>, and <span class="math inline">\(10\)</span> rad/s.</figcaption>
+</figure>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for a higher-order Bode plot with stability margins.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+import numpy as np
+
+num = [50, 150]                          # 50*(s+3) = 50s + 150
+den = np.convolve([1, 0], [1, 1])        # s*(s+1)
+den = np.convolve(den, [1, 4, 100])      # * (s^2+4s+100)
+G = ctrl.tf(num, den)
+ctrl.bode_plot(G, margins=True)
+plt.grid(True)
+Gm, Pm, Wcg, Wcp = ctrl.margin(G)
+print("Gain margin = %.1f dB, Phase margin = %.1f deg" % (20*np.log10(Gm), Pm))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 50*(s+3)/(s*(s+1)*(s^2 + 4*s + 100));
+figure
+margin(G), grid on
+[Gm, Pm, Wcg, Wcp] = margin(G);
+fprintf('Gain margin = %.1f dB, Phase margin = %.1f deg\n', ...
+        20*log10(Gm), Pm)</code></pre>
+</div>
+<h2 id="sec:bode-interpretation">Interpreting Bode Plots</h2>
+<p>The <strong>low-frequency gain</strong> tells us how strongly the system responds to slowly varying signals — high loop gain at low frequencies improves tracking and disturbance rejection. The <strong>high-frequency gain</strong> tells us how much high-frequency content passes through — high gain at high frequencies amplifies sensor noise, so a fast roll-off is usually desirable.</p>
+<p>The bandwidth is the frequency range over which the closed-loop system responds effectively. For many low-pass closed-loop systems, the bandwidth is approximately the <span class="math inline">\(-3\)</span> dB frequency of the closed-loop magnitude. A wider bandwidth means faster response, but also greater sensitivity to high-frequency noise.</p>
+<p>A <strong>resonant peak</strong> is a bump in the magnitude plot, usually caused by lightly damped poles. In the time domain, a resonant peak corresponds to overshoot and oscillation. The peak height is related to the damping ratio: roughly <span class="math inline">\(M_p \approx 1/(2\zeta)\)</span> for a standard second-order system.</p>
+<p>The gain crossover <span class="math inline">\(\omega_{gc}\)</span> is where the open-loop magnitude passes through <span class="math inline">\(0\)</span> dB. The phase crossover <span class="math inline">\(\omega_{pc}\)</span> is where the open-loop phase reaches <span class="math inline">\(-180^\circ\)</span>. These two frequencies are central to stability margin analysis, which is covered in the next section.</p>
+<div class="example"><div class="env-label env-label-example">Example: Low-pass and resonant interpretation</div>
+<p>The standard second-order system <span class="math display">\[G(s)=\frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}
+    =\frac{1}{1+2\zeta(s/\omega_n)+(s/\omega_n)^2}\]</span> has a static gain of <span class="math inline">\(1\)</span> (<span class="math inline">\(0\)</span> dB) and rolls off at <span class="math inline">\(-40\)</span> dB/decade above <span class="math inline">\(\omega_n\)</span>. When <span class="math inline">\(\zeta=0.7\)</span>, the exact magnitude decreases monotonically — there is no resonant peak and the time-domain step response has about <span class="math inline">\(5\%\)</span> overshoot. When <span class="math inline">\(\zeta=0.2\)</span>, a sharp resonant peak of about <span class="math inline">\(8\)</span> dB appears near <span class="math inline">\(\omega_n\)</span>, and the step response oscillates significantly. The Bode plot makes this difference immediately visible (see Figure <a href="#fig:second-order-bode-peak" data-reference-type="ref" data-reference="fig:second-order-bode-peak">1.15</a>).</p>
+</div>
+<figure id="fig:second-order-bode-peak" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_13.png" style="max-width:85%;" />
+<figcaption>Exact second-order magnitude plots compared with the same asymptotic sketch. The asymptote gives the slope, but it does not reveal the resonant peak.</figcaption>
+</figure>
+<p>Figure <a href="#fig:second-order-step-comparison" data-reference-type="ref" data-reference="fig:second-order-step-comparison">1.16</a> shows the corresponding closed-loop step responses. With <span class="math inline">\(\zeta=0.2\)</span>, the resonant peak in the Bode plot translates directly into large overshoot and prolonged oscillation. With <span class="math inline">\(\zeta=0.7\)</span>, the monotonic magnitude roll-off corresponds to a well-damped response with only about <span class="math inline">\(5\%\)</span> overshoot.</p>
+<figure id="fig:second-order-step-comparison" data-latex-placement="htbp">
+<img src="figures/second_order_step_comparison.png" style="max-width:75%;" />
+<figcaption>Step responses of the standard second-order system for <span class="math inline">\(\zeta=0.2\)</span> and <span class="math inline">\(\zeta=0.7\)</span> (<span class="math inline">\(\omega_n=10\)</span> rad/s). The lightly damped case exhibits significant overshoot and oscillation, consistent with the resonant peak in Figure <a href="#fig:second-order-bode-peak" data-reference-type="ref" data-reference="fig:second-order-bode-peak">1.15</a>.</figcaption>
+</figure>
+<p>Listing <a href="#lst:matlab-second-order-bode" data-reference-type="ref" data-reference="lst:matlab-second-order-bode">[lst:matlab-second-order-bode]</a> reproduces these plots in MATLAB, making it easy to experiment with other damping values.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for comparing second-order Bode plots with different damping.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+wn = 10
+G1 = ctrl.tf([wn**2], [1, 2*0.2*wn, wn**2])
+G2 = ctrl.tf([wn**2], [1, 2*0.7*wn, wn**2])
+ctrl.bode_plot([G1, G2])
+plt.legend(['zeta = 0.2','zeta = 0.7'])</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+wn = 10;
+G1 = wn^2/(s^2 + 2*0.2*wn*s + wn^2);
+G2 = wn^2/(s^2 + 2*0.7*wn*s + wn^2);
+bode(G1, G2), grid on
+legend('zeta = 0.2','zeta = 0.7')</code></pre>
+</div>
+<h2 id="sec:bode-stability-margins">Stability Margins from Bode Plots</h2>
+<p>Frequency-domain stability analysis uses the loop tf <span class="math display">\[L(s)=C(s)\,G(s).\]</span> For unity negative feedback, the closed loop becomes unstable if <span class="math inline">\(L(j\omega)=-1\)</span> for some real <span class="math inline">\(\omega\)</span> — that is, when the loop gain has magnitude <span class="math inline">\(1\)</span> (<span class="math inline">\(0\)</span> dB) and phase <span class="math inline">\(-180^\circ\)</span> simultaneously. The stability margins measure how far the system is from this condition.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Gain crossover and phase margin</div>
+<p>The <strong>gain crossover frequency</strong> <span class="math inline">\(\omega_{gc}\)</span> is the frequency where <span class="math display">\[|L(j\omega_{gc})|=1 \quad (\text{i.e.\ } 0~\text{dB}).\]</span> The phase margin is <span class="math display">\[PM=180^\circ+\angle L(j\omega_{gc}).\]</span> It measures how much additional phase lag would be needed to reach <span class="math inline">\(-180^\circ\)</span> at the frequency where the gain is unity.</p>
+</div>
+<div class="definition"><div class="env-label env-label-definition">Definition: Phase crossover and gain margin</div>
+<p>The <strong>phase crossover frequency</strong> <span class="math inline">\(\omega_{pc}\)</span> is the frequency where <span class="math display">\[\angle L(j\omega_{pc})=-180^\circ.\]</span> The gain margin is <span class="math display">\[GM=\frac{1}{|L(j\omega_{pc})|},
+    \qquad
+    GM_{\mathrm{dB}}=-20\log_{10}|L(j\omega_{pc})|.\]</span> It measures how much the loop gain could increase before the magnitude reaches <span class="math inline">\(0\)</span> dB at the frequency where the phase is already <span class="math inline">\(-180^\circ\)</span>.</p>
+</div>
+<p>Figure <a href="#fig:stability-margins-bode" data-reference-type="ref" data-reference="fig:stability-margins-bode">1.17</a> shows both margins on a single Bode plot. The phase margin is read at the gain crossover frequency <span class="math inline">\(\omega_{gc}\)</span>: it is the vertical distance between the phase curve and the <span class="math inline">\(-180^\circ\)</span> line on the phase plot. The gain margin is read at the phase crossover frequency <span class="math inline">\(\omega_{pc}\)</span>: it is the vertical distance between the magnitude curve and the <span class="math inline">\(0\)</span> dB line on the magnitude plot. A positive phase margin and a positive gain margin (in dB) both indicate stability; either one reaching zero means the system is on the boundary of instability.</p>
+<figure id="fig:stability-margins-bode" data-latex-placement="htbp">
+<img src="figures/stability_margins_bode_explanatory_figure.png" style="max-width:99%;" />
+<figcaption>Gain and phase margins on the Bode plot of <span class="math inline">\(L(s)\)</span>. At <span class="math inline">\(\omega_{gc}\)</span>, the magnitude is <span class="math inline">\(0\)</span> dB and the phase margin measures how far the phase is from <span class="math inline">\(-180^\circ\)</span>. At <span class="math inline">\(\omega_{pc}\)</span>, the phase is <span class="math inline">\(-180^\circ\)</span> and the gain margin measures how far the magnitude is below <span class="math inline">\(0\)</span> dB. Both margins must be positive for a stable closed loop.</figcaption>
+</figure>
+<p>Typical engineering targets are a phase margin of <span class="math inline">\(30^\circ\)</span> to <span class="math inline">\(60^\circ\)</span> and a gain margin of at least <span class="math inline">\(6\)</span> dB.</p>
+<h3 id="subsec:crossover-interpretation">Physical interpretation of the crossover frequencies</h3>
+<p>The gain crossover frequency <span class="math inline">\(\omega_{gc}\)</span> determines the <em>speed</em> of the closed-loop system. Below <span class="math inline">\(\omega_{gc}\)</span>, the loop gain is much greater than one, so feedback forces the output to follow the reference. Above <span class="math inline">\(\omega_{gc}\)</span>, the loop gain is much less than one, so feedback is essentially inactive. The closed-loop bandwidth is therefore closely related to <span class="math inline">\(\omega_{gc}\)</span>: roughly <span class="math inline">\(\omega_{\mathrm{BW}} \approx (1\text{--}2)\,\omega_{gc}\)</span>.</p>
+<p>A higher <span class="math inline">\(\omega_{gc}\)</span> means a faster response over a wider frequency band, but also more high-frequency sensor noise passing into the control signal. This is the fundamental trade-off of feedback: speed versus noise sensitivity and robustness.</p>
+<p>At <span class="math inline">\(\omega_{pc}\)</span>, the open-loop phase is exactly <span class="math inline">\(-180^\circ\)</span> — the feedback signal arrives in phase with the reference (positive feedback). If the magnitude were also <span class="math inline">\(0\)</span> dB at that frequency, the system would sustain oscillations. The gain margin tells us how far the magnitude is below <span class="math inline">\(0\)</span> dB at <span class="math inline">\(\omega_{pc}\)</span>.</p>
+<h3 id="subsec:margins-behaviour">What the margins tell you about closed-loop behaviour</h3>
+<p>A small phase margin (<span class="math inline">\(PM&lt;20^\circ\)</span>) means the system is “almost oscillating” — the step response will show large overshoot and poor damping. At <span class="math inline">\(PM=0^\circ\)</span>, the system oscillates indefinitely. A phase margin of <span class="math inline">\(60^\circ\)</span>–<span class="math inline">\(70^\circ\)</span> gives a well-damped response, while <span class="math inline">\(PM&gt;80^\circ\)</span> usually means the system responds too slowly.</p>
+<p>The gain margin provides robustness against plant gain uncertainty. A gain margin of <span class="math inline">\(6\)</span> dB means the actual gain can be up to twice the nominal value before instability — useful insurance against modelling errors. Table <a href="#tab:margin-guidelines" data-reference-type="ref" data-reference="tab:margin-guidelines">1.1</a> summarises the practical guidelines.</p>
+<div id="tab:margin-guidelines">
+<table>
+<caption>Practical guidelines for phase margin and gain margin.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Margin range</strong></th>
+<th style="text-align: left;"><strong>Closed-loop character</strong></th>
+<th style="text-align: left;"><strong>Typical use</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(PM &lt; 20^\circ\)</span></td>
+<td style="text-align: left;">Highly oscillatory, fragile</td>
+<td style="text-align: left;">Unacceptable</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(20^\circ &lt; PM &lt; 30^\circ\)</span></td>
+<td style="text-align: left;">Oscillatory, marginal robustness</td>
+<td style="text-align: left;">Sometimes acceptable</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(30^\circ &lt; PM &lt; 60^\circ\)</span></td>
+<td style="text-align: left;">Moderate damping, good robustness</td>
+<td style="text-align: left;">Recommended range</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(PM &gt; 60^\circ\)</span></td>
+<td style="text-align: left;">Well damped, possibly slow</td>
+<td style="text-align: left;">Good if speed is adequate</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(GM &lt; 3\)</span> dB</td>
+<td style="text-align: left;">Almost no gain tolerance</td>
+<td style="text-align: left;">Unacceptable</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(GM = 6\)</span> dB</td>
+<td style="text-align: left;">Factor-of-two gain tolerance</td>
+<td style="text-align: left;">Minimum target</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(GM &gt; 12\)</span> dB</td>
+<td style="text-align: left;">Very robust to gain changes</td>
+<td style="text-align: left;">Conservative</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="subsec:margin-examples">Phase margin and gain margin calculations</h3>
+<p>The following two examples illustrate both the phase margin and the gain margin calculations in detail.</p>
+<div class="examplebox">
+<p><span>Phase margin calculation</span> Let <span class="math display">\[L(s)=\frac{10}{s(s+1)}.\]</span></p>
+<p><strong>Step 1: Find the gain crossover frequency.</strong> We need <span class="math inline">\(|L(j\omega)|=1\)</span>: <span class="math display">\[|L(j\omega)|=\frac{10}{\omega\sqrt{1+\omega^2}}=1
+    \quad\Longrightarrow\quad
+    \omega^2(1+\omega^2)=100.\]</span> Let <span class="math inline">\(x=\omega^2\)</span>. Then <span class="math inline">\(x^2+x-100=0\)</span>, giving <span class="math inline">\(x=(-1+\sqrt{401})/2\approx 9.51\)</span>, so <span class="math display">\[\omega_{gc}=\sqrt{9.51}\approx 3.08~\text{rad/s}.\]</span></p>
+<p><strong>Step 2: Compute the phase at <span class="math inline">\(\omega_{gc}\)</span>.</strong> <span class="math display">\[\angle L(j3.08)=-90^\circ-\tan^{-1}(3.08)=-90^\circ-72.0^\circ=-162.0^\circ.\]</span></p>
+<p><strong>Step 3: Calculate the phase margin.</strong> <span class="math display">\[PM=180^\circ+(-162.0^\circ)=18.0^\circ.\]</span> This is a small phase margin. The closed-loop step response will be highly oscillatory, with significant overshoot and slow settling. Figure <a href="#fig:bode-margin-example" data-reference-type="ref" data-reference="fig:bode-margin-example">1.18</a> shows the Bode plot with the phase margin annotated.</p>
+</div>
+<div class="examplebox">
+<p><span>Gain margin calculation</span> Using the same loop transfer function <span class="math inline">\(L(s)=10/(s(s+1))\)</span>:</p>
+<p><strong>Step 1: Find the phase crossover frequency.</strong> We need <span class="math inline">\(\angle L(j\omega)=-180^\circ\)</span>: <span class="math display">\[\angle L(j\omega)=-90^\circ-\tan^{-1}(\omega)=-180^\circ
+    \quad\Longrightarrow\quad
+    \tan^{-1}(\omega)=90^\circ.\]</span> This requires <span class="math inline">\(\omega\to\infty\)</span>, so strictly speaking there is no finite phase crossover frequency. The phase approaches <span class="math inline">\(-180^\circ\)</span> but never reaches it. Therefore the gain margin is infinite: <span class="math display">\[GM=\infty.\]</span> This makes physical sense: the system has only two poles (a type-1 system), so the phase saturates at <span class="math inline">\(-180^\circ\)</span> asymptotically. No finite gain increase can make the loop unstable. The stability limitation comes entirely from the phase margin.</p>
+<p><strong>Contrast:</strong> If the plant had a third pole, e.g. <span class="math inline">\(L(s)=10/(s(s+1)(s/5+1))\)</span>, the phase would reach <span class="math inline">\(-180^\circ\)</span> at a finite frequency, and the gain margin would be finite and important.</p>
+</div>
+<figure id="fig:bode-margin-example" data-latex-placement="htbp">
+
+<img src="figures/ch09_tikz_16.png" style="max-width:85%;" />
+<figcaption>Bode plot of <span class="math inline">\(L(s)=10/(s(s+1))\)</span> showing the phase margin of <span class="math inline">\(18^\circ\)</span> at <span class="math inline">\(\omega_{gc}\approx 3.08\)</span> rad/s.</figcaption>
+</figure>
+<p>Listing <a href="#lst:matlab-margin-example" data-reference-type="ref" data-reference="lst:matlab-margin-example">[lst:matlab-margin-example]</a> shows how to compute these margins in MATLAB using the <code>margin</code> command.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for gain and phase margins.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+import numpy as np
+
+s = ctrl.tf('s')
+L = 10/(s*(s+1))
+ctrl.bode_plot(L, margins=True)
+plt.grid(True)
+Gm, Pm, Wcg, Wcp = ctrl.margin(L)
+print("GM = %.1f dB, PM = %.1f deg at wgc = %.2f rad/s" % (20*np.log10(Gm), Pm, Wcp))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+L = 10/(s*(s+1));
+margin(L), grid on
+[Gm, Pm, Wcg, Wcp] = margin(L);
+fprintf('GM = %.1f dB, PM = %.1f deg at wgc = %.2f rad/s\n', ...
+        20*log10(Gm), Pm, Wcp)</code></pre>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The Bode margins are computed from the <em>open-loop</em> transfer function <span class="math inline">\(L(s)=C(s)G(s)\)</span>, not from the closed-loop transfer function. The closed-loop is what we want to stabilise; the open-loop Bode plot is the diagnostic tool.</p>
+</div>
+<h2 id="sec:matlab-bode">MATLAB for Bode Analysis</h2>
+<p>The most commonly used MATLAB commands for Bode analysis are summarised in Table <a href="#tab:matlab-bode-commands" data-reference-type="ref" data-reference="tab:matlab-bode-commands">1.2</a>.</p>
+<div id="tab:matlab-bode-commands">
+<table>
+<caption>Key MATLAB commands for frequency-domain analysis.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Command</strong></th>
+<th style="text-align: left;"><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>bode(G)</code></td>
+<td style="text-align: left;">Plot magnitude and phase</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>margin(G)</code></td>
+<td style="text-align: left;">Plot Bode diagram with gain and phase margins</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>[Gm,Pm,Wcg,Wcp] = margin(G)</code></td>
+<td style="text-align: left;">Compute margins numerically</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>bandwidth(T)</code></td>
+<td style="text-align: left;">Estimate closed-loop bandwidth</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>allmargin(G)</code></td>
+<td style="text-align: left;">Detailed margin information</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A typical analysis workflow is shown in Listing <a href="#lst:matlab-frequency-workflow" data-reference-type="ref" data-reference="lst:matlab-frequency-workflow">[lst:matlab-frequency-workflow]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB workflow for frequency-domain analysis.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 5/((s+1)*(s+4))
+
+# figure
+ctrl.bode_plot(G), plt.grid(True)
+plt.title('Open-loop Bode plot')
+
+# figure
+ctrl.bode_plot(G, margins=True), plt.grid(True)
+plt.suptitle('Open-loop margins')
+
+T = ctrl.feedback(G, 1)
+bw = ctrl.bandwidth(T)
+info = ctrl.step_info(T)
+print("Bandwidth = %.2f rad/s, Settling time = %.2f s" % (bw, info['SettlingTime']))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 5/((s+1)*(s+4));
+
+figure
+bode(G), grid on
+title('Open-loop Bode plot')
+
+figure
+margin(G), grid on
+title('Open-loop margins')
+
+T = feedback(G, 1);
+bw = bandwidth(T);
+info = stepinfo(T);
+fprintf('Bandwidth = %.2f rad/s, Settling time = %.2f s\n', ...
+        bw, info.SettlingTime)</code></pre>
+</div>
+<h2 id="sec:freq-time-connection">Connecting Frequency Domain and Time Domain</h2>
+<p>Control specifications are often stated in the time domain (overshoot, settling time, steady-state error), but frequency-domain tools work with bandwidth, crossover frequency, phase margin, and loop gain. The designer must translate between the two domains. This translation relies on second-order approximations — for higher-order systems, MATLAB verification of the final design is essential.</p>
+<h3 id="subsec:second-order-bridge">The second-order bridge</h3>
+<p>As we saw in Section <a href="#sec:second_order_systems" data-reference-type="ref" data-reference="sec:second_order_systems">[sec:second_order_systems]</a>, the standard second-order closed-loop transfer function is <span class="math display">\[T(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2},\]</span> where <span class="math inline">\(\zeta\)</span> is the damping ratio and <span class="math inline">\(\omega_n\)</span> is the natural frequency. The key time-domain specifications for a step input are: <span class="math display">\[\text{overshoot:}\quad M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%,
+\qquad
+\text{settling time (2\%):}\quad t_s \approx \frac{4}{\zeta\omega_n}.\]</span> These formulas provide the link between the time and frequency domains.</p>
+<h3 id="subsec:pm-damping">Phase margin and damping ratio</h3>
+<p>For a second-order system in a unity-feedback configuration, there is an approximate relationship between phase margin and damping ratio.</p>
+<p><strong>Engineering rule (sufficient for design):</strong> <span class="math display">\[PM \approx 100\,\zeta \quad \text{(degrees)}, \qquad \text{for } 0 &lt; \zeta &lt; 0.7.\]</span></p>
+<p><strong>Exact second-order formula</strong> (used when higher accuracy is needed): <span class="math display">\[PM = \tan^{-1}\!\left(\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}}\right).\]</span> For design purposes, the simple rule <span class="math inline">\(PM \approx 100\zeta\)</span> is usually sufficient. For example, a specification of no more than <span class="math inline">\(16\%\)</span> overshoot corresponds to <span class="math inline">\(\zeta \ge 0.5\)</span> (from the overshoot formula), which translates to a phase margin target of about <span class="math inline">\(50^\circ\)</span>. Figure <a href="#fig:pm-zeta-step-visual" data-reference-type="ref" data-reference="fig:pm-zeta-step-visual">1.19</a> illustrates this relationship visually. The left panel shows a family of unit step responses sweeping from low phase margin (red, highly oscillatory) to high phase margin (blue, well damped). The right panel maps phase margin to overshoot percentage, with shaded regions indicating design quality: margins below <span class="math inline">\(25^\circ\)</span> are generally unacceptable, <span class="math inline">\(45^\circ\)</span>–<span class="math inline">\(70^\circ\)</span> is the preferred design region, and values above <span class="math inline">\(70^\circ\)</span> are conservative.</p>
+<figure id="fig:pm-zeta-step-visual" data-latex-placement="htbp">
+<img src="figures/pm_zeta_step_response_visual.png" />
+<figcaption>Phase margin, damping ratio, and step response character for second-order systems. Left: step responses evolve from oscillatory (red, low <span class="math inline">\(PM\)</span>) to well-damped (blue, high <span class="math inline">\(PM\)</span>). Right: the overshoot–phase margin curve with design-quality zones.</figcaption>
+</figure>
+<h3 id="subsec:crossover-bandwidth-speed">Crossover frequency, bandwidth, and speed</h3>
+<p>The gain crossover frequency <span class="math inline">\(\omega_{gc}\)</span> is closely related to the closed-loop bandwidth <span class="math inline">\(\omega_{\mathrm{BW}}\)</span>. For a second-order system with moderate damping (<span class="math inline">\(0.3 \le \zeta \le 0.7\)</span>), the approximation <span class="math display">\[\omega_{\mathrm{BW}} \approx \omega_{gc} \cdot \left(1 + 1.4\zeta + \zeta^2 \right)^{1/2}\]</span> holds reasonably well. For <span class="math inline">\(\zeta \approx 0.5\)</span>, this gives <span class="math inline">\(\omega_{\mathrm{BW}} \approx 1.4\,\omega_{gc}\)</span>. As a rough engineering rule: <span class="math display">\[\boxed{\omega_{\mathrm{BW}} \approx (1 \text{ to } 2)\,\omega_{gc}.}\]</span></p>
+<p>Once the bandwidth is known, the rise time can be estimated: <span class="math display">\[t_r \approx \frac{1.8}{\omega_{\mathrm{BW}}} \quad \text{(for } 0.4 \le \zeta \le 0.8\text{)}.\]</span> The settling time is best estimated from the time-domain formula <span class="math inline">\(t_s \approx 4/(\zeta\,\omega_n)\)</span>, using <span class="math inline">\(\omega_n \approx \omega_{\mathrm{BW}}/1.4\)</span> for <span class="math inline">\(\zeta \approx 0.5\)</span>.</p>
+<h3 id="subsec:ess-low-freq-gain">Steady-state error and low-frequency gain</h3>
+<p>The steady-state error to polynomial reference inputs depends on the <strong>system type</strong> (the number of free integrators in the loop transfer function <span class="math inline">\(L(s)\)</span>) and the corresponding <strong>error constant</strong>. Three error constants cover the most common reference signals, as summarised in Table <a href="#tab:system-type-error-constants" data-reference-type="ref" data-reference="tab:system-type-error-constants">1.3</a>.</p>
+<div id="tab:system-type-error-constants">
+<table>
+<caption>System type, error constants, and steady-state error for polynomial reference inputs.</caption>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>System type</strong></th>
+<th style="text-align: center;"><strong>Integrators</strong></th>
+<th style="text-align: center;"><strong>Error constant</strong></th>
+<th style="text-align: center;"><strong>Definition</strong></th>
+<th style="text-align: center;"><strong>Steady-state error</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">Type 0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><span class="math inline">\(K_p\)</span> (position)</td>
+<td style="text-align: center;"><span class="math inline">\(\displaystyle\lim_{s\to 0} L(s)\)</span></td>
+<td style="text-align: center;">Step: <span class="math inline">\(e_{\mathrm{ss}}=\dfrac{1}{1+K_p}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">Type 1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(K_v\)</span> (velocity)</td>
+<td style="text-align: center;"><span class="math inline">\(\displaystyle\lim_{s\to 0} s\,L(s)\)</span></td>
+<td style="text-align: center;">Ramp: <span class="math inline">\(e_{\mathrm{ss}}=\dfrac{1}{K_v}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">Type 2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(K_a\)</span> (acceleration)</td>
+<td style="text-align: center;"><span class="math inline">\(\displaystyle\lim_{s\to 0} s^2 L(s)\)</span></td>
+<td style="text-align: center;">Parabola: <span class="math inline">\(e_{\mathrm{ss}}=\dfrac{1}{K_a}\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A type-0 system has finite step error and infinite ramp error. A type-1 system has zero step error, finite ramp error, and infinite parabolic error. A type-2 system has zero error for both steps and ramps, and finite parabolic error. The designer must identify the system type and the relevant error constant before setting the low-frequency gain target.</p>
+<p>On the Bode plot, the error constants can be read from the low-frequency asymptote of the open-loop magnitude:</p>
+<ul>
+<li><p><strong>Type 0:</strong> <span class="math inline">\(K_p\)</span> is the DC gain — read directly from the low-frequency flat region of the magnitude plot.</p></li>
+<li><p><strong>Type 1:</strong> <span class="math inline">\(K_v\)</span> equals <span class="math inline">\(|L(j\omega)|\)</span> extrapolated along the <span class="math inline">\(-20\)</span> dB/dec integrator slope back to <span class="math inline">\(\omega = 1\)</span> rad/s.</p></li>
+<li><p><strong>Type 2:</strong> <span class="math inline">\(K_a\)</span> equals the magnitude of <span class="math inline">\(|L(j\omega)|\)</span> extrapolated along the <span class="math inline">\(-40\)</span> dB/dec double-integrator slope back to <span class="math inline">\(\omega = 1\)</span> rad/s.</p></li>
+</ul>
+<div class="examplebox">
+<p><span>Reading error constants from the Bode magnitude plot</span> <strong>Problem:</strong> For each of the following unity-feedback loop transfer functions, identify the system type, read the error constant from the Bode magnitude plot, and compute the steady-state error to the appropriate polynomial input.</p>
+<ol>
+<li><p><span class="math inline">\(\displaystyle L_0(s) = \frac{20}{(s+1)(s+5)}\)</span></p></li>
+<li><p><span class="math inline">\(\displaystyle L_1(s) = \frac{50}{s(s+10)}\)</span></p></li>
+<li><p><span class="math inline">\(\displaystyle L_2(s) = \frac{900}{s^2(s+30)}\)</span></p></li>
+</ol>
+<p><strong>(a) Type 0 — position constant <span class="math inline">\(K_p\)</span>.</strong> There are no free integrators, so this is a type-0 system. The relevant reference is a unit step. At very low frequencies, all poles and zeros are inactive and the magnitude settles to a flat value: <span class="math display">\[|L_0(j\omega)|\big|_{\omega\to 0} = \frac{20}{1 \cdot 5} = 4 \quad \Longrightarrow \quad K_p = 4 \;(12\;\text{dB}).\]</span> On the Bode plot (Figure <a href="#fig:error-constant-type0" data-reference-type="ref" data-reference="fig:error-constant-type0">1.20</a>), <span class="math inline">\(K_p\)</span> is simply the height of the low-frequency flat region (shaded). The steady-state step error is <span class="math display">\[e_{\mathrm{ss}} = \frac{1}{1+K_p} = \frac{1}{1+4} = 0.2 \quad (20\%).\]</span></p>
+<figure id="fig:error-constant-type0" data-latex-placement="H">
+<img src="figures/error_constant_type0.png" style="max-width:82%;" />
+<figcaption>Type-0 system: <span class="math inline">\(K_p\)</span> is the DC gain, read from the low-frequency flat region of the magnitude plot.</figcaption>
+</figure>
+<p><strong>(b) Type 1 — velocity constant <span class="math inline">\(K_v\)</span>.</strong> One free integrator <span class="math inline">\(1/s\)</span> is present, so this is a type-1 system. The relevant reference is a unit ramp. At low frequencies the magnitude plot has a <span class="math inline">\(-20\)</span> dB/dec slope due to the integrator. Extrapolating this slope back to <span class="math inline">\(\omega = 1\)</span> rad/s gives the intercept: <span class="math display">\[K_v = \lim_{s\to 0} s\,L_1(s) = \frac{50}{10} = 5 \quad \Longrightarrow \quad 20\log_{10}(5) = 14.0\;\text{dB at } \omega=1.\]</span> On the Bode plot (Figure <a href="#fig:error-constant-type1" data-reference-type="ref" data-reference="fig:error-constant-type1">1.21</a>), follow the <span class="math inline">\(-20\)</span> dB/dec asymptote (dashed red) and read off the value where it crosses <span class="math inline">\(\omega = 1\)</span> rad/s. The steady-state ramp error is <span class="math display">\[e_{\mathrm{ss}} = \frac{1}{K_v} = \frac{1}{5} = 0.2.\]</span></p>
+<figure id="fig:error-constant-type1" data-latex-placement="H">
+<img src="figures/error_constant_type1.png" style="max-width:82%;" />
+<figcaption>Type-1 system: <span class="math inline">\(K_v\)</span> is the value of the <span class="math inline">\(-20\)</span> dB/dec asymptote extrapolated to <span class="math inline">\(\omega = 1\)</span> rad/s (red dot).</figcaption>
+</figure>
+<p><strong>(c) Type 2 — acceleration constant <span class="math inline">\(K_a\)</span>.</strong> Two free integrators <span class="math inline">\(1/s^2\)</span> are present, so this is a type-2 system. The relevant reference is a unit parabola. At low frequencies the magnitude plot has a <span class="math inline">\(-40\)</span> dB/dec slope. Extrapolating this slope back to <span class="math inline">\(\omega = 1\)</span> rad/s: <span class="math display">\[K_a = \lim_{s\to 0} s^2\,L_2(s) = \frac{900}{30} = 30 \quad \Longrightarrow \quad 20\log_{10}(30) = 29.5\;\text{dB at } \omega=1.\]</span> On the Bode plot (Figure <a href="#fig:error-constant-type2" data-reference-type="ref" data-reference="fig:error-constant-type2">1.22</a>), follow the <span class="math inline">\(-40\)</span> dB/dec asymptote (dashed red) to <span class="math inline">\(\omega = 1\)</span> rad/s. The steady-state parabolic error is <span class="math display">\[e_{\mathrm{ss}} = \frac{1}{K_a} = \frac{1}{30} \approx 0.033.\]</span></p>
+<figure id="fig:error-constant-type2" data-latex-placement="H">
+<img src="figures/error_constant_type2.png" style="max-width:82%;" />
+
+<figcaption>Type-2 system: <span class="math inline">\(K_a\)</span> is the value of the <span class="math inline">\(-40\)</span> dB/dec asymptote extrapolated to <span class="math inline">\(\omega = 1\)</span> rad/s (red dot).</figcaption>
+</figure>
+</div>
+<div class="examplebox">
+<p><span>Asymptotic Bode magnitude sketch for a type-2 system</span> Consider the open-loop transfer function <span class="math display">\[G(s)=\frac{5(s+5)(s+10)}{s^{2}(s+20)}.\]</span> Sketch the asymptotic Bode magnitude plot. Determine the acceleration error constant <span class="math inline">\(K_a\)</span> and the gain crossover frequency <span class="math inline">\(\omega_{gc}\)</span>.</p>
+<p><strong>Step 1 — Convert to Bode form.</strong> Factor each term so that the frequency-dependent parts have the form <span class="math inline">\((1+s/a)\)</span>: <span class="math display">\[G(s) = \frac{5\cdot 5\!\left(1+\dfrac{s}{5}\right)\cdot 10\!\left(1+\dfrac{s}{10}\right)}{s^{2}\cdot 20\!\left(1+\dfrac{s}{20}\right)}
+         = \frac{12.5\left(1+\dfrac{s}{5}\right)\!\left(1+\dfrac{s}{10}\right)}{s^{2}\left(1+\dfrac{s}{20}\right)}.\]</span> The Bode gain is <span class="math inline">\(K_B = 12.5\)</span>, i.e. <span class="math inline">\(20\log_{10}(12.5) = 21.9\)</span> dB.</p>
+<p><strong>Step 2 — Identify the components and break frequencies.</strong></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Factor</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Break frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(K_B=12.5\)</span></td>
+<td style="text-align: left;">constant gain</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1/s^{2}\)</span></td>
+<td style="text-align: left;">double integrator</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1+s/5\)</span></td>
+<td style="text-align: left;">zero</td>
+<td style="text-align: left;"><span class="math inline">\(5\)</span> rad/s</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1+s/10\)</span></td>
+<td style="text-align: left;">zero</td>
+<td style="text-align: left;"><span class="math inline">\(10\)</span> rad/s</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="math inline">\(1/(1+s/20)\)</span></td>
+<td style="text-align: left;">pole</td>
+<td style="text-align: left;"><span class="math inline">\(20\)</span> rad/s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Step 3 — Determine the slope in each frequency range.</strong> The double integrator gives a starting slope of <span class="math inline">\(-40\)</span> dB/dec. At each break frequency the slope changes by <span class="math inline">\(+20\)</span> (zero) or <span class="math inline">\(-20\)</span> (pole): <span class="math display">\[\begin{array}{c|ccl}
+    \text{Range} &amp; \text{Slope change} &amp; \text{Net slope} &amp; \text{Reason}\\
+    \hline
+    \omega&lt;5 &amp; --- &amp; -40~\mathrm{dB/dec} &amp; \text{double integrator only}\\
+    5&lt;\omega&lt;10 &amp; +20 &amp; -20~\mathrm{dB/dec} &amp; \text{zero at 5}\\
+    10&lt;\omega&lt;20 &amp; +20 &amp; 0~\mathrm{dB/dec} &amp; \text{zero at 10}\\
+    \omega&gt;20 &amp; -20 &amp; -20~\mathrm{dB/dec} &amp; \text{pole at 20}
+    \end{array}\]</span></p>
+<p><strong>Step 4 — Fix the vertical position (anchor point).</strong> At <span class="math inline">\(\omega = 1\)</span> rad/s (below all break frequencies), the magnitude is determined by <span class="math inline">\(K_B/\omega^{2}\)</span>: <span class="math display">\[20\log_{10}\!\left(\frac{12.5}{1^{2}}\right) = 21.9~\text{dB}.\]</span> From this anchor, draw the <span class="math inline">\(-40\)</span> dB/dec line until <span class="math inline">\(\omega = 5\)</span>: <span class="math display">\[\text{At } \omega=5:\quad 21.9 - 40\log_{10}(5) = 21.9 - 28.0 = -6.0~\text{dB}.\]</span> Continue with <span class="math inline">\(-20\)</span> dB/dec from 5 to 10: <span class="math display">\[\text{At } \omega=10:\quad -6.0 - 20\log_{10}\!\left(\frac{10}{5}\right) = -6.0 - 6.0 = -12.0~\text{dB}.\]</span> The slope is <span class="math inline">\(0\)</span> dB/dec from 10 to 20, so the magnitude remains at <span class="math inline">\(-12.0\)</span> dB. After the pole at 20, the slope returns to <span class="math inline">\(-20\)</span> dB/dec.</p>
+<p>The resulting asymptotic sketch is compared with the exact Bode magnitude plot in Figure <a href="#fig:bode-type2-asymptotic" data-reference-type="ref" data-reference="fig:bode-type2-asymptotic">1.23</a>.</p>
+<figure id="fig:bode-type2-asymptotic" data-latex-placement="H">
+<img src="figures/bode_type2_asymptotic.png" style="max-width:88%;" />
+
+<figcaption>Asymptotic (dashed) and exact (solid) Bode magnitude plots for <span class="math inline">\(G(s) = 12.5(1+s/5)(1+s/10)/[s^{2}(1+s/20)]\)</span>. The anchor point at <span class="math inline">\(\omega=1\)</span> is marked, along with the gain crossover frequency.</figcaption>
+</figure>
+<p><strong>Step 5 — Acceleration error constant.</strong> This is a type-2 system (two integrators), so the relevant error constant is <span class="math display">\[K_a = \lim_{s\to 0} s^{2}\,G(s)
+        = \frac{5 \times 5 \times 10}{20} = 12.5.\]</span> On the Bode plot, <span class="math inline">\(K_a\)</span> equals the value of the <span class="math inline">\(-40\)</span> dB/dec asymptote at <span class="math inline">\(\omega = 1\)</span> rad/s, which is indeed <span class="math inline">\(21.9\)</span> dB <span class="math inline">\(= 12.5\)</span> in linear scale. The steady-state error to a unit parabolic input is <span class="math display">\[e_{ss} = \frac{1}{K_a} = \frac{1}{12.5} = 0.08.\]</span></p>
+<p><strong>Step 6 — Gain crossover frequency.</strong> The gain crossover is where <span class="math inline">\(|G(j\omega)| = 0\)</span> dB. From the asymptotic plot, this occurs on the <span class="math inline">\(-40\)</span> dB/dec segment: <span class="math display">\[21.9 - 40\log_{10}(\omega_{gc}) = 0
+    \quad\Longrightarrow\quad
+    \log_{10}(\omega_{gc}) = \frac{21.9}{40} = 0.549
+    \quad\Longrightarrow\quad
+    \omega_{gc} \approx 3.5~\text{rad/s}.\]</span> The exact value (from the plot or MATLAB) is <span class="math inline">\(\omega_{gc} \approx 4.2\)</span> rad/s — the asymptotic estimate is conservative because it does not account for the nearby zero at <span class="math inline">\(\omega = 5\)</span> which lifts the magnitude slightly above the asymptote.</p>
+</div>
+<h3 id="subsec:translation-recipe">Translation recipe: time-domain specs to frequency-domain targets</h3>
+<p>Given time-domain specifications, the designer translates them into frequency-domain targets using the following procedure:</p>
+<ol>
+<li><p><strong>Overshoot <span class="math inline">\(\to\)</span> phase margin.</strong> Use <span class="math inline">\(M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}}\)</span> to find the required <span class="math inline">\(\zeta\)</span>, then set the phase margin target as <span class="math inline">\(PM \approx 100\zeta\)</span> degrees.</p></li>
+<li><p><strong>Settling time <span class="math inline">\(\to\)</span> crossover frequency.</strong> Use <span class="math inline">\(t_s \approx 4/(\zeta\omega_n)\)</span> together with <span class="math inline">\(\omega_{gc} \approx \omega_n\)</span> (for moderate damping) to estimate the required crossover frequency: <span class="math inline">\(\omega_{gc} \gtrsim 4/(\zeta\, t_s)\)</span>.</p></li>
+<li><p><strong>Steady-state error <span class="math inline">\(\to\)</span> low-frequency gain.</strong> Identify the system type and the reference signal, then compute the required error constant: <span class="math inline">\(K_p\)</span> for step tracking (type 0), <span class="math inline">\(K_v\)</span> for ramp tracking (type 1), or <span class="math inline">\(K_a\)</span> for parabolic tracking (type 2). For example, a ramp error of <span class="math inline">\(e_{\mathrm{ss}} \le 0.05\)</span> requires <span class="math inline">\(K_v \ge 1/0.05 = 20\)</span>.</p></li>
+<li><p><strong>Gain margin.</strong> Unless stated otherwise, target <span class="math inline">\(GM \ge 6\)</span> dB (a factor of 2 in gain).</p></li>
+</ol>
+<div class="examplebox">
+<p><span>Translating time-domain specifications to frequency-domain targets</span> <strong>Problem:</strong> A motor speed control system must have:</p>
+<ul>
+<li><p>overshoot <span class="math inline">\(\le 20\%\)</span> to a step command,</p></li>
+<li><p>settling time <span class="math inline">\(\le 2\)</span> s (2% criterion),</p></li>
+<li><p>steady-state error <span class="math inline">\(\le 5\%\)</span> to a ramp input.</p></li>
+</ul>
+<p>Translate these into frequency-domain design targets.</p>
+<p><strong>Step 1 (Overshoot <span class="math inline">\(\to\)</span> <span class="math inline">\(\zeta\)</span> <span class="math inline">\(\to\)</span> PM).</strong> From <span class="math inline">\(M_p = 0.20\)</span>: <span class="math display">\[0.20 = e^{-\pi\zeta/\sqrt{1-\zeta^2}}
+    \quad \Longrightarrow \quad
+    \ln 0.20 = \frac{-\pi\zeta}{\sqrt{1-\zeta^2}}
+    \quad \Longrightarrow \quad
+    \zeta \approx 0.456.\]</span> Phase margin target: <span class="math inline">\(PM \ge 100 \times 0.456 \approx 46^\circ\)</span>. Rounding up for safety: <span class="math inline">\(PM \ge 50^\circ\)</span>.</p>
+<p><strong>Step 2 (Settling time <span class="math inline">\(\to\)</span> <span class="math inline">\(\omega_{gc}\)</span>).</strong> <span class="math display">\[\omega_n \ge \frac{4}{\zeta \, t_s} = \frac{4}{0.456 \times 2} = 4.39~\text{rad/s}.\]</span> Since <span class="math inline">\(\omega_{gc} \approx \omega_n\)</span> for moderate damping, we target <span class="math inline">\(\omega_{gc} \ge 4.4\)</span> rad/s.</p>
+<p><strong>Step 3 (Ramp error <span class="math inline">\(\to\)</span> <span class="math inline">\(K_v\)</span>).</strong> <span class="math display">\[K_v \ge \frac{1}{e_{\mathrm{ss}}} = \frac{1}{0.05} = 20.\]</span></p>
+<p><strong>Summary of frequency-domain targets:</strong></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Parameter</strong></th>
+<th style="text-align: left;"><strong>Target</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Phase margin</td>
+<td style="text-align: left;"><span class="math inline">\(\ge 50^\circ\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Gain crossover frequency</td>
+<td style="text-align: left;"><span class="math inline">\(\ge 4.4\)</span> rad/s</td>
+</tr>
+<tr>
+<td style="text-align: left;">Velocity error constant</td>
+<td style="text-align: left;"><span class="math inline">\(K_v \ge 20\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Gain margin</td>
+<td style="text-align: left;"><span class="math inline">\(\ge 6\)</span> dB</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The second-order approximations are most accurate when the closed-loop system is dominated by a pair of complex poles. For higher-order plants where additional poles are not far from the dominant pair, the approximations underestimate the overshoot and settling time. Always verify the final design with a MATLAB step response.</p>
+</div>
+<h2 id="sec:frequency-synthesis">Frequency-Domain Compensator Design</h2>
+<p>The goal is to choose a controller <span class="math inline">\(C(s)\)</span> so that the loop transfer function <span class="math inline">\(L(s)=C(s)G(s)\)</span> has: large low-frequency gain (tracking and disturbance rejection), an acceptable crossover frequency (speed), adequate phase margin (damping and robustness), and low high-frequency gain (noise rejection). No controller improves everything at once, so frequency-domain design is about shaping the loop gain in a controlled way.</p>
+<h3 id="subsec:design-decision-chart">Which compensator? — A design decision chart</h3>
+<p>The time-domain specifications translate into three frequency-domain questions, as shown in Table <a href="#tab:spec-translation" data-reference-type="ref" data-reference="tab:spec-translation">1.4</a>.</p>
+<div id="tab:spec-translation">
+<table>
+<caption>Translation of time-domain specifications to frequency-domain design targets.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Time-domain spec</strong></th>
+<th style="text-align: left;"><strong>Frequency-domain target</strong></th>
+<th style="text-align: left;"><strong>Bode-plot quantity</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Overshoot <span class="math inline">\(M_p\)</span></td>
+<td style="text-align: left;">Phase margin PM</td>
+<td style="text-align: left;">Phase at <span class="math inline">\(\omega_{gc}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Rise time <span class="math inline">\(t_r\)</span>, settling time <span class="math inline">\(t_s\)</span></td>
+<td style="text-align: left;">Crossover frequency <span class="math inline">\(\omega_{gc}\)</span></td>
+<td style="text-align: left;">Magnitude = 0 dB frequency</td>
+</tr>
+<tr>
+<td style="text-align: left;">Steady-state error <span class="math inline">\(e_{\mathrm{ss}}\)</span></td>
+<td style="text-align: left;">Error constant <span class="math inline">\(K_p\)</span>/<span class="math inline">\(K_v\)</span>/<span class="math inline">\(K_a\)</span></td>
+<td style="text-align: left;">Low-frequency gain level</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>PM and <span class="math inline">\(\omega_{gc}\)</span> both concern the <em>crossover region</em> and are addressed by a lead compensator (adds positive phase and raises gain near crossover). Steady-state accuracy concerns the <em>low-frequency</em> region and is addressed by a lag compensator (boosts low-frequency gain without affecting crossover). The compensator selection involves three checks:</p>
+<ol>
+<li><p><strong>Phase margin:</strong> Is PM adequate (from the overshoot spec)? If not, a lead section is needed to add phase near crossover.</p></li>
+<li><p><strong>Crossover frequency:</strong> Is <span class="math inline">\(\omega_{gc}\)</span> high enough (from the settling/rise time spec)? If not, a lead section is again the remedy — it raises the magnitude near crossover, pushing <span class="math inline">\(\omega_{gc}\)</span> higher.</p></li>
+<li><p><strong>Steady-state accuracy:</strong> Is the error constant (<span class="math inline">\(K_p\)</span>, <span class="math inline">\(K_v\)</span>, or <span class="math inline">\(K_a\)</span>) large enough? If not, a lag section is needed to boost low-frequency gain.</p></li>
+</ol>
+<p>Checks 1 and 2 both lead to a lead compensator, so both “No” paths merge in the flowchart (Figure <a href="#fig:design-decision-flowchart" data-reference-type="ref" data-reference="fig:design-decision-flowchart">1.24</a>).</p>
+<figure id="fig:design-decision-flowchart" data-latex-placement="htbp">
+
+
+<figcaption>Compensator selection flowchart. PM and <span class="math inline">\(\omega_{gc}\)</span> are checked separately, but both “No” paths merge because a lead compensator addresses both (it adds phase <em>and</em> tends to raise the crossover frequency). The final decision checks whether the low-frequency gain also needs boosting.</figcaption>
+</figure>
+<p>Table <a href="#tab:compensator-capabilities" data-reference-type="ref" data-reference="tab:compensator-capabilities">1.5</a> shows what each compensator does to the Bode plot.</p>
+<div id="tab:compensator-capabilities">
+<table>
+<caption>Compensator capabilities: effect on the three key Bode-plot properties.</caption>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Compensator</strong></th>
+<th style="text-align: center;"><strong>Raises <span class="math inline">\(\omega_{gc}\)</span>?</strong></th>
+<th style="text-align: center;"><strong>Adds PM?</strong></th>
+<th style="text-align: center;"><strong>Boosts low-freq gain?</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Lead</td>
+<td style="text-align: center;">Yes (moderate)</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+</tr>
+<tr>
+<td style="text-align: left;">Lag</td>
+<td style="text-align: center;">No (slight decrease)</td>
+<td style="text-align: center;">No (slight decrease)</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td style="text-align: left;">Lag–lead</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="subsec:general-design-algorithm">General design algorithm</h3>
+<p>The frequency-domain design process follows a common structure:</p>
+<ol>
+<li><p><strong>Translate specifications.</strong> Convert each time-domain requirement into a frequency-domain target:</p>
+<ul>
+<li><p>Overshoot <span class="math inline">\(\to\)</span> phase margin (via <span class="math inline">\(PM \approx 100\zeta\)</span>).</p></li>
+<li><p>Settling time or rise time <span class="math inline">\(\to\)</span> crossover frequency (via <span class="math inline">\(\omega_{gc} \gtrsim 4/(\zeta\,t_s)\)</span>).</p></li>
+<li><p>Steady-state error <span class="math inline">\(\to\)</span> error constant <span class="math inline">\(K_p\)</span>, <span class="math inline">\(K_v\)</span>, or <span class="math inline">\(K_a\)</span> (depending on system type and reference).</p></li>
+<li><p>Gain margin <span class="math inline">\(\to\)</span> default <span class="math inline">\(GM \ge 6\)</span> dB unless specified otherwise.</p></li>
+</ul></li>
+<li><p><strong>Plot and diagnose.</strong> Plot the uncompensated Bode diagram. Read <span class="math inline">\(\omega_{gc}\)</span>, PM, <span class="math inline">\(\omega_{pc}\)</span>, GM, and the relevant error constant. Compare each with the targets from Step 1.</p></li>
+<li><p><strong>Select compensator type.</strong> Use the decision chart (Figure <a href="#fig:design-decision-flowchart" data-reference-type="ref" data-reference="fig:design-decision-flowchart">1.24</a>): if the crossover region (PM and/or <span class="math inline">\(\omega_{gc}\)</span>) is deficient, a lead section is needed; if the low-frequency gain is deficient, a lag section is needed; if both, use lag–lead.</p></li>
+<li><p><strong>Compute compensator parameters.</strong> Follow the step-by-step algorithm for the chosen compensator type (detailed in the subsections that follow).</p></li>
+<li><p><strong>Verify.</strong> Plot the compensated Bode diagram and the closed-loop step response in MATLAB. Check <em>all</em> specifications: PM, <span class="math inline">\(\omega_{gc}\)</span>, <span class="math inline">\(e_{\mathrm{ss}}\)</span>, GM, overshoot, and settling time. If any target is missed, iterate — typically by adjusting the safety margin or the placement of the compensator zero and pole.</p></li>
+</ol>
+<h3 id="subsec:lead-compensation">Lead compensation</h3>
+<p>A <strong>lead compensator</strong> adds positive phase near the gain crossover frequency, improving damping and speed of response.</p>
+<h4 class="unnumbered" id="when-is-a-lead-compensator-needed">When is a lead compensator needed?</h4>
+<p>After plotting the Bode diagram of the uncompensated loop <span class="math inline">\(L_0(s)=K\,G(s)\)</span>, check the phase margin at the gain crossover frequency. A lead compensator is the right tool when:</p>
+<ul>
+<li><p>The <strong>phase margin is too small</strong> (the closed loop is too oscillatory or close to instability), <em>or</em></p></li>
+<li><p>The <strong>crossover frequency is too low</strong> (the closed-loop response is too sluggish).</p></li>
+</ul>
+<p>A lead section addresses <em>both</em> problems simultaneously: it adds positive phase at crossover (raising PM) and adds gain in that band (pushing <span class="math inline">\(\omega_{gc}\)</span> higher).</p>
+<p>A lead compensator is <strong>not</strong> the right choice when the main deficiency is steady-state accuracy (low-frequency gain too small). That situation calls for a lag compensator (Section <a href="#subsec:lag-compensation" data-reference-type="ref" data-reference="subsec:lag-compensation">1.10.4</a>).</p>
+<h4 class="unnumbered" id="the-standard-lead-compensator">The standard lead compensator</h4>
+<p>The transfer function is <span class="math display">\[C_{\mathrm{lead}}(s)=K_c\,\frac{Ts+1}{\alpha Ts+1},
+\qquad 0&lt;\alpha&lt;1.\]</span> It has:</p>
+<ul>
+<li><p>a <strong>zero</strong> at <span class="math inline">\(\omega_z=1/T\)</span> (lower frequency),</p></li>
+<li><p>a <strong>pole</strong> at <span class="math inline">\(\omega_p=1/(\alpha T)\)</span> (higher frequency, since <span class="math inline">\(\alpha&lt;1\)</span>).</p></li>
+</ul>
+<p>Between these two frequencies the compensator contributes positive phase. The <strong>maximum phase lead</strong> and the frequency at which it occurs are <span class="math display">\[\phi_{\max}=\sin^{-1}\!\left(\frac{1-\alpha}{1+\alpha}\right),
+\qquad
+\omega_m=\frac{1}{T\sqrt{\alpha}}.\]</span> At <span class="math inline">\(\omega_m\)</span> the compensator magnitude is <span class="math inline">\(10\log_{10}(1/\alpha)\)</span> dB, exactly half the high-frequency asymptotic gain of <span class="math inline">\(20\log_{10}(1/\alpha)\)</span> dB. Figure <a href="#fig:lead-compensator-bode" data-reference-type="ref" data-reference="fig:lead-compensator-bode">1.25</a> summarises all these relationships on a parametric Bode plot.</p>
+<figure id="fig:lead-compensator-bode" data-latex-placement="htbp">
+<img src="figures/lead_compensator_parametric.png" style="max-width:92%;" />
+
+<figcaption>Parametric Bode plot of a lead compensator <span class="math inline">\(C(s)=K_c(Ts+1)/(\alpha Ts+1)\)</span> with <span class="math inline">\(0&lt;\alpha&lt;1\)</span>. Key design quantities — the corner frequencies <span class="math inline">\(1/T\)</span> and <span class="math inline">\(1/(\alpha T)\)</span>, the peak frequency <span class="math inline">\(\omega_m=1/(T\sqrt{\alpha})\)</span>, and the maximum phase lead <span class="math inline">\(\phi_{\max}\)</span> — are shown in terms of the compensator parameters.</figcaption>
+</figure>
+<h4 class="unnumbered" id="design-procedure">Design procedure</h4>
+<div class="defnbox">
+<p><span>Lead Compensator Design Procedure</span></p>
+<ol>
+<li><p><strong>Analyse the uncompensated loop.</strong> Plot the Bode diagram of the plant <span class="math inline">\(G(s)\)</span> (or <span class="math inline">\(K\,G(s)\)</span> if a gain has already been chosen). Read off the current phase margin <span class="math inline">\(\text{PM}_0\)</span> and gain crossover frequency <span class="math inline">\(\omega_{gc,0}\)</span>.</p></li>
+<li><p><strong>Determine the required phase lead.</strong> Compute the phase deficit: <span class="math display">\[\phi_{\mathrm{need}} = \text{PM}_{\mathrm{des}} - \text{PM}_0.\]</span> Because the lead section raises the gain near crossover, the crossover shifts to a higher frequency where the plant phase is more negative. To compensate, add a safety margin of <span class="math inline">\(5^{\circ}\text{--}15^{\circ}\)</span>: <span class="math display">\[\phi_{\max} = \phi_{\mathrm{need}} + \underbrace{(5^{\circ}\text{--}15^{\circ})}_{\text{safety margin}}.\]</span> <em>Rule of thumb:</em> use <span class="math inline">\(5^{\circ}\)</span> if the plant phase curve is fairly flat near crossover, and up to <span class="math inline">\(15^{\circ}\)</span> if it drops steeply.</p></li>
+<li><p><strong>Compute <span class="math inline">\(\alpha\)</span>.</strong> Invert the <span class="math inline">\(\phi_{\max}\)</span> formula: <span class="math display">\[\alpha = \frac{1-\sin\phi_{\max}}{1+\sin\phi_{\max}}.\]</span> Smaller <span class="math inline">\(\alpha\)</span> gives more phase lead but spreads the zero and pole further apart, which amplifies high-frequency noise. In practice <span class="math inline">\(\alpha\ge 0.05\)</span> (i.e. <span class="math inline">\(\phi_{\max}\le 65^{\circ}\)</span>); if more lead is needed, cascade two lead sections.</p></li>
+<li><p><strong>Find the new crossover frequency <span class="math inline">\(\omega_m\)</span>.</strong> At <span class="math inline">\(\omega_m\)</span> the compensator adds <span class="math inline">\(10\log_{10}(1/\alpha)\)</span> dB of gain. For the <em>compensated</em> crossover to fall at <span class="math inline">\(\omega_m\)</span>, the <em>uncompensated</em> magnitude must equal minus this value: <span class="math display">\[|G(j\omega_m)|_{\mathrm{dB}} = -10\log_{10}\!\frac{1}{\alpha}.\]</span> Read <span class="math inline">\(\omega_m\)</span> from the Bode magnitude plot (or solve numerically).</p></li>
+<li><p><strong>Compute <span class="math inline">\(T\)</span>.</strong> <span class="math display">\[T = \frac{1}{\omega_m\sqrt{\alpha}}.\]</span> This places the zero at <span class="math inline">\(\omega_z=1/T=\omega_m\sqrt{\alpha}\)</span> and the pole at <span class="math inline">\(\omega_p=1/(\alpha T)=\omega_m/\sqrt{\alpha}\)</span>, symmetrically around <span class="math inline">\(\omega_m\)</span> on a log scale.</p></li>
+<li><p><strong>Set the gain <span class="math inline">\(K_c\)</span>.</strong> If a specific low-frequency gain or error constant is required, choose <span class="math inline">\(K_c\)</span> to meet it. Otherwise set <span class="math inline">\(K_c=1\)</span> (the lead section alone does not change the DC gain when <span class="math inline">\(K_c=1\)</span>, since <span class="math inline">\(C_{\mathrm{lead}}(0)=1\)</span>).</p></li>
+<li><p><strong>Verify.</strong> Plot the compensated Bode diagram <span class="math inline">\(C_{\mathrm{lead}}(j\omega)\,G(j\omega)\)</span> and confirm that PM and <span class="math inline">\(\omega_{gc}\)</span> meet the specifications. Simulate the closed-loop step response to check overshoot and settling time. If the margin is insufficient, increase the safety margin in Step 2 and repeat.</p></li>
+</ol>
+</div>
+<div class="notebox">
+<p><span>Design tricks and practical tips</span></p>
+<ul>
+<li><p><strong>Reading the Bode plot is the key skill.</strong> Steps 1 and 4 both require reading values from the magnitude and phase curves. Practise locating the frequency where the magnitude equals a given dB value.</p></li>
+<li><p><strong>Why the peak goes at <span class="math inline">\(\omega_m\)</span>.</strong> The compensator contributes its maximum phase exactly at the geometric mean of its zero and pole. By forcing the compensated crossover to coincide with <span class="math inline">\(\omega_m\)</span>, we extract every degree of phase lead that the compensator can provide.</p></li>
+<li><p><strong>Zero below, pole above.</strong> The zero <span class="math inline">\(1/T\)</span> always sits below the new crossover <span class="math inline">\(\omega_m\)</span>, and the pole <span class="math inline">\(1/(\alpha T)\)</span> always sits above it. This is what creates the positive phase hump at crossover.</p></li>
+<li><p><strong>Noise amplification trade-off.</strong> A smaller <span class="math inline">\(\alpha\)</span> gives more phase lead but also more high-frequency gain (<span class="math inline">\(20\log_{10}(1/\alpha)\)</span> dB). This amplifies sensor noise. Keep <span class="math inline">\(\alpha\ge 0.05\)</span>; if more lead is needed, use two cascaded lead sections rather than one aggressive one.</p></li>
+<li><p><strong>The safety margin is not a guess.</strong> It accounts for the fact that the plant phase at the <em>new</em> crossover is more negative than at the <em>old</em> one. A steep phase roll-off (e.g. multiple poles near crossover) demands a larger safety margin.</p></li>
+</ul>
+</div>
+<div class="examplebox">
+<p><span>Lead design to improve phase margin — complete worked example</span> <strong>Problem:</strong> Consider the unity-feedback system shown below, with plant <span class="math inline">\(G(s)=\frac{10}{s(s+1)}\)</span> and compensator <span class="math inline">\(C(s)\)</span> to be designed. The specification is <span class="math inline">\(\text{PM} \ge 50^{\circ}\)</span>.</p>
+<div class="center">
+
+</div>
+<p>We follow the design procedure step by step.</p>
+<p><strong>Step 1 — Analyse the uncompensated loop.</strong> With <span class="math inline">\(C=1\)</span>, the Bode plot of <span class="math inline">\(G(j\omega)\)</span> gives <span class="math inline">\(\text{PM}_0\approx 18^{\circ}\)</span> at <span class="math inline">\(\omega_{gc,0}\approx 3.1\)</span> rad/s. The phase margin is far below the target of <span class="math inline">\(50^{\circ}\)</span>, so a lead compensator is needed to add phase near crossover.</p>
+<p><strong>Step 2 — Determine the required phase lead.</strong> The phase deficit is <span class="math display">\[\phi_{\mathrm{need}} = 50^{\circ} - 18^{\circ} = 32^{\circ}.\]</span> The plant phase rolls off at moderate rate near crossover (one integrator plus one real pole), so we add a <span class="math inline">\(10^{\circ}\)</span> safety margin: <span class="math display">\[\phi_{\max} = 32^{\circ} + 10^{\circ} = 42^{\circ}.\]</span></p>
+<p><strong>Step 3 — Compute <span class="math inline">\(\alpha\)</span>.</strong> <span class="math display">\[\alpha=\frac{1-\sin 42^{\circ}}{1+\sin 42^{\circ}}=\frac{1-0.669}{1+0.669}=\frac{0.331}{1.669}\approx 0.198.\]</span> Since <span class="math inline">\(\alpha\ge 0.05\)</span>, a single lead section is sufficient.</p>
+<p><strong>Step 4 — Find the new crossover frequency <span class="math inline">\(\omega_m\)</span>.</strong> The compensator adds <span class="math inline">\(10\log_{10}(1/0.198)\approx 7.0\)</span> dB at <span class="math inline">\(\omega_m\)</span>. For the compensated crossover to land at <span class="math inline">\(\omega_m\)</span>, the uncompensated magnitude must equal <span class="math inline">\(-7.0\)</span> dB there. From the Bode plot (or solving <span class="math inline">\(|G(j\omega_m)|_{\mathrm{dB}}=-7.0\)</span> numerically): <span class="math display">\[\omega_m\approx 4.7~\text{rad/s}.\]</span></p>
+<p><strong>Step 5 — Compute <span class="math inline">\(T\)</span> and locate the zero and pole.</strong> <span class="math display">\[T=\frac{1}{\omega_m\sqrt{\alpha}}=\frac{1}{4.7\times\sqrt{0.198}}=\frac{1}{4.7\times 0.445}\approx 0.478~\text{s}.\]</span> The compensator zero and pole are: <span class="math display">\[\omega_z = \frac{1}{T} = 2.09~\text{rad/s}
+    \qquad\text{(below }\omega_m\text{)},
+    \qquad
+    \omega_p = \frac{1}{\alpha T} = 10.6~\text{rad/s}
+    \qquad\text{(above }\omega_m\text{)}.\]</span></p>
+<p><strong>Step 6 — Set the gain and write the compensator.</strong> No low-frequency gain adjustment is required (<span class="math inline">\(K_c=1\)</span>): <span class="math display">\[C_{\mathrm{lead}}(s)=\frac{0.478\,s+1}{0.0946\,s+1}.\]</span></p>
+<p><strong>Step 7 — Verify.</strong> Figure <a href="#fig:lead-design-bode" data-reference-type="ref" data-reference="fig:lead-design-bode">1.26</a> confirms <span class="math inline">\(\text{PM}\approx 54^{\circ}\)</span> at <span class="math inline">\(\omega_{gc}\approx 4.7\)</span> rad/s — the <span class="math inline">\(10^{\circ}\)</span> safety margin was well chosen. Figure <a href="#fig:lead-design-step" data-reference-type="ref" data-reference="fig:lead-design-step">1.27</a> shows the closed-loop step response: about <span class="math inline">\(18\%\)</span> overshoot and <span class="math inline">\(1.3\)</span> s settling time, a large improvement over the uncompensated <span class="math inline">\(60\%+\)</span> overshoot.</p>
+</div>
+<figure id="fig:lead-design-bode" data-latex-placement="htbp">
+<img src="figures/lead_bode.png" style="max-width:92%;" />
+
+<figcaption>Bode plots for the lead design example. The compensator shifts the crossover from <span class="math inline">\(3.1\)</span> to <span class="math inline">\(4.7\)</span> rad/s while lifting the phase from <span class="math inline">\(-162^\circ\)</span> to <span class="math inline">\(-126^\circ\)</span> at the new crossover.</figcaption>
+</figure>
+<figure id="fig:lead-design-step" data-latex-placement="htbp">
+<img src="figures/lead_step.png" style="max-width:72%;" />
+
+<figcaption>Closed-loop step responses for the lead design example (unity feedback).</figcaption>
+</figure>
+<p>The complete MATLAB implementation is given in Listing <a href="#lst:matlab-lead-design" data-reference-type="ref" data-reference="lst:matlab-lead-design">[lst:matlab-lead-design]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the lead compensator design and verification.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 10/(s*(s+1))
+
+# Lead compensator
+T_lead = 0.478
+alpha = 0.198
+Clead = (T_lead*s + 1)/(alpha*T_lead*s + 1)
+
+# Bode comparison
+ctrl.bode_plot(G, margins=True)
+plt.suptitle('Uncompensated')
+ctrl.bode_plot(Clead*G, margins=True)
+plt.suptitle('Lead-compensated')
+
+# Closed-loop step response (unity feedback: H=1)
+Tcl_uncomp = ctrl.feedback(G, 1)
+Tcl_lead   = ctrl.feedback(Clead*G, 1)
+# figure
+import numpy as np
+t = np.linspace(0, 14, 500)
+r1 = ctrl.step_response(Tcl_uncomp, t)
+r2 = ctrl.step_response(Tcl_lead, t)
+plt.figure()
+plt.plot(r1.time, r1.outputs, label='Uncompensated')
+plt.plot(r2.time, r2.outputs, label='Lead-compensated')
+plt.xlabel('Time (s)'), plt.ylabel('Output')
+plt.legend(), plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 10/(s*(s+1));
+
+% Lead compensator
+T_lead = 0.478;
+alpha = 0.198;
+Clead = (T_lead*s + 1)/(alpha*T_lead*s + 1);
+
+% Bode comparison
+figure
+margin(G), grid on, title('Uncompensated')
+figure
+margin(Clead*G), grid on, title('Lead-compensated')
+
+% Closed-loop step response (unity feedback: H=1)
+Tcl_uncomp = feedback(G, 1);
+Tcl_lead   = feedback(Clead*G, 1);
+figure
+step(Tcl_uncomp, Tcl_lead), grid on
+legend('Uncompensated','Lead-compensated')</code></pre>
+</div>
+<div class="examplebox">
+<p><span>Lead compensator design for a double-integrator plant</span></p>
+<p><strong>Problem.</strong> Consider the unity-feedback system in Figure <a href="#fig:lead-double-int-block" data-reference-type="ref" data-reference="fig:lead-double-int-block">1.28</a>. The plant is a double integrator <span class="math inline">\(G(s)=K/s^{2}\)</span>, where <span class="math inline">\(K\)</span> is a gain to be chosen. Design a lead compensator <span class="math display">\[C(s)=\frac{Ts+1}{\alpha Ts+1},\qquad 0&lt;\alpha&lt;1,\]</span> and choose <span class="math inline">\(K\)</span> so that the closed-loop system meets:</p>
+<ul>
+<li><p>settling time <span class="math inline">\(t_s\le 4\)</span> s (2% criterion),</p></li>
+<li><p>damping ratio <span class="math inline">\(\zeta\ge 0.45\)</span> (equivalently, overshoot <span class="math inline">\(\le 25\%\)</span>).</p></li>
+</ul>
+<p>Assume the closed-loop behaviour is dominated by a second-order pair.</p>
+<figure id="fig:lead-double-int-block" data-latex-placement="H">
+
+
+<figcaption>Unity-feedback system with a lead compensator and double-integrator plant.</figcaption>
+</figure>
+<p><strong>Step 1 — Translate time-domain specs to frequency domain</strong> (preliminary step).</p>
+<p>For a dominant second-order system with <span class="math inline">\(\zeta\ge 0.45\)</span>, the approximate relation <span class="math inline">\(\text{PM}\approx 100\zeta\)</span> gives <span class="math display">\[\text{PM}_{\mathrm{des}}\ge 100\times 0.45=45^{\circ}.\]</span> The settling-time requirement <span class="math inline">\(t_s\le 4\)</span> s imposes a minimum bandwidth. Using <span class="math inline">\(t_s\approx 4/(\zeta\omega_n)\)</span> with <span class="math inline">\(\zeta=0.45\)</span>: <span class="math display">\[\omega_n\ge\frac{4}{0.45\times 4}\approx 2.22\;\text{rad/s}.\]</span> As a rule of thumb, the gain crossover frequency should satisfy <span class="math inline">\(\omega_{gc}\gtrsim\omega_n\)</span>, so we target <span class="math inline">\(\omega_{gc}\ge 2.2\)</span> rad/s.</p>
+<p><strong>Step 2 — Analyse the uncompensated loop</strong> (Procedure Step 1).</p>
+<p>The uncompensated plant <span class="math inline">\(K/s^2\)</span> is a double integrator: magnitude drops at <span class="math inline">\(-40\)</span> dB/dec and the phase is a constant <span class="math inline">\(-180^{\circ}\)</span> at all frequencies. Therefore <span class="math inline">\(\text{PM}_0 = 0^{\circ}\)</span> — the system is marginally unstable without compensation. A lead compensator is essential to inject positive phase at crossover.</p>
+<p><strong>Step 3 — Determine the required phase lead</strong> (Procedure Step 2).</p>
+<p>The entire <span class="math inline">\(45^{\circ}\)</span> of phase margin must come from the compensator. The double integrator has a flat <span class="math inline">\(-180^{\circ}\)</span> phase, so the crossover shift has little effect on the phase, but we still add a <span class="math inline">\(10^{\circ}\)</span> safety margin: <span class="math display">\[\phi_{\max}=45^{\circ}+10^{\circ}=55^{\circ}.\]</span></p>
+<p><strong>Step 4 — Compute <span class="math inline">\(\alpha\)</span></strong> (Procedure Step 3). <span class="math display">\[\alpha=\frac{1-\sin 55^{\circ}}{1+\sin 55^{\circ}}
+     =\frac{1-0.8192}{1+0.8192}=\frac{0.1808}{1.8192}\approx 0.1.\]</span> Since <span class="math inline">\(\alpha=0.1\ge 0.05\)</span>, a single lead section is sufficient.</p>
+<p><strong>Step 5 — Find the new crossover frequency <span class="math inline">\(\omega_m\)</span></strong> (Procedure Step 4).</p>
+<p>At <span class="math inline">\(\omega_m\)</span>, the compensator adds <span class="math inline">\(10\log_{10}(1/\alpha)=10\log_{10}10=10\)</span> dB. For the compensated crossover to fall at <span class="math inline">\(\omega_m\)</span>, the uncompensated magnitude must equal <span class="math inline">\(-10\)</span> dB there: <span class="math display">\[20\log_{10}\!\Bigl(\frac{K}{\omega_m^{2}}\Bigr)=-10
+\quad\Longrightarrow\quad
+\frac{K}{\omega_m^{2}}=10^{-1/2}=0.3162.\]</span> Setting <span class="math inline">\(K=2\)</span>: <span class="math display">\[\omega_m=\sqrt{\frac{2}{0.3162}}=\sqrt{6.325}\approx 2.51\;\text{rad/s},\]</span> which exceeds the minimum 2.2 rad/s target from Step 1.</p>
+<p><strong>Step 6 — Compute <span class="math inline">\(T\)</span> and locate the zero and pole</strong> (Procedure Step 5). <span class="math display">\[T=\frac{1}{\omega_m\sqrt{\alpha}}=\frac{1}{2.51\times\sqrt{0.1}}=\frac{1}{2.51\times 0.3162}\approx 1.26\;\text{s}.\]</span> The compensator zero and pole are: <span class="math display">\[\omega_z = \frac{1}{T} = 0.80~\text{rad/s}\quad\text{(below }\omega_m\text{)},
+\qquad
+\omega_p = \frac{1}{\alpha T} = 7.95~\text{rad/s}\quad\text{(above }\omega_m\text{)}.\]</span> The lead compensator is therefore <span class="math display">\[\boxed{C_{\mathrm{lead}}(s)=\frac{1.26\,s+1}{0.126\,s+1}}.\]</span></p>
+<p><strong>Step 7 — Verify</strong> (Procedure Step 7).</p>
+<p>Figure <a href="#fig:lead-double-int-bode" data-reference-type="ref" data-reference="fig:lead-double-int-bode">1.29</a> shows that the compensated loop achieves <span class="math inline">\(\text{PM}=55^{\circ}\)</span> at <span class="math inline">\(\omega_{gc}\approx 2.5\)</span> rad/s. Figure <a href="#fig:lead-double-int-step" data-reference-type="ref" data-reference="fig:lead-double-int-step">1.30</a> confirms a step-response overshoot of <span class="math inline">\(23\%\)</span> (<span class="math inline">\(&lt;25\%\)</span>) and settling time <span class="math inline">\(t_s\approx 3.3\)</span> s (<span class="math inline">\(&lt;4\)</span> s) — both specifications are satisfied.</p>
+<figure id="fig:lead-double-int-bode" data-latex-placement="H">
+<img src="figures/lead_double_integrator_bode.png" style="max-width:92%;" />
+
+<figcaption>Bode plots for the double-integrator lead design. The compensator lifts the phase at the new crossover to <span class="math inline">\(-125^{\circ}\)</span>, giving <span class="math inline">\(\text{PM}=55^{\circ}\)</span>.</figcaption>
+</figure>
+<figure id="fig:lead-double-int-step" data-latex-placement="H">
+<img src="figures/lead_double_integrator_step.png" style="max-width:72%;" />
+
+<figcaption>Closed-loop step response of the double-integrator lead design: <span class="math inline">\(23\%\)</span> overshoot and <span class="math inline">\(t_s\approx 3.3\)</span> s.</figcaption>
+</figure>
+<p>The MATLAB code in Listing <a href="#lst:matlab-lead-double-int" data-reference-type="ref" data-reference="lst:matlab-lead-double-int">[lst:matlab-lead-double-int]</a> reproduces these results.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the double-integrator lead compensator design.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+s  = ctrl.tf('s')
+K = 2
+G = ctrl.tf([K], [1, 0, 0])            # double-integrator plant
+
+alpha  = 0.1                           # from phi_max = 55 deg
+T_lead = 1.26                          # 1/(wm*np.sqrt(alpha))
+Clead = (T_lead*s + 1)/(alpha*T_lead*s + 1)   # lead compensator
+
+L = Clead*G                            # open-loop
+ctrl.bode_plot(G, margins=True)
+ctrl.bode_plot(L, margins=True)
+plt.suptitle('Uncompensated (blue) vs Lead-compensated (orange)')
+
+Tcl = ctrl.feedback(L, 1)              # closed-loop (unity feedback)
+t = np.linspace(0, 8, 400)
+_resp = ctrl.step_response(Tcl, t)
+plt.figure()
+plt.plot(_resp.time, _resp.outputs)
+plt.xlabel('Time (s)'), plt.ylabel('Output')
+plt.grid(True)
+plt.title('Closed-loop step response')</code></pre>
+</div>
+<pre class="matlab"><code>s  = tf('s');
+K = 2;
+G = K/s^2;                           % double-integrator plant
+
+alpha  = 0.1;                         % from phi_max = 55 deg
+T_lead = 1.26;                        % 1/(wm*sqrt(alpha))
+Clead = (T_lead*s + 1)/(alpha*T_lead*s + 1);  % lead compensator
+
+L = Clead*G;                          % open-loop
+figure, margin(L), grid on            % Bode plot with PM annotation
+
+Tcl = feedback(L, 1);                 % closed-loop (unity feedback)
+figure, step(Tcl, 8), grid on         % step response</code></pre>
+</div>
+</div>
+<h3 id="subsec:lag-compensation">Lag compensation</h3>
+<p>A <strong>lag compensator</strong> increases the low-frequency loop gain without greatly changing the crossover frequency, thereby improving steady-state accuracy.</p>
+<h4 class="unnumbered" id="when-is-a-lag-compensator-needed">When is a lag compensator needed?</h4>
+<p>After plotting the Bode diagram of the uncompensated loop, check the steady-state error performance. A lag compensator is the right tool when:</p>
+<ul>
+<li><p>The <strong>phase margin is already adequate</strong> (the transient response is acceptable), <em>but</em></p></li>
+<li><p>The <strong>low-frequency gain is too small</strong> (the steady-state error for step, ramp, or parabolic inputs is too large — i.e. <span class="math inline">\(K_p\)</span>, <span class="math inline">\(K_v\)</span>, or <span class="math inline">\(K_a\)</span> is insufficient).</p></li>
+</ul>
+<p>The lag section boosts the low-frequency gain by a factor <span class="math inline">\(\beta\)</span> while leaving the crossover region almost untouched, so the transient response is approximately preserved.</p>
+<p>A lag compensator is <strong>not</strong> the right choice when the phase margin itself is deficient. That situation calls for a lead compensator (Section <a href="#subsec:lead-compensation" data-reference-type="ref" data-reference="subsec:lead-compensation">1.10.3</a>). If <em>both</em> PM and low-frequency gain are inadequate, a lag–lead compensator is needed (Section <a href="#subsec:lag-lead-compensation" data-reference-type="ref" data-reference="subsec:lag-lead-compensation">1.10.5</a>).</p>
+<h4 class="unnumbered" id="the-standard-lag-compensator">The standard lag compensator</h4>
+<p>The transfer function is <span class="math display">\[C_{\mathrm{lag}}(s)=K_c\,\frac{Ts+1}{\beta Ts+1},
+\qquad \beta&gt;1.\]</span> It has:</p>
+<ul>
+<li><p>a <strong>zero</strong> at <span class="math inline">\(\omega_z=1/T\)</span> (higher frequency),</p></li>
+<li><p>a <strong>pole</strong> at <span class="math inline">\(\omega_p=1/(\beta T)\)</span> (lower frequency, closer to the origin, since <span class="math inline">\(\beta&gt;1\)</span>).</p></li>
+</ul>
+<p>Below both frequencies, the magnitude is <span class="math inline">\(20\log_{10}\beta\)</span> dB higher than above both — this is the low-frequency gain boost. Between the pole and zero, the magnitude transitions at <span class="math inline">\(-20\)</span> dB/dec. Both the zero and pole are placed <em>well below</em> the crossover frequency, so the lag section boosts low-frequency gain by <span class="math inline">\(\beta\)</span> while leaving the crossover region essentially unchanged.</p>
+<p>The lag section also introduces <strong>negative phase</strong> between its pole and zero, with a maximum lag of <span class="math display">\[\phi_{\min}=-\sin^{-1}\!\left(\frac{\beta-1}{\beta+1}\right),\]</span> occurring at the geometric mean frequency <span class="math inline">\(\omega_m=1/(T\sqrt{\beta})\)</span>. This negative phase must be kept well away from the crossover region — otherwise it will reduce the phase margin. Figure <a href="#fig:lag-compensator-bode" data-reference-type="ref" data-reference="fig:lag-compensator-bode">1.31</a> summarises all these relationships on a parametric Bode plot.</p>
+<figure id="fig:lag-compensator-bode" data-latex-placement="htbp">
+<img src="figures/lag_compensator_parametric.png" style="max-width:92%;" />
+
+<figcaption>Parametric Bode plot of a lag compensator <span class="math inline">\(C(s)=K_c(Ts+1)/(\beta Ts+1)\)</span> with <span class="math inline">\(\beta&gt;1\)</span>. The low-frequency gain is boosted by <span class="math inline">\(20\log_{10}\beta\)</span> dB. The negative phase dip between the pole <span class="math inline">\(1/(\beta T)\)</span> and zero <span class="math inline">\(1/T\)</span> must be kept well below the crossover frequency to avoid eroding PM.</figcaption>
+</figure>
+<h4 class="unnumbered" id="design-procedure-1">Design procedure</h4>
+<div class="defnbox">
+<p><span>Lag Compensator Design Procedure</span></p>
+<ol>
+<li><p><strong>Analyse the uncompensated loop.</strong> Plot the Bode diagram of <span class="math inline">\(G(s)\)</span> (or <span class="math inline">\(K\,G(s)\)</span>). Read off the current phase margin <span class="math inline">\(\text{PM}_0\)</span>, gain crossover frequency <span class="math inline">\(\omega_{gc,0}\)</span>, and compute the relevant error constant (<span class="math inline">\(K_p\)</span>, <span class="math inline">\(K_v\)</span>, or <span class="math inline">\(K_a\)</span>) from the low-frequency magnitude. Confirm that PM is already acceptable — if not, a lag compensator alone is not enough.</p></li>
+<li><p><strong>Determine <span class="math inline">\(\beta\)</span>.</strong> The gain boost required is <span class="math display">\[\beta = \frac{K_{\mathrm{des}}}{K_{\mathrm{uncomp}}},\]</span> where <span class="math inline">\(K\)</span> is the relevant error constant (<span class="math inline">\(K_p\)</span>, <span class="math inline">\(K_v\)</span>, or <span class="math inline">\(K_a\)</span>). This is the single most important parameter — it determines how much the low-frequency gain is raised.</p></li>
+<li><p><strong>Place the lag zero.</strong> Choose the zero frequency <span class="math inline">\(\omega_z=1/T\)</span> at least one decade below the current crossover: <span class="math display">\[\omega_z \le \frac{\omega_{gc,0}}{10}.\]</span> This ensures that the negative phase contribution of the lag section has returned close to <span class="math inline">\(0^{\circ}\)</span> by the time the crossover region is reached.</p>
+<p><em>Rule of thumb:</em> a factor of 8–10 below <span class="math inline">\(\omega_{gc}\)</span> is typical. Placing it even lower reduces the phase margin loss but slows down the closed-loop settling (the lag pole is closer to the origin).</p></li>
+<li><p><strong>Compute <span class="math inline">\(T\)</span> and locate the pole.</strong> <span class="math display">\[T = \frac{1}{\omega_z},\qquad
+    \omega_p = \frac{\omega_z}{\beta} = \frac{1}{\beta T}.\]</span> The pole sits <span class="math inline">\(\beta\)</span> times lower than the zero on the frequency axis.</p></li>
+<li><p><strong>Set the gain and write the compensator.</strong> A common choice is <span class="math inline">\(K_c = \beta\)</span>, which puts the entire low-frequency boost into the compensator: <span class="math display">\[C_{\mathrm{lag}}(s) = \beta\,\frac{Ts+1}{\beta Ts+1},
+    \qquad C_{\mathrm{lag}}(0) = \beta.\]</span> Alternatively, part of the boost can come from a separate loop gain; the key requirement is that the total DC loop gain meets the error-constant specification.</p></li>
+<li><p><strong>Verify.</strong> Plot the compensated Bode diagram and confirm that:</p>
+<ul>
+<li><p>the low-frequency gain has increased by <span class="math inline">\(20\log_{10}\beta\)</span> dB (error constant met),</p></li>
+<li><p>the crossover frequency is approximately unchanged,</p></li>
+<li><p>the phase margin has dropped by no more than a few degrees.</p></li>
+</ul>
+<p>Simulate the closed-loop step response to confirm the transient is still acceptable. If the phase margin drops too much, move the zero lower (increase <span class="math inline">\(T\)</span>).</p></li>
+</ol>
+</div>
+<div class="notebox">
+<p><span>Design tricks and practical tips</span></p>
+<ul>
+<li><p><strong>What the lag section does to the magnitude curve.</strong> It raises the gain at low frequencies (where accuracy matters) without raising it near crossover (where PM matters), by placing a pole–zero pair that tilts the magnitude curve downward between the two break frequencies.</p></li>
+<li><p><strong>Phase margin will decrease slightly.</strong> The negative phase between the pole and zero always extends partially into the crossover region. Typically PM drops by <span class="math inline">\(3^{\circ}\text{--}8^{\circ}\)</span>; if this is unacceptable, push the zero further below crossover.</p></li>
+<li><p><strong>Slow closed-loop pole.</strong> The pole at <span class="math inline">\(1/(\beta T)\)</span> is very close to the origin. This adds a slow component to the closed-loop response — the step response may appear settled but continue creeping for tens of seconds before reaching its final value.</p></li>
+<li><p><strong>Don’t use lag for PM improvement.</strong> Lag adds negative phase, not positive. It cannot fix a system whose PM is already too low — that requires lead compensation.</p></li>
+<li><p><strong><span class="math inline">\(\beta\)</span> is rarely larger than 20.</strong> Very large <span class="math inline">\(\beta\)</span> pushes the pole too close to the origin, making the closed-loop settling unacceptably slow. If more gain boost is needed, redesign the system (e.g. add an integrator or use lag–lead).</p></li>
+</ul>
+</div>
+<div class="examplebox">
+<p><span>Lag design for steady-state accuracy — complete worked example</span> <strong>Problem:</strong> A unity-feedback system (same structure as the lead examples above) has plant <span class="math inline">\(G(s)=1/(s(s+1))\)</span>. The uncompensated step response is acceptable (<span class="math inline">\(\text{PM}_0 \approx 52^{\circ}\)</span>), but the velocity error constant is only <span class="math display">\[K_v=\lim_{s\to 0}s\,G(s)=1,\]</span> giving a steady-state ramp error of <span class="math inline">\(e_{\mathrm{ss}}=1/K_v=1\)</span>. The specification requires <span class="math inline">\(e_{\mathrm{ss}}\le 0.1\)</span>, i.e. <span class="math inline">\(K_v\ge 10\)</span>.</p>
+<p>We follow the design procedure step by step.</p>
+<p><strong>Step 1 — Analyse the uncompensated loop.</strong> The Bode plot of <span class="math inline">\(G(j\omega)\)</span> gives <span class="math inline">\(\text{PM}_0\approx 52^{\circ}\)</span> at <span class="math inline">\(\omega_{gc,0}\approx 0.78\)</span> rad/s. The phase margin is adequate, but <span class="math inline">\(K_v=1\)</span> is far below the required <span class="math inline">\(10\)</span>. Since PM is already good and only the low-frequency gain needs improvement, a lag compensator is the right choice.</p>
+<p><strong>Step 2 — Determine <span class="math inline">\(\beta\)</span>.</strong> <span class="math display">\[\beta = \frac{K_v^{\mathrm{des}}}{K_v^{\mathrm{uncomp}}} = \frac{10}{1} = 10.\]</span></p>
+<p><strong>Step 3 — Place the lag zero.</strong> The guideline says <span class="math inline">\(\omega_z \le \omega_{gc}/10 = 0.078\)</span> rad/s. We relax this slightly to <span class="math inline">\(\omega_z = 0.1\)</span> rad/s (<span class="math inline">\(\approx \omega_{gc}/8\)</span>), because pushing the zero to <span class="math inline">\(0.078\)</span> would place the pole at <span class="math inline">\(0.0078\)</span> rad/s — unacceptably close to the origin, causing extremely slow settling. With this choice: <span class="math display">\[\omega_z = 0.1~\text{rad/s},\qquad T = 1/\omega_z = 10~\text{s}.\]</span></p>
+<p><strong>Step 4 — Locate the pole.</strong> <span class="math display">\[\omega_p = \frac{\omega_z}{\beta} = \frac{0.1}{10} = 0.01~\text{rad/s},\qquad \beta T = 100~\text{s}.\]</span></p>
+<p><strong>Step 5 — Write the compensator.</strong> With <span class="math inline">\(K_c = \beta = 10\)</span>: <span class="math display">\[C_{\mathrm{lag}}(s)=10\cdot\frac{10s+1}{100s+1}.\]</span> The new velocity error constant is <span class="math inline">\(K_v = \beta\times K_v^{\mathrm{uncomp}} = 10\times 1 = 10\)</span>, meeting the specification.</p>
+<p><strong>Step 6 — Verify.</strong> Figure <a href="#fig:lag-design-bode" data-reference-type="ref" data-reference="fig:lag-design-bode">1.32</a> shows that the low-frequency magnitude is raised by <span class="math inline">\(20\)</span> dB (the factor of <span class="math inline">\(10\)</span>) while the crossover region is barely affected. The phase margin drops from <span class="math inline">\(52^{\circ}\)</span> to <span class="math inline">\(46^{\circ}\)</span> — a small price for a tenfold improvement in <span class="math inline">\(K_v\)</span>. Figure <a href="#fig:lag-design-step" data-reference-type="ref" data-reference="fig:lag-design-step">1.33</a> (left) confirms the step response remains well-damped, and Figure <a href="#fig:lag-design-step" data-reference-type="ref" data-reference="fig:lag-design-step">1.33</a> (right) shows the ramp response: the steady-state ramp error drops from <span class="math inline">\(1\)</span> to <span class="math inline">\(0.1\)</span>, exactly as predicted by the new <span class="math inline">\(K_v=10\)</span>.</p>
+</div>
+<figure id="fig:lag-design-bode" data-latex-placement="htbp">
+<img src="figures/lag_bode.png" style="max-width:92%;" />
+
+<figcaption>Bode plots for the lag design example. The <span class="math inline">\(20\)</span> dB gain boost below <span class="math inline">\(0.1\)</span> rad/s is clearly visible, while the crossover region (near <span class="math inline">\(0.8\)</span> rad/s) is almost unchanged.</figcaption>
+</figure>
+<figure id="fig:lag-design-step" data-latex-placement="htbp">
+<img src="figures/lag_step.png" style="max-width:98%;" />
+
+<figcaption>Closed-loop responses for the lag design example (unity feedback). Left: step response — the lag-compensated system is slightly more oscillatory due to the <span class="math inline">\(6^{\circ}\)</span> PM reduction but remains well-damped. Right: ramp response — the steady-state ramp error drops from <span class="math inline">\(e_{\mathrm{ss}}=1/K_v=1\)</span> (uncompensated) to <span class="math inline">\(0.1\)</span> (lag-compensated), confirming the tenfold <span class="math inline">\(K_v\)</span> improvement.</figcaption>
+</figure>
+<p>The MATLAB implementation is given in Listing <a href="#lst:matlab-lag-design" data-reference-type="ref" data-reference="lst:matlab-lag-design">[lst:matlab-lag-design]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the lag compensator design and verification.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 1/(s*(s+1))
+
+# Lag compensator
+beta = 10
+T_lag = 10
+Clag = beta*(T_lag*s + 1)/(beta*T_lag*s + 1)
+
+# Bode comparison
+ctrl.bode_plot(G, margins=True)
+plt.suptitle('Uncompensated')
+ctrl.bode_plot(Clag*G, margins=True)
+plt.suptitle('Lag-compensated')
+
+# Verify Kv
+Kv = ctrl.dcgain(ctrl.minreal(s*Clag*G, verbose=False))
+print("Kv = %.1f, ramp error = %.2f" % (Kv, 1/Kv,))
+
+# Closed-loop step response comparison
+import numpy as np
+Tcl_uncomp = ctrl.feedback(G, 1)
+Tcl_lag    = ctrl.feedback(Clag*G, 1)
+t = np.linspace(0, 30, 500)
+r1 = ctrl.step_response(Tcl_uncomp, t)
+r2 = ctrl.step_response(Tcl_lag, t)
+plt.figure()
+plt.plot(r1.time, r1.outputs, label='Uncompensated')
+plt.plot(r2.time, r2.outputs, label='Lag-compensated')
+plt.xlabel('Time (s)'), plt.ylabel('Output')
+plt.legend(), plt.grid(True), plt.title('Step response')</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 1/(s*(s+1));
+
+% Lag compensator
+beta = 10;
+T_lag = 10;
+Clag = beta*(T_lag*s + 1)/(beta*T_lag*s + 1);
+
+% Bode comparison
+figure
+margin(G), grid on, title('Uncompensated')
+figure
+margin(Clag*G), grid on, title('Lag-compensated')
+
+% Verify Kv
+Kv = dcgain(s*Clag*G);
+fprintf('Kv = %.1f, ramp error = %.2f\n', Kv, 1/Kv)
+
+% Closed-loop step response (unity feedback)
+Tcl = feedback(Clag*G, 1);
+figure
+step(Tcl), grid on, title('Step response')</code></pre>
+</div>
+<h3 id="subsec:lag-lead-compensation">Lag–lead compensation</h3>
+<p>When a plant has both poor steady-state accuracy <em>and</em> poor phase margin, a <strong>lag–lead compensator</strong> combines both sections: <span class="math display">\[C(s)=K_c
+\underbrace{\frac{T_1s+1}{\beta T_1s+1}}_{\text{lag section}}
+\;\;
+\underbrace{\frac{T_2s+1}{\alpha T_2s+1}}_{\text{lead section}},
+\qquad
+\beta&gt;1,\quad 0&lt;\alpha&lt;1.\]</span></p>
+<div class="examplebox">
+<p><span>Lag–lead design — complete worked example</span> <strong>Problem:</strong> In the same unity-feedback configuration, the plant is <span class="math display">\[G_p(s) = \frac{280(s+0.5)}{s(s+0.2)(s+5)(s+70)}
+    = \frac{2\,(1+s/0.5)}{s\,(1+s/0.2)(1+s/5)(1+s/70)}.\]</span> This is a type-1 system (one free integrator), so there is zero steady-state error for a step and finite error for a ramp. The time-domain specifications are:</p>
+<ul>
+<li><p>overshoot <span class="math inline">\(\le 12\%\)</span> to a step command,</p></li>
+<li><p>settling time <span class="math inline">\(t_s \le 1.5\)</span> s (<span class="math inline">\(2\%\)</span> criterion),</p></li>
+<li><p>steady-state ramp-tracking error <span class="math inline">\(e_{\mathrm{ss}} \le 2\%\)</span>.</p></li>
+</ul>
+<p><strong>Step 1: Translate to frequency-domain targets.</strong></p>
+<ol>
+<li><p><strong>Overshoot <span class="math inline">\(\to\)</span> phase margin.</strong> From <span class="math inline">\(M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \le 0.12\)</span> we obtain <span class="math inline">\(\zeta \ge 0.56\)</span>, giving <span class="math display">\[PM \ge 100\zeta \approx 56^\circ.\]</span> We round to <span class="math inline">\(PM \ge 55^\circ\)</span> as our design target.</p></li>
+<li><p><strong>Settling time <span class="math inline">\(\to\)</span> crossover frequency.</strong> Using <span class="math inline">\(\omega_{gc} \gtrsim 4/(\zeta\,t_s)\)</span>: <span class="math display">\[\omega_{gc} \ge \frac{4}{0.56 \times 1.5} \approx 4.8~\text{rad/s}.\]</span> We round up to target <span class="math inline">\(\omega_{gc} = 5\)</span> rad/s.</p></li>
+<li><p><strong>Ramp error <span class="math inline">\(\to\)</span> velocity error constant.</strong> For a type-1 system, <span class="math inline">\(e_{\mathrm{ss}} = 1/K_v \le 0.02\)</span>, so <span class="math inline">\(K_v \ge 50\)</span>.</p></li>
+<li><p><strong>Gain margin.</strong> We adopt the standard default <span class="math inline">\(GM \ge 6\)</span> dB.</p></li>
+</ol>
+<p><strong>Step 2: Analyse the uncompensated plant.</strong> The velocity error constant of the plant alone is <span class="math display">\[K_{v,\mathrm{plant}} = \lim_{s\to 0} s\,G_p(s) = \frac{280 \times 0.5}{0.2 \times 5 \times 70} = 2.\]</span> We need <span class="math inline">\(K_v = 50\)</span>, so an overall gain increase of <span class="math inline">\(50/2 = 25\)</span> is required. From the uncompensated Bode plot (dashed red in Figure <a href="#fig:laglead-design-bode" data-reference-type="ref" data-reference="fig:laglead-design-bode">1.34</a>): <span class="math inline">\(\omega_{gc} \approx 0.9\)</span> rad/s and <span class="math inline">\(PM \approx 63^\circ\)</span>. The phase margin is adequate, but <span class="math inline">\(\omega_{gc}\)</span> is far below the <span class="math inline">\(5\)</span> rad/s target and <span class="math inline">\(K_v\)</span> is far too low. Neither lag nor lead alone can satisfy all three specifications simultaneously, so a lag–lead compensator is required.</p>
+<p><strong>Step 3: Determine the gain distribution.</strong> At <span class="math inline">\(\omega = 5\)</span> rad/s the uncompensated magnitude is <span class="math inline">\(-18.9\)</span> dB, so the total gain needed at crossover is <span class="math inline">\(+18.9\)</span> dB to bring <span class="math inline">\(|L(j5)| = 0\)</span> dB. The lead section will contribute some of this gain at its peak; the remainder must come from the explicit gain <span class="math inline">\(K_c\)</span>. We design the lead first, then allocate <span class="math inline">\(K_c\)</span> and <span class="math inline">\(\beta\)</span> accordingly.</p>
+<p><strong>Step 4: Design the lead section.</strong> At <span class="math inline">\(\omega = 5\)</span> rad/s, the uncompensated phase is <span class="math inline">\(-142.5^\circ\)</span>, giving a “would-be” phase margin of only <span class="math inline">\(37.5^\circ\)</span>. The deficit is <span class="math inline">\(55 - 37.5 = 17.5^\circ\)</span>. Adding a <span class="math inline">\(5^\circ\)</span> safety margin for the negative phase contributed by the lag section near crossover, we target <span class="math inline">\(\phi_{\max} = 22.5^\circ\)</span>: <span class="math display">\[\alpha = \frac{1 - \sin 22.5^\circ}{1 + \sin 22.5^\circ} \approx 0.447.\]</span> The lead section adds <span class="math inline">\(10\log_{10}(1/0.447) \approx 3.5\)</span> dB at its peak. We place this peak at the desired crossover <span class="math inline">\(\omega_m = 5\)</span> rad/s: <span class="math display">\[T_2 = \frac{1}{\omega_m\sqrt{\alpha}} = \frac{1}{5 \times 0.668} \approx 0.299~\text{s}.\]</span> <span class="math display">\[C_{\mathrm{lead}}(s) = \frac{0.299s + 1}{0.134s + 1}
+    \quad(\text{zero at } 3.34,\ \text{pole at } 7.48~\text{rad/s}).\]</span></p>
+<p><strong>Step 5: Set <span class="math inline">\(K_c\)</span> and design the lag section.</strong> Of the <span class="math inline">\(18.9\)</span> dB needed at crossover, the lead provides <span class="math inline">\(3.5\)</span> dB, so the explicit gain must supply <span class="math inline">\(18.9 - 3.5 = 15.4\)</span> dB, giving <span class="math inline">\(K_c = 10^{15.4/20} \approx 5.89\)</span>. With this gain alone, <span class="math inline">\(K_v = K_c \times 2 = 11.8\)</span>. The lag section must boost this to <span class="math inline">\(50\)</span>: <span class="math display">\[\beta = \frac{50}{11.8} \approx 4.24.\]</span> We place the lag zero two decades below crossover at <span class="math inline">\(\omega_z = 0.05\)</span> rad/s so that the negative phase of the lag section is concentrated well below <span class="math inline">\(\omega_{gc}\)</span>: <span class="math display">\[C_{\mathrm{lag}}(s) = 4.24 \cdot \frac{20s + 1}{84.8s + 1}
+    \quad(\text{zero at } 0.05,\ \text{pole at } 0.012~\text{rad/s}).\]</span></p>
+<p><strong>Step 6: Combine and verify.</strong> <span class="math display">\[C(s) = K_c \cdot C_{\mathrm{lag}}(s) \cdot C_{\mathrm{lead}}(s)
+    = 5.89 \times 4.24 \cdot \frac{20s+1}{84.8s+1} \cdot \frac{0.299s+1}{0.134s+1}.\]</span> Figure <a href="#fig:laglead-design-bode" data-reference-type="ref" data-reference="fig:laglead-design-bode">1.34</a> confirms: the intermediate loop <span class="math inline">\(K_c C_{\mathrm{lag}} G_p\)</span> (orange dotted) raises <span class="math inline">\(K_v\)</span> to <span class="math inline">\(50\)</span> and moves <span class="math inline">\(\omega_{gc}\)</span> to <span class="math inline">\(3.8\)</span> rad/s with <span class="math inline">\(PM \approx 45^\circ\)</span>. Adding the lead section (blue solid) pushes <span class="math inline">\(\omega_{gc}\)</span> to exactly <span class="math inline">\(5\)</span> rad/s with <span class="math inline">\(PM \approx 60^\circ\)</span> and <span class="math inline">\(GM \approx 22\)</span> dB — all specifications are met with margin.</p>
+<p>Figure <a href="#fig:laglead-design-step" data-reference-type="ref" data-reference="fig:laglead-design-step">1.35</a> compares the time responses. The compensated step response reaches steady state in about <span class="math inline">\(3\)</span> s with only <span class="math inline">\(11\%\)</span> overshoot (<span class="math inline">\(\le 12\%\)</span> spec met), versus the sluggish uncompensated response that takes over <span class="math inline">\(8\)</span> s. The ramp response confirms the steady-state tracking: the uncompensated system lags the ramp by <span class="math inline">\(1/K_v = 0.5\)</span>, while the compensated system tracks with an error of only <span class="math inline">\(1/50 = 0.02\)</span> (<span class="math inline">\(\le 2\%\)</span> spec met).</p>
+</div>
+<figure id="fig:laglead-design-bode" data-latex-placement="htbp">
+<img src="figures/laglead_bode.png" style="max-width:92%;" />
+
+<figcaption>Bode plots for the lag–lead design. The lag section and gain <span class="math inline">\(K_c\)</span> (orange, dotted) boost the low-frequency gain by <span class="math inline">\(28\)</span> dB and push <span class="math inline">\(\omega_{gc}\)</span> from <span class="math inline">\(0.9\)</span> to <span class="math inline">\(3.8\)</span> rad/s. The lead section then moves the crossover to <span class="math inline">\(5\)</span> rad/s while lifting the phase margin from <span class="math inline">\(45^\circ\)</span> to <span class="math inline">\(60^\circ\)</span>.</figcaption>
+</figure>
+<figure id="fig:laglead-design-step" data-latex-placement="htbp">
+<img src="figures/laglead_step.png" />
+
+<figcaption>Closed-loop time responses for the lag–lead design (unity feedback). Left: step response — the compensated system settles in about <span class="math inline">\(3\)</span> s with <span class="math inline">\(11\%\)</span> overshoot. Right: ramp response — the uncompensated system (<span class="math inline">\(K_v=2\)</span>) lags the reference by <span class="math inline">\(1/K_v = 0.5\)</span>, while the compensated system (<span class="math inline">\(K_v=50\)</span>) tracks with only <span class="math inline">\(0.02\)</span> steady-state error.</figcaption>
+</figure>
+<p>The complete MATLAB code for this design is given in Listing <a href="#lst:matlab-lag-lead-design" data-reference-type="ref" data-reference="lst:matlab-lag-lead-design">[lst:matlab-lag-lead-design]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the lag--lead compensator design and verification.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+Gp = 280*(s+0.5) / (s*(s+0.2)*(s+5)*(s+70))
+
+# Uncompensated analysis
+Kv_plant = ctrl.dcgain(ctrl.minreal(s*Gp, verbose=False))   # = 2
+print("Kv_plant = %.1f" % (Kv_plant,))
+
+# Lead section: phi_max = 22.5 deg at wm = 5 rad/s
+alpha = 0.447
+T2 = 1/(5*np.sqrt(alpha))              # = 0.299 s
+Clead = (T2*s + 1)/(alpha*T2*s + 1)
+
+# Gain Kc to bring magnitude to 0 dB at wgc = 5
+Kc = 5.89
+
+# Lag section: beta to raise Kv from Kc*2 to 50
+beta = 50/(Kc*Kv_plant)             # = 4.24
+Clag = beta*(20*s + 1)/(beta*20*s + 1)
+
+# Combined compensator
+C = Kc*Clag*Clead
+
+# Verify
+Kv_final = ctrl.dcgain(ctrl.minreal(s*C*Gp, verbose=False))
+print("Kv = %.1f" % (Kv_final,))
+
+ctrl.bode_plot(Gp, margins=True)
+plt.suptitle('Uncompensated')
+ctrl.bode_plot(Kc*Clag*Gp, margins=True)
+plt.suptitle('After Kc + lag')
+ctrl.bode_plot(C*Gp, margins=True)
+plt.suptitle('Lag-lead compensated')
+
+Tcl_uncomp = ctrl.feedback(Gp, 1)
+Tcl_comp   = ctrl.feedback(C*Gp, 1)
+t = np.linspace(0, 8, 400)
+r1 = ctrl.step_response(Tcl_uncomp, t)
+r2 = ctrl.step_response(Tcl_comp, t)
+plt.figure()
+plt.plot(r1.time, r1.outputs, label='Uncompensated')
+plt.plot(r2.time, r2.outputs, label='Lag-lead compensated')
+plt.xlabel('Time (s)'), plt.ylabel('Output')
+plt.legend(), plt.grid(True), plt.title('Step response')
+info = ctrl.step_info(Tcl_comp)
+print("Overshoot = %.1f%%, Settling time = %.2f s" % (info['Overshoot'], info['SettlingTime']))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+Gp = 280*(s+0.5) / (s*(s+0.2)*(s+5)*(s+70));
+
+% Uncompensated analysis
+Kv_plant = dcgain(s*Gp);            % = 2
+fprintf('Kv_plant = %.1f\n', Kv_plant)
+
+% Lead section: phi_max = 22.5 deg at wm = 5 rad/s
+alpha = 0.447;
+T2 = 1/(5*sqrt(alpha));             % = 0.299 s
+Clead = (T2*s + 1)/(alpha*T2*s + 1);
+
+% Gain Kc to bring magnitude to 0 dB at wgc = 5
+Kc = 5.89;
+
+% Lag section: beta to raise Kv from Kc*2 to 50
+beta = 50/(Kc*Kv_plant);            % = 4.24
+Clag = beta*(20*s + 1)/(beta*20*s + 1);
+
+% Combined compensator
+C = Kc*Clag*Clead;
+
+% Verify
+Kv_final = dcgain(s*C*Gp);
+fprintf('Kv = %.1f\n', Kv_final)
+
+figure
+margin(Gp), grid on, title('Uncompensated')
+figure
+margin(Kc*Clag*Gp), grid on, title('After Kc + lag')
+figure
+margin(C*Gp), grid on, title('Lag-lead compensated')
+
+Tcl = feedback(C*Gp, 1);
+figure, step(Tcl, 8), grid on
+title('Closed-loop step response')
+stepinfo(Tcl)</code></pre>
+</div>
+<h3 id="subsec:antenna-design-example">Complete design example: satellite antenna positioning</h3>
+<div class="examplebox">
+<p><span>Satellite antenna positioning system — from specs to compensator</span> A satellite ground-station antenna must track a slowly moving satellite. The unity-feedback system has plant transfer function (motor voltage to antenna angle) <span class="math display">\[G(s) = \frac{10}{s(s+2)(s+5)}.\]</span> Time-domain specifications: overshoot <span class="math inline">\(\le 25\%\)</span>; steady-state ramp error <span class="math inline">\(\le 10\%\)</span>.</p>
+<p><strong>Step 1: Translate to frequency-domain targets.</strong></p>
+<ul>
+<li><p>Overshoot <span class="math inline">\(\le 25\%\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(\zeta \ge 0.40\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(PM \ge 40^\circ\)</span>. With safety: target <span class="math inline">\(PM \ge 45^\circ\)</span>.</p></li>
+<li><p>Ramp error <span class="math inline">\(\le 10\%\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(K_v \ge 10\)</span>. Uncompensated <span class="math inline">\(K_v = 10/(2\!\times\!5) = 1\)</span>, so we need a tenfold gain increase.</p></li>
+</ul>
+<p><strong>Step 2: Diagnose the uncompensated loop.</strong> From Figure <a href="#fig:antenna-design-bode" data-reference-type="ref" data-reference="fig:antenna-design-bode">1.36</a> (dashed red): <span class="math inline">\(PM \approx 56^\circ\)</span> at <span class="math inline">\(\omega_{gc} \approx 0.9\)</span> rad/s, <span class="math inline">\(GM \approx 17\)</span> dB. Phase margin is adequate; <span class="math inline">\(K_v\)</span> is not. The decision chart says: <em>try lag</em>.</p>
+<p><strong>Step 3: Attempt a lag compensator.</strong> Set <span class="math inline">\(\beta = 10/1 = 10\)</span>. We place the lag zero at <span class="math inline">\(\omega_z = 0.2\)</span> rad/s rather than the usual “one decade below crossover” rule of thumb (<span class="math inline">\(\omega_{gc}/10\approx 0.09\)</span>), because the crossover is already low at <span class="math inline">\(0.9\)</span> rad/s and pushing the zero to <span class="math inline">\(0.09\)</span> would give an impractically slow pole at <span class="math inline">\(0.009\)</span> rad/s. With <span class="math inline">\(\omega_z=0.2\)</span>: <span class="math display">\[C_{\mathrm{lag}}(s) = 10 \cdot \frac{5s + 1}{50s + 1}
+    \quad(\text{zero at }0.2,\ \text{pole at }0.02\ \text{rad/s}).\]</span> Figure <a href="#fig:antenna-design-bode" data-reference-type="ref" data-reference="fig:antenna-design-bode">1.36</a> (orange dotted) shows the intermediate result: <span class="math inline">\(PM \approx 44^\circ\)</span>. The lag zero at only <span class="math inline">\(\omega_{gc}/4.5\)</span> — closer than ideal — contributes about <span class="math inline">\(12^\circ\)</span> of negative phase near the crossover region, dropping PM below the <span class="math inline">\(45^\circ\)</span> target. Lag alone is insufficient; we add a lead section.</p>
+<p><strong>Step 4: Add a lead section.</strong> The shortfall is only <span class="math inline">\(1^\circ\)</span>, but a margin of <span class="math inline">\(1^\circ\)</span> is unacceptable in practice (component tolerances, model uncertainty). We target <span class="math inline">\(\phi_{\max} = 25^\circ\)</span> to give a robust margin: <span class="math display">\[\alpha = \frac{1 - \sin 25^\circ}{1 + \sin 25^\circ} \approx 0.406.\]</span> The lead peak adds <span class="math inline">\(3.9\)</span> dB. We place it where the intermediate loop magnitude equals <span class="math inline">\(-3.9\)</span> dB (<span class="math inline">\(\omega_m \approx 1.3\)</span> rad/s), so the lead pushes the crossover to that frequency: <span class="math display">\[T_2 = \frac{1}{1.3 \times \sqrt{0.406}} \approx 1.21~\text{s}.
+    \qquad
+    C_{\mathrm{lead}}(s) = \frac{1.21s + 1}{0.49s + 1}
+    \quad(\text{zero at }0.82,\ \text{pole at }2.03).\]</span></p>
+<p><strong>Step 5: Combine and verify.</strong> <span class="math display">\[C(s) = 10 \cdot \frac{5s+1}{50s+1} \cdot \frac{1.21s+1}{0.49s+1}.\]</span> Figure <a href="#fig:antenna-design-bode" data-reference-type="ref" data-reference="fig:antenna-design-bode">1.36</a> (blue solid) confirms <span class="math inline">\(PM \approx 60^\circ\)</span> at <span class="math inline">\(\omega_{gc} \approx 1.3\)</span> rad/s, <span class="math inline">\(GM \approx 14\)</span> dB, <span class="math inline">\(K_v = 10\)</span>. Figure <a href="#fig:antenna-design-step" data-reference-type="ref" data-reference="fig:antenna-design-step">1.37</a> shows about <span class="math inline">\(13\%\)</span> overshoot (well within the <span class="math inline">\(25\%\)</span> limit) and a ramp tracking error that converges to <span class="math inline">\(1/K_v = 10\%\)</span>.</p>
+</div>
+<figure id="fig:antenna-design-bode" data-latex-placement="htbp">
+<img src="figures/antenna_bode.png" style="max-width:92%;" />
+
+<figcaption>Bode plots for the antenna design. The lag section raises the low-frequency gain by <span class="math inline">\(20\)</span> dB but costs <span class="math inline">\(12^\circ\)</span> of PM because the lag zero is relatively close to crossover. The lead section restores the phase and pushes <span class="math inline">\(\omega_{gc}\)</span> from <span class="math inline">\(0.9\)</span> to <span class="math inline">\(1.3\)</span> rad/s.</figcaption>
+</figure>
+<figure id="fig:antenna-design-step" data-latex-placement="htbp">
+<img src="figures/antenna_step.png" style="max-width:92%;" />
+
+<figcaption>Closed-loop time responses for the antenna system (unity feedback). Left: step response with <span class="math inline">\(13\%\)</span> overshoot. Right: ramp tracking — the output follows the ramp with a small steady-state lag of <span class="math inline">\(1/K_v = 0.1\)</span> s.</figcaption>
+</figure>
+<p>The full MATLAB implementation is given in Listing <a href="#lst:matlab-antenna-design" data-reference-type="ref" data-reference="lst:matlab-antenna-design">[lst:matlab-antenna-design]</a>.</p>
+<div class="minipage">
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB code for the antenna positioning system design.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+G = 10/(s*(s+2)*(s+5))
+
+# Diagnose uncompensated loop
+Kv_uncomp = ctrl.dcgain(ctrl.minreal(s*G, verbose=False))
+print("Uncompensated Kv = %.1f" % (Kv_uncomp,))
+
+# Lag section
+beta = 10
+Clag_section = (5*s+1)/(50*s+1)
+
+# Lead section
+alpha = 0.406
+T2 = 1.21
+Clead = (T2*s+1)/(alpha*T2*s+1)
+
+# Combined lag-lead compensator
+C = beta*Clag_section*Clead
+ctrl.bode_plot(G, margins=True)
+ctrl.bode_plot(C*G, margins=True)
+plt.suptitle('Uncompensated (blue) vs Lag-lead (orange)')
+
+# Closed-loop verification (unity feedback)
+import numpy as np
+Tcl_uncomp = ctrl.feedback(G, 1)
+Tcl_comp   = ctrl.feedback(C*G, 1)
+t = np.linspace(0, 25, 500)
+r1 = ctrl.step_response(Tcl_uncomp, t)
+r2 = ctrl.step_response(Tcl_comp, t)
+plt.figure()
+plt.plot(r1.time, r1.outputs, label='Uncompensated')
+plt.plot(r2.time, r2.outputs, label='Lag-lead compensated')
+plt.xlabel('Time (s)'), plt.ylabel('Output')
+plt.legend(), plt.grid(True), plt.title('Step response')
+info = ctrl.step_info(Tcl_comp)
+Kv = ctrl.dcgain(ctrl.minreal(s*C*G, verbose=False))
+print("Kv = %.1f, OS = %.1f%%, Ts = %.1f s" % (Kv, info['Overshoot'], info['SettlingTime']))</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+G = 10/(s*(s+2)*(s+5));
+
+% Diagnose uncompensated loop
+figure, margin(G), grid on, title('Uncompensated')
+Kv_uncomp = dcgain(s*G);
+fprintf('Uncompensated Kv = %.1f\n', Kv_uncomp)
+
+% Lag section
+beta = 10;
+Clag_section = (5*s+1)/(50*s+1);
+figure, margin(beta*Clag_section*G), grid on
+title('After lag section')
+
+% Lead section
+alpha = 0.406;
+T2 = 1.21;
+Clead = (T2*s+1)/(alpha*T2*s+1);
+
+% Combined lag-lead compensator
+C = beta*Clag_section*Clead;
+figure, margin(C*G), grid on, title('Lag-lead compensated')
+
+% Closed-loop verification (unity feedback)
+Tcl = feedback(C*G, 1);
+figure, step(Tcl, 25), grid on
+title('Closed-loop step response')
+info = stepinfo(Tcl);
+Kv = dcgain(s*C*G);
+fprintf('Kv = %.1f, OS = %.1f%%, Ts = %.1f s\n', ...
+        Kv, info.Overshoot, info.SettlingTime)</code></pre>
+</div>
+<h2 id="sec:frequency-summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p>Frequency-domain analysis studies how LTI systems respond to sinusoidal inputs at different frequencies. A stable LTI system changes the amplitude and phase of a sinusoid but not its frequency.</p></li>
+<li><p>Bode plots show magnitude in dB and phase in degrees against a logarithmic frequency axis. They are constructed by adding the contributions of basic building blocks: constant gain, integrators, first-order poles/zeros, and second-order pairs.</p></li>
+<li><p>The <strong>gain crossover frequency</strong> <span class="math inline">\(\omega_{gc}\)</span> (where <span class="math inline">\(|L|=0\)</span> dB) determines the speed of the closed-loop response. The <strong>phase crossover frequency</strong> <span class="math inline">\(\omega_{pc}\)</span> (where <span class="math inline">\(\angle L=-180^\circ\)</span>) marks the onset of potential positive-feedback instability.</p></li>
+<li><p>Gain margin and phase margin measure robustness against modelling errors. Typical targets are <span class="math inline">\(PM\in[30^\circ,60^\circ]\)</span> and <span class="math inline">\(GM\ge 6\)</span> dB.</p></li>
+<li><p>The second-order approximation <span class="math inline">\(PM \approx 100\zeta\)</span> connects frequency-domain margins to time-domain behaviour. The crossover frequency is closely related to bandwidth (<span class="math inline">\(\omega_{\mathrm{BW}} \approx 1\text{--}2\;\omega_{gc}\)</span>), which determines rise time and settling time.</p></li>
+<li><p>Time-domain specifications (overshoot, settling time, steady-state error) are translated into frequency-domain targets (PM, <span class="math inline">\(\omega_{gc}\)</span>, <span class="math inline">\(K_v\)</span>) before design, and verified in the time domain after design.</p></li>
+<li><p>A lead compensator adds phase near crossover and is used to improve phase margin. A lag compensator boosts low-frequency gain and is used to improve steady-state accuracy. A lag–lead compensator combines both when both are needed.</p></li>
+<li><p>The compensator selection follows a systematic decision chart based on two questions: is the phase margin adequate? is the steady-state accuracy adequate?</p></li>
+</ul>
+</div>
+<h2 id="sec:frequency-problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>(Decibel conversions)</strong> Convert the following magnitude ratios into dB: <span class="math inline">\(0.01\)</span>, <span class="math inline">\(0.1\)</span>, <span class="math inline">\(0.5\)</span>, <span class="math inline">\(1\)</span>, <span class="math inline">\(2\)</span>, <span class="math inline">\(10\)</span>, <span class="math inline">\(100\)</span>. Then convert <span class="math inline">\(-14\)</span> dB and <span class="math inline">\(+26\)</span> dB back to magnitude ratios.</p></li>
+<li><p><strong>(Sinusoidal steady state)</strong> For <span class="math inline">\(G(s)=1/(s+2)\)</span>, compute <span class="math inline">\(|G(j\omega)|\)</span> and <span class="math inline">\(\angle G(j\omega)\)</span> at <span class="math inline">\(\omega=0.2\)</span>, <span class="math inline">\(2\)</span>, and <span class="math inline">\(20\)</span> rad/s. For each frequency, write the steady-state output if <span class="math inline">\(u(t)=3\sin(\omega t)\)</span>.</p></li>
+<li><p><strong>(SSS of a second-order system)</strong> For <span class="math inline">\(G(s)=25/(s^2+4s+25)\)</span>:</p>
+<ol>
+<li><p>Find <span class="math inline">\(\omega_n\)</span> and <span class="math inline">\(\zeta\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(|G(j5)|\)</span> and <span class="math inline">\(\angle G(j5)\)</span>.</p></li>
+<li><p>If <span class="math inline">\(u(t)=\sin(5t)\)</span>, what is the steady-state output? Comment on the amplitude.</p></li>
+</ol></li>
+<li><p><strong>(Asymptotic Bode sketch)</strong> Sketch the asymptotic Bode magnitude plot of <span class="math display">\[G(s)=\frac{20}{s(1+s/5)}.\]</span> State the slope in each frequency range. What is the magnitude at <span class="math inline">\(\omega=1\)</span> rad/s and at <span class="math inline">\(\omega=50\)</span> rad/s?</p></li>
+<li><p><strong>(Bode form conversion)</strong> Put the following transfer function into Bode form, identifying the Bode-form gain and all break frequencies: <span class="math display">\[G(s)=\frac{200(s+5)}{(s+2)(s^2+10s+100)}.\]</span></p></li>
+<li><p><strong>(Phase margin by hand)</strong> For <span class="math display">\[L(s)=\frac{5}{s(s+1)},\]</span> find the gain crossover frequency and estimate the phase margin. Is the closed-loop step response expected to be oscillatory?</p></li>
+<li><p><strong>(Gain margin by hand)</strong> For <span class="math display">\[L(s)=\frac{K}{s(s+1)(s+4)},\]</span> with <span class="math inline">\(K=20\)</span>:</p>
+<ol>
+<li><p>Find the phase crossover frequency <span class="math inline">\(\omega_{pc}\)</span> by solving <span class="math inline">\(\angle L(j\omega)=-180^\circ\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(|L(j\omega_{pc})|\)</span> and the gain margin in dB. What does this value of GM tell you about the closed-loop stability?</p></li>
+<li><p>What is the maximum value of <span class="math inline">\(K\)</span> for which the closed loop remains stable?</p></li>
+</ol></li>
+<li><p><strong>(MATLAB Bode analysis)</strong> Use MATLAB to:</p>
+<ol>
+<li><p>Plot the Bode diagram and margins of <span class="math inline">\(G(s)=10/((s+1)(s+5))\)</span> using <code>margin()</code>.</p></li>
+<li><p>Compute the closed-loop bandwidth using <code>bandwidth(feedback(G,1))</code>.</p></li>
+<li><p>Plot the step response of the closed-loop system and compare the settling time with the bandwidth.</p></li>
+</ol></li>
+<li><p><strong>(Lead compensator design)</strong> For the plant <span class="math inline">\(G(s)=10/(s(s+2))\)</span>:</p>
+<ol>
+<li><p>Find the uncompensated phase margin.</p></li>
+<li><p>Design a lead compensator to achieve <span class="math inline">\(PM\ge 50^\circ\)</span>. Show all steps: compute <span class="math inline">\(\alpha\)</span>, find <span class="math inline">\(\omega_m\)</span>, compute <span class="math inline">\(T\)</span>, and write <span class="math inline">\(C_{\mathrm{lead}}(s)\)</span>.</p></li>
+<li><p>Verify using MATLAB that the compensated phase margin meets the specification.</p></li>
+<li><p>Compare the uncompensated and compensated step responses.</p></li>
+</ol></li>
+<li><p><strong>(Lag compensator design)</strong> For a unity-feedback system with plant <span class="math inline">\(G(s)=2/(s(s+1))\)</span>:</p>
+<ol>
+<li><p>What is the current velocity error constant <span class="math inline">\(K_v\)</span>?</p></li>
+<li><p>Design a lag compensator to increase <span class="math inline">\(K_v\)</span> to at least <span class="math inline">\(20\)</span> while keeping the phase margin above <span class="math inline">\(35^\circ\)</span>. <em>Hint:</em> the margin is tight — you may need to place the lag zero well below crossover and iterate.</p></li>
+<li><p>Verify using MATLAB.</p></li>
+</ol></li>
+<li><p><strong>(Lag–lead design)</strong> For the plant <span class="math inline">\(G(s)=1/(s(s+1)(s/10+1))\)</span>, design a lag–lead compensator to achieve <span class="math inline">\(K_v\ge 10\)</span> and <span class="math inline">\(PM\ge 45^\circ\)</span>. Document all design steps and verify in MATLAB with both Bode plots and a step response.</p></li>
+<li><p><strong>(Bode plot interpretation)</strong> The Bode magnitude plot of an unknown stable system shows the following features: a flat region at <span class="math inline">\(+6\)</span> dB for low frequencies, a break at <span class="math inline">\(\omega=2\)</span> rad/s where the slope changes to <span class="math inline">\(-20\)</span> dB/decade, and another break at <span class="math inline">\(\omega=20\)</span> rad/s where the slope changes to <span class="math inline">\(-40\)</span> dB/decade. Estimate the transfer function.</p></li>
+<li><p><strong>(Time-to-frequency translation)</strong> A servo system must have: overshoot <span class="math inline">\(\le 10\%\)</span>, settling time <span class="math inline">\(\le 1\)</span> s, and zero steady-state error to a step.</p>
+<ol>
+<li><p>Find the required <span class="math inline">\(\zeta\)</span> and compute the phase margin target.</p></li>
+<li><p>Estimate the required gain crossover frequency <span class="math inline">\(\omega_{gc}\)</span>.</p></li>
+<li><p>What system type (number of integrators) is needed for zero step error?</p></li>
+<li><p>If the plant is <span class="math inline">\(G(s) = K/(s+4)(s+10)\)</span>, what value of <span class="math inline">\(K\)</span> is needed, and is a compensator necessary? Verify with MATLAB.</p></li>
+</ol></li>
+<li><p><strong>(Crossover frequency and speed)</strong> Two unity-feedback systems have the same plant <span class="math inline">\(G(s)=1/(s(s+1))\)</span> but different proportional gains: <span class="math inline">\(K_1 = 2\)</span> and <span class="math inline">\(K_2 = 10\)</span>.</p>
+<ol>
+<li><p>Find <span class="math inline">\(\omega_{gc}\)</span> for each case.</p></li>
+<li><p>Predict which system responds faster and which has more overshoot, based on the crossover frequencies and phase margins.</p></li>
+<li><p>Verify your predictions using MATLAB step responses.</p></li>
+</ol></li>
+<li><p><strong>(Design decision)</strong> For each of the following situations, state which compensator type (gain only, lead, lag, or lag–lead) you would choose and why:</p>
+<ol>
+<li><p><span class="math inline">\(PM = 55^\circ\)</span>, <span class="math inline">\(K_v = 2\)</span>, required <span class="math inline">\(K_v \ge 20\)</span>.</p></li>
+<li><p><span class="math inline">\(PM = 15^\circ\)</span>, <span class="math inline">\(K_v = 30\)</span>, required <span class="math inline">\(PM \ge 45^\circ\)</span> and <span class="math inline">\(K_v \ge 20\)</span>.</p></li>
+<li><p><span class="math inline">\(PM = 12^\circ\)</span>, <span class="math inline">\(K_v = 0.5\)</span>, required <span class="math inline">\(PM \ge 40^\circ\)</span> and <span class="math inline">\(K_v \ge 10\)</span>.</p></li>
+<li><p><span class="math inline">\(PM = 50^\circ\)</span>, <span class="math inline">\(K_v = 8\)</span>, required <span class="math inline">\(PM \ge 45^\circ\)</span> and <span class="math inline">\(K_v \ge 5\)</span>.</p></li>
+</ol></li>
+<li><p><strong>(Full design from time specs)</strong> A position control system with plant <span class="math display">\[G(s) = \frac{5}{s(s+1)(s+10)}\]</span> must achieve: overshoot <span class="math inline">\(\le 20\%\)</span>, settling time <span class="math inline">\(\le 3\)</span> s, and ramp tracking error <span class="math inline">\(\le 4\%\)</span>.</p>
+<ol>
+<li><p>Translate the specifications into frequency-domain targets.</p></li>
+<li><p>Plot the uncompensated Bode diagram and identify the deficiencies.</p></li>
+<li><p>Select a compensator type using the decision chart.</p></li>
+<li><p>Design the compensator, showing all steps.</p></li>
+<li><p>Verify in MATLAB with Bode plot, margins, and step response.</p></li>
+</ol></li>
+</ol>
+
+<h2 id="interactive-bode-plotter">Interactive Bode Sketch Studio</h2>
+<p>Use the interactive Bode plot tool below to explore frequency-domain analysis. Enter transfer function numerator and denominator coefficients to see the exact and asymptotic Bode magnitude and phase plots, along with stability margins, crossover frequencies, and pole-zero locations.</p>
+<div class="tool-embed" id="bode-tool">
+<div class="tool-embed-header" onclick="this.parentElement.classList.toggle('collapsed')">
+<h4>Interactive Bode Sketch Studio</h4>
+<span class="toggle-icon">&#9660;</span>
+</div>
+<div class="tool-embed-body">
+<iframe src="bode-plotter/index.html" title="Bode Sketch Studio"></iframe>
+</div>
+</div>

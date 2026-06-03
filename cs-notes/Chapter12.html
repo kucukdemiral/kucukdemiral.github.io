@@ -1,0 +1,593 @@
+<h1 id="chap:observers">Observer Design and Observer-Based Control</h1>
+<blockquote>
+<p><em>“You cannot control what you cannot see — but you can build a system that sees for you.”</em></p>
+</blockquote>
+<p>State feedback requires measuring the full state vector <span class="math inline">\(x(t)\)</span>, but in practice this is rarely possible. A DC motor controller may measure shaft position but not armature current; a robot may measure joint angles but not velocities.</p>
+<p>The solution is an <strong>observer</strong> (state estimator): a dynamic system that runs in parallel with the plant and produces an estimate <span class="math inline">\(\hat{x}(t)\)</span> from the measured output <span class="math inline">\(y(t)\)</span> and known input <span class="math inline">\(u(t)\)</span>.</p>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Explain why observers are needed and state the observability condition for their existence.</p></li>
+<li><p>Derive the Luenberger observer equation and its error dynamics.</p></li>
+<li><p>Compute the observer gain <span class="math inline">\(L\)</span> by pole placement using the duality with state feedback.</p></li>
+<li><p>Apply the separation principle to combine observer and state feedback independently.</p></li>
+<li><p>Design an observer controller with integral action for zero steady-state error.</p></li>
+<li><p>Implement and simulate the complete design in MATLAB and Simulink.</p></li>
+</ul>
+</div>
+<h2 id="sec:observer_problem">The Observer Problem</h2>
+<p>Consider a plant in state-space form: <span class="math display">\[\begin{equation}
+    \dot{x}(t) = Ax(t) + Bu(t), \qquad y(t) = Cx(t).
+    \label{eq:plant_obs}
+\end{equation}\]</span></p>
+<p>We know the matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span> (from our model) and we can measure <span class="math inline">\(u(t)\)</span> and <span class="math inline">\(y(t)\)</span>. We want to reconstruct <span class="math inline">\(x(t)\)</span>.</p>
+<h3 id="a-naive-approach-open-loop-simulation">A naive approach: open-loop simulation</h3>
+<p>The simplest idea is to build a copy of the plant and run it in parallel: <span class="math display">\[\begin{equation}
+    \dot{\hat{x}}(t) = A\hat{x}(t) + Bu(t).
+    \label{eq:open_loop_estimator}
+\end{equation}\]</span></p>
+<p>If we knew the exact initial condition <span class="math inline">\(\hat{x}(0) = x(0)\)</span> and the model were perfect, then <span class="math inline">\(\hat{x}(t) = x(t)\)</span> for all time.</p>
+<p>We never know the exact initial condition, and models are never perfect. Define the estimation error: <span class="math display">\[e(t) = x(t) - \hat{x}(t).\]</span> Subtracting the open-loop estimator equation from the plant equation gives: <span class="math display">\[\dot{e}(t) = Ae(t).\]</span></p>
+<p>The error follows the plant’s own dynamics. If the plant is stable, the error decays — but only as fast as the plant’s slowest pole. If the plant is unstable, the error grows without bound.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The open-loop estimator works only if the plant is stable and we are patient. In control engineering, we need the estimate to converge <em>fast</em> — much faster than the plant itself. This is what the luenberger achieves.</p>
+</div>
+<h2 id="sec:luenberger">The Luenberger Observer</h2>
+<div class="center">
+<div class="minipage">
+<p><img src="figures/David_Luenberger.png" alt="image" /><br />
+David G. Luenberger.<br />
+Photo: Stanford Engineering.</p>
+</div>
+</div>
+<p>The observer is named after David G. Luenberger, whose early work helped establish the modern state-observer framework. In his 1964 paper, he showed how the full state vector of a linear system can be reconstructed from measured inputs and outputs; his 1971 survey then organised the main observer ideas in a form that became standard in control engineering .</p>
+<p>The key insight is to use the measured output <span class="math inline">\(y(t)\)</span> to <em>correct</em> the estimate. At each instant, we compare the actual output <span class="math inline">\(y(t)\)</span> with the predicted output <span class="math inline">\(\hat{y}(t) = C\hat{x}(t)\)</span>. The difference <span class="math inline">\(y - \hat{y}\)</span> tells us how wrong our estimate is. We feed this correction back through a gain matrix <span class="math inline">\(L\)</span>:</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Luenberger Observer</div>
+<p><span class="math display">\[\begin{equation}
+        \dot{\hat{x}}(t) = A\hat{x}(t) + Bu(t) + L\bigl(y(t) - C\hat{x}(t)\bigr)
+        \label{eq:luenberger}
+\end{equation}\]</span> where <span class="math inline">\(L \in \mathbb{R}^{n \times 1}\)</span> is the <em>observer gain vector</em>.</p>
+</div>
+<p>The observer equation has three terms:</p>
+<ul>
+<li><p><span class="math inline">\(A\hat{x} + Bu\)</span>: the model prediction (same as the open-loop estimator),</p></li>
+<li><p><span class="math inline">\(L(y - C\hat{x})\)</span>: the correction term, which pushes <span class="math inline">\(\hat{x}\)</span> towards <span class="math inline">\(x\)</span> whenever the output prediction is wrong.</p></li>
+</ul>
+<figure id="fig:observer_block" data-latex-placement="htbp">
+
+<img src="figures/ch12_tikz_01.png" style="max-width:85%;" />
+<figcaption>Observer-based state feedback controller. The observer estimates <span class="math inline">\(\hat{x}(t)\)</span> from <span class="math inline">\(u(t)\)</span> and <span class="math inline">\(y(t)\)</span>. The feedback gain <span class="math inline">\(K\)</span> uses <span class="math inline">\(\hat{x}\)</span> instead of <span class="math inline">\(x\)</span>.</figcaption>
+</figure>
+<h3 id="error-dynamics">Error dynamics</h3>
+<p>The estimation error <span class="math inline">\(e(t) = x(t) - \hat{x}(t)\)</span> satisfies: <span class="math display">\[\begin{align}
+    \dot{e}(t) &amp;= \dot{x}(t) - \dot{\hat{x}}(t) \notag \\
+    &amp;= \bigl[Ax + Bu\bigr] - \bigl[A\hat{x} + Bu + L(Cx - C\hat{x})\bigr] \notag \\
+    &amp;= (A - LC)\,e(t).
+    \label{eq:error_dynamics}
+\end{align}\]</span></p>
+<p>The error dynamics are governed by the eigenvalues of <span class="math inline">\(A - LC\)</span>, which determine how fast the estimation error decays.</p>
+<div class="result"><div class="env-label env-label-result">Result: Observer Error Convergence</div>
+<p>If the eigenvalues of <span class="math inline">\(A - LC\)</span> all have negative real parts, then <span class="math inline">\(e(t) \to 0\)</span> as <span class="math inline">\(t \to \infty\)</span>, regardless of the initial error <span class="math inline">\(e(0) = x(0) - \hat{x}(0)\)</span>.</p>
+</div>
+<h3 id="choosing-the-observer-gain-l">Choosing the observer gain <span class="math inline">\(L\)</span></h3>
+<p>Choose <span class="math inline">\(L\)</span> so that <span class="math inline">\(A - LC\)</span> has eigenvalues at desired locations — the same type of pole placement problem we solved for <span class="math inline">\(K\)</span> in Chapter 11.</p>
+<p>Recall from Chapter 10 that a system is <strong>observable</strong> if and only if the observability matrix <span class="math display">\[\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}\]</span> has full rank. The following result is the observer counterpart of the controllability condition for pole placement:</p>
+<div class="result"><div class="env-label env-label-result">Result: Observer Pole Placement</div>
+<p>The eigenvalues of <span class="math inline">\(A - LC\)</span> can be placed at arbitrary locations if and only if the pair <span class="math inline">\((A, C)\)</span> is <strong>observable</strong>.</p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Compare with state feedback: <span class="math inline">\(K\)</span> places eigenvalues of <span class="math inline">\(A - BK\)</span> (requires controllability of <span class="math inline">\((A,B)\)</span>), while <span class="math inline">\(L\)</span> places eigenvalues of <span class="math inline">\(A - LC\)</span> (requires observability of <span class="math inline">\((A,C)\)</span>). The duality between controllability and observability from Chapter 10 is at work here.</p>
+</div>
+<h3 id="how-fast-should-the-observer-be">How fast should the observer be?</h3>
+<p>A practical rule of thumb:</p>
+<div class="alertbox">
+<p><span>Observer pole placement guideline</span> Place the observer poles <span class="math inline">\(3\)</span>–<span class="math inline">\(5\)</span> times faster (further left in the <span class="math inline">\(s\)</span>-plane) than the controller poles.</p>
+</div>
+<p>The observer must converge before the controller can act effectively. Too slow, and the controller acts on a poor estimate. Too fast, and the large gains in <span class="math inline">\(L\)</span> amplify sensor noise.</p>
+<h2 id="sec:computing_L">Computing the Observer Gain</h2>
+<h3 id="direct-comparison-method">Direct comparison method</h3>
+<ol>
+<li><p>Choose the desired observer poles <span class="math inline">\(\lambda_1, \lambda_2, \dots, \lambda_n\)</span>.</p></li>
+<li><p>Form the desired characteristic polynomial: <span class="math inline">\(\alpha_d(s) = (s - \lambda_1)(s - \lambda_2)\cdots(s - \lambda_n)\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(\det(sI - A + LC)\)</span> symbolically in terms of the unknown entries of <span class="math inline">\(L\)</span>.</p></li>
+<li><p>Match coefficients with <span class="math inline">\(\alpha_d(s)\)</span> and solve for <span class="math inline">\(L\)</span>.</p></li>
+</ol>
+<h3 id="using-duality">Using duality</h3>
+<p>By duality (Chapter 10), <span class="math inline">\((A, C)\)</span> observable means <span class="math inline">\((A^\top, C^\top)\)</span> is controllable, so we can compute <span class="math inline">\(L\)</span> via: <span class="math display">\[L = \texttt{place}(A^\top, C^\top, p_{\text{obs}})^\top\]</span> where <span class="math inline">\(p_{\text{obs}}\)</span> is the vector of desired observer poles.</p>
+<h3 id="matlab-implementation">MATLAB implementation</h3>
+<p>The following MATLAB code shows how to compute the observer gain using the duality trick.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Computing the observer gain in MATLAB</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+
+# Controller poles (desired closed-loop)
+pc = [-3.5+3.57j, -3.5-3.57j]
+K = ctrl.place(A, B, pc)
+
+# Observer poles (3-5x faster)
+po = [-15, -16]
+L = ctrl.place(A.T, C.T, po).T
+
+# Verify eigenvalues
+print("Observer eigenvalues:", np.linalg.eigvals(A - L @ C))</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3];
+B = [0; 1];
+C = [1 0];
+
+% Controller poles (desired closed-loop)
+pc = [-3.5+3.57j, -3.5-3.57j];
+K = place(A, B, pc);
+
+% Observer poles (3-5x faster)
+po = [-15, -16];
+L = place(A', C', po)';
+
+% Verify eigenvalues
+eig(A - L*C)</code></pre>
+<h2 id="sec:obs_example">Worked Example: Observer Design for a Second-Order System</h2>
+<div class="examplebox">
+<p><span>Luenberger observer for a mass–spring–damper</span></p>
+<p>Consider the mass–spring–damper system from Chapter 11: <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad
+B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad
+C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span></p>
+<p>Only the position <span class="math inline">\(y = x_1\)</span> is measured. The velocity <span class="math inline">\(x_2\)</span> is not directly available.</p>
+<p><strong>Step 1: Check observability.</strong> <span class="math display">\[\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{bmatrix}, \qquad \text{rank}(\mathcal{O}) = 2 = n. \quad \checkmark\]</span></p>
+<p><strong>Step 2: Choose observer poles.</strong> Suppose the controller poles are at <span class="math inline">\(s = -3.5 \pm j3.57\)</span> (from Chapter 11). We choose observer poles <span class="math inline">\(4\times\)</span> faster: <span class="math display">\[\lambda_{1,2} = -15, \; -16.\]</span></p>
+<p><strong>Step 3: Compute <span class="math inline">\(L\)</span>.</strong> The characteristic polynomial of <span class="math inline">\(A - LC\)</span> is: <span class="math display">\[\det(sI - A + LC) = s^2 + (3 + l_1)s + (2 + l_2 + 3l_1).\]</span> The desired polynomial is: <span class="math display">\[(s + 15)(s + 16) = s^2 + 31s + 240.\]</span> Matching coefficients: <span class="math display">\[3 + l_1 = 31 \implies l_1 = 28, \qquad 2 + l_2 + 3 \times 28 = 240 \implies l_2 = 154.\]</span> Therefore: <span class="math display">\[L = \begin{bmatrix} 28 \\ 154 \end{bmatrix}.\]</span></p>
+<p><strong>Step 4: Verify.</strong> <span class="math display">\[A - LC = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix} - \begin{bmatrix} 28 \\ 154 \end{bmatrix}\begin{bmatrix} 1 &amp; 0 \end{bmatrix} = \begin{bmatrix} -28 &amp; 1 \\ -156 &amp; -3 \end{bmatrix}.\]</span> Eigenvalues: <span class="math inline">\(-15\)</span> and <span class="math inline">\(-16\)</span>. <span class="math inline">\(\checkmark\)</span></p>
+</div>
+<h2 id="sec:separation">The Separation Principle</h2>
+<p>Can we simply replace <span class="math inline">\(x\)</span> with <span class="math inline">\(\hat{x}\)</span> in the feedback law <span class="math inline">\(u = -Kx + r\)</span>?</p>
+<p><span class="math display">\[\begin{equation}
+    u(t) = -K\hat{x}(t) + r(t)
+    \label{eq:output_feedback}
+\end{equation}\]</span></p>
+<p>Yes, and this is guaranteed by the <strong>separation principle</strong>:</p>
+<div class="theorem"><div class="env-label env-label-theorem">Theorem: The Separation Principle</div>
+<p>When the observer-based control law is applied to the plant, the closed-loop characteristic polynomial is: <span class="math display">\[\det(sI - A + BK) \cdot \det(sI - A + LC).\]</span> The closed-loop poles are the union of the controller poles and the observer poles. The two designs do not interact.</p>
+</div>
+<p><strong>Proof sketch.</strong> Define <span class="math inline">\(e = x - \hat{x}\)</span>. The closed-loop system in the coordinates <span class="math inline">\((x, e)\)</span> is: <span class="math display">\[\begin{bmatrix} \dot{x} \\ \dot{e} \end{bmatrix}
+=
+\underbrace{\begin{bmatrix} A - BK &amp; BK \\ 0 &amp; A - LC \end{bmatrix}}_{\text{block upper-triangular}}
+\begin{bmatrix} x \\ e \end{bmatrix}
++
+\begin{bmatrix} B \\ 0 \end{bmatrix} r.\]</span></p>
+<p>Because the matrix is block upper-triangular, its eigenvalues are those of <span class="math inline">\(A - BK\)</span> together with those of <span class="math inline">\(A - LC\)</span>. The controller poles and observer poles are completely decoupled.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The separation principle means we can design the controller and observer independently, and the combined system will have exactly the poles we intended.</p>
+</div>
+<div class="interpretation"><div class="env-label env-label-interpretation">Interpretation: What does the separation principle mean physically?</div>
+<p>The observer error <span class="math inline">\(e(t)\)</span> converges to zero with its own dynamics (<span class="math inline">\(A - LC\)</span>). Once <span class="math inline">\(\hat{x} \approx x\)</span>, the controller behaves as if it had full state measurement. The transient caused by the initial estimation error affects performance briefly, but the steady-state behaviour is identical to the full-state-feedback case.</p>
+</div>
+<h2 id="sec:obs_design_procedure">Observer-Based Controller:<br />
+Complete Design Procedure</h2>
+<p>The complete design procedure is:</p>
+<ol>
+<li><p><strong>Model</strong>: obtain the state-space model <span class="math inline">\((A, B, C)\)</span>.</p></li>
+<li><p><strong>Check controllability</strong>: verify <span class="math inline">\(\text{rank}(\mathcal{C}) = n\)</span>.</p></li>
+<li><p><strong>Check observability</strong>: verify <span class="math inline">\(\text{rank}(\mathcal{O}) = n\)</span>.</p></li>
+<li><p><strong>Design state feedback</strong>: choose desired controller poles <span class="math inline">\(p_c\)</span>, then compute the gain <span class="math display">\[K=\operatorname{place}(A,B,p_c).\]</span></p></li>
+<li><p><strong>Design observer</strong>: choose desired observer poles <span class="math inline">\(p_o\)</span> (<span class="math inline">\(3\)</span>–<span class="math inline">\(5\times\)</span> faster than <span class="math inline">\(p_c\)</span>) and compute <span class="math inline">\(L = \texttt{place}(A&#39;, C&#39;, p_o)&#39;\)</span>.</p></li>
+<li><p><strong>Combine</strong>: implement the control law <span class="math inline">\(u = -K\hat{x} + r\)</span> with the observer running in parallel.</p></li>
+<li><p><strong>Simulate and verify</strong>.</p></li>
+</ol>
+<div class="examplebox">
+<p><span>Complete observer-based controller for the mass–spring–damper</span></p>
+<p>Consider the mass–spring–damper from Chapter 11 with the transfer function <span class="math inline">\(G(s) = \dfrac{1}{s^2 + 3s + 2}\)</span>.</p>
+<p>State-space form (controllable canonical form): <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{bmatrix}, \quad
+B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad
+C = \begin{bmatrix} 1 &amp; 0 \end{bmatrix}.\]</span></p>
+<p><strong>Specifications</strong>: settling time <span class="math inline">\(t_s \leq 2\)</span> s, overshoot <span class="math inline">\(\leq 10\%\)</span>.</p>
+<p>From Chapter 6, these translate to <span class="math inline">\(\zeta \geq 0.59\)</span> and <span class="math inline">\(\sigma \geq 2\)</span>. We choose controller poles at <span class="math inline">\(s = -3 \pm j3\)</span> (giving <span class="math inline">\(\zeta = 0.71\)</span>, <span class="math inline">\(\sigma = 3\)</span>).</p>
+<p><strong>Controller gain:</strong> <span class="math display">\[K = \texttt{place}(A, B, [-3+3j,\; -3-3j]) = \begin{bmatrix} 16 &amp; 3 \end{bmatrix}.\]</span></p>
+<p><strong>Observer gain</strong> (poles <span class="math inline">\(4\times\)</span> faster, at <span class="math inline">\(-12\)</span> and <span class="math inline">\(-13\)</span>): <span class="math display">\[L = \texttt{place}(A&#39;, C&#39;, [-12, -13])&#39; = \begin{bmatrix} 22 \\ 88 \end{bmatrix}.\]</span></p>
+<p><strong>MATLAB simulation:</strong> The following code builds the composite closed-loop system and plots the step response.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Observer-based state feedback: closed-loop simulation</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]);  B = np.array([[0], [1]]);  C = np.array([[1, 0]]);  D = 0
+
+K  = ctrl.place(A, B, [-3+3j, -3-3j])
+L  = ctrl.place(A.T, C.T, [-12, -13]).T
+
+# Closed-loop system with observer
+Acl = np.block([[A - B @ K, B @ K], [np.zeros((2, 2)), A - L @ C]])
+Bcl = np.vstack([B, np.zeros((2, 1))])
+Ccl = np.hstack([C, np.zeros((1, 2))])
+
+sys_cl = ctrl.ss(Acl, Bcl, Ccl, 0)
+_resp = ctrl.step_response(sys_cl)
+
+t, y = _resp.time, _resp.outputs
+plt.plot(t, y)
+plt.title('Observer-based state feedback')
+plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3];  B = [0; 1];  C = [1 0];  D = 0;
+
+K  = place(A, B, [-3+3j, -3-3j]);
+L  = place(A', C', [-12, -13])';
+
+% Closed-loop system with observer
+Acl = [A-B*K, B*K; zeros(2), A-L*C];
+Bcl = [B; zeros(2,1)];
+Ccl = [C, zeros(1,2)];
+
+sys_cl = ss(Acl, Bcl, Ccl, 0);
+step(sys_cl);
+title('Observer-based state feedback');</code></pre>
+</div>
+<h2 id="sec:obs_integral">Observer-Based Controller with Integral Action</h2>
+<p>Without an integrator in the loop, the observer-based controller does not guarantee zero steady-state error for step references. The solution combines three ingredients:</p>
+<ol>
+<li><p><strong>Observer</strong>: estimates the state <span class="math inline">\(\hat{x}\)</span> from <span class="math inline">\(y\)</span> and <span class="math inline">\(u\)</span>.</p></li>
+<li><p><strong>State feedback</strong>: stabilises the system and shapes the transient response.</p></li>
+<li><p><strong>Integral action</strong>: eliminates steady-state error.</p></li>
+</ol>
+<h3 id="the-augmented-observer-based-controller">The augmented observer-based controller</h3>
+<p>Recall from Chapter 11 that integral action introduces an additional state: <span class="math display">\[\dot{x}_I(t) = r(t) - y(t) = r(t) - Cx(t).\]</span></p>
+<p>The control law is: <span class="math display">\[\begin{equation}
+    u(t) = -K\hat{x}(t) + K_I\, x_I(t)
+    \label{eq:obs_integral_law}
+\end{equation}\]</span> where <span class="math inline">\(\hat{x}\)</span> comes from the observer and <span class="math inline">\(x_I\)</span> is computed directly from the measured output (no estimation needed — <span class="math inline">\(y\)</span> is measured).</p>
+<figure id="fig:obs_integral_block" data-latex-placement="htbp">
+
+<img src="figures/ch12_tikz_02.png" style="max-width:85%;" />
+<figcaption>Observer-based state feedback with integral action. The integrator accumulates the tracking error <span class="math inline">\(r - y\)</span>, the observer estimates <span class="math inline">\(\hat{x}\)</span>, and both signals are combined to form the control input <span class="math inline">\(u\)</span>.</figcaption>
+</figure>
+<h3 id="design-procedure">Design procedure</h3>
+<ol>
+<li><p><strong>Design the augmented state feedback</strong> (as in Chapter 11):</p>
+<ul>
+<li><p>Form the augmented system with states <span class="math inline">\(\bar{x} = [x^\top \;\; x_I]^\top\)</span>.</p></li>
+<li><p>Choose <span class="math inline">\(n+1\)</span> desired controller poles.</p></li>
+<li><p>Compute <span class="math inline">\(\bar{K} = [K \;\; {-K_I}]\)</span> using <code>place()</code> on the augmented system.</p></li>
+</ul></li>
+<li><p><strong>Design the observer</strong> (on the original, non-augmented system):</p>
+<ul>
+<li><p>Choose <span class="math inline">\(n\)</span> observer poles (<span class="math inline">\(3\)</span>–<span class="math inline">\(5\times\)</span> faster).</p></li>
+<li><p>Compute <span class="math inline">\(L = \texttt{place}(A&#39;, C&#39;, p_o)&#39;\)</span>.</p></li>
+</ul></li>
+<li><p><strong>Implement</strong>: the observer estimates <span class="math inline">\(\hat{x}\)</span>; the integrator uses the measured <span class="math inline">\(y\)</span> directly; the control law is <span class="math inline">\(u = -K\hat{x} + K_I x_I\)</span>.</p></li>
+</ol>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The integral state <span class="math inline">\(x_I\)</span> does not need to be estimated — it is computed from the measured output <span class="math inline">\(y(t)\)</span>. Therefore, the observer is designed for the original <span class="math inline">\(n\)</span>-state system, not the augmented <span class="math inline">\((n+1)\)</span>-state system.</p>
+</div>
+<div class="examplebox">
+<p><span>Observer-based controller with integral action</span></p>
+<p>Continuing the DC motor example with <span class="math inline">\(A = \left[\begin{smallmatrix} 0 &amp; 1 \\ -2 &amp; -3 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(B = \left[\begin{smallmatrix} 0 \\ 1 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 0 \end{smallmatrix}\right]\)</span>.</p>
+<p><strong>Augmented system</strong> (from Chapter 11): <span class="math display">\[\bar{A} = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ -2 &amp; -3 &amp; 0 \\ -1 &amp; 0 &amp; 0 \end{bmatrix}, \quad
+\bar{B} = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}.\]</span></p>
+<p><strong>Controller poles</strong>: <span class="math inline">\(-3 \pm j3\)</span> and <span class="math inline">\(-5\)</span> (the extra pole for the integrator state). <span class="math display">\[\bar{K} = \texttt{place}(\bar{A}, \bar{B}, [-3+3j,\; -3-3j,\; -5]) = \begin{bmatrix} K_1 &amp; K_2 &amp; -K_I \end{bmatrix}.\]</span> Numerically, this gives <span class="math inline">\(\bar{K} = \begin{bmatrix} 46 &amp; 8 &amp; -90 \end{bmatrix}\)</span>, so <span class="math inline">\(K = \begin{bmatrix} 46 &amp; 8 \end{bmatrix}\)</span> and <span class="math inline">\(K_I = 90\)</span>.</p>
+<p><strong>Observer poles</strong>: <span class="math inline">\(-12\)</span> and <span class="math inline">\(-13\)</span> (same as before — the observer sees the original 2-state system). <span class="math display">\[L = \texttt{place}(A&#39;, C&#39;, [-12,\; -13])&#39; = \begin{bmatrix} 22 \\ 88 \end{bmatrix}.\]</span></p>
+<p><strong>MATLAB code:</strong> The following code computes the state feedback, integral, and observer gains.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Computing gains for observer-based control with integral action</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]);  B = np.array([[0], [1]]);  C = np.array([[1, 0]])
+n = A.shape[0]
+
+# Augmented system for integral action
+Abar = np.block([[A, np.zeros((n, 1))], [-C, np.zeros((1, 1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+
+# Controller poles (n+1 = 3 poles)
+pc = [-3+3j, -3-3j, -5]
+Kbar = ctrl.place(Abar, Bbar, pc)
+K  = Kbar[0, 0:n]        # state feedback gains
+KI = -Kbar[0, n]          # integral gain
+
+# Observer poles (n = 2 poles)
+po = [-12, -13]
+L = ctrl.place(A.T, C.T, po).T
+
+print("K  = [%.2f  %.2f]" % (K[0], K[1]))
+print("KI = %.2f" % KI)
+print("L  = [%.2f; %.2f]" % (L[0, 0], L[1, 0]))</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3];  B = [0; 1];  C = [1 0];
+n = size(A,1);
+
+% Augmented system for integral action
+Abar = [A, zeros(n,1); -C, 0];
+Bbar = [B; 0];
+
+% Controller poles (n+1 = 3 poles)
+pc = [-3+3j, -3-3j, -5];
+Kbar = place(Abar, Bbar, pc);
+K  = Kbar(1:n);        % state feedback gains
+KI = -Kbar(n+1);       % integral gain
+
+% Observer poles (n = 2 poles)
+po = [-12, -13];
+L = place(A', C', po)';
+
+fprintf('K  = [%.2f  %.2f]\n', K);
+fprintf('KI = %.2f\n', KI);
+fprintf('L  = [%.2f; %.2f]\n', L);</code></pre>
+</div>
+<div class="examplebox">
+<p><span>MATLAB: Simulating the complete observer-based controller</span></p>
+<p>We now simulate the full closed-loop system with observer, state feedback, and integral action for the mass–spring–damper. The closed-loop state vector is <span class="math inline">\(\begin{bmatrix} x^\top &amp; \hat{x}^\top &amp; x_I \end{bmatrix}^\top\)</span> (5 states in total). The following code builds the composite system matrices and uses <code>step()</code> to verify the response.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Full simulation of observer-based control with integral action</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+A = np.array([[0, 1], [-2, -3]]);  B = np.array([[0], [1]]);  C = np.array([[1, 0]]);  D = 0
+n = A.shape[0]
+
+# Augmented system for integral action
+Abar = np.block([[A, np.zeros((n, 1))], [-C, np.zeros((1, 1))]])
+Bbar = np.vstack([B, np.array([[0]])])
+
+# State feedback + integral gain (3 controller poles)
+pc = [-3+3j, -3-3j, -5]
+Kbar = ctrl.place(Abar, Bbar, pc)
+K  = Kbar[0:1, 0:n]          # K = [46  8]
+KI = -Kbar[0, n]              # KI = 90
+
+# Observer gain (2 observer poles, 4x faster)
+po = [-12, -13]
+L  = ctrl.place(A.T, C.T, po).T   # L = [22; 88]
+
+# Closed-loop in coordinates [x; xhat; xI]
+#   dx    = A*x  + B*u,         u = -K*xhat + KI*xI
+#   dxhat = (A-LC)*xhat + B*u + L*C*x
+#   dxI   = r - C*x
+Acl = np.block([
+    [A,           -B @ K,             B * KI],       # dx/dt
+    [L @ C,       A - L @ C - B @ K,  B * KI],       # dxhat/dt
+    [-C,          np.zeros((1, n)),   np.zeros((1, 1))]  # dxI/dt
+])
+Bcl = np.vstack([np.zeros((n, 1)), np.zeros((n, 1)), np.array([[1]])])   # input = r
+Ccl = np.hstack([C, np.zeros((1, n)), np.zeros((1, 1))])                 # output = y = C*x
+Dcl = 0
+
+sys_cl = ctrl.ss(Acl, Bcl, Ccl, Dcl)
+print('Closed-loop poles:'); print(np.linalg.eigvals(Acl))
+
+# Step response
+T = np.linspace(0, 5, 500)
+_resp = ctrl.forced_response(sys_cl, T=T, U=np.ones_like(T), return_x=True)
+t, y, xall = _resp.time, _resp.outputs, _resp.states
+plt.subplot(2, 1, 1)
+plt.plot(t, y.flatten(), 'b', linewidth=1.5)
+plt.axhline(1, color='k', linestyle='--')
+plt.ylabel('Output y(t)')
+plt.title('Observer-based control with integral action')
+plt.grid(True)
+
+# True vs estimated states
+plt.subplot(2, 1, 2)
+plt.plot(t, xall[0, :], 'b', t, xall[2, :], 'r--', linewidth=1.5)
+plt.plot(t, xall[1, :], 'b:', t, xall[3, :], 'r:', linewidth=1.5)
+plt.legend(['x_1 (true)', 'xhat_1', 'x_2 (true)', 'xhat_2'])
+plt.ylabel('States'); plt.xlabel('Time (s)')
+plt.title('True vs estimated states')
+plt.grid(True)</code></pre>
+</div>
+<pre class="matlab"><code>A = [0 1; -2 -3];  B = [0; 1];  C = [1 0];  D = 0;
+n = size(A,1);
+
+% Augmented system for integral action
+Abar = [A, zeros(n,1); -C, 0];
+Bbar = [B; 0];
+
+% State feedback + integral gain (3 controller poles)
+pc = [-3+3j, -3-3j, -5];
+Kbar = place(Abar, Bbar, pc);
+K  = Kbar(1:n);          % K = [46  8]
+KI = -Kbar(n+1);         % KI = 90
+
+% Observer gain (2 observer poles, 4x faster)
+po = [-12, -13];
+L  = place(A', C', po)';  % L = [22; 88]
+
+% Closed-loop in coordinates [x; xhat; xI]
+%   dx    = A*x  + B*u,         u = -K*xhat + KI*xI
+%   dxhat = (A-LC)*xhat + B*u + L*C*x
+%   dxI   = r - C*x
+Acl = [A,       -B*K,     B*KI;       % dx/dt
+       L*C,  A-L*C-B*K,   B*KI;       % dxhat/dt
+      -C,    zeros(1,n),     0];       % dxI/dt
+Bcl = [zeros(n,1); zeros(n,1); 1];    % input = r
+Ccl = [C, zeros(1,n), 0];             % output = y = C*x
+Dcl = 0;
+
+sys_cl = ss(Acl, Bcl, Ccl, Dcl);
+disp('Closed-loop poles:'); disp(eig(Acl));
+
+% Step response
+figure;
+[y,t,xall] = step(sys_cl, 5);
+subplot(2,1,1);
+plot(t, y, 'b', 'LineWidth', 1.5); hold on;
+yline(1, 'k--'); ylabel('Output y(t)');
+title('Observer-based control with integral action');
+
+% True vs estimated states
+subplot(2,1,2);
+plot(t, xall(:,1), 'b', t, xall(:,3), 'r--', 'LineWidth', 1.5);
+hold on;
+plot(t, xall(:,2), 'b:', t, xall(:,4), 'r:', 'LineWidth', 1.5);
+legend('x_1 (true)','xhat_1','x_2 (true)','xhat_2');
+ylabel('States'); xlabel('Time (s)');
+title('True vs estimated states');</code></pre>
+<p>Running this code produces a step response that settles with zero steady-state error (thanks to integral action) and shows the observer estimates converging rapidly to the true states. You should see that the five closed-loop poles are exactly <span class="math inline">\(\{-3 \pm j3,\; -5,\; -12,\; -13\}\)</span> — confirming the separation principle.</p>
+</div>
+<h2 id="sec:simulink_obs">Simulink Implementation</h2>
+<p>Figure <a href="#fig:simulink_obs_block" data-reference-type="ref" data-reference="fig:simulink_obs_block">1.3</a> shows the Simulink implementation. The key components are:</p>
+<ol>
+<li><p><strong>Plant block</strong>: a State-Space block with matrices <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, <span class="math inline">\(D\)</span>.</p></li>
+<li><p><strong>Observer block</strong>: a State-Space block implementing the Luenberger observer equation, with input <span class="math inline">\([u; y]\)</span> and output <span class="math inline">\(\hat{x}\)</span>.</p></li>
+<li><p><strong>Integrator block</strong>: integrates the error <span class="math inline">\(r - y\)</span> to produce <span class="math inline">\(x_I\)</span>.</p></li>
+<li><p><strong>Gain blocks</strong>: <span class="math inline">\(-K\)</span> multiplied by <span class="math inline">\(\hat{x}\)</span>, <span class="math inline">\(K_I\)</span> multiplied by <span class="math inline">\(x_I\)</span>, summed to form <span class="math inline">\(u\)</span>.</p></li>
+</ol>
+<figure id="fig:simulink_obs_block" data-latex-placement="ht">
+
+<img src="figures/ch12_tikz_03.png" style="max-width:85%;" />
+<figcaption>Observer-based output-feedback control with integral action. The outer loop subtracts <span class="math inline">\(y\)</span> from <span class="math inline">\(r\)</span> and integrates the error. The observer receives <span class="math inline">\(u\)</span> and <span class="math inline">\(y\)</span> from above; its output <span class="math inline">\(\hat{x}\)</span> passes through <span class="math inline">\(-K\)</span> back to the control summing junction.</figcaption>
+</figure>
+<p>The observer state-space block has the following matrices: <span class="math display">\[A_{\text{obs}} = A - LC, \quad B_{\text{obs}} = \begin{bmatrix} B &amp; L \end{bmatrix}, \quad C_{\text{obs}} = I_n, \quad D_{\text{obs}} = 0,\]</span> with input vector <span class="math inline">\(\begin{bmatrix} u \\ y \end{bmatrix}\)</span> and output <span class="math inline">\(\hat{x}\)</span>. The following MATLAB code sets up these matrices.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Setting up the observer block in MATLAB for Simulink</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+L = np.array([[22], [88]])
+n = A.shape[0]
+
+A_obs = A - L @ C
+B_obs = np.hstack([B, L])       # inputs: [u; y]
+C_obs = np.eye(n)               # output: full estimated state
+D_obs = np.zeros((n, 2))
+
+# These matrices define the observer state-space block
+print("A_obs ="); print(A_obs)
+print("B_obs ="); print(B_obs)
+print("C_obs ="); print(C_obs)
+print("D_obs ="); print(D_obs)</code></pre>
+</div>
+<pre class="matlab"><code>A_obs = A - L*C;
+B_obs = [B, L];       % inputs: [u; y]
+C_obs = eye(n);        % output: full estimated state
+D_obs = zeros(n, 2);
+
+% Use these in a Simulink State-Space block</code></pre>
+<p>For the DC motor design from the previous section, the Simulink model uses <span class="math display">\[K = \begin{bmatrix} 46 &amp; 8 \end{bmatrix}, \qquad K_I = 90, \qquad
+    L = \begin{bmatrix} 22 \\ 88 \end{bmatrix}.\]</span> With a unit-step reference and a nonzero initial observer error, the simulation should produce the responses in Figures <a href="#fig:simulink_obs_response" data-reference-type="ref" data-reference="fig:simulink_obs_response">1.4</a> and <a href="#fig:simulink_obs_states" data-reference-type="ref" data-reference="fig:simulink_obs_states">1.5</a>.</p>
+<figure id="fig:simulink_obs_response" data-latex-placement="H">
+<img src="figures/observer_simulink_response.png" style="max-width:90%;" />
+
+<figcaption>Closed-loop response for the observer-based controller with integral action. The top plot shows output tracking, the middle plot shows the control signal, and the bottom plot shows the decay of the estimation-error norm.</figcaption>
+</figure>
+<figure id="fig:simulink_obs_states" data-latex-placement="H">
+<img src="figures/observer_simulink_states.png" style="max-width:90%;" />
+
+<figcaption>True and estimated states for the same simulation. The observer states converge rapidly to the plant states, which is what the Simulink observer block should reproduce.</figcaption>
+</figure>
+<h2 id="sec:obs_robustness">Robustness: What Happens When the Model is Not Perfect?</h2>
+<p>What happens when the observer matrices differ from the true plant?</p>
+<ul>
+<li><p>The estimation error <span class="math inline">\(e(t)\)</span> no longer converges to exactly zero — a small residual error remains.</p></li>
+<li><p>If integral action is included, the steady-state tracking error is still zero for step references, because the integrator compensates for the model mismatch.</p></li>
+<li><p>The transient performance degrades, but the system remains stable provided the model errors are not too large.</p></li>
+</ul>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>This is another reason why integral action is essential in practice. Without it, any model error leads to a permanent steady-state offset. With it, the integrator absorbs the mismatch.</p>
+</div>
+<h2 id="sec:ch11_summary">Summary</h2>
+<div class="summarybox">
+<p><span>Chapter Summary</span></p>
+<ul>
+<li><p>An <strong>observer</strong> (Luenberger observer) estimates the unmeasured states from the known input <span class="math inline">\(u\)</span> and measured output <span class="math inline">\(y\)</span>.</p></li>
+<li><p>The observer equation is <span class="math inline">\(\dot{\hat{x}} = A\hat{x} + Bu + L(y - C\hat{x})\)</span>.</p></li>
+<li><p>The estimation error decays according to <span class="math inline">\(\dot{e} = (A - LC)e\)</span>. The gain <span class="math inline">\(L\)</span> is chosen to place the eigenvalues of <span class="math inline">\(A - LC\)</span> at desired locations.</p></li>
+<li><p>Observer design requires <strong>observability</strong> of <span class="math inline">\((A, C)\)</span>.</p></li>
+<li><p>Observer poles are typically placed <span class="math inline">\(3\)</span>–<span class="math inline">\(5\times\)</span> faster than the controller poles.</p></li>
+<li><p>The <strong>separation principle</strong> guarantees that the controller <span class="math inline">\((K)\)</span> and observer <span class="math inline">\((L)\)</span> can be designed independently. The closed-loop poles are the union of both sets.</p></li>
+<li><p>For zero steady-state error, add <strong>integral action</strong>: <span class="math inline">\(u = -K\hat{x} + K_I x_I\)</span>, where <span class="math inline">\(\dot{x}_I = r - y\)</span>.</p></li>
+<li><p>MATLAB: <code>L = place(A’, C’, po)’</code> for the observer gain.</p></li>
+</ul>
+</div>
+<h2 id="sec:beyond">Beyond This Module: A Glimpse of Advanced Control</h2>
+<p>The tools from this module — transfer functions, state-space models, stability analysis, PID tuning, pole placement, observers, and integral action — form the foundation of control engineering. This section briefly introduces directions you may encounter in advanced modules or industry. None are examinable.</p>
+<h3 id="discrete-time-control">Discrete-time control</h3>
+<p>In practice, controllers run on digital processors that sample at discrete intervals. Discrete-time control replaces the Laplace transform with the <strong><span class="math inline">\(z\)</span>-transform</strong> and differential equations with difference equations. The design concepts (pole placement, observers, integral action) carry over directly. MATLAB’s <code>c2d()</code> converts continuous-time designs to discrete-time equivalents.</p>
+<h3 id="linear-quadratic-regulator-lqr">Linear Quadratic Regulator (LQR)</h3>
+<p>LQR finds the optimal state feedback gain <span class="math inline">\(K\)</span> by minimising a cost function: <span class="math display">\[J = \int_0^\infty \bigl[ x^\top Q\, x + u^\top R\, u \bigr]\,dt,\]</span> where <span class="math inline">\(Q\)</span> penalises state deviations and <span class="math inline">\(R\)</span> penalises control effort. LQR produces guaranteed stability margins and avoids trial-and-error pole selection. In MATLAB: <code>K = lqr(A, B, Q, R)</code>.</p>
+<h3 id="kalman-filter">Kalman filter</h3>
+<p>The Luenberger observer assumes deterministic signals. The <strong>Kalman filter</strong> is the optimal observer for systems with Gaussian noise — it minimises the mean-squared estimation error. It is the dual of LQR: LQR optimises <span class="math inline">\(K\)</span>, the Kalman filter optimises <span class="math inline">\(L\)</span>. Applications include GPS, inertial navigation, robotics, and financial modelling.</p>
+<h3 id="linear-quadratic-gaussian-lqg-control">Linear Quadratic Gaussian (LQG) control</h3>
+<p>Combining LQR with the Kalman filter gives the <strong>LQG controller</strong>. By the separation principle, the two designs remain independent. LQG is widely used in aerospace, process control, and robotics.</p>
+<h3 id="robust-control-h_infty">Robust control (<span class="math inline">\(H_\infty\)</span>)</h3>
+<p><strong>Robust control</strong> explicitly accounts for model uncertainty. The <span class="math inline">\(H_\infty\)</span> framework guarantees stability and performance for all plants within a defined uncertainty set — essential in aerospace and automotive applications requiring worst-case guarantees.</p>
+<h3 id="model-predictive-control-mpc">Model Predictive Control (MPC)</h3>
+<p>At each time step, MPC solves an optimisation problem over a finite prediction horizon, explicitly handling:</p>
+<ul>
+<li><p>constraints on inputs (actuator limits),</p></li>
+<li><p>constraints on states and outputs (safety limits),</p></li>
+<li><p>a cost function balancing tracking performance and control effort.</p></li>
+</ul>
+<p>Only the first control action is applied; the optimisation repeats at the next step. MPC is standard in chemical process control, building energy management, autonomous vehicles, and robotics.</p>
+<h3 id="nonlinear-and-adaptive-control">Nonlinear and adaptive control</h3>
+<p>All methods in this module assume linearity. Advanced nonlinear techniques include feedback linearisation, sliding mode control, backstepping, and Lyapunov-based design. <strong>Adaptive control</strong> adjusts controller parameters online as the plant changes.</p>
+<h3 id="machine-learning-and-data-driven-control">Machine learning and data-driven control</h3>
+<p>Reinforcement learning can discover control policies from interaction with the environment, and neural networks can approximate complex nonlinear dynamics. Safety-critical applications still require model-based guarantees — ML methods are most powerful when combined with the classical foundations from this module.</p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>Every method above builds on the concepts from this module. State-space models, controllability, observability, stability, pole placement, and observers are the language of modern control theory.</p>
+</div>
+<h2 id="sec:ch12_problems">End-of-Chapter Problems</h2>
+<ol>
+<li><p><strong>Open-loop vs closed-loop observer.</strong> Consider <span class="math inline">\(A = \left[\begin{smallmatrix} 0 &amp; 1 \\ -5 &amp; -6 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 0 \end{smallmatrix}\right]\)</span>.</p>
+<ol>
+<li><p>Write the error dynamics for the open-loop estimator (no correction term). What are the eigenvalues?</p></li>
+<li><p>Now design a Luenberger observer with poles at <span class="math inline">\(-20\)</span> and <span class="math inline">\(-25\)</span>. Find <span class="math inline">\(L\)</span>.</p></li>
+<li><p>Compare the convergence speed of both approaches.</p></li>
+</ol></li>
+<li><p><strong>Observability check.</strong> For each system, determine whether an observer can be designed:</p>
+<ol>
+<li><p><span class="math inline">\(A = \left[\begin{smallmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 1 \end{smallmatrix}\right]\)</span>.</p></li>
+<li><p><span class="math inline">\(A = \left[\begin{smallmatrix} -1 &amp; 0 \\ 0 &amp; -2 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 0 \end{smallmatrix}\right]\)</span>.</p></li>
+<li><p><span class="math inline">\(A = \left[\begin{smallmatrix} 0 &amp; 1 \\ -6 &amp; -5 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 0 &amp; 1 \end{smallmatrix}\right]\)</span>.</p></li>
+</ol></li>
+<li><p><strong>Observer gain computation.</strong> Given <span class="math inline">\(A = \left[\begin{smallmatrix} 0 &amp; 1 \\ -10 &amp; -7 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(B = \left[\begin{smallmatrix} 0 \\ 1 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 0 \end{smallmatrix}\right]\)</span>:</p>
+<ol>
+<li><p>Verify observability.</p></li>
+<li><p>Compute <span class="math inline">\(L\)</span> so that the observer poles are at <span class="math inline">\(-30\)</span> and <span class="math inline">\(-35\)</span>.</p></li>
+<li><p>Verify using MATLAB: <code>L = place(A’, C’, [-30, -35])’</code>.</p></li>
+</ol></li>
+<li><p><strong>Separation principle verification.</strong> Using the system from Problem 3:</p>
+<ol>
+<li><p>Design <span class="math inline">\(K\)</span> to place the controller poles at <span class="math inline">\(-5 \pm j5\)</span>.</p></li>
+<li><p>Design <span class="math inline">\(L\)</span> to place the observer poles at <span class="math inline">\(-25\)</span> and <span class="math inline">\(-30\)</span>.</p></li>
+<li><p>Write the <span class="math inline">\(4 \times 4\)</span> closed-loop system matrix in coordinates <span class="math inline">\((x, e)\)</span>.</p></li>
+<li><p>Verify that the eigenvalues are exactly <span class="math inline">\(\{-5+5j,\; -5-5j,\; -25,\; -30\}\)</span>.</p></li>
+</ol></li>
+<li><p><strong>Observer-based controller with integral action.</strong> For the system <span class="math inline">\(A = \left[\begin{smallmatrix} 0 &amp; 1 \\ -4 &amp; -5 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(B = \left[\begin{smallmatrix} 0 \\ 1 \end{smallmatrix}\right]\)</span>, <span class="math inline">\(C = \left[\begin{smallmatrix} 1 &amp; 0 \end{smallmatrix}\right]\)</span>:</p>
+<ol>
+<li><p>Form the augmented system for integral action.</p></li>
+<li><p>Compute <span class="math inline">\(\bar{K} = [K \;\; {-K_I}]\)</span> with controller poles at <span class="math inline">\(-4 \pm j4\)</span> and <span class="math inline">\(-6\)</span>.</p></li>
+<li><p>Compute <span class="math inline">\(L\)</span> with observer poles at <span class="math inline">\(-20\)</span> and <span class="math inline">\(-25\)</span>.</p></li>
+<li><p>Simulate the step response in MATLAB. Verify zero steady-state error.</p></li>
+</ol></li>
+<li><p><strong>Effect of observer speed.</strong> Using the system and controller from Problem 5:</p>
+<ol>
+<li><p>Simulate with observer poles at <span class="math inline">\(-8\)</span> and <span class="math inline">\(-10\)</span> (slow observer).</p></li>
+<li><p>Simulate with observer poles at <span class="math inline">\(-40\)</span> and <span class="math inline">\(-50\)</span> (fast observer).</p></li>
+<li><p>Compare the transient responses. What do you observe about the initial transient?</p></li>
+<li><p>Discuss the trade-off between convergence speed and noise sensitivity.</p></li>
+</ol></li>
+<li><p><strong>Robustness test.</strong> Using the design from Problem 5, suppose the true plant has <span class="math inline">\(A_{true} = \left[\begin{smallmatrix} 0 &amp; 1 \\ -5 &amp; -6 \end{smallmatrix}\right]\)</span> (a <span class="math inline">\(25\%\)</span> parameter error).</p>
+<ol>
+<li><p>Simulate the step response with the controller designed for the nominal plant.</p></li>
+<li><p>Is the system still stable?</p></li>
+<li><p>What happens to the steady-state error? Explain why integral action helps.</p></li>
+</ol></li>
+<li><p><strong>MATLAB comprehensive exercise.</strong> Consider the third-order system: <span class="math display">\[A = \begin{bmatrix} 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \\ -6 &amp; -11 &amp; -6 \end{bmatrix}, \quad
+    B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad
+    C = \begin{bmatrix} 1 &amp; 0 &amp; 0 \end{bmatrix}.\]</span></p>
+<ol>
+<li><p>Verify controllability and observability.</p></li>
+<li><p>Design state feedback with poles at <span class="math inline">\(-4\)</span>, <span class="math inline">\(-5\)</span>, <span class="math inline">\(-6\)</span>.</p></li>
+<li><p>Design an observer with poles at <span class="math inline">\(-20\)</span>, <span class="math inline">\(-25\)</span>, <span class="math inline">\(-30\)</span>.</p></li>
+<li><p>Add integral action with an additional pole at <span class="math inline">\(-8\)</span>.</p></li>
+<li><p>Simulate the complete observer-based controller with integral action for a unit step reference.</p></li>
+<li><p>Plot the true state <span class="math inline">\(x(t)\)</span> and estimated state <span class="math inline">\(\hat{x}(t)\)</span> on the same graph. Verify that the estimation error converges quickly.</p></li>
+</ol></li>
+</ol>

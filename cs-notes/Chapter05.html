@@ -1,0 +1,589 @@
+<h1 id="ch:block_diagrams">Block Diagrams and Computer Simulations</h1>
+<div class="summarybox">
+<p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
+<ul>
+<li><p>Identify the fundamental elements of a block diagram: blocks, summing junctions, and pick-off points</p></li>
+<li><p>Reduce block diagrams to a single transfer function using series, parallel, and feedback rules</p></li>
+<li><p>Apply Mason’s Gain Formula to find transfer functions from forward paths and loop gains</p></li>
+<li><p>Derive the transfer function of a DC motor from its block diagram</p></li>
+<li><p>Use superposition to analyse systems with multiple inputs (reference, disturbance, noise)</p></li>
+<li><p>Implement block diagrams in MATLAB (<code>series</code>, <code>feedback</code>, <code>connect</code>) and Simulink</p></li>
+</ul>
+</div>
+<p>block diagrams represent interconnected subsystems visually and provide a systematic way to derive the overall transfer function. Once drawn, tools such as <span class="smallcaps">MATLAB</span> and <span class="smallcaps">Simulink</span> can simulate the system under different conditions.</p>
+<h2 id="fundamental-elements-of-block-diagrams">Fundamental Elements of Block Diagrams</h2>
+<p>In block diagrams, a subsystem with transfer function</p>
+<p><span class="math display">\[Y(s) = G(s)U(s)\]</span></p>
+<p>is represented by a rectangular block. The signal <span class="math inline">\(U(s)\)</span> is the input to the block and <span class="math inline">\(Y(s)\)</span> is the output.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Basic Elements of a Block Diagram</div>
+<p>A block diagram is composed of the following fundamental components:</p>
+<ul>
+<li><p><strong>Signal lines</strong> representing system variables.</p></li>
+<li><p><strong>System blocks</strong> representing transfer functions.</p></li>
+<li><p><strong>Summing junctions</strong> used to combine signals algebraically.</p></li>
+<li><p><strong>Pick-off (branch) points</strong> used to distribute a signal to multiple locations.</p></li>
+</ul>
+</div>
+<p>Figure <a href="#fig:block_elements" data-reference-type="ref" data-reference="fig:block_elements">1.1</a> illustrates the basic building blocks used in block diagram representations.</p>
+<figure id="fig:block_elements" data-latex-placement="!ht">
+
+<img src="figures/ch05_tikz_01.png" style="max-width:40%;display:inline-block;" />
+<img src="figures/ch05_tikz_02.png" style="max-width:40%;display:inline-block;" />
+<img src="figures/ch05_tikz_03.png" style="max-width:40%;display:inline-block;" />
+<img src="figures/ch05_tikz_04.png" style="max-width:40%;display:inline-block;" />
+<figcaption>Fundamental components of block diagrams: (a) representation of signals, (b) system block with transfer function <span class="math inline">\(G(s)\)</span>, (c) summing junction for combining multiple input signals algebraically, and (d) pickoff point for distributing a signal to multiple paths.</figcaption>
+</figure>
+<h2 id="block-diagram-reduction-techniques">Block Diagram Reduction Techniques</h2>
+<p>To determine the overall transfer function, a block diagram can be simplified using reduction rules.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Block Diagram Reduction</div>
+<p>block reduction is the process of simplifying a complex block diagram by systematically combining blocks into an equivalent single transfer function.</p>
+</div>
+<p>Common reduction techniques include:</p>
+<ul>
+<li><p>Series connection</p></li>
+<li><p>Parallel connection</p></li>
+<li><p>Feedback connection</p></li>
+<li><p>Moving blocks across summing junctions</p></li>
+</ul>
+<p>The three most common reductions are <span class="math display">\[G_{\mathrm{series}}(s)=G_1(s)G_2(s),
+\qquad
+G_{\mathrm{parallel}}(s)=G_1(s)+G_2(s),\]</span> and <span class="math display">\[G_{\mathrm{feedback}}(s)
+=\frac{G(s)}{1+G(s)H(s)}
+\quad \text{for negative feedback}.\]</span> For positive feedback, the sign in the denominator changes: <span class="math display">\[G_{\mathrm{feedback}}(s)
+=\frac{G(s)}{1-G(s)H(s)}.\]</span></p>
+<p>These rules are shown in Figure <a href="#fig:blockdiagreduction" data-reference-type="ref" data-reference="fig:blockdiagreduction">1.2</a>.</p>
+<figure id="fig:blockdiagreduction" data-latex-placement="!htbp">
+
+<img src="figures/ch05_tikz_05.png" style="max-width:85%;" />
+<figcaption>Common block diagram reduction rules: series, parallel, and feedback connections, plus moving a block across a summation point.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Block diagram reduction with multiple feedback paths</div>
+<p><strong>Question.</strong> Consider the block diagram below. Use block diagram reduction to find the closed-loop transfer function <span class="math display">\[T(s)=\frac{C(s)}{R(s)}.\]</span> Assume all blocks are proper transfer functions, and the summing junction signs are exactly as shown.</p>
+<div class="center">
+<img src="figures/ch05_tikz_06.png" style="max-width:85%;" />
+</div>
+<p><strong>Step 1: Identify the forward path.</strong> From the summing junction output to the plant output, <span class="math display">\[G(s)=G_2(s)\,G_3(s).\]</span> The signal into the summing junction from the reference is <span class="math display">\[X(s)=G_1(s)R(s).\]</span></p>
+<p><strong>Step 2: Combine the feedback paths into an equivalent feedback signal.</strong> All three feedback blocks sense the same output <span class="math inline">\(Y(s)\)</span> and feed the summing junction in parallel (with signs). Thus the feedback contribution added at the summing node is <span class="math display">\[\underbrace{\big(-H_1(s)Y(s)\big)}_{\text{negative input}}
+    +\underbrace{\big(+H_2(s)Y(s)\big)}_{\text{positive input}}
+    +\underbrace{\big(-H_3(s)Y(s)\big)}_{\text{negative input}}.\]</span> So the summing junction output (call it <span class="math inline">\(E(s)\)</span>) is <span class="math display">\[E(s)=X(s)-H_1(s)Y(s)+H_2(s)Y(s)-H_3(s)Y(s)
+    =X(s)+\Big(-H_1(s)+H_2(s)-H_3(s)\Big)Y(s).\]</span></p>
+<div class="center">
+<img src="figures/ch05_tikz_07.png" style="max-width:85%;" />
+</div>
+<p><strong>Step 3: Close the loop using the forward dynamics.</strong> Since <span class="math inline">\(Y(s)=G(s)E(s)=G_2(s)G_3(s)\,E(s)\)</span>, <span class="math display">\[\begin{align*}
+        Y(s)
+        &amp;=G_2(s)G_3(s)\Big[X(s)+\big(-H_1(s)+H_2(s)-H_3(s)\big)Y(s)\Big]\\
+        &amp;=G_2(s)G_3(s)X(s)+G_2(s)G_3(s)\big(-H_1(s)+H_2(s)-H_3(s)\big)Y(s).
+\end{align*}\]</span> Move all terms in <span class="math inline">\(Y(s)\)</span> to the left: <span class="math display">\[Y(s)\Big[1-G_2(s)G_3(s)\big(-H_1(s)+H_2(s)-H_3(s)\big)\Big]
+    =G_2(s)G_3(s)X(s).\]</span></p>
+<p><strong>Step 4: Substitute <span class="math inline">\(X(s)=G_1(s)R(s)\)</span> and simplify.</strong> Note that <span class="math display">\[1-G_2G_3(-H_1+H_2-H_3)=1+G_2G_3(H_1-H_2+H_3).\]</span> Therefore, <span class="math display">\[\frac{Y(s)}{R(s)}
+    =\frac{G_2(s)G_3(s)\,G_1(s)}{1+G_2(s)G_3(s)\Big(H_1(s)-H_2(s)+H_3(s)\Big)}.\]</span></p>
+</div>
+<h2 id="direct-transfer-function-calculation">Direct Transfer Function Calculation</h2>
+<p>A faster and more systematic alternative to manual reduction is based on identifying <strong>forward paths</strong> and <strong>loop gains</strong>. This approach uses mason, applied here directly to block diagrams without signal-flow graph notation.</p>
+<div class="definition"><div class="env-label env-label-definition">Definition: Forward Path and Loop Gain</div>
+<p>A <strong>forward path</strong> is a path from the input to the output that does not pass through any node more than once. The gain of the <span class="math inline">\(k\)</span>-th forward path is denoted by <span class="math inline">\(P_k(s)\)</span>.</p>
+<p>A <strong>loop</strong> is a closed path that starts and ends at the same node without passing through any other node more than once. The loop gain <span class="math inline">\(L_m(s)\)</span> is the product of all block gains and summing-junction signs around that loop.</p>
+</div>
+<p>For example, a negative feedback loop with forward path <span class="math inline">\(G(s)\)</span> and feedback path <span class="math inline">\(H(s)\)</span> has signed loop gain <span class="math display">\[L(s)=-G(s)H(s).\]</span> Mason’s Gain Formula gives the overall transfer function as <span class="math display">\[T(s)=\frac{Y(s)}{U(s)}
+=\frac{\displaystyle\sum_{k=1}^{N_f}P_k(s)\Delta_k(s)}{\Delta(s)},\]</span> where <span class="math display">\[\Delta(s)
+=1-\sum L_m(s)+\sum L_i(s)L_j(s)-\sum L_i(s)L_j(s)L_k(s)+\cdots .\]</span> The products in <span class="math inline">\(\Delta(s)\)</span> are formed only from <strong>non-touching loops</strong>. The factor <span class="math inline">\(\Delta_k(s)\)</span> is found from <span class="math inline">\(\Delta(s)\)</span> after removing all loops that touch the <span class="math inline">\(k\)</span>-th forward path. However, in this class, we will not use the full generality of Mason’s formula.</p>
+<p>Two loops are said to <strong>touch</strong> if they have at least one common node. They are <strong>non-touching</strong> if they have no node in common. This distinction matters because non-touching loops can act independently, and their products must be included in <span class="math inline">\(\Delta(s)\)</span>. For two non-touching loops <span class="math inline">\(L_1(s)\)</span> and <span class="math inline">\(L_2(s)\)</span>, <span class="math display">\[\Delta(s)=1-\big(L_1(s)+L_2(s)\big)+L_1(s)L_2(s).\]</span> The last term is present only because the two loops are non-touching.</p>
+<figure id="fig:mason_non_touching" data-latex-placement="!htbp">
+
+<img src="figures/ch05_tikz_08.png" style="max-width:85%;" />
+<figcaption>A block diagram with two non-touching feedback loops.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: Mason’s formula with non-touching loops</div>
+<p><strong>Question.</strong> For the block diagram in Figure <a href="#fig:mason_non_touching" data-reference-type="ref" data-reference="fig:mason_non_touching">1.3</a>, find the transfer function <span class="math display">\[T(s)=\frac{Y(s)}{U(s)}\]</span> using Mason’s Gain Formula.</p>
+<p><strong>Step 1: Identify the forward path.</strong> There is only one forward path from <span class="math inline">\(U(s)\)</span> to <span class="math inline">\(Y(s)\)</span>: <span class="math display">\[P_1(s)=G_1(s)G_2(s)G_3(s).\]</span></p>
+<p><strong>Step 2: Identify the loop gains.</strong> The first feedback loop contains <span class="math inline">\(G_1(s)\)</span> and <span class="math inline">\(H_1(s)\)</span>. Since the feedback enters the summing junction with a negative sign, <span class="math display">\[L_1(s)=-G_1(s)H_1(s).\]</span> The second feedback loop contains <span class="math inline">\(G_3(s)\)</span> and <span class="math inline">\(H_2(s)\)</span>, and it is also negative: <span class="math display">\[L_2(s)=-G_3(s)H_2(s).\]</span> These two loops are non-touching because they do not share any node.</p>
+<p><strong>Step 3: Form <span class="math inline">\(\Delta(s)\)</span>.</strong> Because <span class="math inline">\(L_1(s)\)</span> and <span class="math inline">\(L_2(s)\)</span> are non-touching, their product must be included: <span class="math display">\[\begin{align*}
+    \Delta(s)
+    &amp;=1-\big(L_1(s)+L_2(s)\big)+L_1(s)L_2(s)\\
+    &amp;=1+G_1(s)H_1(s)+G_3(s)H_2(s)
+    +G_1(s)G_3(s)H_1(s)H_2(s).
+\end{align*}\]</span></p>
+<p><strong>Step 4: Form <span class="math inline">\(\Delta_1(s)\)</span>.</strong> The forward path <span class="math inline">\(P_1(s)\)</span> touches both loops, so both loops are removed when calculating <span class="math inline">\(\Delta_1(s)\)</span>. Therefore, <span class="math display">\[\Delta_1(s)=1.\]</span></p>
+<p><strong>Step 5: Apply Mason’s formula.</strong> <span class="math display">\[T(s)=\frac{P_1(s)\Delta_1(s)}{\Delta(s)}.\]</span> Hence, <span class="math display">\[\frac{Y(s)}{U(s)}
+    =
+    \frac{G_1(s)G_2(s)G_3(s)}
+    {1+G_1(s)H_1(s)+G_3(s)H_2(s)+G_1(s)G_3(s)H_1(s)H_2(s)}\]</span></p>
+</div>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>For many simple teaching examples, all loops touch each other and each loop touches every forward path. In that special case, <span class="math inline">\(\Delta_k(s)=1\)</span> and <span class="math display">\[T(s)=\frac{\sum P_k(s)}{1-\sum L_m(s)}.\]</span> This is a useful shortcut, but it should not be used blindly when a diagram contains feedforward branches or non-touching loops.</p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Fast method to find transfer function</div>
+<p><strong>Question.</strong> Consider the block diagram in the figure. Using the <em>fast approach</em> (forward paths + loop gains), find the transfer function <span class="math display">\[T(s)=\frac{Y(s)}{U(s)}.\]</span></p>
+<div class="center">
+<img src="figures/ch05_tikz_09.png" style="max-width:85%;" />
+</div>
+<p><strong>Step 1 — Forward paths (loops opened).</strong> Open all feedback connections conceptually. There is only <em>one</em> independent forward path from input to output: <span class="math display">\[N_f = 1,
+    \qquad
+    P_1(s)=A(s)\,B(s)\,C(s).\]</span></p>
+<p><strong>Step 2 — Identify the feedback loops and their signed loop gains.</strong></p>
+<ul>
+<li><p><strong>Loop 1 (upper loop, negative feedback at <span class="math inline">\(S_1\)</span>):</strong> Traverse the loop starting at the signal after <span class="math inline">\(B\)</span> and returning to <span class="math inline">\(S_1\)</span>: <span class="math display">\[S_1 \;\rightarrow\; A(s)\;\rightarrow\; S_2 \;\rightarrow\; B(s)\;\rightarrow\; \text{(after $B$)} \;\rightarrow\; S_1.\]</span> The feedback signal enters <span class="math inline">\(S_1\)</span> with a negative sign. Hence the signed loop gain is <span class="math display">\[L_1(s)=-A(s)\,B(s).\]</span></p></li>
+<li><p><strong>Loop 2 (lower loop, negative feedback at <span class="math inline">\(S_2\)</span>):</strong> Traverse from <span class="math inline">\(S_2\)</span> through the forward blocks to the output, then through <span class="math inline">\(D(s)\)</span> back to <span class="math inline">\(S_2\)</span>: <span class="math display">\[S_2 \;\rightarrow\; B(s)\;\rightarrow\; C(s)\;\rightarrow\; Y(s)\;\rightarrow\; D(s)\;\rightarrow\; S_2.\]</span> The signal enters <span class="math inline">\(S_2\)</span> with a negative sign, therefore <span class="math display">\[L_2(s)=-B(s)\,C(s)\,D(s).\]</span></p></li>
+</ul>
+<p><strong>Step 3 — Check the shortcut condition.</strong> The two loops <em>touch</em> (they share nodes/blocks around <span class="math inline">\(S_2\)</span> and <span class="math inline">\(B\)</span>), so there are <strong>no non-touching loops</strong>. Both loops also touch the forward path, so <span class="math inline">\(\Delta_1(s)=1\)</span>. Mason’s formula reduces to <span class="math display">\[T(s)=\frac{P_1(s)}{\Delta(s)},
+    \qquad
+    \Delta(s)=1-\big(L_1(s)+L_2(s)\big).\]</span></p>
+<p><strong>Step 4 — Substitute.</strong> <span class="math display">\[\begin{align*}
+        T(s)
+    &amp;=\frac{A(s)B(s)C(s)}
+    {1-\big[-A(s)B(s)-B(s)C(s)D(s)\big]}\\
+    &amp;=\frac{A(s)B(s)C(s)}
+    {1+A(s)B(s)+B(s)C(s)D(s)}.
+\end{align*}\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Transfer function using Mason’s formula</div>
+
+<p>Consider the block diagram shown in Figure <a href="#fig:quick_complex_example" data-reference-type="ref" data-reference="fig:quick_complex_example">1.4</a>. Using the direct method based on forward paths and loop gains, determine the overall transfer function</p>
+<p><span class="math display">\[T(s)=\frac{Y(s)}{X(s)}.\]</span></p>
+<p>All summing junction inputs are positive except those explicitly marked with a negative sign.</p>
+<figure id="fig:quick_complex_example" data-latex-placement="H">
+
+<img src="figures/ch05_tikz_10.png" style="max-width:85%;" />
+<figcaption>Block diagram with multiple forward paths and feedback loops.</figcaption>
+</figure>
+<p><strong>Step 1: Identify forward paths</strong></p>
+<p>When all feedback loops are opened, there are three independent forward paths from the input <span class="math inline">\(X(s)\)</span> to the output <span class="math inline">\(Y(s)\)</span>: <span class="math display">\[\begin{align*}
+    P_1(s)&amp;=A(s)B(s)C(s) \\
+        P_2(s)&amp;=D(s)B(s)C(s) \\
+            P_3(s)&amp;=E(s)C(s)
+\end{align*}\]</span> Hence</p>
+<p><span class="math display">\[N_f = 3\]</span></p>
+<p>and</p>
+<p><span class="math display">\[\sum_{k=1}^3  P_k(s) = A B C + D B C + E C\]</span></p>
+<p><strong>Step 2: Identify loop gains</strong></p>
+<p>There are two feedback loops.</p>
+<p><strong>Loop 1 (inner loop through <span class="math inline">\(F\)</span>)</strong></p>
+<p>Because this signal enters the lower input of the summing junction with a negative sign, <span class="math display">\[L_1(s)=-B(s)F(s).\]</span></p>
+<p><strong>Loop 2 (global feedback through <span class="math inline">\(G\)</span>)</strong></p>
+<p>Traversing the loop through the lower feedback block gives</p>
+<p><span class="math display">\[A(s)B(s)C(s)G(s)\]</span></p>
+<p>Again the returned signal enters the summing junction with a negative sign, therefore</p>
+<p><span class="math display">\[L_2(s)=-A(s)B(s)C(s)G(s).\]</span></p>
+<p>The two loops touch because both contain block <span class="math inline">\(B(s)\)</span>. Therefore there are no products of non-touching loop gains in <span class="math inline">\(\Delta(s)\)</span>, and <span class="math display">\[\Delta(s)=1-\big(L_1(s)+L_2(s)\big)
+    =1+B(s)F(s)+A(s)B(s)C(s)G(s).\]</span></p>
+<p><strong>Step 3: Determine the path cofactors</strong></p>
+<p>The first two forward paths pass through block <span class="math inline">\(B(s)\)</span>, so they touch both loops: <span class="math display">\[\Delta_1(s)=1, \qquad \Delta_2(s)=1.\]</span> The third path <span class="math inline">\(P_3(s)=E(s)C(s)\)</span> touches the global loop through <span class="math inline">\(G(s)\)</span>, but it does not touch the inner loop through <span class="math inline">\(F(s)\)</span>. Hence <span class="math display">\[\Delta_3(s)=1-L_1(s)=1+B(s)F(s).\]</span></p>
+<p><strong>Step 4: Apply Mason’s formula</strong></p>
+<p><span class="math display">\[T(s)=
+    \frac{P_1\Delta_1+P_2\Delta_2+P_3\Delta_3}{\Delta}.\]</span> Therefore, <span class="math display">\[T(s)=
+    \frac{A B C + D B C + E C(1+B F)}
+    {1 + B F + A B C G}\]</span></p>
+</div>
+<h2 id="block-diagram-representation-of-a-dc-motor">Block Diagram Representation of a DC Motor</h2>
+<p>The DC motor model derived earlier can be represented as a block diagram by converting each governing equation into a block.</p>
+<div class="example"><div class="env-label env-label-example">Example: Block diagram of a DC motor</div>
+
+<p>The electrical equation of the motor is</p>
+<p><span class="math display">\[V_{in}(t)=L\frac{di}{dt}+Ri(t)+K_b\omega(t).\]</span></p>
+<p>Taking the Laplace transform gives</p>
+<p><span class="math display">\[I(s)=\frac{V_{in}(s)-K_b\Omega(s)}{Ls+R}.\]</span></p>
+<p>The mechanical equation is</p>
+<p><span class="math display">\[K_m i(t)=J\frac{d\omega}{dt}+b\omega(t)\]</span></p>
+<p>which yields</p>
+<p><span class="math display">\[\Omega(s)=\frac{K_m I(s)}{Js+b}.\]</span></p>
+<p>Finally, the position is obtained from</p>
+<p><span class="math display">\[\Theta(s)=\frac{\Omega(s)}{s}.\]</span></p>
+<p>Combining these relations produces the block diagram shown in Figure <a href="#fig:dcmotorblkdiag" data-reference-type="ref" data-reference="fig:dcmotorblkdiag">1.5</a>.</p>
+</div>
+<figure id="fig:dcmotorblkdiag" data-latex-placement="H">
+
+<img src="figures/ch05_tikz_11.png" style="max-width:85%;" />
+<figcaption>Block diagram representation of a DC motor. The back-EMF voltage <span class="math inline">\(V_b(s) = K_b\,\Omega(s)\)</span> closes the feedback loop.</figcaption>
+</figure>
+<div class="example"><div class="env-label env-label-example">Example: DC motor transfer function using block diagram reduction</div>
+
+<p>Consider the motor block diagram shown earlier.</p>
+<p>Define the blocks</p>
+<p><span class="math display">\[G_1(s)=\frac{1}{Ls+R}, \quad
+    G_2(s)=K_m\]</span></p>
+<p><span class="math display">\[G_3(s)=\frac{1}{Js+b}, \quad
+    G_4(s)=\frac{1}{s}, \quad
+    H(s)=K_b.\]</span></p>
+<p>The transfer function from input voltage to motor speed is</p>
+<p><span class="math display">\[\frac{\Omega(s)}{V_{in}(s)}
+    =\frac{G_1G_2G_3}{1+G_1G_2G_3H}.\]</span></p>
+<p>The position output is obtained by including the integrator</p>
+<p><span class="math display">\[\frac{\Theta(s)}{V_{in}(s)}
+    =\frac{G_1G_2G_3G_4}{1+G_1G_2G_3H}.\]</span></p>
+<p>Substituting the transfer functions gives</p>
+<p><span class="math display">\[\frac{\Omega(s)}{V_{in}(s)}
+    =
+    \frac{K_m}{(Ls+R)(Js+b)+K_bK_m}.\]</span> The corresponding position transfer function is <span class="math display">\[\frac{\Theta(s)}{V_{in}(s)}
+    =
+    \frac{K_m}{s\left[(Ls+R)(Js+b)+K_bK_m\right]}.\]</span></p>
+</div>
+<div class="example"><div class="env-label env-label-example">Example: Applying the direct method to the DC motor</div>
+
+<p>Since the motor diagram contains</p>
+<ul>
+<li><p>one forward path</p></li>
+<li><p>one feedback loop</p></li>
+</ul>
+<p>the forward path from voltage to position is <span class="math display">\[P_1(s)=G_1G_2G_3G_4.\]</span> The back-emf loop is negative and returns from the speed signal, before the position integrator. Hence its signed loop gain is <span class="math display">\[L_1(s)=-G_1G_2G_3H.\]</span> Therefore,</p>
+<p><span class="math display">\[G(s)=
+    \frac{P_1(s)}{1-L_1(s)}
+    =
+    \frac{G_1G_2G_3G_4}{1+G_1G_2G_3H}.\]</span></p>
+</div>
+<h2 id="block-diagrams-with-multiple-inputs">Block Diagrams with Multiple Inputs</h2>
+<p>A closed-loop system typically contains a reference input <span class="math inline">\(R(s)\)</span>, a disturbance <span class="math inline">\(D(s)\)</span>, and measurement noise <span class="math inline">\(N(s)\)</span>. Because these systems are linear, the effect of each input can be found separately and added by superposition.</p>
+<p>Consider the standard negative-feedback system <span class="math display">\[E(s)=R(s)-Y_m(s),
+\qquad
+Y_m(s)=Y(s)+N(s),\]</span> with controller <span class="math inline">\(C(s)\)</span>, plant <span class="math inline">\(G_p(s)\)</span>, and a disturbance <span class="math inline">\(D(s)\)</span> added at the plant input. Then <span class="math display">\[Y(s)=G_p(s)\left[C(s)E(s)+D(s)\right].\]</span> Substituting the feedback relation gives <span class="math display">\[Y(s)=G_p\,C\big(R(s)-Y(s)-N(s)\big)+G_pD(s).\]</span> Therefore, <span class="math display">\[\big(1+C\,G_p\big)Y(s)
+=C\,G_pR(s)+G_pD(s)-C\,G_pN(s).\]</span> The output can be written as <span class="math display">\[Y(s)
+=
+\underbrace{\frac{C\,G_p}{1+C\,G_p}}_{\text{reference response}}R(s)
++
+\underbrace{\frac{G_p}{1+C\,G_p}}_{\text{disturbance response}}D(s)
+-
+\underbrace{\frac{C\,G_p}{1+C\,G_p}}_{\text{noise response}}N(s).\]</span></p>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>When a block diagram has several independent inputs, set all other inputs to zero and calculate one transfer function at a time. The complete response is the sum of the individual responses.</p>
+</div>
+<h2 id="computer-simulation-and-simulink-implementation">Computer Simulation and Simulink Implementation</h2>
+<p>In <span class="smallcaps">MATLAB</span>, transfer functions can be combined using <code>series</code>, <code>parallel</code>, and <code>feedback</code>. In <span class="smallcaps">Simulink</span>, the same model is built graphically using source blocks, transfer-function blocks, summing junctions, gain blocks, integrators, and scope blocks.</p>
+<h3 class="unnumbered" id="matlab-implementation">MATLAB Implementation</h3>
+<div class="example"><div class="env-label env-label-example">Example: MATLAB simulation of the DC motor speed response</div>
+<p>For the DC motor model, <span class="math display">\[\frac{\Omega(s)}{V_{in}(s)}
+=
+\frac{K_m}{(Ls+R)(Js+b)+K_bK_m},\]</span> the following MATLAB script creates the transfer function and plots the step response (Listing <a href="#lst:ch5_dc_motor_speed_sim" data-reference-type="ref" data-reference="lst:ch5_dc_motor_speed_sim">[lst:ch5_dc_motor_speed_sim]</a>). The numerical values are typical Quanser SRV02 motor parameters.</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">MATLAB simulation of the DC motor speed response.</p>
+<div class="pyodide-runner">
+<pre><code>import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+
+R  = 2.6          # Armature resistance (ohm)
+L  = 0.18e-3      # Armature inductance (H)
+J  = 3.90e-7      # Motor rotor inertia (kg m**2)
+b  = 0            # Motor viscous friction neglected (N m s/rad)
+Km = 7.68e-3      # Motor torque constant (N m/A)
+Kb = 7.68e-3      # Back-emf constant (V s/rad)
+
+Gspeed = Km/((L*s + R)*(J*s + b) + Kb*Km)
+
+_resp = ctrl.step_response(Gspeed)
+
+
+t, y = _resp.time, _resp.outputs
+plt.plot(t, y)
+plt.grid(True)
+plt.title('DC motor speed response')
+plt.xlabel('Time (s)')
+plt.ylabel('Angular speed (rad/s)')
+plt.show()</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+
+R  = 2.6;        % Armature resistance (ohm)
+L  = 0.18e-3;    % Armature inductance (H)
+J  = 3.90e-7;    % Motor rotor inertia (kg m^2)
+b  = 0;          % Motor viscous friction neglected (N m s/rad)
+Km = 7.68e-3;    % Motor torque constant (N m/A)
+Kb = 7.68e-3;    % Back-emf constant (V s/rad)
+
+Gspeed = Km/((L*s + R)*(J*s + b) + Kb*Km);
+
+step(Gspeed)
+grid on
+title('DC motor speed response')
+xlabel('Time (s)')
+ylabel('Angular speed (rad/s)')</code></pre>
+<p>The same model can also be assembled from smaller blocks, as shown in Listing <a href="#lst:ch5_dc_motor_block_build" data-reference-type="ref" data-reference="lst:ch5_dc_motor_block_build">[lst:ch5_dc_motor_block_build]</a>:</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Constructing the DC motor block diagram in MATLAB.</p>
+<div class="pyodide-runner">
+<pre><code>import control as ctrl
+
+import matplotlib.pyplot as plt
+
+s = ctrl.tf('s')
+
+R  = 2.6          # Armature resistance (ohm)
+L  = 0.18e-3      # Armature inductance (H)
+J  = 3.90e-7      # Motor rotor inertia (kg m**2)
+b  = 0            # Motor viscous friction neglected (N m s/rad)
+Km = 7.68e-3      # Motor torque constant (N m/A)
+Kb = 7.68e-3      # Back-emf constant (V s/rad)
+
+G1 = 1/(L*s + R)      # Electrical dynamics
+G2 = Km               # Torque constant
+G3 = 1/(J*s + b)      # Mechanical dynamics
+H  = Kb               # Back-emf feedback
+
+Gspeed = ctrl.feedback(G1*G2*G3, H)
+Gpos   = Gspeed/s
+
+print('Speed TF:')
+print(Gspeed)
+print('Position TF:')
+print(Gpos)</code></pre>
+</div>
+<pre class="matlab"><code>G1 = 1/(L*s + R);     % Electrical dynamics
+G2 = Km;              % Torque constant
+G3 = 1/(J*s + b);     % Mechanical dynamics
+H  = Kb;              % Back-emf feedback
+
+Gspeed = feedback(G1*G2*G3, H);
+Gpos   = Gspeed/s;</code></pre>
+</div>
+<div class="example"><div class="env-label env-label-example">Example</div>
+<p><span>MATLAB verification of the transfer function in Figure <a href="#fig:quick_complex_example" data-reference-type="ref" data-reference="fig:quick_complex_example">1.4</a></span> We now return to the block diagram in Figure <a href="#fig:quick_complex_example" data-reference-type="ref" data-reference="fig:quick_complex_example">1.4</a>. For that example, Mason’s formula gave <span class="math display">\[T(s)=
+\frac{A B C + D B C + E C(1+B F)}
+{1+B F+A B C G}.\]</span> The following two methods verify the same result using numerical transfer functions. The first method follows the equations of the diagram directly. This is often the clearest way to debug the calculation before building the same interconnection with named MATLAB signals.</p>
+<p><strong>Method 1: Verify from the signal equations</strong> (Listing <a href="#lst:ch5_verify_signal_eqs" data-reference-type="ref" data-reference="lst:ch5_verify_signal_eqs">[lst:ch5_verify_signal_eqs]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Verification from the signal equations.</p>
+<div class="pyodide-runner">
+<pre><code>import control as ctrl
+
+s = ctrl.tf('s')
+
+# Example transfer functions
+A0 = 1/(s + 1)
+B0 = 2/(s + 2)
+C0 = 3/(s + 3)
+D0 = 1/(s + 4)
+E0 = 2/(s + 5)
+F0 = 1/(s + 6)
+G0 = 1/(s + 7)
+
+# Formula obtained using Mason's Gain Formula
+# minreal() cancels common pole-zero factors to give a minimal realisation
+T_mason = ctrl.minreal((A0*B0*C0 + D0*B0*C0 + E0*C0*(1 + B0*F0))
+    / (1 + B0*F0 + A0*B0*C0*G0))
+
+# Equation-based check:
+# b = B0*(a + d - F0*b), so b/(a+d) = B0/(1+B0*F0)
+B_inner = ctrl.feedback(B0, F0)
+
+# y = C0*( B_inner*(A0*(x-G0*y) + D0*x) + E0*x )
+# Therefore:
+# y/x = (C0*B_inner*(A0+D0) + C0*E0)/(1 + C0*B_inner*A0*G0)
+T_equations = ctrl.minreal((C0*B_inner*(A0 + D0) + C0*E0)
+    / (1 + C0*B_inner*A0*G0))
+
+# This should be close to zero
+err1 = ctrl.minreal(T_equations - T_mason)
+print('Mason TF:')
+print(T_mason)
+print('Equation-based TF:')
+print(T_equations)
+print('Error TF:')
+print(err1)</code></pre>
+</div>
+<pre class="matlab"><code>s = tf('s');
+
+% Example transfer functions
+A0 = 1/(s + 1);
+B0 = 2/(s + 2);
+C0 = 3/(s + 3);
+D0 = 1/(s + 4);
+E0 = 2/(s + 5);
+F0 = 1/(s + 6);
+G0 = 1/(s + 7);
+
+% Formula obtained using Mason's Gain Formula
+% minreal() cancels common pole-zero factors to give a minimal realisation
+T_mason = minreal((A0*B0*C0 + D0*B0*C0 + E0*C0*(1 + B0*F0)) ...
+    /(1 + B0*F0 + A0*B0*C0*G0));
+
+% Equation-based check:
+% b = B0*(a + d - F0*b), so b/(a+d) = B0/(1+B0*F0)
+B_inner = feedback(B0,F0);
+
+% y = C0*( B_inner*(A0*(x-G0*y) + D0*x) + E0*x )
+% Therefore:
+% y/x = (C0*B_inner*(A0+D0) + C0*E0)/(1 + C0*B_inner*A0*G0)
+T_equations = minreal((C0*B_inner*(A0 + D0) + C0*E0) ...
+    /(1 + C0*B_inner*A0*G0));
+
+% This should be close to zero
+err1 = minreal(tf(T_equations - T_mason),1e-7)</code></pre>
+<p><strong>Method 2: Build the interconnection using <code>connect</code> and <code>sumblk</code></strong> (Listing <a href="#lst:ch5_verify_connect_sumblk" data-reference-type="ref" data-reference="lst:ch5_verify_connect_sumblk">[lst:ch5_verify_connect_sumblk]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Verification using connect and sumblk.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+
+A0 = 1/(s + 1)
+B0 = 2/(s + 2)
+C0 = 3/(s + 3)
+D0 = 1/(s + 4)
+E0 = 2/(s + 5)
+F0 = 1/(s + 6)
+G0 = 1/(s + 7)
+
+# Mason's gain formula result
+T_mason = ctrl.minreal((A0*B0*C0 + D0*B0*C0 + E0*C0*(1 + B0*F0))
+    / (1 + B0*F0 + A0*B0*C0*G0))
+
+# Equation-based result
+B_inner = ctrl.feedback(B0, F0)
+T_connect = ctrl.minreal((C0*B_inner*(A0 + D0) + C0*E0)
+    / (1 + C0*B_inner*A0*G0))
+
+# Compare the two frequency responses
+w = np.logspace(-2, 2, 200)
+mag_m, phase_m, _ = ctrl.frequency_response(T_mason, w)
+mag_c, phase_c, _ = ctrl.frequency_response(T_connect, w)
+
+plt.figure()
+plt.subplot(2, 1, 1)
+plt.semilogx(w, 20*np.log10(np.abs(mag_m.flatten())), 'b', label='Mason formula')
+plt.semilogx(w, 20*np.log10(np.abs(mag_c.flatten())), 'r--', label='Equation-based')
+plt.ylabel('Magnitude (dB)')
+plt.grid(True)
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.semilogx(w, np.degrees(np.angle(mag_m.flatten())), 'b')
+plt.semilogx(w, np.degrees(np.angle(mag_c.flatten())), 'r--')
+plt.ylabel('Phase (deg)')
+plt.xlabel('Frequency (rad/s)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+err_freq = mag_c.flatten() - mag_m.flatten()
+max_freq_error = np.max(np.abs(err_freq))
+print("Max frequency response error: %.2e" % max_freq_error)</code></pre>
+</div>
+<pre class="matlab"><code>A = A0; A.InputName = 'e1'; A.OutputName = 'a';
+B = B0; B.InputName = 'e2'; B.OutputName = 'b';
+C = C0; C.InputName = 'e3'; C.OutputName = 'y';
+D = D0; D.InputName = 'x';  D.OutputName = 'd';
+E = E0; E.InputName = 'x';  E.OutputName = 'e';
+F = F0; F.InputName = 'b';  F.OutputName = 'fb';
+G = G0; G.InputName = 'y';  G.OutputName = 'gy';
+
+% Summing junctions from the block diagram
+S1 = sumblk('e1 = x - gy');
+S2 = sumblk('e2 = a + d - fb');
+S3 = sumblk('e3 = b + e');
+
+T_connect = minreal(tf(connect(A,B,C,D,E,F,G,S1,S2,S3,'x','y')),1e-7);
+
+% Compare the two frequency responses.
+w = logspace(-2,2,200);
+figure
+bode(T_mason, 'b', T_connect, 'r--', w)
+grid on
+legend('Mason formula', 'MATLAB interconnection')
+
+err_freq = squeeze(freqresp(T_connect - T_mason,w));
+max_freq_error = max(abs(err_freq))</code></pre>
+<p>If the calculation is correct, <code>err1</code> should simplify to zero and the two Bode plots should overlap. For the numerical values used above, MATLAB gives approximately <span class="math display">\[\texttt{max\_freq\_error}=3.9\times 10^{-9},\]</span> which is small compared with the size of the frequency response.</p>
+<p><strong>Optional check: compare time responses</strong> (Listing <a href="#lst:ch5_verify_time_response" data-reference-type="ref" data-reference="lst:ch5_verify_time_response">[lst:ch5_verify_time_response]</a>).</p>
+<p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Verification by comparing time responses.</p>
+<div class="pyodide-runner">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+
+s = ctrl.tf('s')
+
+A0 = 1/(s + 1)
+B0 = 2/(s + 2)
+C0 = 3/(s + 3)
+D0 = 1/(s + 4)
+E0 = 2/(s + 5)
+F0 = 1/(s + 6)
+G0 = 1/(s + 7)
+
+T_mason = ctrl.minreal((A0*B0*C0 + D0*B0*C0 + E0*C0*(1 + B0*F0))
+    / (1 + B0*F0 + A0*B0*C0*G0))
+
+B_inner = ctrl.feedback(B0, F0)
+T_connect = ctrl.minreal((C0*B_inner*(A0 + D0) + C0*E0)
+    / (1 + C0*B_inner*A0*G0))
+
+t = np.arange(0, 20.01, 0.01)
+
+_resp = ctrl.step_response(T_mason, t)
+
+
+t_m, y_mason = _resp.time, _resp.outputs
+_resp = ctrl.step_response(T_connect, t)
+
+t_c, y_connect = _resp.time, _resp.outputs
+
+plt.plot(t_m, y_mason, 'b', label='Mason formula')
+plt.plot(t_c, y_connect, 'r--', label='Equation-based')
+plt.grid(True)
+plt.legend()
+plt.xlabel('Time (s)')
+plt.ylabel('Output y(t)')
+plt.show()
+
+max_error = np.max(np.abs(y_mason - y_connect))
+print("Max time-domain error: %.2e" % max_error)</code></pre>
+</div>
+<pre class="matlab"><code>t = 0:0.01:20;
+
+y_mason  = step(T_mason, t);
+y_connect = step(T_connect, t);
+
+plot(t, y_mason, 'b', t, y_connect, 'r--', 'LineWidth', 1.5)
+grid on
+legend('Mason formula', 'MATLAB interconnection')
+xlabel('Time (s)')
+ylabel('Output y(t)')
+
+max_error = max(abs(y_mason - y_connect))</code></pre>
+</div>
+<h3 class="unnumbered" id="simulink-implementation">Simulink Implementation</h3>
+<div class="example"><div class="env-label env-label-example">Example: Simulink implementation of the DC motor model</div>
+<p>We now return to the DC motor model and implement the same speed block diagram in <span class="smallcaps">Simulink</span>. Use the following procedure.</p>
+<ol>
+<li><p>Open a new Simulink model.</p></li>
+<li><p>Add a <code>Step</code> block to represent the input voltage <span class="math inline">\(V_{in}(t)\)</span>.</p></li>
+<li><p>Add a <code>Sum</code> block with signs <span class="math inline">\(+\)</span> and <span class="math inline">\(-\)</span> to subtract the back-emf voltage <span class="math inline">\(K_b\omega(t)\)</span>.</p></li>
+<li><p>Add a <code>Transfer Fcn</code> block with numerator <span class="math inline">\(1\)</span> and denominator <span class="math inline">\([L\;\;R]\)</span> to model <span class="math inline">\(1/(Ls+R)\)</span>.</p></li>
+<li><p>Add a <code>Gain</code> block with gain <span class="math inline">\(K_m\)</span> to convert current into torque.</p></li>
+<li><p>Add a second <code>Transfer Fcn</code> block with numerator <span class="math inline">\(1\)</span> and denominator <span class="math inline">\([J\;\;b]\)</span> to model <span class="math inline">\(1/(Js+b)\)</span>.</p></li>
+<li><p>Feed the speed output <span class="math inline">\(\omega(t)\)</span> back through a <code>Gain</code> block with gain <span class="math inline">\(K_b\)</span> to the negative input of the first summing junction.</p></li>
+<li><p>Add a <code>Scope</code> block to display <span class="math inline">\(\omega(t)\)</span>. To obtain position <span class="math inline">\(\theta(t)\)</span>, add an <code>Integrator</code> block after the speed signal.</p></li>
+</ol>
+<figure id="fig:simulink_dc_motor" data-latex-placement="H">
+
+<img src="figures/ch05_tikz_12.png" style="max-width:85%;" />
+<figcaption>Simulink-style implementation of the DC motor speed model.</figcaption>
+</figure>
+<div class="remark"><div class="env-label env-label-remark">Remark</div>
+<p>The Simulink diagram should match the mathematical block diagram. Each block represents one algebraic or dynamic relation, and each feedback signal must enter the correct sign of the summing junction.</p>
+</div>
+</div>
+<div class="summarybox">
+<p><span>Key Takeaways</span></p>
+<ul>
+<li><p>A block diagram represents system relationships using blocks, summing junctions, and pick-off points.</p></li>
+<li><p>Series blocks multiply, parallel blocks add, and feedback connections produce denominators of the form <span class="math inline">\(1\pm GH\)</span>.</p></li>
+<li><p>Block diagram reduction must preserve the signs and locations of all feedback signals.</p></li>
+<li><p>Mason’s Gain Formula computes transfer functions from forward paths and loop gains — non-touching loops contribute product terms in <span class="math inline">\(\Delta(s)\)</span>.</p></li>
+<li><p>For multiple inputs, use superposition: find the transfer function from each input separately, then sum.</p></li>
+<li><p>The DC motor block diagram couples electrical and mechanical dynamics with back-emf feedback.</p></li>
+<li><p>MATLAB (<code>feedback</code>, <code>connect</code>, <code>sumblk</code>) and Simulink can implement and verify any block diagram.</p></li>
+</ul>
+</div>
+<h2 id="exercises">Exercises</h2>
+<ol>
+<li><p>Two blocks <span class="math inline">\(G_1(s)=\frac{2}{s+1}\)</span> and <span class="math inline">\(G_2(s)=\frac{5}{s+3}\)</span> are connected in series. Find the equivalent transfer function.</p></li>
+<li><p>Two blocks <span class="math inline">\(G_1(s)=\frac{1}{s+2}\)</span> and <span class="math inline">\(G_2(s)=\frac{3}{s+4}\)</span> are connected in parallel. Find the equivalent transfer function.</p></li>
+<li><p>A system has forward path <span class="math inline">\(G(s)=\frac{10}{s(s+2)}\)</span> and unity negative feedback. Find the closed-loop transfer function.</p></li>
+<li><p>Repeat Exercise 3 for positive feedback. Comment on the difference in the denominator.</p></li>
+<li><p>For a negative-feedback system with controller <span class="math inline">\(C(s)\)</span>, plant <span class="math inline">\(G_p(s)\)</span>, and disturbance <span class="math inline">\(D(s)\)</span> added at the plant input, derive <span class="math inline">\(Y(s)/D(s)\)</span> when <span class="math inline">\(R(s)=0\)</span>.</p></li>
+<li><p>A block diagram has one forward path <span class="math inline">\(P_1(s)=G_1G_2G_3\)</span> and two touching negative feedback loops with unsigned gains <span class="math inline">\(G_1G_2H_1\)</span> and <span class="math inline">\(G_2G_3H_2\)</span>. Use Mason’s formula to find <span class="math inline">\(Y(s)/R(s)\)</span>.</p></li>
+<li><p>For the DC motor model, derive <span class="math inline">\(\Omega(s)/V_{in}(s)\)</span> from the electrical and mechanical equations.</p></li>
+<li><p>Using the DC motor parameters in the MATLAB listing, simulate the speed response and record the steady-state speed.</p></li>
+<li><p>Draw the Simulink diagram for the DC motor position model <span class="math inline">\(\Theta(s)/V_{in}(s)\)</span>. Indicate where the additional integrator should be placed.</p></li>
+<li><p>Explain why the sign of the back-emf feedback in a DC motor model is negative.</p></li>
+</ol>
