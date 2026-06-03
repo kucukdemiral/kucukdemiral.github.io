@@ -37,11 +37,25 @@
     .embed-mode .sidebar,
     .embed-mode .sidebar-toggle,
     .embed-mode .chapter-nav { display: none !important; }
-    .embed-mode .cs-layout { max-width: 100%; width: 100%; margin: 0; }
+    .embed-mode .cs-layout { max-width: 100%; width: 100%; margin: 0; min-height: auto; }
     .embed-mode .main-content { border-left: none; }
     .embed-mode .chapter-body { max-width: 960px; padding-top: 1rem; }
-    .embed-mode body { background: #fff; }
+    html.embed-mode, .embed-mode body { background: #fff; overflow: visible; }
     </style>
+    <script>
+    if (document.documentElement.classList.contains('embed-mode')) {
+        function postHeight() {
+            var h = document.documentElement.scrollHeight;
+            parent.postMessage({ type: 'cs-embed-resize', height: h }, '*');
+        }
+        var _resizeObserver = new ResizeObserver(postHeight);
+        document.addEventListener('DOMContentLoaded', function() {
+            _resizeObserver.observe(document.body);
+            postHeight();
+        });
+        setInterval(postHeight, 1000);
+    }
+    </script>
     <header>
         <div class="header-content">
             <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
