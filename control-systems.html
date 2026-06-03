@@ -44,16 +44,17 @@
     </style>
     <script>
     if (document.documentElement.classList.contains('embed-mode')) {
-        function postHeight() {
+        function resizeParentIframe() {
             var h = document.documentElement.scrollHeight;
+            try { if (window.frameElement) window.frameElement.style.height = h + 'px'; } catch(e) {}
             parent.postMessage({ type: 'cs-embed-resize', height: h }, '*');
         }
-        var _resizeObserver = new ResizeObserver(postHeight);
-        document.addEventListener('DOMContentLoaded', function() {
-            _resizeObserver.observe(document.body);
-            postHeight();
+        new MutationObserver(resizeParentIframe).observe(document.documentElement, {
+            childList: true, subtree: true, attributes: true
         });
-        setInterval(postHeight, 1000);
+        new ResizeObserver(resizeParentIframe).observe(document.documentElement);
+        document.addEventListener('DOMContentLoaded', resizeParentIframe);
+        setInterval(resizeParentIframe, 800);
     }
     </script>
     <header>
