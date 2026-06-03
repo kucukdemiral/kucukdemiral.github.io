@@ -26,6 +26,20 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 </head>
 <body>
+    <script>
+    if (new URLSearchParams(window.location.search).get('embed') === '1') {
+        document.documentElement.classList.add('embed-mode');
+    }
+    </script>
+    <style>
+    .embed-mode header,
+    .embed-mode footer,
+    .embed-mode .sidebar,
+    .embed-mode .sidebar-toggle { display: none !important; }
+    .embed-mode .cs-layout { max-width: 100%; width: 100%; }
+    .embed-mode .main-content { border-left: none; }
+    .embed-mode .chapter-body { max-width: 900px; }
+    </style>
     <header>
         <div class="header-content">
             <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
