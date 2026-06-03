@@ -2,7 +2,7 @@
 <blockquote>
 <p><em>“Before you try to control a system, first ask: can you actually control it? And before you try to estimate its state, ask: can you actually observe it?”</em></p>
 </blockquote>
-<p>State feedback control (Chapter 9) places closed-loop poles by feeding back the full state vector. But two fundamental questions must be answered first: <em>is it even possible to steer every state of the system using the available input?</em> And <em>can we determine all the internal states from the output measurements?</em></p>
+<p>State feedback control (Chapter 11) places closed-loop poles by feeding back the full state vector. But two fundamental questions must be answered first: <em>is it even possible to steer every state of the system using the available input?</em> And <em>can we determine all the internal states from the output measurements?</em></p>
 <p>These questions lead to <strong>controllability</strong> and <strong>observability</strong> — structural properties that determine whether a control or estimation design is feasible at all.</p>
 <div class="summarybox">
 <p><span>Learning Objectives</span> After completing this chapter, you should be able to:</p>
@@ -361,7 +361,7 @@ fprintf('Poles: '); disp(p');</code></pre>
 </table>
 </div>
 </div>
-<p>For state feedback design (Chapter 9), we need the system to be <em>controllable</em>. For observer design (Chapter 10), we need it to be <em>observable</em>. For a combined observer-based state feedback controller, we need <em>both</em>.</p>
+<p>For state feedback design (Chapter 11), we need the system to be <em>controllable</em>. For observer design (Chapter 10), we need it to be <em>observable</em>. For a combined observer-based state feedback controller, we need <em>both</em>.</p>
 <div class="example"><div class="env-label env-label-example">Example: DC motor: controllability and observability analysis</div>
 <p>A simplified DC motor has the transfer function <span class="math display">\[G(s) = \frac{5}{s^2 + 6s + 5} = \frac{5}{(s+1)(s+5)}.\]</span></p>
 <p><strong>Step 1: Controllable canonical form.</strong></p>
