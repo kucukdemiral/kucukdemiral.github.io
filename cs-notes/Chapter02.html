@@ -515,8 +515,7 @@ print("Direct:  ", k)</code></pre>
     y(t)=(x \star g)(t)\triangleq \int_{0}^{t} g(t-\tau)\,x(\tau)\,d\tau.
 \end{equation}\]</span> Equation <a href="#eq:convolution-def" data-reference-type="eqref" data-reference="eq:convolution-def">[eq:convolution-def]</a> says that the output at time <span class="math inline">\(t\)</span> is built from past input values, weighted by how the system responds over time. The symbol <span class="math inline">\(\star\)</span> denotes convolution; it is not ordinary multiplication. Each small piece of the input excites the system, and the total output is the accumulation of all those shifted small responses.</p>
 <figure id="fig:convolution" data-latex-placement="htbp">
-
-
+<img src="figures/convolution.png" style="max-width:75%;" />
 <figcaption>Convolution of input <span class="math inline">\(x(t)\)</span> with impulse response <span class="math inline">\(g(t)\)</span> in time corresponds to multiplication of <span class="math inline">\(X(s)\)</span> and <span class="math inline">\(G(s)\)</span> in the Laplace domain.</figcaption>
 </figure>
 <p>The great advantage of the Laplace transform is that it turns the integral in <a href="#eq:convolution-def" data-reference-type="eqref" data-reference="eq:convolution-def">[eq:convolution-def]</a> into ordinary multiplication.</p>

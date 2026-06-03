@@ -601,8 +601,7 @@ stepinfo(T)</code></pre>
     -M &amp; \text{if } e(t) &lt; 0
 \end{cases}\]</span> where <span class="math inline">\(M\)</span> is the relay amplitude (chosen within the actuator’s safe range).</p>
 <figure id="fig:relay_autotune" data-latex-placement="htbp">
-
-
+<img src="figures/ch08_tikz_05.png" style="max-width:85%;" />
 <figcaption>Relay-feedback auto-tuning. The PID controller is temporarily replaced by an ON–OFF relay. The relay produces bounded sustained oscillations from which <span class="math inline">\(K_u\)</span> and <span class="math inline">\(P_u\)</span> are measured. After tuning, the relay is switched back to the PID controller.</figcaption>
 </figure>
 <p>When the relay is connected in the feedback loop and a brief disturbance is applied (a small step in <span class="math inline">\(r(t)\)</span>), the system naturally develops sustained oscillations. These oscillations are <em>stable by construction</em> — the relay keeps them bounded regardless of the plant dynamics. The amplitude never diverges.</p>

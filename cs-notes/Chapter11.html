@@ -436,8 +436,7 @@ plt.grid(True)</code></pre>
 </div>
 <h2 id="sec:integral_intuition">Why Integral Action Works: An Intuitive View</h2>
 <figure id="fig:integral_comparison" data-latex-placement="H">
-
-
+<img src="figures/state_feedback_integral_action.png" style="max-width:85%;" />
 <figcaption>Comparison of state feedback with and without integral action. Without <span class="math inline">\(K_I\)</span>, the output settles below the reference. With <span class="math inline">\(K_I\)</span>, the integrator drives the error to zero.</figcaption>
 </figure>
 <p>Think of the integral state <span class="math inline">\(x_I\)</span> as a “memory of dissatisfaction”. Every instant that <span class="math inline">\(y &lt; r\)</span>, the error <span class="math inline">\(e &gt; 0\)</span> adds to <span class="math inline">\(x_I\)</span>, which increases <span class="math inline">\(K_I x_I\)</span> in the control signal, pushing the output harder towards the reference. The process stops only when <span class="math inline">\(e = 0\)</span> and <span class="math inline">\(x_I\)</span> holds steady. This is exactly what the “I” term does in PID — here we have embedded it into the state feedback framework.</p>
