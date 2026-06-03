@@ -250,10 +250,17 @@
 /* Laplace Transform Table */
 .chapter-body .lt-table {
     font-size: 0.85rem;
+    table-layout: fixed;
+    width: 100%;
 }
 .chapter-body .lt-table td {
     vertical-align: middle;
     padding: 0.5rem 0.6rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.chapter-body .lt-table td mjx-container {
+    font-size: 95% !important;
 }
 .chapter-body .lt-table img {
     max-height: 52px;

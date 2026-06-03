@@ -20,7 +20,7 @@
 <td><strong style="color:var(--accent)">Definition</strong></td>
 <td>\(f(t) = \mathcal{L}^{-1}\{F(s)\}\)</td>
 <td></td>
-<td>\(F(s) = \mathcal{L}\{f(t)\} = \displaystyle\int_0^{\infty} f(t)\,e^{-st}\,dt\)</td>
+<td>\(F(s) = \mathcal{L}\{f(t)\}\)<br>\(\;= \displaystyle\int_0^{\infty}\! f(t)\,e^{-st}\,dt\)</td>
 </tr>
 
 <tr>
@@ -32,7 +32,7 @@
 
 <tr>
 <td><strong style="color:var(--accent)">Convolution</strong></td>
-<td>\(g(t) = (f*h)(t) = \displaystyle\int_0^t f(\tau)\,h(t-\tau)\,d\tau\)</td>
+<td>\(g(t) = (f*h)(t)\)<br>\(\phantom{g(t)} = \displaystyle\int_0^t f(\tau)\,h(t-\tau)\,d\tau\)</td>
 <td></td>
 <td>\(G(s) = F(s)\,H(s)\)</td>
 </tr>
@@ -41,7 +41,7 @@
 <td><strong style="color:var(--accent)">Differentiation</strong></td>
 <td>\(g(t) = \dfrac{df(t)}{dt}\)<br><br>\(g(t) = \dfrac{d^2f(t)}{dt^2}\)<br><br>\(g(t) = \dfrac{d^nf(t)}{dt^n}\)</td>
 <td></td>
-<td>\(G(s) = sF(s) - f(0)\)<br><br>\(G(s) = s^2F(s) - sf(0) - f'(0)\)<br><br>\(G(s) = s^nF(s) - \displaystyle\sum_{k=0}^{n-1} s^{n-1-k}\,f^{(k)}(0)\)</td>
+<td>\(G(s) = sF(s) - f(0)\)<br><br>\(G(s) = s^2F(s) - sf(0) - f'(0)\)<br><br>\(G(s) = s^nF(s)\)<br>\(\phantom{G(s)}\; - \displaystyle\sum_{k=0}^{n-1} s^{n-1-k} f^{(k)}(0)\)</td>
 </tr>
 
 <tr>
@@ -178,19 +178,19 @@
 <td><strong style="color:var(--accent)">Compound signals</strong></td>
 <td>\(f(t) = 1 - e^{-at}\)</td>
 <td style="text-align:center;"><img src="figures/misc1.png" alt="1-exp" style="height:48px;"></td>
-<td>\(F(s) = \dfrac{1}{s} - \dfrac{1}{s+a} = \dfrac{a}{s(s+a)}\)</td>
+<td>\(F(s) = \dfrac{a}{s(s+a)}\)</td>
 </tr>
 
 <tr>
 <td></td>
-<td>\(f(t) = \dfrac{1}{a}\!\left(t - \dfrac{1-e^{-at}}{a}\right)\)</td>
+<td>\(f(t) = \dfrac{1}{a}\!\Big(t - \dfrac{1-e^{-at}}{a}\Big)\)</td>
 <td style="text-align:center;"><img src="figures/misc2.png" alt="ramp-exp" style="height:48px;"></td>
 <td>\(F(s) = \dfrac{1}{s^2(s+a)}\)</td>
 </tr>
 
 <tr>
 <td></td>
-<td>\(f(t) = \dfrac{1}{a^2}\bigl(1 - e^{-at} - at\,e^{-at}\bigr)\)</td>
+<td>\(f(t) = \dfrac{1}{a^2}\big(1 - e^{-at}\)<br>\(\phantom{f(t) = \dfrac{1}{a^2}\big(} - at\,e^{-at}\big)\)</td>
 <td style="text-align:center;"><img src="figures/misc3.png" alt="compound" style="height:48px;"></td>
 <td>\(F(s) = \dfrac{1}{s(s+a)^2}\)</td>
 </tr>
@@ -211,14 +211,14 @@
 
 <tr>
 <td></td>
-<td>\(f(t) = 1 - \dfrac{b}{b-a}\,e^{-at} + \dfrac{a}{b-a}\,e^{-bt}\)</td>
+<td>\(f(t) = 1 - \dfrac{b}{b-a}\,e^{-at}\)<br>\(\phantom{f(t) = 1\;} + \dfrac{a}{b-a}\,e^{-bt}\)</td>
 <td style="text-align:center;"><img src="figures/misc6.png" alt="step 2-pole" style="height:48px;"></td>
 <td>\(F(s) = \dfrac{ab}{s(s+a)(s+b)}\)</td>
 </tr>
 
 <tr>
 <td></td>
-<td>\(f(t) = \dfrac{e^{-at}}{(b-a)(c-a)} + \dfrac{e^{-bt}}{(a-b)(c-b)} + \dfrac{e^{-ct}}{(a-c)(b-c)}\)</td>
+<td>\(f(t) = \dfrac{e^{-at}}{(b\!-\!a)(c\!-\!a)}\)<br>\(\;+ \dfrac{e^{-bt}}{(a\!-\!b)(c\!-\!b)}\)<br>\(\;+ \dfrac{e^{-ct}}{(a\!-\!c)(b\!-\!c)}\)</td>
 <td style="text-align:center;"><img src="figures/misc7.png" alt="3-pole" style="height:48px;"></td>
 <td>\(F(s) = \dfrac{1}{(s+a)(s+b)(s+c)}\)</td>
 </tr>
@@ -226,23 +226,23 @@
 <!-- === Second-order systems === -->
 <tr>
 <td><strong style="color:var(--accent)">2nd order impulse</strong></td>
-<td>\(f(t) = \dfrac{\omega_n}{\sqrt{1-\zeta^2}}\,e^{-\zeta\omega_n t}\sin\!\bigl(\omega_n\sqrt{1-\zeta^2}\,t\bigr)\)</td>
+<td>\(f(t) = \dfrac{\omega_n}{\sqrt{1-\zeta^2}}\,e^{-\zeta\omega_n t}\)<br>\(\phantom{f(t) =\;}\times\sin\!\bigl(\omega_n\sqrt{1\!-\!\zeta^2}\;t\bigr)\)</td>
 <td></td>
-<td>\(F(s) = \dfrac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}\)</td>
+<td>\(F(s) = \dfrac{\omega_n^2}{s^2\!+\!2\zeta\omega_n s\!+\!\omega_n^2}\)</td>
 </tr>
 
 <tr>
 <td><strong style="color:var(--accent)">2nd order step</strong></td>
 <td>\(f(t) = 1 + A_1 e^{P_1 t} + A_2 e^{P_2 t}\)</td>
 <td></td>
-<td>\(F(s) = \dfrac{\omega_n^2}{s\bigl(s^2+2\zeta\omega_n s+\omega_n^2\bigr)}\)</td>
+<td>\(F(s) = \dfrac{\omega_n^2}{s(s^2\!+\!2\zeta\omega_n s\!+\!\omega_n^2)}\)</td>
 </tr>
 
 <tr>
 <td><strong style="color:var(--accent)">Alternative underdamped form</strong></td>
-<td>\(f(t) = 1 - \dfrac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}\sin\!\bigl(\omega_n\sqrt{1-\zeta^2}\,t + \cos^{-1}\zeta\bigr)\)</td>
+<td>\(f(t) = 1 - \dfrac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}\)<br>\(\phantom{f(t) = 1\;}\times\sin\!\bigl(\omega_n\sqrt{1\!-\!\zeta^2}\;t + \cos^{-1}\!\zeta\bigr)\)</td>
 <td></td>
-<td>\(F(s) = \dfrac{\omega_n^2}{s\bigl(s^2+2\zeta\omega_n s+\omega_n^2\bigr)}\)</td>
+<td>\(F(s) = \dfrac{\omega_n^2}{s(s^2\!+\!2\zeta\omega_n s\!+\!\omega_n^2)}\)</td>
 </tr>
 
 </tbody>
