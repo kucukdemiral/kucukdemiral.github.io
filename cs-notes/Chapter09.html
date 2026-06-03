@@ -863,8 +863,7 @@ fprintf('Bandwidth = %.2f rad/s, Settling time = %.2f s\n', ...
 </ol>
 <p>Checks 1 and 2 both lead to a lead compensator, so both “No” paths merge in the flowchart (Figure <a href="#fig:design-decision-flowchart" data-reference-type="ref" data-reference="fig:design-decision-flowchart">1.24</a>).</p>
 <figure id="fig:design-decision-flowchart" data-latex-placement="htbp">
-
-
+<img src="figures/design_decision_flowchart.png" style="max-width:90%;" />
 <figcaption>Compensator selection flowchart. PM and <span class="math inline">\(\omega_{gc}\)</span> are checked separately, but both “No” paths merge because a lead compensator addresses both (it adds phase <em>and</em> tends to raise the crossover frequency). The final decision checks whether the low-frequency gain also needs boosting.</figcaption>
 </figure>
 <p>Table <a href="#tab:compensator-capabilities" data-reference-type="ref" data-reference="tab:compensator-capabilities">1.5</a> shows what each compensator does to the Bode plot.</p>
