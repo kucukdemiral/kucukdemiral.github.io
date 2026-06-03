@@ -8,12 +8,168 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .teaching-intro {
+            text-align: center;
+            max-width: 720px;
+            margin: 0 auto 2.5rem;
+        }
+        .teaching-intro h2 {
+            border-bottom: none;
+            margin-bottom: 0.5rem;
+        }
+        .teaching-intro p {
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        .course-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: box-shadow 0.25s ease, transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .course-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+        }
+
+        .course-card-cover {
+            background: var(--navy);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            text-decoration: none;
+        }
+        .course-card-cover img {
+            width: 100px;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .course-card-cover .cover-text {
+            color: #fff;
+        }
+        .course-card-cover .cover-text h3 {
+            font-family: 'Crimson Text', Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 0.25rem;
+            color: #fff;
+        }
+        .course-card-cover .cover-text .cover-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .course-card-body {
+            padding: 1.25rem 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .course-card-body p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin: 0 0 1rem;
+        }
+
+        .course-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+        .course-tags span {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.2rem 0.55rem;
+            border-radius: 3px;
+            background: var(--bg-subtle);
+            color: var(--text-light);
+            letter-spacing: 0.3px;
+        }
+
+        .course-stats {
+            display: flex;
+            gap: 1.25rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+        .course-stats .stat {
+            text-align: center;
+        }
+        .course-stats .stat-num {
+            display: block;
+            font-family: 'Crimson Text', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+        .course-stats .stat-label {
+            font-size: 0.68rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+        }
+
+        .course-card-footer {
+            padding: 0 1.5rem 1.25rem;
+        }
+        .course-card-footer a {
+            display: block;
+            text-align: center;
+            padding: 0.6rem 1.25rem;
+            background: var(--accent);
+            color: #fff;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            transition: background 0.2s ease;
+        }
+        .course-card-footer a:hover {
+            background: var(--accent-hover);
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .course-grid {
+                grid-template-columns: 1fr;
+            }
+            .course-card-cover {
+                padding: 1.25rem;
+            }
+            .course-card-cover img {
+                width: 80px;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="header-content">
             <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
-            <p class="subtitle">Glasgow Caledonian University</p>
+            <p class="subtitle">Reader &middot; Glasgow Caledonian University</p>
         </div>
         <nav>
             <ul>
@@ -33,18 +189,82 @@
     </header>
 
     <div class="container">
-        <h2>Teaching</h2>
-        <p>I teach courses in Systems and Control Theory, Numerical Optimal Control, and Robotics. Below are the current courses with interactive materials.</p>
+        <div class="teaching-intro">
+            <h2>Teaching</h2>
+            <p>Interactive course materials in Systems and Control Theory, featuring full textbook chapters, worked examples with MATLAB/Python code, and hands-on simulation tools.</p>
+        </div>
 
-        <h3>Current Courses</h3>
-        <ul class="course-list">
-            <li><a href="control-systems.html">Control Systems</a> &mdash; Fundamentals of feedback control, PID tuning, and system analysis</li>
-            <li><a href="model-predictive-control.html">Model Predictive Control</a> &mdash; Constrained optimal control and receding-horizon strategies</li>
-        </ul>
+        <div class="course-grid">
+
+            <!-- Control Systems -->
+            <div class="course-card">
+                <a href="control-systems.html" class="course-card-cover">
+                    <img src="cs-notes/figures/cs_book_cover.jpg" alt="Feedback Control Book Cover">
+                    <div class="cover-text">
+                        <h3>Control Systems</h3>
+                        <p class="cover-subtitle">Feedback Control: Modelling, Analysis, and Design with MATLAB/Simulink</p>
+                    </div>
+                </a>
+                <div class="course-card-body">
+                    <p>A comprehensive course covering classical and modern control theory &mdash; from Laplace transforms and transfer functions through PID tuning, frequency-domain design, state feedback, and observer-based control.</p>
+                    <div class="course-tags">
+                        <span>Laplace Transform</span>
+                        <span>Transfer Functions</span>
+                        <span>PID Control</span>
+                        <span>Bode Plots</span>
+                        <span>State Space</span>
+                        <span>Observer Design</span>
+                    </div>
+                    <div class="course-stats">
+                        <div class="stat"><span class="stat-num">12</span><span class="stat-label">Chapters</span></div>
+                        <div class="stat"><span class="stat-num">260+</span><span class="stat-label">Figures</span></div>
+                        <div class="stat"><span class="stat-num">2</span><span class="stat-label">Simulators</span></div>
+                        <div class="stat"><span class="stat-num">CC BY</span><span class="stat-label">License</span></div>
+                    </div>
+                </div>
+                <div class="course-card-footer">
+                    <a href="control-systems.html">Open Course &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Model Predictive Control -->
+            <div class="course-card">
+                <a href="model-predictive-control.html" class="course-card-cover">
+                    <img src="mpc-notes/figures/mpc_book_cover.jpg" alt="MPC Book Cover">
+                    <div class="cover-text">
+                        <h3>Model Predictive Control</h3>
+                        <p class="cover-subtitle">From Foundations to Advanced Topics</p>
+                    </div>
+                </a>
+                <div class="course-card-body">
+                    <p>An in-depth treatment of constrained optimal control and receding-horizon strategies &mdash; covering optimisation fundamentals, linear and nonlinear MPC, robust MPC, and real-world implementation.</p>
+                    <div class="course-tags">
+                        <span>Optimisation</span>
+                        <span>Constrained Control</span>
+                        <span>Linear MPC</span>
+                        <span>Nonlinear MPC</span>
+                        <span>Robust MPC</span>
+                        <span>CasADi</span>
+                    </div>
+                    <div class="course-stats">
+                        <div class="stat"><span class="stat-num">12</span><span class="stat-label">Chapters</span></div>
+                        <div class="stat"><span class="stat-num">100+</span><span class="stat-label">Figures</span></div>
+                        <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Examples</span></div>
+                        <div class="stat"><span class="stat-num">Print</span><span class="stat-label">Amazon</span></div>
+                    </div>
+                </div>
+                <div class="course-card-footer">
+                    <a href="model-predictive-control.html">Open Course &rarr;</a>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <footer>
-        <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Ibrahim Kucukdemiral, Glasgow, Scotland, UK.
+        Licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>.
+        </p>
     </footer>
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
