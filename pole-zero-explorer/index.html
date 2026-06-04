@@ -62,37 +62,34 @@
       </section>
     </div>
 
-    <!-- Bottom: Metrics -->
-    <section class="panel metrics-panel">
-      <div class="metrics-grid" id="metrics-grid">
-        <div class="metric"><span class="metric-label">DC Gain</span><span class="metric-value" id="m-dcgain">—</span></div>
-        <div class="metric"><span class="metric-label">Damping ζ</span><span class="metric-value" id="m-zeta">—</span></div>
-        <div class="metric"><span class="metric-label">ω_n</span><span class="metric-value" id="m-wn">—</span></div>
-        <div class="metric"><span class="metric-label">Overshoot</span><span class="metric-value" id="m-overshoot">—</span></div>
-        <div class="metric"><span class="metric-label">Rise Time</span><span class="metric-value" id="m-rise">—</span></div>
-        <div class="metric"><span class="metric-label">Settling Time</span><span class="metric-value" id="m-settle">—</span></div>
-        <div class="metric"><span class="metric-label">Stable</span><span class="metric-value" id="m-stable">—</span></div>
-        <div class="metric"><span class="metric-label">System Order</span><span class="metric-value" id="m-order">—</span></div>
-      </div>
-    </section>
-
-    <!-- Presets -->
-    <section class="panel presets-panel">
-      <div class="panel-header">
-        <h2>Presets</h2>
-      </div>
-      <div class="preset-btns">
-        <button class="preset-btn" data-preset="first-order">1st Order</button>
-        <button class="preset-btn" data-preset="underdamped">Underdamped</button>
-        <button class="preset-btn" data-preset="overdamped">Overdamped</button>
-        <button class="preset-btn" data-preset="critically">Critically Damped</button>
-        <button class="preset-btn" data-preset="unstable">Unstable</button>
-        <button class="preset-btn" data-preset="resonant">Resonant</button>
-        <button class="preset-btn" data-preset="notch">Notch (Zero)</button>
-        <button class="preset-btn" data-preset="third-order">3rd Order</button>
-        <button class="preset-btn" data-preset="non-min-phase">Non-min Phase</button>
-      </div>
-    </section>
+    <!-- Bottom: Metrics + Presets in one row -->
+    <div class="bottom-row">
+      <section class="panel metrics-panel">
+        <div class="metrics-grid" id="metrics-grid">
+          <div class="metric"><span class="metric-label">DC Gain</span><span class="metric-value" id="m-dcgain">—</span></div>
+          <div class="metric"><span class="metric-label">Damping ζ</span><span class="metric-value" id="m-zeta">—</span></div>
+          <div class="metric"><span class="metric-label">ω_n</span><span class="metric-value" id="m-wn">—</span></div>
+          <div class="metric"><span class="metric-label">Overshoot</span><span class="metric-value" id="m-overshoot">—</span></div>
+          <div class="metric"><span class="metric-label">Rise Time</span><span class="metric-value" id="m-rise">—</span></div>
+          <div class="metric"><span class="metric-label">Settling</span><span class="metric-value" id="m-settle">—</span></div>
+          <div class="metric"><span class="metric-label">Stable</span><span class="metric-value" id="m-stable">—</span></div>
+          <div class="metric"><span class="metric-label">Order</span><span class="metric-value" id="m-order">—</span></div>
+        </div>
+      </section>
+      <section class="panel presets-panel">
+        <div class="preset-btns">
+          <button class="preset-btn" data-preset="first-order">1st Order</button>
+          <button class="preset-btn" data-preset="underdamped">Underdamped</button>
+          <button class="preset-btn" data-preset="overdamped">Overdamped</button>
+          <button class="preset-btn" data-preset="critically">Critical</button>
+          <button class="preset-btn" data-preset="unstable">Unstable</button>
+          <button class="preset-btn" data-preset="resonant">Resonant</button>
+          <button class="preset-btn" data-preset="notch">Notch</button>
+          <button class="preset-btn" data-preset="third-order">3rd Order</button>
+          <button class="preset-btn" data-preset="non-min-phase">Non-min Phase</button>
+        </div>
+      </section>
+    </div>
   </main>
 </div>
 </body>

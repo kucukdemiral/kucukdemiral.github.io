@@ -11,8 +11,8 @@
   --orange: #d97706;
   --green: #16a34a;
   --border: rgba(0,0,0,0.08);
-  --radius: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,50 +21,50 @@ html, body { height: 100%; overflow: hidden; }
 
 body {
   font-family: 'Source Sans 3', system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
   background: var(--bg);
 }
 
 .page-shell {
-  max-width: 1280px; margin: 0 auto; padding: 0.75rem 1.25rem 0.75rem;
+  max-width: 1280px; margin: 0 auto; padding: 0.4rem 0.75rem;
   height: 100%; display: flex; flex-direction: column;
 }
 
 .app-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;
+  margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;
 }
 .app-header .eyebrow {
-  font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 1px; color: var(--teal); margin-bottom: 0.1rem;
+  font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--teal); margin-bottom: 0;
 }
 .app-header h1 {
   font-family: 'Crimson Text', Georgia, serif;
-  font-size: clamp(1.3rem, 3vw, 1.65rem); font-weight: 700; line-height: 1.2;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem); font-weight: 700; line-height: 1.15;
 }
 .tf-display {
   font-family: 'Crimson Text', Georgia, serif;
-  font-size: 1rem; font-style: italic; color: var(--ink-light);
-  background: var(--panel-solid); padding: 0.35rem 1rem;
+  font-size: 0.9rem; font-style: italic; color: var(--ink-light);
+  background: var(--panel-solid); padding: 0.2rem 0.75rem;
   border-radius: var(--radius); border: 1px solid var(--border);
 }
 
 .panel {
   background: var(--panel); backdrop-filter: blur(12px);
   border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 0.75rem 1rem;
+  box-shadow: var(--shadow); padding: 0.4rem 0.6rem;
 }
 .panel-header h2 {
   font-family: 'Crimson Text', Georgia, serif;
-  font-size: 1rem; font-weight: 700; margin-bottom: 0.1rem;
+  font-size: 0.85rem; font-weight: 700; margin-bottom: 0;
 }
-.panel-header p { font-size: 0.73rem; color: var(--ink-light); margin-bottom: 0.5rem; }
+.panel-header p { font-size: 0.65rem; color: var(--ink-light); margin-bottom: 0.25rem; }
 
 .app-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.35rem;
   flex: 1;
   min-height: 0;
 }
@@ -76,19 +76,19 @@ body {
 .response-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
+  gap: 0.35rem;
   flex: 2; min-height: 0;
 }
 .response-panel { display: flex; flex-direction: column; min-height: 0; }
 
-.plot-container { position: relative; width: 100%; background: #fff; border-radius: 6px; border: 1px solid var(--border); overflow: hidden; flex: 1; min-height: 0; }
+.plot-container { position: relative; width: 100%; background: #fff; border-radius: 4px; border: 1px solid var(--border); overflow: hidden; flex: 1; min-height: 0; }
 .plot-container canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
 
 /* Toolbar */
-.toolbar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 0.25rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
 .tool-btn {
-  font-family: 'Source Sans 3', sans-serif; font-size: 0.73rem; font-weight: 600;
-  padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 5px;
+  font-family: 'Source Sans 3', sans-serif; font-size: 0.7rem; font-weight: 600;
+  padding: 0.2rem 0.55rem; border: 1px solid var(--border); border-radius: 4px;
   background: var(--panel-solid); color: var(--ink-light); cursor: pointer;
   transition: all 0.15s;
 }
@@ -98,24 +98,27 @@ body {
 .tool-btn.danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
 .toggle-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 
-/* Metrics */
-.metrics-panel { flex: none; }
-.metrics-grid { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.metric {
-  flex: 1; min-width: 110px; text-align: center;
-  padding: 0.5rem 0.4rem; background: rgba(255,255,255,0.6); border-radius: 6px;
+/* Metrics + Presets in one row */
+.bottom-row {
+  display: flex; gap: 0.35rem; flex: none;
 }
-.metric-label { display: block; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-faint); margin-bottom: 0.15rem; }
-.metric-value { display: block; font-family: 'Crimson Text', serif; font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+.metrics-panel { flex: 1; }
+.metrics-grid { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.metric {
+  flex: 1; min-width: 80px; text-align: center;
+  padding: 0.25rem 0.2rem; background: rgba(255,255,255,0.6); border-radius: 4px;
+}
+.metric-label { display: block; font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--ink-faint); margin-bottom: 0; }
+.metric-value { display: block; font-family: 'Crimson Text', serif; font-size: 0.95rem; font-weight: 700; color: var(--ink); }
 .metric-value.unstable { color: var(--red); }
 .metric-value.stable { color: var(--green); }
 
 /* Presets */
 .presets-panel { flex: none; }
-.preset-btns { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.preset-btns { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 .preset-btn {
-  font-family: 'Source Sans 3', sans-serif; font-size: 0.73rem; font-weight: 600;
-  padding: 0.3rem 0.75rem; border: 1px solid var(--border); border-radius: 20px;
+  font-family: 'Source Sans 3', sans-serif; font-size: 0.65rem; font-weight: 600;
+  padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 20px;
   background: var(--panel-solid); color: var(--ink-light); cursor: pointer; transition: all 0.15s;
 }
 .preset-btn:hover { border-color: var(--teal); color: var(--teal); }
@@ -125,6 +128,7 @@ body {
   .page-shell { height: auto; min-height: 100%; }
   .app-grid { flex: none; }
   .response-row { grid-template-columns: 1fr; }
+  .bottom-row { flex-direction: column; }
   .splane-panel { flex: none; }
   .splane-panel .plot-container { height: 300px; }
   .response-panel { flex: none; }
