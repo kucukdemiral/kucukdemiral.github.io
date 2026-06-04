@@ -1,0 +1,66 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
+    "CLAUDE_CODE_DISABLE_TOOLS": "true"
+  },
+  "permissions": {
+    "deny": [
+      "Bash(format *)",
+      "Bash(diskpart *)",
+      "Bash(mkfs *)",
+      "Bash(fdisk *)",
+      "Bash(dd *)",
+      "Bash(shred *)",
+      "Bash(reg *)",
+      "Bash(regedit *)",
+      "Bash(schtasks *)",
+      "Bash(sc config *)",
+      "Bash(sc create *)",
+      "Bash(sc delete *)",
+      "Bash(sc stop *)",
+      "Bash(sc start *)",
+      "Bash(bcdedit *)",
+      "Bash(wmic *)",
+      "Bash(takeown *)",
+      "Bash(icacls *)",
+      "Bash(net user *)",
+      "Bash(net localgroup *)",
+      "Bash(netsh *)",
+      "Bash(cipher /w *)",
+      "Bash(powershell -enc *)",
+      "Bash(powershell -encodedcommand *)",
+      "Bash(powershell -e *)",
+      "Bash(shutdown *)",
+      "Bash(logoff *)",
+      "Bash(cmdkey *)",
+      "Read(~/.ssh/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.aws/**)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.gnupg/**)",
+      "Edit(~/.aws/**)",
+      "Write(~/.ssh/**)",
+      "Write(~/.gnupg/**)",
+      "Write(~/.aws/**)"
+    ],
+    "ask": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(del *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)"
+    ],
+    "allow": [
+      "Read",
+      "Edit(*)",
+      "Write(*)",
+      "Bash(git status)",
+      "Bash(git pull)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  },
+  "model": "opusplan",
+  "plansDirectory": "./.claude/reports"
+}
