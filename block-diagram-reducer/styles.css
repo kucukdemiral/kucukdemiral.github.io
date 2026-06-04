@@ -1,0 +1,363 @@
+/* Block Diagram Reducer — styles */
+:root {
+  --bg: #f4efe7;
+  --bg-strong: #efe3d3;
+  --panel: rgba(255, 252, 247, 0.78);
+  --panel-solid: #fffcf7;
+  --ink: #1e2430;
+  --ink-light: #5a6270;
+  --ink-faint: #9aa0aa;
+  --teal: #0f766e;
+  --teal-light: #14b8a6;
+  --blue: #1d4ed8;
+  --orange: #b45309;
+  --red: #b91c1c;
+  --green: #15803d;
+  --border: rgba(0, 0, 0, 0.08);
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+/* Page shell */
+.page-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.app-header .eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--teal);
+  margin-bottom: 0.15rem;
+}
+.app-header h1 {
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.status-ready { background: #d1fae5; color: #065f46; }
+.status-reducing { background: #fef3c7; color: #92400e; }
+.status-done { background: #dbeafe; color: #1e40af; }
+
+/* Panel base */
+.panel {
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.25rem;
+}
+.panel-header h2 {
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+}
+.panel-header p {
+  font-size: 0.78rem;
+  color: var(--ink-light);
+  margin-bottom: 0.75rem;
+}
+
+/* Example selector tabs */
+.example-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.example-tab {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel-solid);
+  color: var(--ink-light);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.example-tab:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+.example-tab.active {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+/* Main grid */
+.app-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: auto auto;
+  gap: 0.85rem;
+}
+
+/* Control panel (left) */
+.control-panel {
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Diagram canvas (right top) */
+.diagram-panel {
+  min-height: 350px;
+}
+.diagram-panel .plot {
+  width: 100%;
+  height: 380px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.diagram-panel svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Algebra panel (right bottom) */
+.algebra-panel {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.btn-primary {
+  background: var(--teal);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #0d6d65;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn-secondary {
+  background: var(--panel-solid);
+  color: var(--ink-light);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+.btn-accent {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-accent:hover:not(:disabled) {
+  background: #1e3faa;
+}
+
+/* Step history */
+.step-list {
+  list-style: none;
+}
+.step-item {
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--border);
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-light);
+  border-radius: 0 4px 4px 0;
+  background: rgba(255,255,255,0.5);
+  transition: all 0.3s ease;
+}
+.step-item.active {
+  border-left-color: var(--teal);
+  background: rgba(15, 118, 110, 0.06);
+  color: var(--ink);
+}
+.step-item.completed {
+  border-left-color: var(--green);
+  color: var(--ink);
+}
+.step-item .step-rule {
+  font-weight: 700;
+  color: var(--teal);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+.step-item .step-expr {
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1rem;
+  color: var(--ink);
+  font-style: italic;
+}
+
+/* Rule badge (overlay on SVG) */
+.rule-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.7rem;
+  border-radius: 4px;
+  background: var(--teal);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+.rule-badge.visible { opacity: 1; }
+
+/* SVG element styles */
+.bd-block rect {
+  fill: #fff;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  rx: 4;
+}
+.bd-block text {
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 16px;
+  font-style: italic;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.bd-sumjunc circle {
+  fill: #fff;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.bd-sumjunc text {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.bd-pickoff circle {
+  fill: var(--ink);
+  stroke: none;
+}
+.bd-edge path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.bd-edge .arrowhead {
+  fill: var(--ink);
+}
+.bd-label text {
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+  fill: var(--ink);
+}
+
+/* Highlight states */
+.bd-highlight rect,
+.bd-highlight circle {
+  stroke: var(--teal);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px rgba(15, 118, 110, 0.4));
+}
+.bd-highlight path {
+  stroke: var(--teal);
+  stroke-width: 2.5;
+}
+.bd-highlight .arrowhead {
+  fill: var(--teal);
+}
+.bd-fade {
+  opacity: 0.2;
+  transition: opacity 0.4s ease;
+}
+
+/* Diagram position relative for rule badge */
+.diagram-wrap {
+  position: relative;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+  .control-panel {
+    grid-row: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .control-panel .btn {
+    flex: 1;
+    min-width: 100px;
+  }
+  .diagram-panel .plot {
+    height: 280px;
+  }
+}
