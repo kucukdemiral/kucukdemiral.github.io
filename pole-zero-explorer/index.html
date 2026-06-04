@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pole-Zero Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="page-shell">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Interactive Tool</p>
+      <h1>Pole-Zero Explorer</h1>
+    </div>
+    <div class="header-right">
+      <span id="tf-display" class="tf-display"></span>
+    </div>
+  </header>
+
+  <main class="app-grid">
+    <!-- Left: S-plane -->
+    <section class="panel splane-panel">
+      <div class="panel-header">
+        <h2>S-Plane</h2>
+        <p>Drag poles (×) and zeros (○) or click to place new ones.</p>
+      </div>
+      <div class="toolbar">
+        <button id="btn-add-pole" class="tool-btn active" title="Add pole">× Pole</button>
+        <button id="btn-add-zero" class="tool-btn" title="Add zero">○ Zero</button>
+        <button id="btn-add-conj" class="tool-btn toggle-btn" title="Auto-conjugate">Conjugate</button>
+        <button id="btn-delete" class="tool-btn" title="Delete mode">Delete</button>
+        <button id="btn-clear" class="tool-btn danger" title="Clear all">Clear</button>
+      </div>
+      <div id="splane-container" class="plot-container">
+        <canvas id="splane-canvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Row 2: Step + Impulse side by side -->
+    <div class="response-row">
+      <section class="panel response-panel">
+        <div class="panel-header">
+          <h2>Step Response</h2>
+        </div>
+        <div id="step-container" class="plot-container">
+          <canvas id="step-canvas"></canvas>
+        </div>
+      </section>
+
+      <section class="panel response-panel">
+        <div class="panel-header">
+          <h2>Impulse Response</h2>
+        </div>
+        <div id="impulse-container" class="plot-container">
+          <canvas id="impulse-canvas"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom: Metrics -->
+    <section class="panel metrics-panel">
+      <div class="metrics-grid" id="metrics-grid">
+        <div class="metric"><span class="metric-label">DC Gain</span><span class="metric-value" id="m-dcgain">—</span></div>
+        <div class="metric"><span class="metric-label">Damping ζ</span><span class="metric-value" id="m-zeta">—</span></div>
+        <div class="metric"><span class="metric-label">ω_n</span><span class="metric-value" id="m-wn">—</span></div>
+        <div class="metric"><span class="metric-label">Overshoot</span><span class="metric-value" id="m-overshoot">—</span></div>
+        <div class="metric"><span class="metric-label">Rise Time</span><span class="metric-value" id="m-rise">—</span></div>
+        <div class="metric"><span class="metric-label">Settling Time</span><span class="metric-value" id="m-settle">—</span></div>
+        <div class="metric"><span class="metric-label">Stable</span><span class="metric-value" id="m-stable">—</span></div>
+        <div class="metric"><span class="metric-label">System Order</span><span class="metric-value" id="m-order">—</span></div>
+      </div>
+    </section>
+
+    <!-- Presets -->
+    <section class="panel presets-panel">
+      <div class="panel-header">
+        <h2>Presets</h2>
+      </div>
+      <div class="preset-btns">
+        <button class="preset-btn" data-preset="first-order">1st Order</button>
+        <button class="preset-btn" data-preset="underdamped">Underdamped</button>
+        <button class="preset-btn" data-preset="overdamped">Overdamped</button>
+        <button class="preset-btn" data-preset="critically">Critically Damped</button>
+        <button class="preset-btn" data-preset="unstable">Unstable</button>
+        <button class="preset-btn" data-preset="resonant">Resonant</button>
+        <button class="preset-btn" data-preset="notch">Notch (Zero)</button>
+        <button class="preset-btn" data-preset="third-order">3rd Order</button>
+        <button class="preset-btn" data-preset="non-min-phase">Non-min Phase</button>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
