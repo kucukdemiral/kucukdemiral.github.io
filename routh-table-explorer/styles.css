@@ -17,10 +17,10 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; }
 body { font-family: 'Source Sans 3', system-ui, sans-serif; font-size: 14px; color: var(--ink); background: var(--bg); }
 
-.page-shell { max-width: 1280px; margin: 0 auto; padding: 0.4rem 0.75rem; height: 100%; display: flex; flex-direction: column; }
+.page-shell { max-width: 1280px; margin: 0 auto; padding: 0.4rem 0.75rem; display: flex; flex-direction: column; }
 
 .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem; }
 .app-header .eyebrow { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin-bottom: 0; }
@@ -29,7 +29,7 @@ body { font-family: 'Source Sans 3', system-ui, sans-serif; font-size: 14px; col
 
 .panel { background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 0.4rem 0.6rem; }
 
-.app-grid { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-height: 0; }
+.app-grid { display: flex; flex-direction: column; gap: 0.35rem; }
 
 /* Input panel */
 .input-panel { flex: none; }
@@ -52,7 +52,7 @@ body { font-family: 'Source Sans 3', system-ui, sans-serif; font-size: 14px; col
 .preset-btn:hover { border-color: var(--teal); color: var(--teal); }
 
 /* Table panel */
-.table-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.table-panel { flex: none; display: flex; flex-direction: column; max-height: 60vh; }
 .formula-bar { min-height: 1.6rem; padding: 0.2rem 0.4rem; font-size: 0.75rem; color: var(--ink-light); background: rgba(15,118,110,0.04); border-radius: 4px; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .formula-bar:empty { background: transparent; }
 .formula-bar .hl { font-weight: 700; color: var(--teal); }
