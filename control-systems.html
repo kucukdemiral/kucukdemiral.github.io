@@ -121,6 +121,9 @@
             <div class="toc-item" data-ch="ch07" onclick="loadChapter('ch07')">
                 <span class="ch-num">7</span>Stability
             </div>
+            <div class="toc-item toc-sub" data-ch="routh-explorer" onclick="loadChapter('routh-explorer')">
+                <span class="ch-num"></span>Routh Table Explorer
+            </div>
 
             <div class="part-label">Part III &mdash; Design</div>
             <div class="toc-item" data-ch="ch08" onclick="loadChapter('ch08')">
@@ -184,6 +187,7 @@
         { id: 'ch06', file: 'cs-notes/Chapter06.html', title: 'Chapter 6: Time Response' },
         { id: 'pz-explorer', file: 'cs-notes/PoleZeroExplorer.html', title: 'Interactive Pole-Zero Explorer' },
         { id: 'ch07', file: 'cs-notes/Chapter07.html', title: 'Chapter 7: Stability' },
+        { id: 'routh-explorer', file: 'cs-notes/RouthTableExplorer.html', title: 'Interactive Routh Table Explorer' },
         { id: 'ch08', file: 'cs-notes/Chapter08.html', title: 'Chapter 8: PID Control' },
         { id: 'pid-sim', file: 'cs-notes/PIDSimulator.html', title: 'Interactive PID Simulator' },
         { id: 'ch09', file: 'cs-notes/Chapter09.html', title: 'Chapter 9: Frequency Domain: Analysis and Design' },
@@ -195,7 +199,7 @@
 
     var currentIndex = 0;
     var cache = {};
-    var chapterAssetVersion = '2026-06-04-pz-explorer';
+    var chapterAssetVersion = '2026-06-04-routh-explorer';
 
     function normalizeChapterHtml(html) {
         return html

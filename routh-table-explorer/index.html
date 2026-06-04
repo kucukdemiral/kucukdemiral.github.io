@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Routh Table Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="page-shell">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Interactive Tool</p>
+      <h1>Routh-Hurwitz Table Explorer</h1>
+    </div>
+    <div class="header-right">
+      <span id="poly-display" class="poly-display"></span>
+    </div>
+  </header>
+
+  <main class="app-grid">
+    <section class="panel input-panel">
+      <div class="input-row">
+        <div class="input-modes">
+          <button id="btn-mode-coeff" class="mode-btn active">Coefficients</button>
+          <button id="btn-mode-poly" class="mode-btn">Polynomial</button>
+        </div>
+        <div class="field" id="coeff-field">
+          <input id="coeff-input" type="text" placeholder="e.g. 1 6 11 6  (descending powers)" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field hidden" id="poly-field">
+          <input id="poly-input" type="text" placeholder="e.g. s^4 + 3s^3 + 5s^2 + 4s + 2" autocomplete="off" spellcheck="false">
+        </div>
+        <button id="btn-build" class="build-btn">Build Table</button>
+      </div>
+      <div class="presets-row">
+        <span class="presets-label">Presets:</span>
+        <div class="preset-btns" id="preset-btns"></div>
+      </div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="formula-bar" id="formula-bar"></div>
+      <div class="table-scroll" id="table-scroll">
+        <table class="routh-table" id="routh-table"></table>
+      </div>
+    </section>
+
+    <div class="bottom-row">
+      <section class="panel controls-panel">
+        <div class="anim-controls">
+          <button id="btn-reset" class="ctrl-btn" title="Reset">&#8634;</button>
+          <button id="btn-step-back" class="ctrl-btn" title="Step Back">&#9664;&#9664;</button>
+          <button id="btn-play" class="ctrl-btn play-btn" title="Play">&#9654;</button>
+          <button id="btn-step-fwd" class="ctrl-btn" title="Step Forward">&#9654;&#9654;</button>
+          <button id="btn-skip" class="ctrl-btn" title="Show All">&#9654;|</button>
+          <div class="speed-control">
+            <label for="speed-slider">Speed</label>
+            <input id="speed-slider" type="range" min="0" max="4" value="2">
+          </div>
+        </div>
+      </section>
+      <section class="panel results-panel">
+        <div class="results-grid" id="results-grid">
+          <div class="result-card"><span class="result-label">Verdict</span><span class="result-value" id="r-verdict">&mdash;</span></div>
+          <div class="result-card"><span class="result-label">Sign Changes</span><span class="result-value" id="r-sign">&mdash;</span></div>
+          <div class="result-card"><span class="result-label">RHP</span><span class="result-value" id="r-rhp">&mdash;</span></div>
+          <div class="result-card"><span class="result-label">LHP</span><span class="result-value" id="r-lhp">&mdash;</span></div>
+          <div class="result-card"><span class="result-label">j&#969; Axis</span><span class="result-value" id="r-jw">&mdash;</span></div>
+          <div class="result-card"><span class="result-label">Degree</span><span class="result-value" id="r-deg">&mdash;</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>
