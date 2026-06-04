@@ -267,6 +267,7 @@
   function fmtVal(v) {
     if (Math.abs(v) < 1e-12) return '0';
     if (Math.abs(v - EPSILON) < 1e-15 || Math.abs(v + EPSILON) < 1e-15) return 'ε';
+    if (Math.abs(v) > 1e6) return (v > 0 ? '+' : '−') + '∞';
     var frac = toFraction(v, 100);
     if (frac) {
       if (frac.den === 1) return '' + frac.num;
@@ -277,6 +278,7 @@
 
   function fmtSrc(v) {
     if (Math.abs(v - EPSILON) < 1e-15) return 'ε';
+    if (Math.abs(v) > 1e6) return (v > 0 ? '+' : '−') + '∞';
     return fmtVal(v);
   }
 
