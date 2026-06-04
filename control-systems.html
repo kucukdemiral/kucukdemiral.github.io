@@ -115,6 +115,9 @@
             <div class="toc-item" data-ch="ch06" onclick="loadChapter('ch06')">
                 <span class="ch-num">6</span>Time Response
             </div>
+            <div class="toc-item toc-sub" data-ch="pz-explorer" onclick="loadChapter('pz-explorer')">
+                <span class="ch-num"></span>Pole-Zero Explorer
+            </div>
             <div class="toc-item" data-ch="ch07" onclick="loadChapter('ch07')">
                 <span class="ch-num">7</span>Stability
             </div>
@@ -179,6 +182,7 @@
         { id: 'ch04', file: 'cs-notes/Chapter04.html', title: 'Chapter 4: State-Space Modelling' },
         { id: 'ch05', file: 'cs-notes/Chapter05.html', title: 'Chapter 5: Block Diagrams' },
         { id: 'ch06', file: 'cs-notes/Chapter06.html', title: 'Chapter 6: Time Response' },
+        { id: 'pz-explorer', file: 'cs-notes/PoleZeroExplorer.html', title: 'Interactive Pole-Zero Explorer' },
         { id: 'ch07', file: 'cs-notes/Chapter07.html', title: 'Chapter 7: Stability' },
         { id: 'ch08', file: 'cs-notes/Chapter08.html', title: 'Chapter 8: PID Control' },
         { id: 'pid-sim', file: 'cs-notes/PIDSimulator.html', title: 'Interactive PID Simulator' },
@@ -191,7 +195,7 @@
 
     var currentIndex = 0;
     var cache = {};
-    var chapterAssetVersion = '2026-06-03-subtabs-laplace';
+    var chapterAssetVersion = '2026-06-04-pz-explorer';
 
     function normalizeChapterHtml(html) {
         return html
