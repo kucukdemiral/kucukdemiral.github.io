@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frequency-Domain Compensator Design Studio</title>
+    <meta
+      name="description"
+      content="Interactive animated frequency-domain controller design tool for Lead, Lag, and Lag-Lead compensators with step-by-step flowchart and Bode plot visualization."
+    />
+    <link rel="stylesheet" href="styles.css?v=20260606" />
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)']],
+        displayMath: [['\\[','\\]']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script','noscript','style','textarea','pre','input','select']
+      },
+      startup: { typeset: false }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+    <script src="app.js?v=20260606" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Frequency-Domain Controller Design</p>
+          <h1>Compensator Design Studio</h1>
+        </div>
+        <div id="status-badge" class="status-badge status-idle">Ready</div>
+      </header>
+
+      <main class="app-grid">
+        <section class="input-panel panel">
+          <div class="panel-header">
+            <h2>Plant & Design Specs</h2>
+            <p>Enter the plant transfer function and desired closed-loop specifications.</p>
+          </div>
+
+          <div class="section-label">Plant G(s)</div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Numerator coefficients</span>
+              <input id="num-input" type="text" value="1" autocomplete="off" spellcheck="false" />
+              <small>Descending powers of <span class="mono">s</span></small>
+            </label>
+            <label class="field">
+              <span>Denominator coefficients</span>
+              <input id="den-input" type="text" value="1 4 0" autocomplete="off" spellcheck="false" />
+              <small>Descending powers of <span class="mono">s</span></small>
+            </label>
+          </div>
+
+          <div class="section-label">Time-Domain Requirements</div>
+          <div class="field-grid field-grid-row">
+            <label class="field">
+              <span>Max Overshoot (%)</span>
+              <input id="mp-input" type="number" value="20" min="0.5" max="80" step="0.5" />
+            </label>
+            <label class="field">
+              <span>Settling Time (s)</span>
+              <input id="ts-input" type="number" value="2" min="0.01" step="0.1" />
+            </label>
+          </div>
+
+          <div class="section-label">Steady-State Error Requirement</div>
+          <div class="field-grid field-grid-row">
+            <label class="field field-narrow">
+              <span>Constant</span>
+              <select id="error-type">
+                <option value="Kv" selected>K<sub>v</sub></option>
+                <option value="Kp">K<sub>p</sub></option>
+                <option value="Ka">K<sub>a</sub></option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Required Value</span>
+              <input id="error-value" type="number" value="20" min="0.01" step="0.5" />
+            </label>
+          </div>
+
+          <div class="section-label">Compensator Options</div>
+          <div class="field-grid field-grid-row">
+            <label class="field">
+              <span>Type</span>
+              <select id="comp-type">
+                <option value="auto" selected>Auto Detect</option>
+                <option value="lead">Lead</option>
+                <option value="double-lead">Double Lead</option>
+                <option value="lag">Lag</option>
+                <option value="lag-lead">Lag-Lead</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Safety Margin (&deg;)</span>
+              <input id="safety-margin" type="number" value="10" min="2" max="25" step="1" />
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="design-btn" type="button">Design</button>
+            <button id="reset-btn" type="button">Reset</button>
+          </div>
+
+          <div class="playback-row" id="playback-row">
+            <button id="prev-btn" type="button" title="Previous step" disabled>&larr;</button>
+            <button id="play-btn" type="button" title="Play/Pause" disabled>&#9654;</button>
+            <button id="next-btn" type="button" title="Next step" disabled>&rarr;</button>
+            <label class="speed-control">
+              <small>Speed</small>
+              <input id="speed-slider" type="range" min="0.5" max="3" step="0.25" value="1" />
+            </label>
+          </div>
+
+          <div class="preset-row">
+            <span class="section-label">Examples</span>
+            <button class="preset-btn" data-preset="1">Lead</button>
+            <button class="preset-btn" data-preset="2">Double Lead</button>
+            <button class="preset-btn" data-preset="3">Lag</button>
+            <button class="preset-btn" data-preset="4">Lag-Lead</button>
+          </div>
+
+          <div id="message-box" class="message-box" aria-live="polite"></div>
+        </section>
+
+        <section class="flowchart-panel panel">
+          <div class="panel-header">
+            <h2>Design Procedure</h2>
+            <p>Step-by-step flowchart &mdash; active step glows, completed steps turn green.</p>
+          </div>
+          <div id="flowchart" class="flowchart"></div>
+        </section>
+
+        <section id="step-detail-panel" class="step-detail-panel panel panel-full">
+          <div class="panel-header">
+            <h2 id="step-title">Design Steps</h2>
+            <p id="step-subtitle">Click &ldquo;Design&rdquo; to begin the compensator design procedure.</p>
+          </div>
+          <div id="step-content" class="step-content"></div>
+        </section>
+
+        <div class="plots-grid panel-full">
+          <section class="plot-panel panel">
+            <div class="panel-header"><h2>Open-Loop Magnitude</h2></div>
+            <div id="mag-readout" class="plot-readout" aria-live="polite"></div>
+            <div id="mag-plot" class="plot"></div>
+          </section>
+          <section class="plot-panel panel">
+            <div class="panel-header"><h2>Open-Loop Phase</h2></div>
+            <div id="phase-readout" class="plot-readout" aria-live="polite"></div>
+            <div id="phase-plot" class="plot"></div>
+          </section>
+        </div>
+
+        <div class="plots-grid panel-full">
+          <section class="plot-panel panel">
+            <div class="panel-header"><h2>Compensator C(j&omega;)</h2></div>
+            <div id="ctrl-plot" class="plot plot-short"></div>
+          </section>
+          <section class="plot-panel panel">
+            <div class="panel-header"><h2>Closed-Loop Step Response</h2></div>
+            <div id="time-plot" class="plot plot-short"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

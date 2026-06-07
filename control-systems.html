@@ -141,6 +141,9 @@
             <div class="toc-item toc-sub" data-ch="bode-studio" onclick="loadChapter('bode-studio')">
                 <span class="ch-num"></span>Bode Plot Studio
             </div>
+            <div class="toc-item toc-sub" data-ch="comp-studio" onclick="loadChapter('comp-studio')">
+                <span class="ch-num"></span>Compensator Design Studio
+            </div>
 
             <div class="part-label">Part IV &mdash; Modern Control</div>
             <div class="toc-item" data-ch="ch10" onclick="loadChapter('ch10')">
@@ -196,6 +199,7 @@
         { id: 'pid-sim', file: 'cs-notes/PIDSimulator.html', title: 'Interactive PID Simulator' },
         { id: 'ch09', file: 'cs-notes/Chapter09.html', title: 'Chapter 9: Frequency Domain: Analysis and Design' },
         { id: 'bode-studio', file: 'cs-notes/BodePlotStudio.html', title: 'Interactive Bode Sketch Studio' },
+        { id: 'comp-studio', file: 'cs-notes/CompensatorDesignStudio.html', title: 'Compensator Design Studio' },
         { id: 'ch10', file: 'cs-notes/Chapter10.html', title: 'Chapter 10: Controllability & Observability' },
         { id: 'ch11', file: 'cs-notes/Chapter11.html', title: 'Chapter 11: State Feedback Control' },
         { id: 'ch12', file: 'cs-notes/Chapter12.html', title: 'Chapter 12: Observer Design' }
@@ -203,7 +207,7 @@
 
     var currentIndex = 0;
     var cache = {};
-    var chapterAssetVersion = '2026-06-04-routh-explorer';
+    var chapterAssetVersion = '2026-06-07-comp-studio';
 
     function normalizeChapterHtml(html) {
         return html
