@@ -782,5 +782,102 @@
     .tool-embed-body iframe { height: 500px; }
 }
 
+/* ========== Video Lecture Card ========== */
+.video-lecture {
+    margin: 1.5rem 0 2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.video-lecture-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+}
+.video-lecture-header svg {
+    flex-shrink: 0;
+}
+.video-lecture-header h4 {
+    margin: 0;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    flex: 1;
+}
+.video-lecture-header .toggle-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+.video-lecture.collapsed .video-lecture-body {
+    display: none;
+}
+.video-lecture.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+.video-lecture-body {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #000;
+}
+.video-lecture-body iframe,
+.video-lecture-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.video-lecture-thumb {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    background-color: #111;
+}
+.video-lecture-thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    transition: background 0.2s ease;
+}
+.video-lecture-thumb:hover::after {
+    background: rgba(0,0,0,0.1);
+}
+.video-lecture-play {
+    position: relative;
+    z-index: 1;
+    width: 68px;
+    height: 48px;
+    background: rgba(255,0,0,0.85);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+.video-lecture-thumb:hover .video-lecture-play {
+    background: #ff0000;
+    transform: scale(1.08);
+}
+.video-lecture-play svg {
+    fill: #fff;
+    margin-left: 3px;
+}
+
 /* Hide raw CircuiTikZ / TikZ source that was not converted to images */
 .circuitikz { display: none; }

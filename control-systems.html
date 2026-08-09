@@ -216,6 +216,17 @@
             .replace(/\\end\{bsmallmatrix\}/g, '\\end{smallmatrix}\\right]');
     }
 
+    function loadVideo(thumb) {
+        var container = thumb.parentElement;
+        var card = container.closest('.video-lecture');
+        var videoId = card.getAttribute('data-video-id');
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.youtube-nocookie.com/embed/' + videoId + '?autoplay=1&rel=0';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.allowFullscreen = true;
+        container.replaceChild(iframe, thumb);
+    }
+
     function loadChapter(id) {
         var idx = chapters.findIndex(function(c) { return c.id === id; });
         if (idx === -1) return;
