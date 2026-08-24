@@ -27,11 +27,17 @@
 }
 
 @article{Mousavi2026FracTrace,
-	author  = {Yashar Mousavi and Arash Mousavi and Rashin Mousavi and Mahsa Tavasoli and Ibrahim Beklan Küçükdemiral and Afef Fekih and Ümit Çalı},
-	title   = {FracTrace: Long-Horizon Credit Assignment in Deep Reinforcement Learning via Fractional Eligibility Traces},
+	title = {FracTrace: long-horizon credit assignment in deep reinforcement learning via fractional eligibility traces},
+	abstract = {Temporal credit assignment becomes intractable when reward signals are displaced hundreds of steps from causal actions, limiting learning in robotic manipulation, autonomous navigation, and long-horizon planning. Conventional exponentially-decaying eligibility traces allocate negligible credit beyond moderate horizons, as their geometric forgetting renders causal attribution effectively impossible at extended lags. This paper introduces FracTrace, a Fractional Trace Actor-Critic framework that replaces exponential decay with power-law memory kernels derived from fractional calculus. Variable-order Mittag-Leffler functions are incorporated at two architectural levels: hierarchical traces maintain multi-timescale state representations across fast, medium, and slow dynamics, while fractional eligibility traces induce algebraic decay that sustains meaningful credit assignment on tasks with reward delays of 500-800 steps. A key design principle retains the standard distributional Bellman operator for the critic, preserving γ-contraction in Wasserstein metric, while fractionalization is applied exclusively to policy-side advantages. For an idealized policy-gradient variant of the algorithm, almost-sure convergence of the critic to the true value function and of the policy to a stationary point neighborhood of radius εbias, a truncation-dependent bias term, are established under two-timescale stochastic approximation, where εbias vanishes as the truncation horizon Jl → ∞; the practical algorithm uses the PPO clipped surrogate and is evaluated empirically. The critic achieves sample complexity O˜(Rmax2/((1-γ)4ε2)), matching classical actor-critic rates while capturing substantially longer dependencies. Empirical evaluation across six long-horizon tasks demonstrates substantial improvements over PPO, PPO-LSTM, R2D2, and GTrXL, with FracTrace uniquely solving extreme-horizon tasks (800 steps) at O(L · d · Jmax) per-step complexity. The kernel-swap ablation (Table 5), which isolates kernel choice within an otherwise identical architecture, supports the conclusion that these gains stem from power-law memory structure; the PPO-LSTM comparison provides converging evidence at the level of a full baseline architecture rather than a single-factor control.},
+	keywords = {Reinforcement learning, Credit assignment, fractional calculus, eligibility traces, actor-critic, long-horizon tasks, recurrent policy optimization},
+	author = {Yashar Mousavi and Rashin Mousavi and Arash Mousavi and Mahsa Tavasoli and İbrahim Beklan Küçükdemiral and Afef Fekih and Ümit Çalı},
+	year = {2026},
+	month = aug,
+	day = {22},
+	language = {English},
 	journal = {Neurocomputing},
-	note    = {Under review},
-	year    = {2026}
+	issn = {0925-2312},
+	publisher = {Elsevier B.V.},
 }
 
 @article{CANERUST2026,
