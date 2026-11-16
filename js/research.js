@@ -159,6 +159,32 @@
             });
     }
 
+    // --- Clips of current work (js/demos.js) ---
+    // Themes whose windows open with the clips, above the paper list
+    var demoThemes = { mpc: true, datadriven: true, robotics: true };
+
+    function demosHtml() {
+        var D = window.Demos;
+        if (!D) return '';
+
+        var html = '<section class="modal-demos" aria-label="Current work in motion">';
+        html += '<h4>Current work in motion</h4>';
+        html += '<p class="modal-demos-note">Nonlinear data-driven predictive control, shown in simulation. Manuscripts in preparation.</p>';
+        html += '<div class="modal-demos-row">';
+        D.clips.forEach(function (clip) {
+            html += '<figure class="modal-demo">' + D.html(clip) +
+                '<figcaption>' + clip.label + '</figcaption></figure>';
+        });
+        html += '</div>';
+        html += '<p class="modal-demos-key">';
+        html += '<span class="key"><span class="key-dot key-blue"></span>Data-driven predictive controller</span>';
+        html += '<span class="key"><span class="key-dot key-red"></span>Conventional baseline controller</span>';
+        html += '</p>';
+        html += '</section>';
+        html += '<h4 class="modal-list-title">Publications</h4>';
+        return html;
+    }
+
     // --- Modal ---
     var overlay, modalTitle, modalBody, modalClose;
 
@@ -167,6 +193,9 @@
         modalTitle = document.getElementById('modalTitle');
         modalBody = document.getElementById('modalBody');
         modalClose = document.getElementById('modalClose');
+
+        // Stop any clips left over from the theme that was open before
+        if (window.Demos) window.Demos.release(modalBody);
 
         var themeNames = {
             robust: 'Robust & Optimal Control',
@@ -225,7 +254,11 @@
             html = '<p style="color:var(--text-light);text-align:center;padding:2rem 0;">No publications found for this theme.</p>';
         }
 
+        if (demoThemes[theme]) html = demosHtml() + html;
+
         modalBody.innerHTML = html;
+        modalBody.scrollTop = 0;
+        if (window.Demos) window.Demos.init(modalBody);
 
         // Bind BibTeX copy buttons
         modalBody.querySelectorAll('.modal-bib-btn').forEach(function (btn) {
@@ -250,6 +283,8 @@
         if (ov) {
             ov.classList.remove('active');
             document.body.style.overflow = '';
+            // The closed window is only hidden, so its clips must be stopped by hand
+            if (window.Demos) window.Demos.release(document.getElementById('modalBody'));
         }
     }
 

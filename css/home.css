@@ -455,6 +455,100 @@ body.home main a:focus-visible {
     font-style: italic;
 }
 
+/* --- Current work in motion ---
+   The clip itself (.demo-media, .demo-video, .demo-toggle) is styled in demos.css */
+.motion-head {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 1.25rem 3.5rem;
+    align-items: end;
+    margin-bottom: 2.25rem;
+}
+
+.motion-head h2 {
+    margin: 0;
+    font-size: 2.25rem;
+    line-height: 1.12;
+    text-wrap: balance;
+}
+
+.motion-lede {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.demos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.demo {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.demo figcaption {
+    padding: 1.15rem 1.3rem 1.35rem;
+}
+
+.demo-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.demo h3 {
+    margin: 0 0 0.45rem;
+    font-size: 1.28rem;
+    line-height: 1.25;
+}
+
+.demo figcaption p:last-child {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.motion-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-light);
+}
+
+.motion-note p {
+    margin: 0;
+}
+
+.motion-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.5rem;
+    color: var(--text-secondary);
+}
+
 /* --- Methods --- */
 .methods {
     list-style: none;
@@ -874,12 +968,45 @@ body.home main a:focus-visible {
     .pillars {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .motion-head {
+        grid-template-columns: minmax(0, 1fr);
+        margin-bottom: 1.75rem;
+    }
+
+    .motion-head h2 {
+        font-size: 1.95rem;
+    }
+
+    .motion-lede {
+        max-width: 44rem;
+    }
+}
+
+/* Clips: one per row, picture beside its caption */
+@media (max-width: 800px) {
+    .demos {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .demo {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+        align-items: center;
+    }
 }
 
 @media (max-width: 720px) {
     .apps,
     .books {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Clips: picture above its caption */
+@media (max-width: 560px) {
+    .demo {
+        display: flex;
     }
 }
 

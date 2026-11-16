@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/demos.css">
     <link rel="stylesheet" href="css/research.css">
 </head>
 <body>
@@ -37,7 +38,7 @@
 
         <h2>Research</h2>
         <p class="research-intro">My research programme spans robust and optimal control theory, model predictive control, data-driven methods, and their applications in robotics, autonomous vehicles, renewable energy, and biomedical systems. I lead the <strong>Robotics for the Common Good</strong> research group and collaborate internationally across these domains.</p>
-        <p class="research-hint">Select a research theme below to explore related publications.</p>
+        <p class="research-hint">Select a research theme below to explore related publications. Themes marked <span class="hint-flag">In motion</span> also show clips of current work.</p>
 
         <section class="research-themes">
             <div class="theme-grid">
@@ -79,7 +80,8 @@
                     <div class="theme-cta">View publications →</div>
                 </div>
 
-                <div class="theme-card" data-theme="mpc" tabindex="0" role="button" aria-label="View Model Predictive Control publications">
+                <div class="theme-card" data-theme="mpc" tabindex="0" role="button" aria-label="View Model Predictive Control publications and clips of current work">
+                    <span class="theme-flag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a.7.7 0 0 0 1.07.6l10.6-6.8a.7.7 0 0 0 0-1.2L9.07 4.6A.7.7 0 0 0 8 5.2z"/></svg>In motion</span>
                     <div class="theme-icon theme-icon-wide">
                         <!-- MPC: receding horizon with prediction/control horizons, constraints -->
                         <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -110,15 +112,16 @@
                         </svg>
                     </div>
                     <h4>Model Predictive Control</h4>
-                    <p>Tube-based robust MPC, stochastic MPC, event-triggered MPC, and computationally efficient algorithms for constrained systems under uncertainty.</p>
+                    <p>Tube-based robust MPC, stochastic and event-triggered MPC, nonlinear data-driven MPC, and computationally efficient algorithms for constrained systems under uncertainty.</p>
                     <div class="theme-tags">
-                        <span>Tube MPC</span><span>Event-Triggered</span><span>Stochastic</span><span>Constraints</span>
+                        <span>Tube MPC</span><span>Event-Triggered</span><span>Stochastic</span><span>Nonlinear Data-Driven</span>
                     </div>
                     <div class="theme-count"></div>
                     <div class="theme-cta">View publications →</div>
                 </div>
 
-                <div class="theme-card" data-theme="datadriven" tabindex="0" role="button" aria-label="View Data-Driven Control publications">
+                <div class="theme-card" data-theme="datadriven" tabindex="0" role="button" aria-label="View Data-Driven Control publications and clips of current work">
+                    <span class="theme-flag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a.7.7 0 0 0 1.07.6l10.6-6.8a.7.7 0 0 0 0-1.2L9.07 4.6A.7.7 0 0 0 8 5.2z"/></svg>In motion</span>
                     <div class="theme-icon theme-icon-wide">
                         <!-- Data-driven: scatter data points with a fitted curve, Hankel-like data matrix hint -->
                         <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -147,15 +150,16 @@
                         </svg>
                     </div>
                     <h4>Data-Driven Control</h4>
-                    <p>Data-enabled predictive control (DeePC), data-driven H-infinity methods, learning-based observers, and neural-network-augmented controllers for systems with limited models.</p>
+                    <p>Data-enabled predictive control (DeePC) for linear and nonlinear systems, data-driven H-infinity methods, learning-based observers, and neural-network-augmented controllers for systems with limited models.</p>
                     <div class="theme-tags">
-                        <span>DeePC</span><span>Data-Driven H&infin;</span><span>Neural Networks</span>
+                        <span>DeePC</span><span>Data-Driven H&infin;</span><span>Nonlinear Systems</span><span>Neural Networks</span>
                     </div>
                     <div class="theme-count"></div>
                     <div class="theme-cta">View publications →</div>
                 </div>
 
-                <div class="theme-card" data-theme="robotics" tabindex="0" role="button" aria-label="View Robotics and Autonomous Systems publications">
+                <div class="theme-card" data-theme="robotics" tabindex="0" role="button" aria-label="View Robotics and Autonomous Systems publications and clips of current work">
+                    <span class="theme-flag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a.7.7 0 0 0 1.07.6l10.6-6.8a.7.7 0 0 0 0-1.2L9.07 4.6A.7.7 0 0 0 8 5.2z"/></svg>In motion</span>
                     <div class="theme-icon theme-icon-wide">
                         <!-- 3-DOF robotic manipulator arm with joints and end-effector -->
                         <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -193,9 +197,9 @@
                         </svg>
                     </div>
                     <h4>Robotics &amp; Autonomous Systems</h4>
-                    <p>UAV trajectory tracking, underwater manipulation, collaborative robots, mobile robot safety, and autonomous vehicle control with motion sickness mitigation.</p>
+                    <p>UAV trajectory tracking and navigation, legged and humanoid locomotion, underwater manipulation, collaborative robots, mobile robot safety, and autonomous vehicle control with motion sickness mitigation.</p>
                     <div class="theme-tags">
-                        <span>UAVs</span><span>Cobots</span><span>Mobile Robots</span><span>AUVs</span>
+                        <span>UAVs</span><span>Legged Robots</span><span>Cobots</span><span>Mobile Robots</span><span>AUVs</span>
                     </div>
                     <div class="theme-count"></div>
                     <div class="theme-cta">View publications →</div>
@@ -300,6 +304,7 @@
     </footer>
 
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <script src="js/demos.js"></script>
     <script src="js/bib-parser.js"></script>
     <script src="js/research.js"></script>
 </body>
