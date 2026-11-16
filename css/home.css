@@ -184,14 +184,15 @@ body.home main a:focus-visible {
 .profile-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
+/* Five links fit on one line of the hero's text column at desktop widths */
 .profile-links a {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.3rem 0.7rem;
+    gap: 0.4rem;
+    padding: 0.3rem 0.58rem;
     border: 1px solid var(--rule-on-navy);
     border-radius: var(--radius);
     font-size: 0.84rem;
