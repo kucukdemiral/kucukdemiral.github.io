@@ -10,9 +10,8 @@
         var countEl = document.getElementById('pub-count');
         var currentFilter = 'all';
 
-        entries.sort(function (a, b) {
-            return (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0);
-        });
+        entries = entries.filter(function (e) { return !B.isHidden(e); });
+        entries.sort(B.compareEntries);
 
         function update() {
             var query = (searchInput.value || '').toLowerCase();
@@ -46,7 +45,7 @@
                 card.className = 'pub-card';
 
                 var cat = B.getCategory(e);
-                var badge = cat === 'journal' ? 'Journal' : cat === 'conference' ? 'Conference' : cat === 'book' ? 'Book' : 'Other';
+                var badge = { journal: 'Journal', conference: 'Conference', chapter: 'Book Chapter', book: 'Book' }[cat] || 'Other';
                 var badgeClass = 'pub-badge pub-badge-' + cat;
 
                 var doi = e.doi || '';
@@ -58,6 +57,8 @@
                 var noteHtml = '';
                 if (B.isUnderReview(e)) {
                     noteHtml = ' <span class="pub-under-review">Under Review</span>';
+                } else if (B.isAccepted(e)) {
+                    noteHtml = ' <span class="pub-accepted">Accepted</span>';
                 }
 
                 var html = '';

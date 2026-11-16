@@ -19,12 +19,14 @@
             'observer design', 'observer-based',
             'output feedback', 'state feedback',
             'pid control', 'pid controller', 'self-tuning', 'self tuning',
-            'ell_', 'h sonsuz', 'position feedback'
+            'ell_', 'h sonsuz', 'position feedback', 'lmis',
+            'dayanıklı', 'doyumlu eyleyici', 'matris eşitsizlik',
+            'kazanç programlama', 'titreşim'
         ],
         mpc: [
             'model predictive', 'predictive control', 'mpc',
             'receding horizon',
-            'offset-free', 'offset free'
+            'offset-free', 'offset free', 'öngörülü'
         ],
         datadriven: [
             'data-driven', 'data driven', 'data-enabled', 'data enabled',
@@ -35,7 +37,7 @@
             'whale optimization', 'metaheuristic',
             'generative ai', 'large language model',
             'deep learning', 'load forecasting',
-            'pseudo-data', 'fault identifiab'
+            'pseudo-data', 'fault identifiab', 'trafik tahmin'
         ],
         robotics: [
             'quadrotor', 'uav', 'unmanned aerial',
@@ -68,7 +70,7 @@
         ]
     };
 
-    var wordBoundaryKeywords = ['mpc', 'pid', 'llm', 'solar'];
+    var wordBoundaryKeywords = ['mpc', 'pid', 'llm', 'solar', 'lmi', 'lmis'];
 
     function matchesKeyword(blob, kw) {
         if (wordBoundaryKeywords.indexOf(kw) !== -1) {
@@ -79,10 +81,11 @@
     }
 
     function classifyEntry(entry) {
-        var blob = [
+        // Resolve LaTeX accents and drop grouping braces ({EV}, {LPV}) before matching.
+        var blob = B.cleanAccents([
             entry.title, entry.abstract, entry.journal,
             entry.booktitle, entry.keywords, entry.note
-        ].join(' ').toLowerCase();
+        ].join(' ')).replace(/[{}]/g, '').toLowerCase();
 
         var themes = [];
         for (var theme in themeKeywords) {
@@ -101,10 +104,8 @@
         fetch('pub.bib')
             .then(function (r) { return r.text(); })
             .then(function (raw) {
-                var entries = B.parse(raw);
-                entries.sort(function (a, b) {
-                    return (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0);
-                });
+                var entries = B.parse(raw).filter(function (e) { return !B.isHidden(e); });
+                entries.sort(B.compareEntries);
 
                 var themeEntries = {};
                 for (var theme in themeKeywords) {
@@ -188,6 +189,8 @@
 
             if (B.isUnderReview(e)) {
                 html += '<span class="modal-under-review">Under Review</span> ';
+            } else if (B.isAccepted(e)) {
+                html += '<span class="modal-accepted">Accepted</span> ';
             }
 
             if (e.abstract) {

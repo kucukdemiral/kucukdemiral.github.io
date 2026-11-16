@@ -142,6 +142,7 @@
 
 .pub-badge-journal { background: var(--accent); }
 .pub-badge-conference { background: #5a7d3a; }
+.pub-badge-chapter { background: #2f6f73; }
 .pub-badge-book { background: #8b5e3c; }
 .pub-badge-other { background: var(--text-light); }
 
@@ -178,6 +179,21 @@
     text-transform: uppercase;
     letter-spacing: 0.4px;
     background: #e8b339;
+    color: #fff;
+    padding: 0.12rem 0.5rem;
+    border-radius: 50px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+}
+
+.pub-accepted {
+    display: inline-block;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: #3d7a4a;
     color: #fff;
     padding: 0.12rem 0.5rem;
     border-radius: 50px;

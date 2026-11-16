@@ -297,6 +297,17 @@
     margin-bottom: 0.4rem;
 }
 
+.modal-accepted {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #1e5b2e;
+    background: #d8eedd;
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+}
+
 .modal-abstract-details {
     margin: 0.4rem 0;
 }

@@ -236,14 +236,17 @@ var BibParser = (function () {
         return d.innerHTML;
     }
 
+    // Same classification as the CV (biblatex sections by entry type);
+    // the J/C keyword is only a fallback for other entry types.
     function getCategory(entry) {
-        var kw = (entry.keywords || '').trim();
-        if (kw === 'J') return 'journal';
-        if (kw === 'C') return 'conference';
         var t = entry._type;
         if (t === 'article') return 'journal';
         if (t === 'inproceedings' || t === 'conference') return 'conference';
-        if (t === 'book' || t === 'inbook') return 'book';
+        if (t === 'inbook' || t === 'incollection') return 'chapter';
+        if (t === 'book') return 'book';
+        var kw = (entry.keywords || '').trim();
+        if (kw === 'J') return 'journal';
+        if (kw === 'C') return 'conference';
         return 'other';
     }
 
@@ -251,6 +254,37 @@ var BibParser = (function () {
         var note = (entry.note || '').toLowerCase();
         var journal = (entry.journal || '').toLowerCase();
         return /under\s*review/i.test(note) || /under\s*review/i.test(journal);
+    }
+
+    // Entries tagged `underreview` in the CV's pubs.bib are not listed.
+    function isHidden(entry) {
+        return /underreview/i.test(entry.keywords || '');
+    }
+
+    function isAccepted(entry) {
+        return /accepted|in\s*press/i.test(entry.note || '') && !isUnderReview(entry);
+    }
+
+    var monthIndex = {
+        jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+        jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+    };
+
+    // Accepted papers first within their year, then latest month first,
+    // entries without a month last (stable sort keeps file order otherwise).
+    function monthRank(entry) {
+        if (isAccepted(entry)) return 13;
+        var m = String(entry.month || '').trim().toLowerCase();
+        var n = parseInt(m, 10);
+        if (n >= 1 && n <= 12) return n;
+        return monthIndex[m.substring(0, 3)] || 0;
+    }
+
+    function compareEntries(a, b) {
+        var ya = parseInt(a.year, 10) || 0;
+        var yb = parseInt(b.year, 10) || 0;
+        if (ya !== yb) return yb - ya;
+        return monthRank(b) - monthRank(a);
     }
 
     function formatAuthors(raw) {
@@ -309,6 +343,9 @@ var BibParser = (function () {
         escHtml: escHtml,
         getCategory: getCategory,
         isUnderReview: isUnderReview,
+        isHidden: isHidden,
+        isAccepted: isAccepted,
+        compareEntries: compareEntries,
         formatAuthors: formatAuthors,
         formatVenue: formatVenue,
         extractRawBibtex: extractRawBibtex,
