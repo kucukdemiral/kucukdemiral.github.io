@@ -31,7 +31,6 @@ body.home main a:focus-visible {
 }
 
 .hero-inner,
-.hero-facts,
 .section-inner {
     width: min(100% - 3rem, var(--home-width));
     margin-left: auto;
@@ -120,7 +119,7 @@ body.home main a:focus-visible {
     grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
     gap: 3.5rem;
     align-items: center;
-    padding: 4rem 0 3.25rem;
+    padding: 4rem 0;
 }
 
 .hero-id {
@@ -354,35 +353,6 @@ body.home main a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
     .loop .flows { display: none; }
-}
-
-/* --- Facts strip --- */
-.hero-facts {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1.5rem 2rem;
-    padding: 1.6rem 0 2.1rem;
-    border-top: 1px solid var(--rule-on-navy);
-}
-
-.fact {
-    display: flex;
-    flex-direction: column;
-}
-
-.fact-num {
-    font-family: 'Crimson Text', Georgia, serif;
-    font-size: 2.1rem;
-    font-weight: 600;
-    line-height: 1.15;
-    color: #fff;
-    font-variant-numeric: lining-nums;
-}
-
-.fact-label {
-    font-size: 0.88rem;
-    line-height: 1.4;
-    color: var(--on-navy-muted);
 }
 
 /* === Sections === */
@@ -871,17 +841,13 @@ body.home main a:focus-visible {
     .hero-inner {
         grid-template-columns: minmax(0, 1fr);
         gap: 2.75rem;
-        padding: 3rem 0 2.5rem;
+        padding: 3rem 0;
     }
 
     .hero-figure {
         width: 100%;
         max-width: 580px;
         margin: 0 auto;
-    }
-
-    .hero-facts {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .section {
@@ -919,7 +885,6 @@ body.home main a:focus-visible {
 
 @media (max-width: 600px) {
     .hero-inner,
-    .hero-facts,
     .section-inner {
         width: calc(100% - 2rem);
     }
@@ -956,10 +921,6 @@ body.home main a:focus-visible {
     .roles > div {
         grid-template-columns: minmax(0, 1fr);
         gap: 0.1rem;
-    }
-
-    .fact-num {
-        font-size: 1.8rem;
     }
 
     /* Keep the diagram readable when it is scaled down */

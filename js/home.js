@@ -1,5 +1,5 @@
-/* Home page: fills the publication counts, the "Recent" paper lines and the
-   latest-papers list from pub.bib. Without JavaScript, or if pub.bib cannot be
+/* Home page: fills the "Recent work" paper lines and the latest-papers list
+   from pub.bib. Without JavaScript, or if pub.bib cannot be
    loaded, the page keeps its static text. */
 (function () {
     'use strict';
@@ -37,17 +37,6 @@
             return '<a href="' + B.escHtml(url) + '" target="_blank" rel="noopener">' + title + '</a>';
         }
         return className ? '<span class="' + className + '">' + title + '</span>' : title;
-    }
-
-    function fillFacts(entries) {
-        var counts = {
-            total: entries.length,
-            journal: entries.filter(function (e) { return B.getCategory(e) === 'journal'; }).length
-        };
-        document.querySelectorAll('[data-fact]').forEach(function (el) {
-            var n = counts[el.getAttribute('data-fact')];
-            if (n) el.textContent = n;
-        });
     }
 
     function fillRecent(entries) {
@@ -105,7 +94,6 @@
         .then(function (raw) {
             var entries = B.parse(raw).filter(function (e) { return !B.isHidden(e); });
             entries.sort(B.compareEntries);
-            fillFacts(entries);
             fillRecent(entries);
             fillLatest(entries);
         })
