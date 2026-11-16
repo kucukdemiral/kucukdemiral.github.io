@@ -147,6 +147,12 @@
                         }
                     });
                 });
+
+                // Open a theme straight from a link such as research.html#energy
+                var hashTheme = (window.location.hash || '').replace('#', '');
+                if (Object.prototype.hasOwnProperty.call(themeEntries, hashTheme)) {
+                    openModal(hashTheme, themeEntries[hashTheme], raw);
+                }
             })
             .catch(function (err) {
                 console.error('Failed to load pub.bib:', err);

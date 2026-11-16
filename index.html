@@ -3,46 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dr. Ibrahim Beklan Kucukdemiral - Glasgow Caledonian University</title>
+    <title>Dr. Ibrahim Beklan Kucukdemiral - Robust and Trustworthy AI-Enabled Control</title>
+    <meta name="description" content="Dr. Ibrahim Beklan Kucukdemiral, Reader at Glasgow Caledonian University. Robust and trustworthy control that learns from data: predictive and data-driven control, reinforcement learning, generative AI, LLMs and expert systems for energy, biomedical systems and autonomous robots.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Dr. Ibrahim Beklan Kucukdemiral - Robust and Trustworthy AI-Enabled Control">
+    <meta property="og:description" content="Control that learns from data, and can still be trusted. Research in control theory, data-driven control, reinforcement learning, generative AI and expert systems for energy, biomedical systems and autonomous robots.">
+    <meta property="og:url" content="https://kucukdemiral.github.io/">
+    <meta property="og:image" content="https://kucukdemiral.github.io/images/portrait.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .profile-links {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-        }
-        .profile-links a {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.8rem;
-            border: 1px solid var(--border, #ddd);
-            border-radius: 6px;
-            text-decoration: none;
-            color: var(--navy, #1a2a3a);
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-        .profile-links a:hover {
-            background: #f0f4f8;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        }
-        .profile-links img {
-            height: 20px;
-            width: auto;
-        }
-        .profile-links .gcu-logo {
-            height: 18px;
-            filter: brightness(0) saturate(100%) invert(15%) sepia(50%) saturate(500%) hue-rotate(180deg);
-        }
-    </style>
+    <link rel="stylesheet" href="css/home.css">
 </head>
-<body>
+<body class="home">
     <header>
         <div class="header-content">
             <h1>Dr. Ibrahim Beklan Kucukdemiral</h1>
@@ -65,44 +39,453 @@
         </nav>
     </header>
 
-    <div class="container">
-        <div class="profile-section">
-            <img src="images/portrait.jpg" alt="Dr. Ibrahim Beklan Kucukdemiral" class="portrait">
-            <div class="profile-text">
-                <h2>Welcome</h2>
-                <p>Dr. Ibrahim Kucukdemiral is a Reader in the Department of Engineering within the School of Science and Engineering at Glasgow Caledonian University. He serves as Chair of the IEEE Control Systems Chapter of the UK &amp; Ireland Section and is a committee member of the IEEE Region 8 Conference Coordination Committee. He chairs the Industrial Advisory Board for the Electrical and Mechanical Engineering departments and leads the Robotics for the Common Good research group.</p>
-                <div class="profile-links">
-                    <a href="https://scholar.google.com/citations?user=YWefQu8AAAAJ&hl=tr" target="_blank">
-                        <img src="images/google-scholar.svg" alt="Google Scholar"> Google Scholar
+    <main>
+        <!-- ============ Hero ============ -->
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="hero-inner">
+                <div class="hero-text">
+                    <div class="hero-id">
+                        <img class="hero-portrait" src="images/portrait.jpg" alt="Portrait of Dr. Ibrahim Beklan Kucukdemiral" width="600" height="600">
+                        <p class="hero-role">
+                            <strong>Reader in Control, Robotics and Applied AI</strong>
+                            School of Science and Engineering, Glasgow Caledonian University
+                        </p>
+                    </div>
+
+                    <h2 id="hero-title" class="hero-title">Control that learns from data, and can still be <em>trusted</em>.</h2>
+
+                    <p class="hero-lede">I study how learning-based methods can be given the guarantees that control theory provides. My work joins robust and predictive control with data-driven design, reinforcement learning, generative AI, large language models and expert systems, and applies them to power and renewable energy, biological and biomedical systems, and autonomous robots.</p>
+
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="research.html">Explore the research</a>
+                        <a class="btn btn-ghost" href="publications.html">Publications</a>
+                    </div>
+
+                    <div class="profile-links">
+                        <a href="https://scholar.google.com/citations?user=YWefQu8AAAAJ&hl=tr" target="_blank" rel="noopener">
+                            <img src="images/google-scholar.svg" alt=""> Google Scholar
+                        </a>
+                        <a href="https://orcid.org/0000-0003-0174-5680" target="_blank" rel="noopener">
+                            <img src="images/orcid.svg" alt=""> ORCID
+                        </a>
+                        <a href="https://researchonline.gcu.ac.uk/en/persons/ibrahim-k%C3%BC%C3%A7%C3%BCkdemiral/" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5.5 10.5v7M10 10.5v7M14 10.5v7M18.5 10.5v7"/><path d="M3 20.5h18"/></svg> GCU Research
+                        </a>
+                        <a href="https://www.linkedin.com/in/ibrahim-k%C3%BC%C3%A7%C3%BCkdemiral-12645664" target="_blank" rel="noopener">
+                            <img src="images/linkedin.svg" alt=""> LinkedIn
+                        </a>
+                    </div>
+                </div>
+
+                <figure class="hero-figure">
+                    <svg class="loop" viewBox="0 44 560 326" role="img" aria-labelledby="loop-title loop-desc">
+                        <title id="loop-title">A feedback loop with learning inside it</title>
+                        <desc id="loop-desc">Block diagram. A reference signal enters a controller built on control theory, which drives a system such as a robot, an energy system or a biomedical process. The measured output is fed back to the input. A learning block uses input and output data to adapt the controller. The controller and the learning block sit together inside a dashed boundary labelled robustness and safety guarantees.</desc>
+                        <defs>
+                            <marker id="arr-w" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto">
+                                <path d="M1,1.5 L9,5 L1,8.5 Z" fill="#DCE3EE"/>
+                            </marker>
+                            <marker id="arr-s" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto">
+                                <path d="M1,1.5 L9,5 L1,8.5 Z" fill="#E9B44C"/>
+                            </marker>
+                        </defs>
+
+                        <!-- Boundary of guarantees around controller + learning -->
+                        <path class="envelope" d="M142,66 H294 A14,14 0 0 1 308,80 V186 A14,14 0 0 0 322,200 H422 A14,14 0 0 1 436,214 V304 A14,14 0 0 1 422,318 H142 A14,14 0 0 1 128,304 V80 A14,14 0 0 1 142,66 Z"/>
+                        <text class="env-label" x="282" y="339">Robustness and safety guarantees</text>
+
+                        <!-- Main loop -->
+                        <path class="wire" d="M28,120 H74" marker-end="url(#arr-w)"/>
+                        <path class="wire" d="M102,120 H146" marker-end="url(#arr-w)"/>
+                        <path class="wire" d="M290,120 H362" marker-end="url(#arr-w)"/>
+                        <path class="wire" d="M512,120 H552" marker-end="url(#arr-w)"/>
+                        <path class="wire" d="M530,120 V352 H88 V134" marker-end="url(#arr-w)"/>
+
+                        <!-- Learning paths -->
+                        <path class="wire wire-learn dashed" d="M326,120 V228" marker-end="url(#arr-s)"/>
+                        <path class="wire wire-learn dashed" d="M530,264 H418" marker-end="url(#arr-s)"/>
+                        <path class="wire wire-learn" d="M234,264 H196 V156" marker-end="url(#arr-s)"/>
+
+                        <!-- Travelling signals -->
+                        <g class="flows" aria-hidden="true">
+                            <path class="flow" d="M28,120 H552"/>
+                            <path class="flow" d="M530,120 V352 H88 V134"/>
+                            <path class="flow flow-learn" d="M326,120 V228"/>
+                            <path class="flow flow-learn" d="M530,264 H418"/>
+                            <path class="flow flow-learn" d="M234,264 H196 V156"/>
+                        </g>
+
+                        <!-- Summing junction and taps -->
+                        <circle class="sum" cx="88" cy="120" r="14"/>
+                        <text class="sign" x="62" y="112">+</text>
+                        <text class="sign" x="100" y="149">&minus;</text>
+                        <circle class="tap" cx="326" cy="120" r="3.2"/>
+                        <circle class="tap" cx="530" cy="120" r="3.2"/>
+                        <circle class="tap tap-learn" cx="530" cy="264" r="3.2"/>
+
+                        <!-- Blocks -->
+                        <rect class="block" x="146" y="84" width="144" height="72" rx="8"/>
+                        <text class="b-title" x="218" y="117">Control theory</text>
+                        <text class="b-sub" x="218" y="137">robust &middot; predictive</text>
+
+                        <rect class="block" x="362" y="84" width="150" height="72" rx="8"/>
+                        <text class="b-title" x="437" y="117">System</text>
+                        <text class="b-sub" x="437" y="137">robots &middot; energy &middot; health</text>
+
+                        <rect class="block block-learn" x="234" y="228" width="184" height="72" rx="8"/>
+                        <text class="b-title" x="326" y="261">Learning from data</text>
+                        <text class="b-sub" x="326" y="281">DeePC &middot; RL &middot; GenAI &amp; LLMs</text>
+
+                        <!-- Signal names -->
+                        <text class="sig" x="12" y="125">r</text>
+                        <text class="sig" x="342" y="109">u</text>
+                        <text class="sig" x="538" y="108">y</text>
+                        <text class="data-label" x="474" y="256">data</text>
+                    </svg>
+                    <figcaption>The research in one picture: a controller that learns from data, kept inside a boundary of robustness and safety guarantees.</figcaption>
+                </figure>
+            </div>
+
+            <div class="hero-facts">
+                <div class="fact"><span class="fact-num" data-fact="total">110</span><span class="fact-label">publications</span></div>
+                <div class="fact"><span class="fact-num" data-fact="journal">53</span><span class="fact-label">journal articles</span></div>
+                <div class="fact"><span class="fact-num">&pound;1.4M+</span><span class="fact-label">in research funding</span></div>
+                <div class="fact"><span class="fact-num">6</span><span class="fact-label">PhD students supervised to completion</span></div>
+            </div>
+        </section>
+
+        <!-- ============ Methods ============ -->
+        <section class="section section-white" aria-labelledby="methods-title">
+            <div class="section-inner split">
+                <div class="rail">
+                    <p class="eyebrow">Methods</p>
+                    <h2 id="methods-title">Theory and learning in one toolbox</h2>
+                    <p>Classical control and modern AI are treated as parts of one design problem, chosen for what can be guaranteed as well as for what performs best.</p>
+                    <a class="rail-link" href="research.html">All research themes &rarr;</a>
+                </div>
+
+                <ul class="methods">
+                    <li class="method">
+                        <span class="method-icon">
+                            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="9" cy="15" r="3.2"/>
+                                <path d="M2 15h3.8M12.2 15H18M32 15h10"/>
+                                <rect x="18" y="9" width="14" height="12" rx="2"/>
+                                <path d="M37 15v17H9V18.2"/>
+                                <path d="M6.6 21.6 9 18.4l2.4 3.2"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>Control theory</h3>
+                            <p>Robust, optimal and predictive control: H<sub>&infin;</sub> and LMI-based design, tube and event-triggered MPC, sliding-mode and adaptive methods for uncertain, delayed and constrained systems.</p>
+                            <p class="recent" data-bib="HAN2026108259" hidden></p>
+                        </div>
+                    </li>
+
+                    <li class="method">
+                        <span class="method-icon">
+                            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M5 5v34h34"/>
+                                <path d="M9 34c9-3 12-8 16-13s8-9 13-11"/>
+                                <g fill="currentColor" stroke="none">
+                                    <circle cx="12" cy="28" r="1.7"/><circle cx="17" cy="33" r="1.7"/><circle cx="20" cy="23" r="1.7"/>
+                                    <circle cx="26" cy="24" r="1.7"/><circle cx="28" cy="14" r="1.7"/><circle cx="34" cy="16" r="1.7"/>
+                                </g>
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>Data-driven control</h3>
+                            <p>Controllers designed directly from measured trajectories, without first identifying a model: data-enabled predictive control (DeePC) and data-driven H<sub>&infin;</sub> design with stability and constraint guarantees.</p>
+                            <p class="recent" data-bib="Bilal2025JFI" hidden></p>
+                        </div>
+                    </li>
+
+                    <li class="method">
+                        <span class="method-icon">
+                            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="15" y="4" width="14" height="11" rx="2"/>
+                                <rect x="15" y="29" width="14" height="11" rx="2"/>
+                                <path d="M29 9.5h7a3 3 0 0 1 3 3v19a3 3 0 0 1-3 3h-4.5"/>
+                                <path d="M34.4 32.1 31.5 34.5l2.9 2.4"/>
+                                <path d="M15 34.5H8a3 3 0 0 1-3-3v-19a3 3 0 0 1 3-3h4.5"/>
+                                <path d="M9.6 7.1 12.5 9.5l-2.9 2.4"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>Reinforcement learning</h3>
+                            <p>Deep reinforcement learning for long-horizon decisions, where reward arrives late and credit is hard to assign, and learning-guided optimisation for large design problems.</p>
+                            <p class="recent" data-bib="Mousavi2026FracTrace" hidden></p>
+                        </div>
+                    </li>
+
+                    <li class="method">
+                        <span class="method-icon">
+                            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <g stroke-width="1.1" opacity="0.6">
+                                    <path d="M8 31V13M8 31l14-18M22 31 8 13M22 31V13M22 31l14-18M36 31 22 13M36 31V13"/>
+                                </g>
+                                <circle cx="8" cy="10" r="3"/><circle cx="22" cy="10" r="3"/><circle cx="36" cy="10" r="3"/>
+                                <g fill="currentColor">
+                                    <circle cx="8" cy="34" r="3"/><circle cx="22" cy="34" r="3"/><circle cx="36" cy="34" r="3"/>
+                                </g>
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>Generative AI and large language models</h3>
+                            <p>Where generative AI and LLMs add value in engineering systems (forecasting, design, operation and decision support), and how far their outputs can be relied on.</p>
+                            <p class="recent" data-bib="95f3ca0ecac246d7b73c0679fdb3b14a" hidden></p>
+                        </div>
+                    </li>
+
+                    <li class="method">
+                        <span class="method-icon">
+                            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="16" y="4" width="12" height="8" rx="1.5"/>
+                                <path d="M22 12v5M10 22v-5h24v5"/>
+                                <rect x="4" y="22" width="12" height="8" rx="1.5"/>
+                                <rect x="28" y="22" width="12" height="8" rx="1.5"/>
+                                <path d="M34 30v4M28 37.5V34h12v3.5"/>
+                                <g fill="currentColor" stroke="none"><circle cx="28" cy="39.5" r="2"/><circle cx="40" cy="39.5" r="2"/></g>
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>Expert systems</h3>
+                            <p>Knowledge-based and probabilistic reasoning, from fuzzy inference to Bayesian networks, for diagnosis, reliability assessment and supervisory decisions that stay explainable.</p>
+                            <p class="recent" data-bib="IEEE_Access_25" hidden></p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ============ Robust and trustworthy ============ -->
+        <section class="section trust" aria-labelledby="trust-title">
+            <div class="section-inner">
+                <p class="eyebrow">The common thread</p>
+                <h2 id="trust-title">Robust and trustworthy by design</h2>
+                <p class="trust-lede">A method earns its place in a wind turbine, a treatment plan or a robot working beside people only if it keeps behaving well when the model is wrong, the data are noisy or a component fails. Four questions run through every project.</p>
+
+                <ul class="pillars">
+                    <li class="pillar">
+                        <h3>Robustness</h3>
+                        <p>Does performance hold under model uncertainty, disturbances, delays and actuator limits?</p>
+                        <p class="recent" data-bib="Bilal2026JSV" hidden></p>
+                    </li>
+                    <li class="pillar">
+                        <h3>Safety</h3>
+                        <p>Are state and input constraints respected at every step, even when the controller is built from data alone?</p>
+                        <p class="recent" data-bib="CANERUST2026" hidden></p>
+                    </li>
+                    <li class="pillar">
+                        <h3>Resilience</h3>
+                        <p>Does the system detect and ride through sensor faults and cyber-attacks?</p>
+                        <p class="recent" data-bib="Abdel_UPEC2025" hidden></p>
+                    </li>
+                    <li class="pillar">
+                        <h3>Deployability</h3>
+                        <p>Is it data-efficient and light enough to run in real time on real hardware?</p>
+                        <p class="recent" data-bib="https://doi.org/10.1002/rnc.70351" hidden></p>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ============ Applications ============ -->
+        <section class="section section-page" aria-labelledby="apps-title">
+            <div class="section-inner split">
+                <div class="rail">
+                    <p class="eyebrow">Applications</p>
+                    <h2 id="apps-title">Where it is put to work</h2>
+                    <p>Three domains where a wrong decision is expensive, and where guarantees matter as much as performance.</p>
+                </div>
+
+                <div class="apps">
+                    <article class="app-card">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <line x1="30" y1="72" x2="30" y2="28" stroke="currentColor" stroke-width="2"/>
+                                <circle cx="30" cy="28" r="3" fill="currentColor"/>
+                                <path d="M30,28 L30,8 C32,12 34,18 30,28" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.3"/>
+                                <path d="M30,28 L47,38 C42,37 36,34 30,28" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.3"/>
+                                <path d="M30,28 L13,38 C18,37 24,34 30,28" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.3"/>
+                                <line x1="22" y1="72" x2="38" y2="72" stroke="currentColor" stroke-width="2"/>
+                                <rect x="54" y="46" width="28" height="18" rx="1.5" stroke="currentColor" stroke-width="1.8" transform="rotate(-15 68 55)"/>
+                                <line x1="59" y1="42" x2="74" y2="62" stroke="currentColor" stroke-width="0.8" opacity="0.4" transform="rotate(-15 68 55)"/>
+                                <line x1="64" y1="42" x2="79" y2="62" stroke="currentColor" stroke-width="0.8" opacity="0.4" transform="rotate(-15 68 55)"/>
+                                <line x1="54" y1="49" x2="82" y2="49" stroke="currentColor" stroke-width="0.8" opacity="0.4" transform="rotate(-15 68 55)"/>
+                                <line x1="54" y1="55" x2="82" y2="55" stroke="currentColor" stroke-width="0.8" opacity="0.4" transform="rotate(-15 68 55)"/>
+                                <line x1="68" y1="64" x2="68" y2="72" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="90" y1="20" x2="90" y2="72" stroke="currentColor" stroke-width="1.8"/>
+                                <line x1="86" y1="26" x2="94" y2="26" stroke="currentColor" stroke-width="1.2"/>
+                                <line x1="87" y1="32" x2="93" y2="32" stroke="currentColor" stroke-width="1"/>
+                                <path d="M38,30 C50,22 78,18 88,24" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+                                <path d="M76,56 L88,38" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+                                <path d="M106,12 L100,28 L106,28 L100,44" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <h3>Power and renewable energy</h3>
+                        <p>Wind and solar conversion, microgrids and smart grids, load forecasting, EV charging networks and cyber-secure power electronics.</p>
+                        <p class="recent" data-bib="Erust_SEST2026" hidden></p>
+                        <a class="more" href="research.html#energy">Energy publications &rarr;</a>
+                    </article>
+
+                    <article class="app-card">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M30,8 L26,8 C24,8 22,10 22,12 L22,30 C22,32 24,34 26,34 L34,34 C36,34 38,32 38,30 L38,12 C38,10 36,8 34,8 Z" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                <circle cx="30" cy="38" r="5" stroke="currentColor" stroke-width="2" fill="var(--bg-card,#fff)"/>
+                                <circle cx="30" cy="38" r="2" fill="currentColor"/>
+                                <line x1="26" y1="43" x2="24" y2="56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="34" y1="43" x2="32" y2="56" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="28" y1="56" x2="28" y2="68" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M20,68 L28,68 L36,68 C38,68 40,70 38,72 L18,72 C16,72 18,68 20,68 Z" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                <polyline points="52,46 60,46 64,46 67,36 70,56 73,30 76,52 79,40 82,46 90,46 98,46" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M72,12 C72,8 76,4 80,8 C84,4 88,8 88,12 C88,18 80,24 80,24 C80,24 72,18 72,12 Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.15"/>
+                                <rect x="96" y="10" width="4" height="16" rx="1" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+                                <line x1="98" y1="26" x2="98" y2="30" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                                <line x1="96" y1="10" x2="100" y2="10" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                                <line x1="95" y1="8" x2="101" y2="8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <h3>Biological and biomedical systems</h3>
+                        <p>Treatment as a feedback problem: data-driven dosing for cancer therapy, and powered prostheses that adapt to the wearer's gait.</p>
+                        <p class="recent" data-bib="kucukdemiralBSPC26" hidden></p>
+                        <a class="more" href="research.html#biomedical">Biomedical publications &rarr;</a>
+                    </article>
+
+                    <article class="app-card">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="14" y="64" width="24" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <line x1="10" y1="72" x2="42" y2="72" stroke="currentColor" stroke-width="2"/>
+                                <line x1="12" y1="74" x2="16" y2="78" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                                <line x1="18" y1="74" x2="22" y2="78" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                                <line x1="24" y1="74" x2="28" y2="78" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                                <line x1="30" y1="74" x2="34" y2="78" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                                <line x1="36" y1="74" x2="40" y2="78" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                                <circle cx="26" cy="64" r="5" stroke="currentColor" stroke-width="2" fill="var(--bg-card,#fff)"/>
+                                <circle cx="26" cy="64" r="2" fill="currentColor"/>
+                                <line x1="30" y1="60" x2="56" y2="34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="56" cy="34" r="4.5" stroke="currentColor" stroke-width="2" fill="var(--bg-card,#fff)"/>
+                                <circle cx="56" cy="34" r="1.8" fill="currentColor"/>
+                                <line x1="60" y1="32" x2="86" y2="18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="86" cy="18" r="3.5" stroke="currentColor" stroke-width="1.8" fill="var(--bg-card,#fff)"/>
+                                <circle cx="86" cy="18" r="1.5" fill="currentColor"/>
+                                <line x1="89" y1="16" x2="98" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="98" y1="10" x2="104" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                <line x1="98" y1="10" x2="104" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                <path d="M26,56 A8,8 0 0,1 32,60" stroke="currentColor" stroke-width="1" fill="none" opacity="0.5"/>
+                                <text x="33" y="56" fill="currentColor" font-family="'Crimson Text',Georgia,serif" font-size="8" font-style="italic" opacity="0.6">q&#8321;</text>
+                                <path d="M56,26 A8,8 0 0,1 62,30" stroke="currentColor" stroke-width="1" fill="none" opacity="0.5"/>
+                                <text x="63" y="27" fill="currentColor" font-family="'Crimson Text',Georgia,serif" font-size="8" font-style="italic" opacity="0.6">q&#8322;</text>
+                            </svg>
+                        </div>
+                        <h3>Autonomous robotics</h3>
+                        <p>Aerial, ground, underwater and collaborative robots, and autonomous vehicles that keep their passengers comfortable.</p>
+                        <p class="recent" data-bib="Mousavi_Actuators2024" hidden></p>
+                        <a class="more" href="research.html#robotics">Robotics publications &rarr;</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Latest papers ============ -->
+        <section class="section section-white" aria-labelledby="latest-title">
+            <div class="section-inner split">
+                <div class="rail">
+                    <p class="eyebrow">Publications</p>
+                    <h2 id="latest-title">Latest papers</h2>
+                    <p>The most recent entries from the full publication list.</p>
+                    <a class="rail-link" href="publications.html">All publications &rarr;</a>
+                </div>
+
+                <ol class="latest" id="latest">
+                    <li class="latest-fallback">The full list of journal articles, conference papers and books is on the <a href="publications.html">publications page</a>.</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- ============ Roles and background ============ -->
+        <section class="section section-page" aria-labelledby="roles-title">
+            <div class="section-inner split">
+                <div class="rail">
+                    <p class="eyebrow">Leadership</p>
+                    <h2 id="roles-title">Roles and service</h2>
+                    <p>Work for the control and robotics community, in the UK and internationally.</p>
+                </div>
+
+                <dl class="roles">
+                    <div><dt>Chair</dt><dd>IEEE UK and Ireland Control Systems Chapter, 2025&ndash;2027</dd></div>
+                    <div><dt>Steering Committee Chair</dt><dd>IEEE EUROCON 2027, Sarajevo</dd></div>
+                    <div><dt>Editor</dt><dd><em>Results in Engineering</em>; editorial board member of <em>Ocean Engineering</em> and the <em>Turkish Journal of Electrical Engineering and Computer Sciences</em></dd></div>
+                    <div><dt>Founder and lead</dt><dd>Robotics for Common Good Research Group, Glasgow Caledonian University</dd></div>
+                    <div><dt>Peer review</dt><dd>EPSRC Peer Review College (UKRI); expert reviewer for EUREKA Eurostars and Innovation Fund Denmark</dd></div>
+                    <div><dt>Research strategy</dt><dd>Thematic Leadership Group in Robotics and Autonomous Systems, Scottish Research Partnership in Engineering</dd></div>
+                    <div><dt>Memberships</dt><dd>Senior Member of IEEE; Fellow of the Higher Education Academy; member of five IFAC technical committees</dd></div>
+                </dl>
+            </div>
+
+            <div class="section-inner split split-follow">
+                <div class="rail">
+                    <p class="eyebrow">Background</p>
+                    <h2>Career in brief</h2>
+                </div>
+
+                <div class="prose">
+                    <p>I received my BSc, MSc and PhD degrees in Electrical Engineering from Y&#305;ld&#305;z Technical University (YTU), Istanbul, in 1997, 1999 and 2002. At YTU I was Assistant Professor (2004&ndash;2010), Associate Professor (2010&ndash;2015) and Full Professor (2015&ndash;2017). I joined Glasgow Caledonian University in 2017 and have been a Reader since 2021.</p>
+                    <p>I was Principal Investigator of ROBMAN, an EPSRC project on robust robotic manipulation underwater with Heriot-Watt University and Subsea 7, and my research has attracted more than &pound;1.4 million in competitive and industrial funding. I have supervised six PhD students to completion and examine doctoral theses in the UK and abroad.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Teaching ============ -->
+        <section class="section section-white" aria-labelledby="teaching-title">
+            <div class="section-inner split">
+                <div class="rail">
+                    <p class="eyebrow">Teaching</p>
+                    <h2 id="teaching-title">Open textbooks and courses</h2>
+                    <p>Interactive course materials with full textbook chapters, worked MATLAB and Python examples, and hands-on simulation tools.</p>
+                    <a class="rail-link" href="teaching.html">All teaching material &rarr;</a>
+                </div>
+
+                <div class="books">
+                    <a class="book" href="control-systems.html">
+                        <img src="cs-notes/figures/cs_book_cover.jpg" alt="" width="565" height="800" loading="lazy">
+                        <span class="book-text">
+                            <span class="book-kicker">Control Systems</span>
+                            <span class="book-title">Feedback Control: Modelling, Analysis, and Design with MATLAB/Simulink</span>
+                            <span class="book-more">Open course &rarr;</span>
+                        </span>
                     </a>
-                    <a href="https://orcid.org/0000-0003-0174-5680" target="_blank">
-                        <img src="images/orcid.svg" alt="ORCID"> ORCID
-                    </a>
-                    <a href="https://researchonline.gcu.ac.uk/en/persons/ibrahim-k%C3%BC%C3%A7%C3%BCkdemiral/" target="_blank">
-                        <img src="images/gcu-logo.png" alt="GCU" class="gcu-logo"> GCU Research
-                    </a>
-                    <a href="https://www.linkedin.com/in/ibrahim-k%C3%BC%C3%A7%C3%BCkdemiral-12645664" target="_blank">
-                        <img src="images/linkedin.svg" alt="LinkedIn"> LinkedIn
+                    <a class="book" href="model-predictive-control.html">
+                        <img src="mpc-notes/figures/mpc_book_cover.jpg" alt="" width="1000" height="1329" loading="lazy">
+                        <span class="book-text">
+                            <span class="book-kicker">Model Predictive Control</span>
+                            <span class="book-title">Model Predictive Control: From Foundations to Advanced Topics</span>
+                            <span class="book-more">Open course &rarr;</span>
+                        </span>
                     </a>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <h3>Academic Background</h3>
-        <p>Dr. Kucukdemiral completed his BSc, MSc, and PhD degrees in Electrical Engineering at Yildiz Technical University (YTU) in 1997, 1999, and 2002, respectively. His career spans positions as Research and Teaching Assistant (1998&ndash;2004), Assistant Professor (2004&ndash;2010), Associate Professor (2010&ndash;2015), and Full Professor (2015&ndash;2017) at YTU.</p>
-
-        <h3>Research Interests</h3>
-        <p>His research covers a broad range of control engineering topics, including robust, optimal, and adaptive control systems, model predictive control, computational and data-driven control, with applications in mechatronics, renewable energy systems, autonomous vehicles, and robotics. He has been actively involved in significant research collaborations, such as the EPSRC-funded ROBMAN project on robust robotic manipulation underwater.</p>
-
-        <h3>Professional Activities</h3>
-        <p>As a Fellow of the Higher Education Academy (FHEA), a Senior Member of IEEE, and a member of IFAC, Dr. Kucukdemiral has contributed extensively through teaching, supervision, and module leadership across institutions including YTU, the Turkish Airforce Academy, and the University of Sharjah.</p>
-        <p>He is an editor of <em>Results in Engineering</em> (Q1) and serves on the editorial boards of <em>Ocean Engineering</em> (Q1) and the <em>Turkish Journal of Electrical Engineering &amp; Computer Sciences</em>. He has supervised five PhD students to completion and continues to provide consultation and review services globally.</p>
-        <p>Dr. Kucukdemiral serves in the EPSRC Peer Review College and as an external examiner for several universities in England. He is also a member of the Thematic Leadership Group for Robotics and Autonomous Systems, a strategic partnership among Scotland's universities aimed at securing Scotland's standing as a world-class centre of research excellence in engineering.</p>
-    </div>
+        <!-- ============ Contact ============ -->
+        <section class="section cta" aria-labelledby="cta-title">
+            <div class="section-inner cta-inner">
+                <div>
+                    <h2 id="cta-title">Collaboration and PhD supervision</h2>
+                    <p>I welcome enquiries about research collaboration, PhD supervision and academic partnerships.</p>
+                </div>
+                <a class="btn btn-primary" href="contact.html">Get in touch</a>
+            </div>
+        </section>
+    </main>
 
     <footer>
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <script src="js/bib-parser.js"></script>
+    <script src="js/home.js"></script>
 </body>
 </html>
