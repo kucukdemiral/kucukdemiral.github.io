@@ -3,9 +3,37 @@
 
     var B = BibParser;
 
+    var themeMeta = {
+        robust: {
+            eyebrow: '01 · Control Theory',
+            name: 'Robust & Optimal Control'
+        },
+        mpc: {
+            eyebrow: '02 · Predictive Optimisation',
+            name: 'Model Predictive Control'
+        },
+        datadriven: {
+            eyebrow: '03 · Learning & Safety',
+            name: 'Data-Driven & Conformal Control'
+        },
+        robotics: {
+            eyebrow: '04 · Autonomous Machines',
+            name: 'Robotics & Autonomous Systems'
+        },
+        energy: {
+            eyebrow: '05 · Clean Infrastructure',
+            name: 'Renewable Energy & Smart Grids'
+        },
+        biomedical: {
+            eyebrow: '06 · Physiological Control',
+            name: 'Biomedical Engineering'
+        }
+    };
+
     var themeKeywords = {
         robust: [
             'h-infinity', 'h_infinity', 'h_\\infty', 'h∞', 'mathcal h', 'mathcal{h}',
+            'integral quadratic', 'iqc',
             'sliding mode', 'backstepping', 'lmi', 'linear matrix inequalit',
             'robust control', 'robust delay', 'robust disturbance',
             'gain-scheduling', 'gain scheduling', 'lpv', 'linear parameter varying',
@@ -30,7 +58,7 @@
         ],
         datadriven: [
             'data-driven', 'data driven', 'data-enabled', 'data enabled',
-            'deepc', 'deep reinforcement',
+            'deepc', 'koopman', 'conformal', 'edmd', 'deep reinforcement',
             'learning-based', 'learning based',
             'neural network', 'radial basis',
             'q-learning', 'firefly algorithm',
@@ -42,7 +70,7 @@
         robotics: [
             'quadrotor', 'uav', 'unmanned aerial',
             'underwater', 'auv', 'autonomous underwater',
-            'robot', 'mobile robot', 'wheeled',
+            'robot', 'legged', 'humanoid', 'mobile robot', 'wheeled',
             'collaborative robot', 'cobot',
             'manipulator', 'pendulum', 'inverted pendulum',
             'teleoperation', 'bilateral',
@@ -70,7 +98,7 @@
         ]
     };
 
-    var wordBoundaryKeywords = ['mpc', 'pid', 'llm', 'solar', 'lmi', 'lmis'];
+    var wordBoundaryKeywords = ['mpc', 'pid', 'llm', 'solar', 'lmi', 'lmis', 'iqc', 'edmd'];
 
     function matchesKeyword(blob, kw) {
         if (wordBoundaryKeywords.indexOf(kw) !== -1) {
@@ -81,7 +109,6 @@
     }
 
     function classifyEntry(entry) {
-        // Resolve LaTeX accents and drop grouping braces ({EV}, {LPV}) before matching.
         var blob = B.cleanAccents([
             entry.title, entry.abstract, entry.journal,
             entry.booktitle, entry.keywords, entry.note
@@ -100,67 +127,106 @@
         return themes;
     }
 
+    function updateHeroMetrics(entries) {
+        var totalEl = document.getElementById('statTotal');
+        var journalsEl = document.getElementById('statJournals');
+        var spanEl = document.getElementById('statSpan');
+
+        if (totalEl) totalEl.textContent = String(entries.length);
+
+        var journals = entries.filter(function (e) { return B.getCategory(e) === 'journal'; }).length;
+        if (journalsEl) journalsEl.textContent = String(journals);
+
+        var years = entries.map(function (e) { return parseInt(e.year, 10); }).filter(Boolean);
+        if (spanEl && years.length) {
+            spanEl.innerHTML = Math.min.apply(null, years) + '&ndash;' + Math.max.apply(null, years);
+        }
+    }
+
+    function renderPage(raw) {
+        var entries = raw ? B.parse(raw).filter(function (e) { return !B.isHidden(e); }) : [];
+        entries.sort(B.compareEntries);
+
+        if (entries.length) updateHeroMetrics(entries);
+
+        var themeEntries = {};
+        for (var theme in themeKeywords) {
+            themeEntries[theme] = [];
+        }
+
+        entries.forEach(function (e) {
+            var themes = classifyEntry(e);
+            themes.forEach(function (t) {
+                themeEntries[t].push(e);
+            });
+        });
+
+        // Update card counts and latest paper preview (distinct flagship paper per card)
+        var usedLatestKeys = {};
+        document.querySelectorAll('.theme-card').forEach(function (card) {
+            var theme = card.getAttribute('data-theme');
+            var papers = themeEntries[theme] || [];
+            var jCount = papers.filter(function (p) { return B.getCategory(p) === 'journal'; }).length;
+
+            var countBadge = card.querySelector('.theme-count');
+            if (countBadge) {
+                countBadge.textContent = papers.length
+                    ? (papers.length + ' publications · ' + jCount + ' journal')
+                    : 'View theme';
+            }
+
+            var latestEl = card.querySelector('[data-latest-for="' + theme + '"]');
+            if (latestEl && papers.length > 0) {
+                var newest = papers[0];
+                for (var k = 0; k < papers.length; k++) {
+                    if (!usedLatestKeys[papers[k]._key]) {
+                        newest = papers[k];
+                        break;
+                    }
+                }
+                usedLatestKeys[newest._key] = true;
+                var yr = newest.year ? ' (' + B.escHtml(newest.year) + ')' : '';
+                latestEl.innerHTML = '<span class="theme-latest-label">Latest' + yr + '</span>' +
+                    B.renderLatex(newest.title || '');
+                latestEl.hidden = false;
+            }
+        });
+
+        // Bind click and keyboard handlers
+        document.querySelectorAll('.theme-card').forEach(function (card) {
+            function handler() {
+                var theme = card.getAttribute('data-theme');
+                openModal(theme, themeEntries[theme] || [], raw || '');
+            }
+            card.addEventListener('click', handler);
+            card.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    handler();
+                }
+            });
+        });
+
+        // Open a theme straight from a link such as research.html#energy
+        var hashTheme = (window.location.hash || '').replace('#', '');
+        if (Object.prototype.hasOwnProperty.call(themeEntries, hashTheme)) {
+            openModal(hashTheme, themeEntries[hashTheme], raw || '');
+        }
+    }
+
     function init() {
-        fetch('pub.bib')
-            .then(function (r) { return r.text(); })
+        var loader = B.loadBib ? B.loadBib() : fetch('pub.bib').then(function (r) { return r.text(); });
+        loader
             .then(function (raw) {
-                var entries = B.parse(raw).filter(function (e) { return !B.isHidden(e); });
-                entries.sort(B.compareEntries);
-
-                var themeEntries = {};
-                for (var theme in themeKeywords) {
-                    themeEntries[theme] = [];
-                }
-
-                entries.forEach(function (e) {
-                    var themes = classifyEntry(e);
-                    themes.forEach(function (t) {
-                        themeEntries[t].push(e);
-                    });
-                });
-
-                // Update card counts
-                document.querySelectorAll('.theme-card').forEach(function (card) {
-                    var theme = card.getAttribute('data-theme');
-                    var papers = themeEntries[theme] || [];
-                    var countBadge = card.querySelector('.theme-count');
-                    if (countBadge) {
-                        countBadge.textContent = papers.length + ' paper' + (papers.length !== 1 ? 's' : '');
-                    }
-                    var cta = card.querySelector('.theme-cta');
-                    if (cta) {
-                        cta.textContent = 'View ' + papers.length + ' publication' + (papers.length !== 1 ? 's' : '') + ' →';
-                    }
-                });
-
-                // Bind click handlers
-                document.querySelectorAll('.theme-card').forEach(function (card) {
-                    function handler() {
-                        var theme = card.getAttribute('data-theme');
-                        openModal(theme, themeEntries[theme] || [], raw);
-                    }
-                    card.addEventListener('click', handler);
-                    card.addEventListener('keydown', function (ev) {
-                        if (ev.key === 'Enter' || ev.key === ' ') {
-                            ev.preventDefault();
-                            handler();
-                        }
-                    });
-                });
-
-                // Open a theme straight from a link such as research.html#energy
-                var hashTheme = (window.location.hash || '').replace('#', '');
-                if (Object.prototype.hasOwnProperty.call(themeEntries, hashTheme)) {
-                    openModal(hashTheme, themeEntries[hashTheme], raw);
-                }
+                renderPage(raw);
             })
             .catch(function (err) {
                 console.error('Failed to load pub.bib:', err);
+                renderPage('');
             });
     }
 
     // --- Clips of current work (js/demos.js) ---
-    // Themes whose windows open with the clips, above the paper list
     var demoThemes = { robust: true, mpc: true, datadriven: true, robotics: true };
 
     function demosHtml() {
@@ -178,59 +244,54 @@
         html += '</div>';
         html += '<p class="modal-demos-key">';
         html += '<span class="key"><span class="key-dot key-blue"></span>Proposed data-driven controller</span>';
-        html += '<span class="key"><span class="key-dot key-ring"></span>Adaptive 3D conformal safety tube</span>';
+        html += '<span class="key"><span class="key-dot key-ring"></span>Adaptive 3D conformal safety cage</span>';
         html += '<span class="key"><span class="key-dot key-red"></span>Conventional / nominal MPC baseline</span>';
         html += '</p>';
         html += '</section>';
-        html += '<h4 class="modal-list-title">Publications</h4>';
         return html;
     }
 
-    // --- Modal ---
-    var overlay, modalTitle, modalBody, modalClose;
+    var typeBadgeLabels = {
+        journal: { label: 'Journal', cls: '' },
+        conference: { label: 'Conference', cls: ' modal-type-conference' },
+        chapter: { label: 'Book Chapter', cls: ' modal-type-book' },
+        book: { label: 'Book', cls: ' modal-type-book' }
+    };
 
-    function openModal(theme, papers, rawBib) {
-        overlay = document.getElementById('modalOverlay');
-        modalTitle = document.getElementById('modalTitle');
-        modalBody = document.getElementById('modalBody');
-        modalClose = document.getElementById('modalClose');
-
-        // Stop any clips left over from the theme that was open before
-        if (window.Demos) window.Demos.release(modalBody);
-
-        var themeNames = {
-            robust: 'Robust & Optimal Control',
-            mpc: 'Model Predictive Control',
-            datadriven: 'Data-Driven Control',
-            robotics: 'Robotics & Autonomous Systems',
-            energy: 'Renewable Energy & Smart Grids',
-            biomedical: 'Biomedical Engineering'
-        };
-
-        modalTitle.textContent = themeNames[theme] || theme;
+    function renderPaperCards(papers) {
+        if (!papers.length) {
+            return '<p class="modal-empty">No matching publications found in this theme.</p>';
+        }
 
         var html = '';
         papers.forEach(function (e) {
             var doi = e.doi || '';
             if (doi && !doi.startsWith('http')) doi = 'https://doi.org/' + doi;
 
+            var cat = B.getCategory(e);
+            var tInfo = typeBadgeLabels[cat] || { label: 'Publication', cls: '' };
+
             html += '<div class="modal-paper">';
-            html += '<div class="modal-paper-year">' + (e.year || '?') + '</div>';
+            html += '<div class="modal-paper-year">' + B.escHtml(e.year || '?') + '</div>';
             html += '<div class="modal-paper-content">';
+
+            html += '<div class="modal-paper-badges">';
+            html += '<span class="modal-type-badge' + tInfo.cls + '">' + tInfo.label + '</span>';
+            if (B.isUnderReview(e)) {
+                html += '<span class="modal-under-review">Under Review</span>';
+            } else if (B.isAccepted(e)) {
+                html += '<span class="modal-accepted">Accepted</span>';
+            }
+            html += '</div>';
+
             html += '<h4>' + B.renderLatex(e.title || 'Untitled') + '</h4>';
             html += '<p class="modal-paper-authors">' + B.escHtml(B.formatAuthors(e.author)) + '</p>';
 
             var venue = B.formatVenue(e);
             if (venue) html += '<p class="modal-paper-venue">' + B.escHtml(venue) + '</p>';
 
-            if (B.isUnderReview(e)) {
-                html += '<span class="modal-under-review">Under Review</span> ';
-            } else if (B.isAccepted(e)) {
-                html += '<span class="modal-accepted">Accepted</span> ';
-            }
-
             if (e.abstract) {
-                html += '<details class="modal-abstract-details"><summary>Abstract</summary>';
+                html += '<details class="modal-abstract-details"><summary>Read abstract</summary>';
                 html += '<p class="modal-paper-abstract">' + B.renderLatex(e.abstract) + '</p>';
                 html += '</details>';
             }
@@ -240,29 +301,101 @@
                 var linkLabel = 'View Paper';
                 if (doi.indexOf('arxiv.org') !== -1) linkLabel = 'Preprint';
                 else if (doi.indexOf('amzn.') !== -1 || doi.indexOf('a.co/') !== -1) linkLabel = 'View Book';
-                actions += '<a href="' + B.escHtml(doi) + '" target="_blank" rel="noopener" class="modal-paper-doi">' + linkLabel + ' →</a> ';
+                actions += '<a href="' + B.escHtml(doi) + '" target="_blank" rel="noopener" class="modal-paper-doi">' + linkLabel + ' &rarr;</a> ';
             }
             if (e.url && e.url !== doi) {
-                actions += '<a href="' + B.escHtml(e.url) + '" target="_blank" rel="noopener" class="modal-paper-doi modal-paper-link">Link →</a> ';
+                actions += '<a href="' + B.escHtml(e.url) + '" target="_blank" rel="noopener" class="modal-paper-doi modal-paper-link">Link &rarr;</a> ';
             }
-            actions += '<button class="modal-paper-doi modal-bib-btn" data-key="' + B.escHtml(e._key) + '">BibTeX</button>';
+            actions += '<button type="button" class="modal-paper-doi modal-bib-btn" data-key="' + B.escHtml(e._key) + '">BibTeX</button>';
             html += '<div class="modal-paper-actions">' + actions + '</div>';
 
             html += '</div></div>';
         });
+        return html;
+    }
 
-        if (papers.length === 0) {
-            html = '<p style="color:var(--text-light);text-align:center;padding:2rem 0;">No publications found for this theme.</p>';
+    // --- Modal ---
+    function openModal(theme, papers, rawBib) {
+        var overlay = document.getElementById('modalOverlay');
+        var modalEyebrow = document.getElementById('modalEyebrow');
+        var modalTitle = document.getElementById('modalTitle');
+        var modalSubtitle = document.getElementById('modalSubtitle');
+        var modalBody = document.getElementById('modalBody');
+        var modalClose = document.getElementById('modalClose');
+
+        if (window.Demos) window.Demos.release(modalBody);
+
+        var meta = themeMeta[theme] || { eyebrow: 'Research Theme', name: theme };
+        if (modalEyebrow) modalEyebrow.textContent = meta.eyebrow;
+        modalTitle.textContent = meta.name;
+
+        var jCount = papers.filter(function (p) { return B.getCategory(p) === 'journal'; }).length;
+        var cCount = papers.filter(function (p) { return B.getCategory(p) === 'conference'; }).length;
+        var years = papers.map(function (p) { return parseInt(p.year, 10); }).filter(Boolean);
+        var spanText = years.length ? (' · ' + Math.min.apply(null, years) + '–' + Math.max.apply(null, years)) : '';
+        if (modalSubtitle) {
+            modalSubtitle.textContent = papers.length + ' publications (' + jCount + ' journal, ' + cCount + ' conference)' + spanText;
         }
 
-        if (demoThemes[theme]) html = demosHtml() + html;
+        var html = '';
+        if (demoThemes[theme]) html += demosHtml();
+
+        html += '<div class="modal-toolbar">';
+        html += '<div class="modal-filters" role="tablist" aria-label="Filter publications by type">';
+        html += '<button type="button" class="modal-filter-btn active" data-type="all">All (' + papers.length + ')</button>';
+        if (jCount > 0) html += '<button type="button" class="modal-filter-btn" data-type="journal">Journal (' + jCount + ')</button>';
+        if (cCount > 0) html += '<button type="button" class="modal-filter-btn" data-type="conference">Conference (' + cCount + ')</button>';
+        html += '</div>';
+        html += '<input type="search" class="modal-search" id="modalSearch" placeholder="Filter by keyword or year..." aria-label="Filter publications in this theme">';
+        html += '</div>';
+
+        html += '<div id="modalPaperList">' + renderPaperCards(papers) + '</div>';
 
         modalBody.innerHTML = html;
         modalBody.scrollTop = 0;
         if (window.Demos) window.Demos.init(modalBody);
 
-        // Bind BibTeX copy buttons
-        modalBody.querySelectorAll('.modal-bib-btn').forEach(function (btn) {
+        var activeType = 'all';
+        var searchQuery = '';
+        var listEl = document.getElementById('modalPaperList');
+        var searchEl = document.getElementById('modalSearch');
+
+        function refreshList() {
+            var filtered = papers.filter(function (e) {
+                if (activeType !== 'all' && B.getCategory(e) !== activeType) return false;
+                if (!searchQuery) return true;
+                var hay = B.stripLatex([e.title, e.author, e.journal, e.booktitle, e.year].join(' ')).toLowerCase();
+                return hay.indexOf(searchQuery) !== -1;
+            });
+            listEl.innerHTML = renderPaperCards(filtered);
+            bindBibButtons(listEl, rawBib);
+        }
+
+        modalBody.querySelectorAll('.modal-filter-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                modalBody.querySelectorAll('.modal-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                activeType = btn.getAttribute('data-type');
+                refreshList();
+            });
+        });
+
+        if (searchEl) {
+            searchEl.addEventListener('input', function () {
+                searchQuery = searchEl.value.trim().toLowerCase();
+                refreshList();
+            });
+        }
+
+        bindBibButtons(listEl, rawBib);
+
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        modalClose.focus();
+    }
+
+    function bindBibButtons(root, rawBib) {
+        root.querySelectorAll('.modal-bib-btn').forEach(function (btn) {
             btn.addEventListener('click', function (ev) {
                 ev.stopPropagation();
                 var key = btn.getAttribute('data-key');
@@ -273,10 +406,6 @@
                 });
             });
         });
-
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        modalClose.focus();
     }
 
     function closeModalFn() {
@@ -284,7 +413,6 @@
         if (ov) {
             ov.classList.remove('active');
             document.body.style.overflow = '';
-            // The closed window is only hidden, so its clips must be stopped by hand
             if (window.Demos) window.Demos.release(document.getElementById('modalBody'));
         }
     }

@@ -86,11 +86,12 @@
         list.innerHTML = html;
     }
 
-    fetch('pub.bib')
-        .then(function (r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.text();
-        })
+    var loader = B.loadBib ? B.loadBib() : fetch('pub.bib').then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+    });
+
+    loader
         .then(function (raw) {
             var entries = B.parse(raw).filter(function (e) { return !B.isHidden(e); });
             entries.sort(B.compareEntries);

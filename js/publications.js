@@ -184,8 +184,8 @@
 
     // --- Init ---
     document.addEventListener('DOMContentLoaded', function () {
-        fetch('pub.bib')
-            .then(function (r) { return r.text(); })
+        var loader = B.loadBib ? B.loadBib() : fetch('pub.bib').then(function (r) { return r.text(); });
+        loader
             .then(function (raw) {
                 var entries = BibParser.parse(raw);
                 render(entries, raw);

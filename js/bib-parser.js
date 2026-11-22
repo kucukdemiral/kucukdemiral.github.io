@@ -336,8 +336,51 @@ var BibParser = (function () {
         return raw.substring(start, i).trim();
     }
 
+    // Loads pub.bib over HTTP(S), falling back to js/pub-fallback.js when opened directly via file://
+    function loadBib() {
+        function loadScriptFallback() {
+            return new Promise(function (resolve, reject) {
+                if (typeof window.PUB_BIB_FALLBACK === 'string') {
+                    resolve(window.PUB_BIB_FALLBACK);
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = 'js/pub-fallback.js';
+                s.onload = function () {
+                    if (typeof window.PUB_BIB_FALLBACK === 'string') {
+                        resolve(window.PUB_BIB_FALLBACK);
+                    } else {
+                        reject(new Error('Fallback BibTeX data unavailable'));
+                    }
+                };
+                s.onerror = function () {
+                    reject(new Error('Could not load pub.bib or js/pub-fallback.js'));
+                };
+                document.head.appendChild(s);
+            });
+        }
+
+        if (window.location && window.location.protocol === 'file:') {
+            return loadScriptFallback();
+        }
+
+        if (!window.fetch) {
+            return loadScriptFallback();
+        }
+
+        return fetch('pub.bib')
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            })
+            .catch(function () {
+                return loadScriptFallback();
+            });
+    }
+
     return {
         parse: parse,
+        loadBib: loadBib,
         renderLatex: renderLatex,
         stripLatex: stripLatex,
         escHtml: escHtml,
