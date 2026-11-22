@@ -9,6 +9,10 @@
     background: #0B1118;
 }
 
+.demo-media-light {
+    background: #EAEEF5;
+}
+
 .demo-video {
     display: block;
     width: 100%;
@@ -80,4 +84,8 @@
 }
 
 .key-blue { background: #1FA8D8; }
+.key-ring {
+    background: rgba(35, 88, 190, 0.14);
+    border: 2px solid #2358BE;
+}
 .key-red { background: #D2453A; }

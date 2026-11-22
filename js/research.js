@@ -161,7 +161,7 @@
 
     // --- Clips of current work (js/demos.js) ---
     // Themes whose windows open with the clips, above the paper list
-    var demoThemes = { mpc: true, datadriven: true, robotics: true };
+    var demoThemes = { robust: true, mpc: true, datadriven: true, robotics: true };
 
     function demosHtml() {
         var D = window.Demos;
@@ -169,7 +169,7 @@
 
         var html = '<section class="modal-demos" aria-label="Current work in motion">';
         html += '<h4>Current work in motion</h4>';
-        html += '<p class="modal-demos-note">Nonlinear data-driven predictive control, shown in simulation. Manuscripts in preparation.</p>';
+        html += '<p class="modal-demos-note">Switched Koopman&ndash;conformal control under random network delays and nonlinear data-driven predictive control, shown in simulation. Manuscripts in preparation.</p>';
         html += '<div class="modal-demos-row">';
         D.clips.forEach(function (clip) {
             html += '<figure class="modal-demo">' + D.html(clip) +
@@ -177,8 +177,9 @@
         });
         html += '</div>';
         html += '<p class="modal-demos-key">';
-        html += '<span class="key"><span class="key-dot key-blue"></span>Data-driven predictive controller</span>';
-        html += '<span class="key"><span class="key-dot key-red"></span>Conventional baseline controller</span>';
+        html += '<span class="key"><span class="key-dot key-blue"></span>Proposed data-driven controller</span>';
+        html += '<span class="key"><span class="key-dot key-ring"></span>Adaptive 3D conformal safety tube</span>';
+        html += '<span class="key"><span class="key-dot key-red"></span>Conventional / nominal MPC baseline</span>';
         html += '</p>';
         html += '</section>';
         html += '<h4 class="modal-list-title">Publications</h4>';

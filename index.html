@@ -157,12 +157,27 @@
                 <div class="motion-head">
                     <div>
                         <p class="eyebrow">Current work</p>
-                        <h2 id="motion-title">Nonlinear data-driven predictive control</h2>
+                        <h2 id="motion-title">Nonlinear data-driven and conformal control</h2>
                     </div>
-                    <p class="motion-lede">My most recent work takes data-driven predictive control beyond linear systems, to machines whose dynamics are strongly nonlinear: aerial, legged and humanoid robots. The controllers are built from recorded data instead of a hand-derived model, and are designed to stay safe when conditions differ from that data.</p>
+                    <p class="motion-lede">My most recent work takes data-driven control beyond linear systems, to machines whose dynamics are strongly nonlinear and whose feedback arrives over delayed wireless links: aerial, legged and humanoid robots. Combining learned lifted dynamics, delay-robust synthesis and adaptive conformal inference, the controllers are built from recorded data and stay safe when winds, terrain or network delays depart from nominal conditions.</p>
                 </div>
 
                 <ul class="demos">
+                    <li>
+                        <figure class="demo">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/crazyflie-kcd.jpg" data-label="Nano-quadrotor gate slalom under random radio delays" aria-label="3D physics simulation of a 29-gram Bitcraze Crazyflie 2.1+ nano-quadrotor flying a figure-eight slalom through four narrow gates under switching radio delays and wind gusts. The blue quadrotor inside an adaptive 3D conformal wireframe safety cage clears every gate, while a red constrained nominal MPC baseline clips the gates.">
+                                    <source src="media/crazyflie-kcd.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="demo-kicker">Nano-quadrotor &middot; Delayed link</p>
+                                <h3>Switched Koopman&ndash;conformal flight in wind and radio lag</h3>
+                                <p>A 29&nbsp;g Crazyflie&nbsp;2.1+ flies a tight gate slalom under random 0&ndash;150&nbsp;ms radio delays and crosswinds. A switched Koopman law with an online conformal 3D safety cage clears every gate at microsecond rates, while a constrained nominal MPC oscillates into the frames.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
                     <li>
                         <figure class="demo">
                             <div class="demo-media">
@@ -180,7 +195,7 @@
                     </li>
                     <li>
                         <figure class="demo">
-                            <div class="demo-media">
+                            <div class="demo-media demo-media-light">
                                 <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/quadruped-locomotion.jpg" data-label="Quadruped on logs and ice" aria-label="Simulation of a four-legged robot walking a course of pylons, logs and ice. A blue robot completes the course while a red robot falls.">
                                     <source src="media/quadruped-locomotion.mp4" type="video/mp4">
                                 </video>
@@ -195,7 +210,7 @@
                     </li>
                     <li>
                         <figure class="demo">
-                            <div class="demo-media">
+                            <div class="demo-media demo-media-light">
                                 <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/humanoid-locomotion.jpg" data-label="Humanoid on planks and wet ground" aria-label="Simulation of a humanoid robot walking a course of pylons, planks and wet ground. A blue robot completes the course while a red robot falls.">
                                     <source src="media/humanoid-locomotion.mp4" type="video/mp4">
                                 </video>
@@ -212,8 +227,9 @@
 
                 <div class="motion-note">
                     <p class="motion-key">
-                        <span class="key"><span class="key-dot key-blue"></span>Data-driven predictive controller</span>
-                        <span class="key"><span class="key-dot key-red"></span>Conventional baseline controller</span>
+                        <span class="key"><span class="key-dot key-blue"></span>Data-driven predictive / Koopman controller</span>
+                        <span class="key"><span class="key-dot key-ring"></span>Adaptive 3D conformal safety cage</span>
+                        <span class="key"><span class="key-dot key-red"></span>Conventional / nominal MPC baseline</span>
                     </p>
                     <p>Simulation studies from manuscripts in preparation. The methods will be described here once the papers are published.</p>
                 </div>

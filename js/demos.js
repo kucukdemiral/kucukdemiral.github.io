@@ -8,6 +8,12 @@
 
     var CLIPS = [
         {
+            id: 'crazyflie-kcd',
+            label: 'Nano-quadrotor gate slalom under random radio delays',
+            alt: '3D physics simulation of a 29-gram Bitcraze Crazyflie 2.1+ nano-quadrotor flying a figure-eight slalom through four narrow gates under switching radio delays and wind gusts. The blue quadrotor inside an adaptive 3D conformal wireframe safety cage clears every gate, while a red constrained nominal MPC baseline clips the gates.',
+            light: true
+        },
+        {
             id: 'aerial-navigation',
             label: 'Quadrotor in an unmapped warehouse',
             alt: 'Simulation of a quadrotor flying past storage racks in a warehouse to reach a goal point.'
@@ -15,12 +21,14 @@
         {
             id: 'quadruped-locomotion',
             label: 'Quadruped on logs and ice',
-            alt: 'Simulation of a four-legged robot walking a course of pylons, logs and ice. A blue robot completes the course while a red robot falls.'
+            alt: 'Simulation of a four-legged robot walking a course of pylons, logs and ice. A blue robot completes the course while a red robot falls.',
+            light: true
         },
         {
             id: 'humanoid-locomotion',
             label: 'Humanoid on planks and wet ground',
-            alt: 'Simulation of a humanoid robot walking a course of pylons, planks and wet ground. A blue robot completes the course while a red robot falls.'
+            alt: 'Simulation of a humanoid robot walking a course of pylons, planks and wet ground. A blue robot completes the course while a red robot falls.',
+            light: true
         }
     ];
 
@@ -117,7 +125,8 @@
     // Markup for one clip, for pages that build their content in JavaScript
     function html(clip) {
         var base = 'media/' + clip.id;
-        return '<div class="demo-media">' +
+        var mediaClass = 'demo-media' + (clip.light ? ' demo-media-light' : '');
+        return '<div class="' + mediaClass + '">' +
             '<video class="demo-video" muted loop playsinline controls preload="none"' +
             ' width="800" height="600" poster="' + base + '.jpg"' +
             ' data-label="' + clip.label + '" aria-label="' + clip.alt + '">' +

@@ -482,8 +482,8 @@ body.home main a:focus-visible {
 
 .demos {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.15rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -502,7 +502,7 @@ body.home main a:focus-visible {
 }
 
 .demo figcaption {
-    padding: 1.15rem 1.3rem 1.35rem;
+    padding: 1.05rem 1.15rem 1.25rem;
 }
 
 .demo-kicker {
@@ -516,14 +516,14 @@ body.home main a:focus-visible {
 
 .demo h3 {
     margin: 0 0 0.45rem;
-    font-size: 1.28rem;
+    font-size: 1.2rem;
     line-height: 1.25;
 }
 
 .demo figcaption p:last-child {
     margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.92rem;
+    line-height: 1.58;
     color: var(--text-secondary);
 }
 
@@ -982,10 +982,14 @@ body.home main a:focus-visible {
     .motion-lede {
         max-width: 44rem;
     }
+
+    .demos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 /* Clips: one per row, picture beside its caption */
-@media (max-width: 800px) {
+@media (max-width: 680px) {
     .demos {
         grid-template-columns: minmax(0, 1fr);
     }
