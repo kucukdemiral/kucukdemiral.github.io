@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20261122b">
-    <link rel="stylesheet" href="css/demos.css?v=20261122b">
-    <link rel="stylesheet" href="css/research.css?v=20261122b">
+    <link rel="stylesheet" href="css/styles.css?v=20261125a">
+    <link rel="stylesheet" href="css/demos.css?v=20261125a">
+    <link rel="stylesheet" href="css/research.css?v=20261125a">
 </head>
 <body class="research-body">
     <header>
@@ -446,6 +446,106 @@
             </div>
         </section>
 
+        <!-- ============ Simulations in Motion Showcase ============ -->
+        <section class="res-motion-band" id="simulations" aria-labelledby="res-motion-title">
+            <div class="res-inner">
+                <div class="res-section-head">
+                    <div>
+                        <p class="res-section-eyebrow">In Motion</p>
+                        <h3 id="res-motion-title">Nonlinear data-driven and conformal control</h3>
+                    </div>
+                    <p class="res-section-hint">Recent 3D physics studies combining learned Koopman / data-enabled dynamics, switched delay-robust synthesis and online adaptive conformal safety tubes across aerial, quadruped and humanoid robots under winds, slippery ground and random 0&ndash;150&nbsp;ms feedback delays.</p>
+                </div>
+
+                <ul class="res-demos">
+                    <li>
+                        <figure class="res-demo-card">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/crazyflie-kcd.jpg" data-label="Nano-quadrotor gate slalom under random radio delays" aria-label="3D physics simulation of a 29-gram Bitcraze Crazyflie 2.1+ nano-quadrotor flying a figure-eight slalom through four narrow gates under switching radio delays and wind gusts. The blue quadrotor inside an adaptive 3D conformal wireframe safety cage clears every gate, while a red constrained nominal MPC baseline clips the gates.">
+                                    <source src="media/crazyflie-kcd.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="res-demo-kicker">Nano-quadrotor &middot; Delayed link</p>
+                                <h4>Switched Koopman&ndash;conformal flight in wind and radio lag</h4>
+                                <p>A 29&nbsp;g Crazyflie&nbsp;2.1+ flies a tight gate slalom under random 0&ndash;150&nbsp;ms radio delays and crosswinds. A switched Koopman law with an online conformal 3D safety cage clears every gate at microsecond rates, while a constrained nominal MPC oscillates into the frames.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                    <li>
+                        <figure class="res-demo-card">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/go2-parkour-kcd.jpg" data-label="Unitree Go2 3D parkour under network and perception delays" aria-label="3D 1 kHz multi-contact simulation of a 15-kilogram Unitree Go2 quadruped climbing stairs, vaulting a bridge hurdle, crossing a wet slab, descending stairs and hopping off a block under 0 to 150 ms delays. The blue Go2 with online label-free conformal tread and takeoff tightening finishes cleanly, while a red constrained nominal MPC baseline collides at the bridge hurdle.">
+                                    <source src="media/go2-parkour-kcd.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="res-demo-kicker">Quadruped &middot; 3D Parkour &amp; Delayed Link</p>
+                                <h4>Climbing stairs and vaulting hurdles under perception lag</h4>
+                                <p>Two controllers drive the same 15&nbsp;kg Unitree&nbsp;Go2 across stairs, a bridge hurdle, a wet deck and a drop-off block under 0&ndash;150&nbsp;ms network and perception delays. A switched Koopman law with online label-free conformal tightening shrinks stair-tread margins and shifts jump takeoff earlier to clear the course, whereas a constrained nominal MPC lags into the hurdle.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                    <li>
+                        <figure class="res-demo-card">
+                            <div class="demo-media">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/aerial-navigation.jpg" data-label="Quadrotor in an unmapped warehouse" aria-label="Simulation of a quadrotor flying past storage racks in a warehouse to reach a goal point.">
+                                    <source src="media/aerial-navigation.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="res-demo-kicker">Aerial robot</p>
+                                <h4>Flight through an unmapped warehouse</h4>
+                                <p>A quadrotor gathers a short burst of flight data at its launch point. A predictive controller built from that data then flies it past storage racks it discovers on the way.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                    <li>
+                        <figure class="res-demo-card">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/quadruped-locomotion.jpg" data-label="Quadruped on logs and ice" aria-label="Simulation of a four-legged robot walking a course of pylons, logs and ice. A blue robot completes the course while a red robot falls.">
+                                    <source src="media/quadruped-locomotion.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="res-demo-kicker">Quadruped</p>
+                                <h4>Walking over logs and ice</h4>
+                                <p>Two controllers drive the same four-legged robot along a course marked by pylons, across stepping logs and then a sheet of ice, where they part company.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                    <li>
+                        <figure class="res-demo-card">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/humanoid-locomotion.jpg" data-label="Humanoid on planks and wet ground" aria-label="Simulation of a humanoid robot walking a course of pylons, planks and wet ground. A blue robot completes the course while a red robot falls.">
+                                    <source src="media/humanoid-locomotion.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="res-demo-kicker">Humanoid</p>
+                                <h4>Keeping balance on planks and wet ground</h4>
+                                <p>A humanoid robot takes on the same kind of course: raised planks first, then wet, slippery ground.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                </ul>
+
+                <div class="res-motion-note">
+                    <p class="res-motion-key">
+                        <span class="key"><span class="key-dot key-blue"></span>Data-driven predictive / Koopman controller</span>
+                        <span class="key"><span class="key-dot key-ring"></span>Adaptive 3D conformal safety cage</span>
+                        <span class="key"><span class="key-dot key-red"></span>Conventional / nominal MPC baseline</span>
+                    </p>
+                    <p>Simulation studies from manuscripts in preparation.</p>
+                </div>
+            </div>
+        </section>
+
         <!-- ============ Research Group & Collaboration Band ============ -->
         <section class="res-group-band" aria-labelledby="group-title">
             <div class="res-inner res-group-grid">
@@ -483,8 +583,8 @@
     </footer>
 
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-    <script src="js/demos.js?v=20261122b"></script>
-    <script src="js/bib-parser.js?v=20261122b"></script>
-    <script src="js/research.js?v=20261122b"></script>
+    <script src="js/demos.js?v=20261125a"></script>
+    <script src="js/bib-parser.js?v=20261125a"></script>
+    <script src="js/research.js?v=20261125a"></script>
 </body>
 </html>

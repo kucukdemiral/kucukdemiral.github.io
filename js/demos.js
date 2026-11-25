@@ -14,6 +14,12 @@
             light: true
         },
         {
+            id: 'go2-parkour-kcd',
+            label: 'Unitree Go2 3D parkour under network and perception delays',
+            alt: '3D 1 kHz multi-contact simulation of a 15-kilogram Unitree Go2 quadruped climbing stairs, vaulting a bridge hurdle, crossing a wet slab, descending stairs and hopping off a block under 0 to 150 ms delays. The blue Go2 with online label-free conformal tread and takeoff tightening finishes cleanly, while a red constrained nominal MPC baseline collides at the bridge hurdle.',
+            light: true
+        },
+        {
             id: 'aerial-navigation',
             label: 'Quadrotor in an unmapped warehouse',
             alt: 'Simulation of a quadrotor flying past storage racks in a warehouse to reach a goal point.'

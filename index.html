@@ -13,9 +13,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20261122b">
-    <link rel="stylesheet" href="css/demos.css?v=20261122b">
-    <link rel="stylesheet" href="css/home.css?v=20261122b">
+    <link rel="stylesheet" href="css/styles.css?v=20261125a">
+    <link rel="stylesheet" href="css/demos.css?v=20261125a">
+    <link rel="stylesheet" href="css/home.css?v=20261125a">
 </head>
 <body class="home">
     <header>
@@ -175,6 +175,21 @@
                                 <p class="demo-kicker">Nano-quadrotor &middot; Delayed link</p>
                                 <h3>Switched Koopman&ndash;conformal flight in wind and radio lag</h3>
                                 <p>A 29&nbsp;g Crazyflie&nbsp;2.1+ flies a tight gate slalom under random 0&ndash;150&nbsp;ms radio delays and crosswinds. A switched Koopman law with an online conformal 3D safety cage clears every gate at microsecond rates, while a constrained nominal MPC oscillates into the frames.</p>
+                            </figcaption>
+                        </figure>
+                    </li>
+                    <li>
+                        <figure class="demo">
+                            <div class="demo-media demo-media-light">
+                                <video class="demo-video" muted loop playsinline controls preload="none" width="800" height="600" poster="media/go2-parkour-kcd.jpg" data-label="Unitree Go2 3D parkour under network and perception delays" aria-label="3D 1 kHz multi-contact simulation of a 15-kilogram Unitree Go2 quadruped climbing stairs, vaulting a bridge hurdle, crossing a wet slab, descending stairs and hopping off a block under 0 to 150 ms delays. The blue Go2 with online label-free conformal tread and takeoff tightening finishes cleanly, while a red constrained nominal MPC baseline collides at the bridge hurdle.">
+                                    <source src="media/go2-parkour-kcd.mp4" type="video/mp4">
+                                </video>
+                                <span class="demo-tag">Simulation</span>
+                            </div>
+                            <figcaption>
+                                <p class="demo-kicker">Quadruped &middot; 3D Parkour &amp; Delayed Link</p>
+                                <h3>Climbing stairs and vaulting hurdles under perception lag</h3>
+                                <p>Two controllers drive the same 15&nbsp;kg Unitree&nbsp;Go2 across stairs, a bridge hurdle, a wet deck and a drop-off block under 0&ndash;150&nbsp;ms network and perception delays. A switched Koopman law with online label-free conformal tightening shrinks stair-tread margins and shifts jump takeoff earlier to clear the course, whereas a constrained nominal MPC lags into the hurdle.</p>
                             </figcaption>
                         </figure>
                     </li>
@@ -567,8 +582,8 @@
         <p>&copy; <span id="year"></span> Dr. Ibrahim Beklan Kucukdemiral, Glasgow Caledonian University. All rights reserved.</p>
     </footer>
     <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-    <script src="js/demos.js?v=20261122b"></script>
-    <script src="js/bib-parser.js?v=20261122b"></script>
-    <script src="js/home.js?v=20261122b"></script>
+    <script src="js/demos.js?v=20261125a"></script>
+    <script src="js/bib-parser.js?v=20261125a"></script>
+    <script src="js/home.js?v=20261125a"></script>
 </body>
 </html>

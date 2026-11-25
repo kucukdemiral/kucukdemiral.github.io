@@ -482,11 +482,19 @@ body.home main a:focus-visible {
 
 .demos {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1.15rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.25rem;
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.demos > li {
+    grid-column: span 2;
+}
+
+.demos > li:nth-child(-n+2) {
+    grid-column: span 3;
 }
 
 .demo {
@@ -986,12 +994,26 @@ body.home main a:focus-visible {
     .demos {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .demos > li,
+    .demos > li:nth-child(-n+2) {
+        grid-column: span 1;
+    }
+
+    .demos > li:first-child {
+        grid-column: 1 / -1;
+    }
 }
 
 /* Clips: one per row, picture beside its caption */
 @media (max-width: 680px) {
     .demos {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .demos > li,
+    .demos > li:first-child {
+        grid-column: 1 / -1;
     }
 
     .demo {
